@@ -13,8 +13,6 @@ from urllib2  import *
 from urlparse import *
 from functools import wraps
 
-from prompt import prompt #For dropping into a prompt when debugging
-
 #Self explanatory exceptions.
 class AlreadyLoggedIn(exceptions.Exception):
     pass
