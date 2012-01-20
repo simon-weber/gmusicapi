@@ -1,0 +1,22 @@
+Protocol Information:
+
+    Calls are made to music.google.com/music/services/<call name>
+
+    Calls also need to send 'u' (I've only seen it =0) and 'xt' (=the same as the cookie) in the url. A sample url:
+
+    	  https://music.google.com/music/services/search?u=0&xt=AM-WbXjYA_Y1LgZx_znahg9rOeIg3aDtWg:<long number>
+
+
+    == Implemented Calls ==
+
+    search:
+	req: {"q": "<query>"}
+	res: {"results":{"artists":[<hits>],"albums":[<hits>],"songs":[<hits>]}}
+
+    addplaylist:
+        req: {"title": "<name>"}
+	res: {"id":"<new playlist id>","title":"<name>","success":true}
+
+    addtoplaylist:
+        req: {"playlistId":"<playlist to add to>","songIds":["<songs to add>"]}
+	res: {"playlistId":"<same as above>","songIds":[{"playlistEntryId":"<new id>","songId":"<same as above>"}]}
