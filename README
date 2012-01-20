@@ -5,6 +5,7 @@ This is very much a work in progress. It currently supports:
      searching for songs
      creating playlists
      adding songs to playlists
+     loading the entire library
 
 Check protocol-info for more detailed specifications.
 

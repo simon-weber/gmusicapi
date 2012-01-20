@@ -20,3 +20,19 @@ Protocol Information:
     addtoplaylist:
         req: {"playlistId":"<playlist to add to>","songIds":["<songs to add>"]}
 	res: {"playlistId":"<same as above>","songIds":[{"playlistEntryId":"<new id>","songId":"<same as above>"}]}
+
+    loadalltracks:
+        Libraries can be big, so GM sends the tracks down in 'chunks'.
+        Requests that don't complete the library have 'continuation tokens' to send in the request for the next chunk. 
+
+        req: 
+           first: {}
+	   continuations: {"continuationToken":<token>}
+        res:
+           {"continuation": <True or False>,
+	    "continuationToken": "<token if there is a next chunk>",
+	    "differentialUpdate": <False - never seen True>,
+	    "playlist": [ {<song 1>}, {<song 2>}... ],
+	    "playlistID": "all",
+	    "requestTime": <some time representation>
+	    }
