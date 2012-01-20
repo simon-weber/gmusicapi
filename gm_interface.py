@@ -13,6 +13,8 @@ from urllib2  import *
 from urlparse import *
 from functools import wraps
 
+from prompt import prompt #For dropping into a prompt when debugging
+
 #Self explanatory exceptions.
 class AlreadyLoggedIn(exceptions.Exception):
     pass
@@ -42,6 +44,25 @@ class GM_API:
 
         return wrapped
 
+    def load_library(self):
+        """Loads the entire library through one or more calls to loadalltracks.
+        returns a list of song key-value pairs."""
+
+        library = []
+
+        lib_chunk = self.loadalltracks()
+    
+        while 'continuationToken' in lib_chunk:
+            library += lib_chunk['playlist'] #misleading name; this is the entire chunk
+            
+            lib_chunk = self.loadalltracks(lib_chunk['continuationToken'])
+
+        library += lib_chunk['playlist']
+
+        return library
+        
+        
+
     #API calls.
     #Calls added properly here should be automatically supported. The body of the function simply builds the python representation of the json query, and the decorator handles the rest. The name of the function needs to be the same as it will be in the url.
     #They should also have params in the docstring, since args (presently) won't be preserved by the decorator. The decorator module fixes this, but I'd rather not introduce another dependency.
@@ -70,6 +91,22 @@ class GM_API:
             song_ids = [song_ids]
 
         return {"playlistId": playlist_id, "songIds": song_ids} 
+
+    @api_call
+    def loadalltracks(cont_token = None):
+        """Load tracks from the library.
+        cont_token: a continuation token from a previous request chunk
+
+        Since libraries can have many tracks, GM gives them back in chunks.
+        If after a request, no continuation token comes back, the entire library has been sent.
+        The first request has no continuation token.
+        """
+
+        if not cont_token:
+            return {}
+        else:
+            return {"continuationToken":cont_token}
+        
 
 class GM_Communicator:
     """ Enables low level communication with Google Music."""
