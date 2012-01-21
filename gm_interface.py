@@ -140,7 +140,7 @@ class Api:
 class Tools:
     """ Holds some utility functions for dealing with GM data. """
 
-
+    @staticmethod
     def filter_song_md(song, md_list=['id'], no_singletons=True):
         """Returns a list of the selected metadata from a song.
         Does not modify the given song.
@@ -161,7 +161,7 @@ class Tools:
 
             return res
 
-
+    @staticmethod
     def build_song_rep(song, md_list=['title', 'artist', 'album'], divider=" - "):
         """Returns a string of the requested metadata types.
         The order of md_list determines order in the string.
@@ -171,7 +171,7 @@ class Tools:
         :param divider: (optional) string to separate the metadata with.
         """
         
-        filtered = filter_song_md(song, md_list, no_singletons=False)
+        filtered = Tools.filter_song_md(song, md_list, no_singletons=False)
 
         return divider.join(filtered)
 
