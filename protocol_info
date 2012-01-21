@@ -9,9 +9,7 @@ Protocol Information:
 
     == Implemented Calls ==
 
-    search:
-	req: {"q": "<query>"}
-	res: {"results":{"artists":[<hits>],"albums":[<hits>],"songs":[<hits>]}}
+
 
     addplaylist:
         req: {"title": "<name>"}
@@ -20,10 +18,14 @@ Protocol Information:
     addtoplaylist:
         req: {"playlistId":"<playlist to add to>","songIds":["<songs to add>"]}
 	res: {"playlistId":"<same as above>","songIds":[{"playlistEntryId":"<new id>","songId":"<same as above>"}]}
+	
+    deleteplaylist:
+        req: {"id": <playlist to delete>}
+	res: {"deleteID": <id>}
 
     loadalltracks:
         Libraries can be big, so GM sends the tracks down in 'chunks'.
-        Requests that don't complete the library have 'continuation tokens' to send in the request for the next chunk. 
+        Requests that don't complete the library have 'continuation tokens' required to get the next chunk.
 
         req: 
            first: {}
@@ -36,3 +38,7 @@ Protocol Information:
 	    "playlistID": "all",
 	    "requestTime": <some time representation>
 	    }
+
+    search:
+	req: {"q": "<query>"}
+	res: {"results":{"artists":[<hits>],"albums":[<hits>],"songs":[<hits>]}}

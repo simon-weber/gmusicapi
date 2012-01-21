@@ -2,18 +2,18 @@ A Python API for Google Music.
 
 This is very much a work in progress. It currently supports:
      authentication
-     searching for songs
-     creating playlists
-     adding songs to playlists
      loading the entire library
+     searching for songs
+     creating/deleting/adding songs to playlists
+
 
 Check protocol-info for more detailed specifications.
 
 
-There are two classes in gm_interface.py: GM_API and GM_Communicator.
-GM_API is probably what you want to use; it has convenient abstractions of the implemented API calls.
-GM_Communicator handles the plumbing for the API. You shouldn't need to use this if everything is working.
-
+There are three classes in gm_interface.py: 
+      Api: probably what you want to use; it has abstractions of the api calls.
+      Tools: some functions for manipulating GM data.
+      Communicator: handles the api plumbing. No need to use it if the api is working.
 
 
 

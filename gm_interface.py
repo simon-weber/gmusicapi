@@ -13,7 +13,6 @@ from urllib2  import *
 from urlparse import *
 from functools import wraps
 
-from prompt import prompt #For dropping into a prompt when debugging
 
 #Self explanatory exceptions.
 class AlreadyLoggedIn(exceptions.Exception):
@@ -22,20 +21,14 @@ class NotLoggedIn(exceptions.Exception):
     pass
 
 
-class GM_API:
-    """ Contains functional abstractions of API calls."""
-
-    def __init__(self):
-        self.comm = GM_Communicator()
-
-    def login(self, email, password):
-        return self.comm.login(email, password)
-
-    def logout(self):
-        return self.comm.logout()
+class Api:
+    """ Contains abstractions of API calls."""
 
     def api_call(json_builder):
-        """Decorator for building API calls."""
+        """Decorator to add plumbing for API calls.
+        Assumes the name of the function is the url name.
+        Assumes all positional arguments.
+        """
 
         @wraps(json_builder) #Preserve docstrings.
         def wrapped(self = None, *args):
@@ -44,9 +37,19 @@ class GM_API:
 
         return wrapped
 
+    def __init__(self):
+        self.comm = Communicator()
+
+    def login(self, email, password):
+        return self.comm.login(email, password)
+
+    def logout(self):
+        return self.comm.logout()
+
     def load_library(self):
-        """Loads the entire library through one or more calls to loadalltracks.
-        returns a list of song key-value pairs."""
+        """Loads the entire library through calls to loadalltracks.
+        Returns a list of song dictionaries.
+        """
 
         library = []
 
@@ -64,51 +67,116 @@ class GM_API:
         
 
     #API calls.
-    #Calls added properly here should be automatically supported. The body of the function simply builds the python representation of the json query, and the decorator handles the rest. The name of the function needs to be the same as it will be in the url.
-    #They should also have params in the docstring, since args (presently) won't be preserved by the decorator. The decorator module fixes this, but I'd rather not introduce another dependency.
-    @api_call
-    def search(query):
-        """Search for songs, artists and albums.
-        query: the search query."""
+    #Calls added properly here should be automatically supported. 
 
-        return {"q": query}
+    #The body of the function builds the python representation of the json query, 
+    # and the decorator handles the rest. 
+
+    #The name of the function needs to be the same as it will be in the url.
+
+    #Params should be included in the docstring, since the decorator won't preserve them.
+    # The decorator module could fix this, but it seems like overkill.
+
+
 
     @api_call
     def addplaylist(title): 
-        """Create a new playlist.
-        title: the title of the playlist to create."""
+        """Creates a new playlist.
+
+        :param title: the title of the playlist to create.
+        """
 
         return {"title": title}
 
     @api_call
     def addtoplaylist(playlist_id, song_ids):
-        """Add songs to a playlist.
-        playlist_id: id of the playlist to add to.
-        song_ids:    a list of song ids, or a single song id."""
+        """Adds songs to a playlist.
 
-        #We require a list. If a string is passed, wrap it in a list.
+        :param playlist_id: id of the playlist to add to.
+        :param song_ids: a list of song ids, or a single song id.
+        """
+
+        #GM requires a list; wrap single strings.
         if isinstance(song_ids, basestring):
             song_ids = [song_ids]
 
         return {"playlistId": playlist_id, "songIds": song_ids} 
 
     @api_call
-    def loadalltracks(cont_token = None):
-        """Load tracks from the library.
-        cont_token: a continuation token from a previous request chunk
+    def deleteplaylist(playlist_id):
+        """Deletes a playlist.
 
+        :param playlist_id: id of the playlist to delete.
+        """
+        
+        return {"id": playlist_id}
+
+    @api_call
+    def loadalltracks(cont_token = None):
+        """Loads tracks from the library.
         Since libraries can have many tracks, GM gives them back in chunks.
-        If after a request, no continuation token comes back, the entire library has been sent.
-        The first request has no continuation token.
+        The first request needs no continuation token.
+        The last response will not send a token.
+        
+        :param cont_token: (optional) token to get the next library chunk.
         """
 
         if not cont_token:
             return {}
         else:
             return {"continuationToken":cont_token}
-        
 
-class GM_Communicator:
+    @api_call
+    def search(query):
+        """Searches for songs, artists and albums.
+        Punctuation is ignored.
+
+        :param query: the search query.
+        """
+
+        return {"q": query}
+
+
+class Tools:
+    """ Holds some utility functions for dealing with GM data. """
+
+
+    def filter_song_md(song, md_list=['id'], no_singletons=True):
+        """Returns a list of the selected metadata from a song.
+        Does not modify the given song.
+
+        :param song: Dictionary representing a GM song.
+        :param md_list: (optional) the ordered list of metadata to keep.
+        :param no_singletons: (optional) if md_list is of length 1, return the actual metadata, not singleton lists.
+        """
+
+        if len(md_list) == 1 and no_singletons:
+            return song[md_list[0]]
+
+        else:
+            res = []
+
+            for md_type in md_list:
+                res.append(song[md_type])
+
+            return res
+
+
+    def build_song_rep(song, md_list=['title', 'artist', 'album'], divider=" - "):
+        """Returns a string of the requested metadata types.
+        The order of md_list determines order in the string.
+
+        :param song
+        :param md_list: (optional) list of valid GM metadata types.
+        :param divider: (optional) string to separate the metadata with.
+        """
+        
+        filtered = filter_song_md(song, md_list, no_singletons=False)
+
+        return divider.join(filtered)
+
+
+class Communicator:
     """ Enables low level communication with Google Music."""
 
     _base_url = 'https://music.google.com/music/services/'
@@ -116,15 +184,14 @@ class GM_Communicator:
     
 
     def __init__(self):
-        #This cookie jar holds our session.
-        self._cookie_jar = cookielib.LWPCookieJar()
+        self._cookie_jar = cookielib.LWPCookieJar() #to hold the session
         self.logged_in = False
 
     def login(self, email, password):
         if self.logged_in:
             raise AlreadyLoggedIn
 
-        #Faking Google auth is tricky business, and it's easiest just to emulate a browser; there are fields filled in by javascript when a user submits, for example.
+        #It's easiest just to emulate a browser; some field are filled by javascript.
 
         #This code modified from here: http://stockrt.github.com/p/emulating-a-browser-in-python-with-mechanize/
 
@@ -162,9 +229,11 @@ class GM_Communicator:
         self.logged_in = False
     
     def make_request(self, call, data):
-        """Make a single request to Google Music and return the response for reading.
-        call: the name of the service, eg 'search'
-        data: Python representation of the json query"""
+        """Sends a request to Google Music. Returns the response.
+
+        :param call: the name of the service, eg 'search'
+        :param data: Python representation of the json query
+        """
 
         if not self.logged_in:
             raise NotLoggedIn
@@ -179,13 +248,13 @@ class GM_Communicator:
         
         return self.open_https_url(url, encoded_data)
 
-
     def open_https_url(self, target_url, encoded_data = None):
-        """Open an https url using our Google session.
-        target_url: full https url to open
-        encoded_data: optional, encoded POST data"""
+        """Opens an https url using our Google session.
+        Code adapted from: http://code.google.com/p/gdatacopier/source/browse/tags/gdatacopier-1.0.2/gdatacopier.py
 
-        #Code adapted from: http://code.google.com/p/gdatacopier/source/browse/tags/gdatacopier-1.0.2/gdatacopier.py
+        :param target_url: full https url to open.
+        :param encoded_data: (optional) encoded POST data.
+        """
 
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self._cookie_jar))
 
@@ -200,7 +269,9 @@ class GM_Communicator:
         return response
 
     def get_cookie(self, name):
-        """Find a cookie by name from the cookie jar."""
+        """Finds a cookie by name from the cookie jar.
+        :param name
+        """
 
         for cookie in self._cookie_jar:
             if cookie.name == name:
