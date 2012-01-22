@@ -9,8 +9,6 @@ Protocol Information:
 
     == Implemented Calls ==
 
-
-
     addplaylist:
         req: {"title": "<name>"}
 	res: {"id":"<new playlist id>","title":"<name>","success":true}
@@ -46,3 +44,42 @@ Protocol Information:
     search:
 	req: {"q": "<query>"}
 	res: {"results":{"artists":[<hits>],"albums":[<hits>],"songs":[<hits>]}}
+
+
+    == Song Metadata Format ==
+
+    Song metadata is sent in dictionaries.
+
+    All songs in my library have either 27 or 28 keys. Here's an example:
+
+    {'comment': ''
+     'rating': 0
+     'lastPlayed': 1324954872637533L
+     'disc': 1
+     'composer': ''
+     'year': 2009
+     'id': '305a7b83-32fa-3a71-9a77-498dfce74aad'
+     'album': 'Live on Earth'
+     'title': 'The Car Song'
+     'deleted': False
+     'albumArtist': 'The Cat Empire'
+     'type': 2
+     'titleNorm': 'the car song'
+     'track': 2
+     'albumArtistNorm': 'the cat empire'
+     'totalTracks': 0
+     'beatsPerMinute': 0
+     'genre': 'Alternative'
+     'playCount': 0
+     'creationDate': 1324614519429366L
+     'name': 'The Car Song'
+     'albumNorm': 'live on earth'
+     'artist': 'The Cat Empire'
+     'url': ''
+     'totalDiscs': 2
+     'durationMillis': 562000
+     'artistNorm': 'the cat empire',
+
+      (optional entry; exists if there is album art)
+     'albumArtUrl': '//lh6.googleusercontent.com/dXUUawYec_1Kid7toEEBHAfqf3H4xJddufBwnRiOgt66XPxK_0jhs6gIZ0hDAsaem59GmmaPiw=s130-c'
+     }
