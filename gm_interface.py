@@ -67,7 +67,6 @@ class Api:
         
 
     #API calls.
-    #Calls added properly here should be automatically supported. 
 
     #The body of the function builds the python representation of the json query, 
     # and the decorator handles the rest. 
@@ -115,6 +114,7 @@ class Api:
     def loadalltracks(cont_token = None):
         """Loads tracks from the library.
         Since libraries can have many tracks, GM gives them back in chunks.
+        Chunks will send a continuation token to get the next chunk.
         The first request needs no continuation token.
         The last response will not send a token.
         
@@ -124,12 +124,22 @@ class Api:
         if not cont_token:
             return {}
         else:
-            return {"continuationToken":cont_token}
+            return {"continuationToken": cont_token}
+
+    @api_call
+    def modifyplaylist(playlist_id, new_title):
+        """Changes the name of a playlist.
+
+        :param playlist_id: id of the playlist to rename.
+        :param new_title: desired title.
+        """
+        
+        return {"playlistId": playlist_id, "playlistName": new_title}
 
     @api_call
     def search(query):
         """Searches for songs, artists and albums.
-        Punctuation is ignored.
+        GM ignores punctuation.
 
         :param query: the search query.
         """
@@ -142,33 +152,29 @@ class Tools:
 
     @staticmethod
     def filter_song_md(song, md_list=['id'], no_singletons=True):
-        """Returns a list of the selected metadata from a song.
+        """Returns a list of desired metadata from a song.
         Does not modify the given song.
 
         :param song: Dictionary representing a GM song.
-        :param md_list: (optional) the ordered list of metadata to keep.
-        :param no_singletons: (optional) if md_list is of length 1, return the actual metadata, not singleton lists.
+        :param md_list: (optional) the ordered list of metadata to select.
+        :param no_singletons: (optional) if md_list is of length 1, return the data, not a singleton list.
         """
 
+        filtered = [song[md_type] for md_type in md_list]
+
         if len(md_list) == 1 and no_singletons:
-            return song[md_list[0]]
-
+            return filtered[0]
         else:
-            res = []
-
-            for md_type in md_list:
-                res.append(song[md_type])
-
-            return res
+            return filtered
 
     @staticmethod
     def build_song_rep(song, md_list=['title', 'artist', 'album'], divider=" - "):
         """Returns a string of the requested metadata types.
         The order of md_list determines order in the string.
 
-        :param song
+        :param song: Dictionary representing a GM song.
         :param md_list: (optional) list of valid GM metadata types.
-        :param divider: (optional) string to separate the metadata with.
+        :param divider: (optional) string to join the metadata.
         """
         
         filtered = Tools.filter_song_md(song, md_list, no_singletons=False)
@@ -188,19 +194,25 @@ class Communicator:
         self.logged_in = False
 
     def login(self, email, password):
+        """Attempts to login with the given credentials.
+        Returns True on success, False on failure.
+        
+        :param email:
+        :param password:
+        """
+
         if self.logged_in:
             raise AlreadyLoggedIn
 
-        #It's easiest just to emulate a browser; some field are filled by javascript.
-
-        #This code modified from here: http://stockrt.github.com/p/emulating-a-browser-in-python-with-mechanize/
+        #It's easiest just to emulate a browser; some fields are filled by javascript.
+        #This code adapted from: http://stockrt.github.com/p/emulating-a-browser-in-python-with-mechanize/
 
         br = mechanize.Browser()
         br.set_cookiejar(self._cookie_jar)
 
         # Browser options
         br.set_handle_equiv(True)
-        br.set_handle_gzip(True)
+        br.set_handle_gzip(True) #suppress this warning?
         br.set_handle_redirect(True)
         br.set_handle_referer(True)
         br.set_handle_robots(False)
@@ -229,10 +241,10 @@ class Communicator:
         self.logged_in = False
     
     def make_request(self, call, data):
-        """Sends a request to Google Music. Returns the response.
+        """Sends a request to Google Music; returns the response.
 
-        :param call: the name of the service, eg 'search'
-        :param data: Python representation of the json query
+        :param call: the name of the service, eg 'search'.
+        :param data: Python representation of the json query.
         """
 
         if not self.logged_in:
@@ -249,7 +261,7 @@ class Communicator:
         return self.open_https_url(url, encoded_data)
 
     def open_https_url(self, target_url, encoded_data = None):
-        """Opens an https url using our Google session.
+        """Opens an https url using the current session.
         Code adapted from: http://code.google.com/p/gdatacopier/source/browse/tags/gdatacopier-1.0.2/gdatacopier.py
 
         :param target_url: full https url to open.
@@ -270,7 +282,9 @@ class Communicator:
 
     def get_cookie(self, name):
         """Finds a cookie by name from the cookie jar.
-        :param name
+        Returns None on failure.
+
+        :param name:
         """
 
         for cookie in self._cookie_jar:

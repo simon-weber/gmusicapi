@@ -4,7 +4,7 @@ This is very much a work in progress. It currently supports:
      authentication
      loading the entire library
      searching for songs
-     creating/deleting/adding songs to playlists
+     creating/deleting/editing/adding songs to playlists
 
 
 Check protocol-info for more detailed specifications.

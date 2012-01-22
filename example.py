@@ -23,10 +23,10 @@ def init():
     return api
 
 def main():
-    """Tests the api features.
+    """Demonstrates all api features.
     Logs in, searches for a song, selects the first result, 
     then creates a new playlist and adds that song to it.
-    Finally, deletes the new playlist.
+    Finally, it renames and deletes the playlist.
     """
 
     api = init()
@@ -61,8 +61,10 @@ def main():
     res = api.addtoplaylist(playlist_id, song_id)
     print "Added to playlist."
 
+    res = api.modifyplaylist(playlist_id, "a different name")
+    print "Modified playlist name."
 
-    raw_input("Press enter to delete it.")
+    raw_input("Press enter to delete the playlist.")
     res = api.deleteplaylist(playlist_id)
     print "Deleted playlist."
 
