@@ -24,17 +24,23 @@ def init():
 
 def main():
     """Demonstrates all api features.
-    Logs in, searches for a song, selects the first result, 
+    Logs in, gets library, searches for a song, selects the first result, 
     then creates a new playlist and adds that song to it.
     Finally, it renames and deletes the playlist.
     """
 
     api = init()
+
+    print "Loading library...",
+    library = api.load_library()
+    print "done"
+
+    print len(library), "tracks detected."
+    print
     
     query = raw_input("Search Query: ")
     search_results = api.search(query)
-    
-    
+        
     #Note that this only looks at hits on songs.
     #Songs matched on artist/album hits are discarded by selecting ['songs'].
     songs = search_results['results']['songs']

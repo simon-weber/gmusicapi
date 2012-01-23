@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+"""Python client library for Google Music."""
+
 import mechanize
 import cookielib
 import exceptions
@@ -7,14 +9,13 @@ import urllib
 import urllib2
 import os
 import json
-import inspect
+import warnings
 
 from urllib2  import *
 from urlparse import *
 from functools import wraps
 
 
-#Self explanatory exceptions.
 class AlreadyLoggedIn(exceptions.Exception):
     pass
 class NotLoggedIn(exceptions.Exception):
@@ -39,6 +40,11 @@ class Api:
 
     def __init__(self):
         self.comm = Communicator()
+
+    def is_authenticated(self):
+        """Returns whether the api is logged in."""
+
+        return self.comm.logged_in
 
     def login(self, email, password):
         return self.comm.login(email, password)
@@ -147,41 +153,6 @@ class Api:
         return {"q": query}
 
 
-class Tools:
-    """ Holds some utility functions for dealing with GM data. """
-
-    @staticmethod
-    def filter_song_md(song, md_list=['id'], no_singletons=True):
-        """Returns a list of desired metadata from a song.
-        Does not modify the given song.
-
-        :param song: Dictionary representing a GM song.
-        :param md_list: (optional) the ordered list of metadata to select.
-        :param no_singletons: (optional) if md_list is of length 1, return the data, not a singleton list.
-        """
-
-        filtered = [song[md_type] for md_type in md_list]
-
-        if len(md_list) == 1 and no_singletons:
-            return filtered[0]
-        else:
-            return filtered
-
-    @staticmethod
-    def build_song_rep(song, md_list=['title', 'artist', 'album'], divider=" - "):
-        """Returns a string of the requested metadata types.
-        The order of md_list determines order in the string.
-
-        :param song: Dictionary representing a GM song.
-        :param md_list: (optional) list of valid GM metadata types.
-        :param divider: (optional) string to join the metadata.
-        """
-        
-        filtered = Tools.filter_song_md(song, md_list, no_singletons=False)
-
-        return divider.join(filtered)
-
-
 class Communicator:
     """ Enables low level communication with Google Music."""
 
@@ -212,7 +183,12 @@ class Communicator:
 
         # Browser options
         br.set_handle_equiv(True)
-        br.set_handle_gzip(True) #suppress this warning?
+        
+        #Suppress warning that gzip support is experimental.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            br.set_handle_gzip(True) 
+
         br.set_handle_redirect(True)
         br.set_handle_referer(True)
         br.set_handle_robots(False)
