@@ -10,11 +10,11 @@ This is very much a work in progress. It currently supports:
 Check protocol-info for more detailed specifications.
 
 
-There are three classes in gm_interface.py: 
-      Api: probably what you want to use; it has abstractions of the api calls.
-      Tools: some functions for manipulating GM data.
+There are two classes in gm_interface:
+      Api: what you want to use; it has abstractions of the api calls.
       Communicator: handles the api plumbing. No need to use it if the api is working.
 
+gm_tools provides some utilities to manipulate GM data, and provides the backbone for my playlist importer (https://github.com/simon-weber/Google-Music-Playlist-Importer).
 
 
 Copyright (c) 2012 Simon Weber
