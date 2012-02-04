@@ -9,6 +9,9 @@ Protocol Information:
 
     == Implemented Calls ==
 
+    req - request
+    res - response on a success
+
     addplaylist:
         req: {"title": "<name>"}
 	res: {"id":"<new playlist id>","title":"<name>","success":true}
@@ -20,6 +23,11 @@ Protocol Information:
     deleteplaylist:
         req: {"id": "<playlist to delete>"}
 	res: {"deleteID": "<id>"}
+
+    deletesong:
+        delete from library:
+           req: {"songIds": ["<id1>", "<id2>"], "entryIds":[""], "listId": "all"}	
+	   res: {"listId":"all","deleteIds":["<id1>"]}
 
     loadalltracks:
         Libraries can be big, so GM sends the tracks down in 'chunks'.
@@ -39,7 +47,14 @@ Protocol Information:
 
     modifyplaylist:
         req: {"playlistId": "<id>", "playlistName": "<title to change to>"}
-	res: {}
+	res: {} - note the lack of success entry here; this is normal.
+
+    multidownload:
+        Gets download links. Only tested with 1 id, but it likely supports multiple.
+
+	req: {"songIds":[<id>"]}
+	res: {"downloadCounts": {"<id>":<times it has been downloaded>},
+	     "url":"<download url>"}
 
     search:
 	req: {"q": "<query>"}
@@ -81,5 +96,5 @@ Protocol Information:
      'artistNorm': 'the cat empire',
 
       (optional entry; exists if there is album art)
-     'albumArtUrl': '//lh6.googleusercontent.com/dXUUawYec_1Kid7toEEBHAfqf3H4xJddufBwnRiOgt66XPxK_0jhs6gIZ0hDAsaem59GmmaPiw=s130-c'
+     'albumArtUrl': '//lh6.googleusercontent.com/<long identifier>'
      }

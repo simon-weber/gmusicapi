@@ -1,20 +1,49 @@
 A Python API for Google Music.
 
-This is very much a work in progress. It currently supports:
+This is a work in progress. Currently it emulates the GM web client; music manager support (with song uploading) is on the way.
+
+
+Current features:
      authentication
-     loading the entire library
-     searching for songs
-     creating/deleting/editing/adding songs to playlists
 
+     loading:
+	all songs
+	all playlists
 
-Check protocol-info for more detailed specifications.
+     searching:
+	songs
+	artists
+	albums
 
+     playlist:
+	creation
+	name changing
+	song addition (not removal, yet)
+	deletion
 
-There are two classes in gm_interface:
-      Api: what you want to use; it has abstractions of the api calls.
-      Communicator: handles the api plumbing. No need to use it if the api is working.
+     song:
+	downloading - gets a link and download count (GM allows 2 downloads per file)
+	removal from library
+     
 
-gm_tools provides some utilities to manipulate GM data, and provides the backbone for my playlist importer (https://github.com/simon-weber/Google-Music-Playlist-Importer).
+Files:
+     gm_interface.py:
+	The Api class is in here.
+
+     example.py
+
+     gm_tools.py:
+	Provides some utilities for manipulating loaded GM data.
+
+     protocol_info:
+	Detailed call specs.
+
+     README
+
+     test_api_calls.py:
+	A test suite for api calls. 
+	You shouldn't run this on your library! Currently, it performs destructive actions to the library being tested.
+
 
 
 Copyright (c) 2012 Simon Weber

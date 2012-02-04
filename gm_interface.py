@@ -10,6 +10,7 @@ import urllib2
 import os
 import json
 import warnings
+import re
 
 from urllib2  import *
 from urlparse import *
@@ -22,57 +23,102 @@ class NotLoggedIn(exceptions.Exception):
     pass
 
 
+def wrap_single_string(item):
+    """If item is a string, return [item]. Otherwise return item.
+
+    :param item
+    """
+
+    return [item] if isinstance(item, basestring) else item
+
 class Api:
     """ Contains abstractions of API calls."""
 
-    def api_call(json_builder):
+    def api_call(gm_service_name):
         """Decorator to add plumbing for API calls.
-        Assumes the name of the function is the url name.
-        Assumes all positional arguments.
+        Assumes all arguments are positional.
+
+        :param gm_service_name: the part of the url that comes after /services/
         """
 
-        @wraps(json_builder) #Preserve docstrings.
-        def wrapped(self = None, *args):
-            res = self.comm.make_request(json_builder.__name__, json_builder(*args))
-            return json.loads(res.read())
+        def make_wrapped(json_builder):
+        
+            @wraps(json_builder) #Preserve docstrings.
+            def wrapped(self = None, *args):
+                res = self.wc_comm.make_request(gm_service_name, json_builder(*args))
+                return json.loads(res.read())
 
-        return wrapped
+            return wrapped
+        return make_wrapped
 
     def __init__(self):
-        self.comm = Communicator()
+        self.wc_comm = WC_Communicator()
 
     def is_authenticated(self):
         """Returns whether the api is logged in."""
 
-        return self.comm.logged_in
+        return self.wc_comm.logged_in
 
     def login(self, email, password):
-        return self.comm.login(email, password)
+        return self.wc_comm.login(email, password)
 
     def logout(self):
-        return self.comm.logout()
+        return self.wc_comm.logout()
+
+    def get_download_info(self, song_id):
+        """Returns a tuple of (download url, download_count).
+
+        :param song_id: a single song id.
+        """
+
+        info = self.raw_download_info(song_ids)
+        return (info["url"], info["downloadCounts"][song_id])
 
     def load_library(self):
-        """Loads the entire library through calls to loadalltracks.
+        """Loads the entire library through calls to load_all_tracks.
         Returns a list of song dictionaries.
         """
 
         library = []
 
-        lib_chunk = self.loadalltracks()
+        lib_chunk = self.load_all_tracks()
     
         while 'continuationToken' in lib_chunk:
             library += lib_chunk['playlist'] #misleading name; this is the entire chunk
             
-            lib_chunk = self.loadalltracks(lib_chunk['continuationToken'])
+            lib_chunk = self.load_all_tracks(lib_chunk['continuationToken'])
 
         library += lib_chunk['playlist']
 
         return library
         
+
+    def load_playlists(self):
+        """Returns a dictionary of playlist_name: playlist_id for each playlist.
+        """
+        
+        #Playlists are built in to the markup server-side.
+        #There's a lot of html; rather than parse, it's easier to just cut
+        # out the playlists ul, then use a regex.
+        res = self.wc_comm.open_https_url("https://music.google.com/music/listen?u=0")
+        markup = res.read()
+
+        #Get the playlists ul.
+        markup = markup[markup.index(r'<ul id="playlists" class="playlistContainer">'):]
+        markup = markup[:markup.index(r'</ul>') + 5]
+
+
+        id_name = re.findall(r'<li id="(.*?)" class="nav-item-container".*?title="(.*?)">', markup)
+        
+        playlists = {}
+        
+        for p_id, p_name in id_name:
+            playlists[p_name] = p_id
+
+        return playlists
         
 
-    #API calls.
+    #Webclient API calls.
 
     #The body of the function builds the python representation of the json query, 
     # and the decorator handles the rest. 
@@ -84,8 +130,8 @@ class Api:
 
 
 
-    @api_call
-    def addplaylist(title): 
+    @api_call('addplaylist')
+    def add_playlist(title): 
         """Creates a new playlist.
 
         :param title: the title of the playlist to create.
@@ -93,22 +139,30 @@ class Api:
 
         return {"title": title}
 
-    @api_call
-    def addtoplaylist(playlist_id, song_ids):
+    @api_call("addtoplaylist")
+    def add_to_playlist(playlist_id, song_ids):
         """Adds songs to a playlist.
 
         :param playlist_id: id of the playlist to add to.
         :param song_ids: a list of song ids, or a single song id.
         """
 
-        #GM requires a list; wrap single strings.
-        if isinstance(song_ids, basestring):
-            song_ids = [song_ids]
+        song_ids = wrap_single_string(song_ids)
 
         return {"playlistId": playlist_id, "songIds": song_ids} 
 
-    @api_call
-    def deleteplaylist(playlist_id):
+    @api_call("modifyplaylist")
+    def change_playlist_name(playlist_id, new_title):
+        """Changes the name of a playlist.
+
+        :param playlist_id: id of the playlist to rename.
+        :param new_title: desired title.
+        """
+        
+        return {"playlistId": playlist_id, "playlistName": new_title}
+
+    @api_call("deleteplaylist")
+    def delete_playlist(playlist_id):
         """Deletes a playlist.
 
         :param playlist_id: id of the playlist to delete.
@@ -116,8 +170,19 @@ class Api:
         
         return {"id": playlist_id}
 
-    @api_call
-    def loadalltracks(cont_token = None):
+    @api_call("deletesong")
+    def delete_song(song_ids):
+        """Delete a song from the entire library.
+
+        :param song_ids: a list of song ids, or a single song id.
+        """
+        
+        song_ids = wrap_single_string(song_ids)
+
+        return {"songIds": song_ids, "entryIds":[""], "listId": "all"}
+
+    @api_call("loadalltracks")
+    def load_all_tracks(cont_token = None):
         """Loads tracks from the library.
         Since libraries can have many tracks, GM gives them back in chunks.
         Chunks will send a continuation token to get the next chunk.
@@ -132,17 +197,18 @@ class Api:
         else:
             return {"continuationToken": cont_token}
 
-    @api_call
-    def modifyplaylist(playlist_id, new_title):
-        """Changes the name of a playlist.
+    @api_call("multidownload")
+    def raw_download_info(song_ids):
+        """Get download links and counts for songs.
 
-        :param playlist_id: id of the playlist to rename.
-        :param new_title: desired title.
+        :param song_ids: a list of song ids, or a single song id.
         """
-        
-        return {"playlistId": playlist_id, "playlistName": new_title}
 
-    @api_call
+        song_ids = wrap_single_string(song_ids)
+
+        return {"songIds": song_ids}
+
+    @api_call("search")
     def search(query):
         """Searches for songs, artists and albums.
         GM ignores punctuation.
@@ -154,22 +220,88 @@ class Api:
 
 
 class Communicator:
-    """ Enables low level communication with Google Music."""
+    """ Abstract class to handle common low-level operations when communicating with Google Music.
+    Implement:
 
-    _base_url = 'https://music.google.com/music/services/'
-    _user_agent = "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.8.1.6) Gecko/20061201 Firefox/2.0.0.6 (Ubuntu-feisty)"
+    _base_url
+    _user_agent
+
+    login - store session in _cookie_jar
+    make_request - 
+    """
+
+    @property
+    def NotImplementedField(self):
+        raise NotImplementedError
+
+    #### Implement these:
+    _base_url = NotImplementedField
+    _user_agent = NotImplementedField
+
     
+    def login(self, email, password):
+        raise NotImplementedError
+    
+    def make_request(self, call, data):
+        raise NotImplementedError
+    ####
+
+
 
     def __init__(self):
         self._cookie_jar = cookielib.LWPCookieJar() #to hold the session
         self.logged_in = False
 
-    def login(self, email, password):
+    def logout(self):
+        self.__init__() #discard our session
+        
+    def open_https_url(self, target_url, encoded_data = None):
+        """Opens an https url using the current session and returns the response.
+        Code adapted from: http://code.google.com/p/gdatacopier/source/browse/tags/gdatacopier-1.0.2/gdatacopier.py
+
+        :param target_url: full https url to open.
+        :param encoded_data: (optional) encoded POST data.
+        """
+
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self._cookie_jar))
+
+        opener.addheaders = [('User-agent', self._user_agent)]
+        
+        if encoded_data:
+            response = opener.open(target_url, encoded_data)
+        else:
+            response = opener.open(target_url)
+            
+        return response
+
+    def get_cookie(self, name):
+        """Finds a cookie by name from the cookie jar.
+        Returns None on failure.
+
+        :param name:
+        """
+
+        for cookie in self._cookie_jar:
+            if cookie.name == name:
+                return cookie
+
+        return None    
+    
+class WC_Communicator(Communicator):
+    """ A Communicator that emulates the GM web client."""
+
+    _base_url = 'https://music.google.com/music/services/'
+
+    #The wc requires a common user agent.
+    _user_agent = "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.8.1.6) Gecko/20061201 Firefox/2.0.0.6 (Ubuntu-feisty)"
+
+    def login(self, email, password, mm_session=None):
         """Attempts to login with the given credentials.
         Returns True on success, False on failure.
         
         :param email:
         :param password:
+        :param mm_session: an authenticated MM_Communicator to bump to web auth
         """
 
         if self.logged_in:
@@ -200,7 +332,6 @@ class Communicator:
         br.addheaders = [('User-agent', self._user_agent)]
 
         r = br.open('https://music.google.com')
-        auth_page = r.read()
 
         br.select_form(nr=0)
 
@@ -211,10 +342,6 @@ class Communicator:
         self.logged_in = True if self.get_cookie("SID") else False
 
         return self.logged_in
-
-    def logout(self):
-        self._cookie_jar = cookielib.CookieJar()
-        self.logged_in = False
     
     def make_request(self, call, data):
         """Sends a request to Google Music; returns the response.
@@ -235,36 +362,3 @@ class Communicator:
         encoded_data = "json=" + urllib.quote_plus(json.dumps(data))
         
         return self.open_https_url(url, encoded_data)
-
-    def open_https_url(self, target_url, encoded_data = None):
-        """Opens an https url using the current session.
-        Code adapted from: http://code.google.com/p/gdatacopier/source/browse/tags/gdatacopier-1.0.2/gdatacopier.py
-
-        :param target_url: full https url to open.
-        :param encoded_data: (optional) encoded POST data.
-        """
-
-        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self._cookie_jar))
-
-        opener.addheaders = [('User-agent', self._user_agent)]
-        
-        response = None
-        if encoded_data:
-            response = opener.open(target_url, encoded_data)
-        else:
-            response = opener.open(target_url)
-            
-        return response
-
-    def get_cookie(self, name):
-        """Finds a cookie by name from the cookie jar.
-        Returns None on failure.
-
-        :param name:
-        """
-
-        for cookie in self._cookie_jar:
-            if cookie.name == name:
-                return cookie
-
-        return None
