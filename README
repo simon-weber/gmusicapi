@@ -7,8 +7,8 @@ Current features:
      authentication
 
      loading:
-	all songs
-	all playlists
+	all song metadata
+	all user playlists (not auto)
 
      searching:
 	songs
@@ -26,23 +26,9 @@ Current features:
 	removal from library
      
 
-Files:
-     gm_interface.py:
-	The Api class is in here.
+See example.py for a usage example.
 
-     example.py
-
-     gm_tools.py:
-	Provides some utilities for manipulating loaded GM data.
-
-     protocol_info:
-	Detailed call specs.
-
-     README
-
-     test_api_calls.py:
-	A test suite for api calls. 
-	You shouldn't run this on your library! Currently, it performs destructive actions to the library being tested.
+The docstrings on gmapi.api are descriptive enough for documentation right now.
 
 
 
