@@ -1,6 +1,6 @@
 #!/user/bin/env python
 
-import gm_interface
+from gmapi.api import Api
 from getpass import getpass
 
 def init():
@@ -8,7 +8,7 @@ def init():
     Returns the authenticated api.
     """
 
-    api = gm_interface.Api()
+    api = Api()
     
     logged_in = False
     attempts = 0
@@ -32,7 +32,7 @@ def main():
     api = init()
 
     print "Loading library...",
-    library = api.load_library()
+    library = api.get_library_track_metadata()
     print "done"
 
     print len(library), "tracks detected."

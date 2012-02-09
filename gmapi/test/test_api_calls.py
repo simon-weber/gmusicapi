@@ -5,7 +5,8 @@ Currently, it _will_ modify the library it is tested on.
 
 import unittest
 
-import gm_interface
+from ..api import Api
+from .. import session
 
 import random
 import inspect
@@ -18,7 +19,7 @@ def init():
     Returns the authenticated api.
     """
 
-    api = gm_interface.Api()
+    api = Api()
     
     logged_in = False
     attempts = 0
@@ -57,11 +58,11 @@ class TestWCApiCalls(unittest.TestCase):
         cls.api = init()
     
         if not cls.api.is_authenticated():
-            raise gm_interface.NotLoggedIn
+            raise session.NotLoggedIn
         
         #These are assumed to succeed, but errors here will prevent further testing.
-        cls.library = cls.api.load_library()
-        cls.playlists = cls.api.load_playlists()
+        cls.library = cls.api.get_library_track_metadata()
+        cls.playlists = cls.api.get_playlist_ids()
 
 
     @classmethod
@@ -95,7 +96,7 @@ class TestWCApiCalls(unittest.TestCase):
             self.api.add_playlist('test playlist'))
 
         #Need to reload playlists so it appears.
-        self.playlists = self.api.load_playlists()
+        self.playlists = self.api.get_playlist_ids()
 
     #Add a random song to it.
     def pl_2_add_song(self):
@@ -107,14 +108,14 @@ class TestWCApiCalls(unittest.TestCase):
         self.assert_success(
             self.api.change_playlist_name(self.playlists['test playlist'], 'modified playlist'))
 
-        self.playlists = self.api.load_playlists()
+        self.playlists = self.api.get_playlist_ids()
             
     #Delete it.
     def pl_4_delete(self):
         self.assert_success(
             self.api.delete_playlist(self.playlists['modified playlist']))
 
-        self.playlists = self.api.load_playlists()
+        self.playlists = self.api.get_playlist_ids()
 
 
     def playlist_steps(self):
@@ -141,9 +142,11 @@ class TestWCApiCalls(unittest.TestCase):
             self.api.delete_song(self.r_song_id))
 
 
-    def test_multidownload(self):
+    def test_get_track_download_info(self):
+        #Need to go a layer deeper than the user-facing api to get the actual response.
         self.assert_success(
-            self.api.raw_download_info(self.r_song_id))
+            self.api.wc_call("multidownload", self.r_song_id))
+        
 
     def test_search(self):
         self.assert_success(

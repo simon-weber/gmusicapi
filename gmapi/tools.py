@@ -198,7 +198,7 @@ class SongMatcher:
             menu_lines.append(
                 str(key) 
                 + ": " 
-                + gm_interface.Tools.build_song_rep(song).encode('utf-8'))
+                + build_song_rep(song).encode('utf-8'))
 
             key += 1
 
