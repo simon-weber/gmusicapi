@@ -1,6 +1,7 @@
+#!/usr/bin/env python
+
 """The session layer allows for authentication and the making of authenticated requests."""
 
-import mechanize
 import cookielib
 import exceptions
 import urllib
@@ -8,21 +9,14 @@ import urllib2
 import os
 import json
 import warnings
-
-from decorator import decorator
-
 from urllib2  import *
 from urlparse import *
-
 import httplib
-from uuid import getnode as getmac
-from socket import gethostname
-import metadata_pb2
-from mutagen.easyid3 import EasyID3
-from mutagen.mp3 import MP3
-import random
-import string
-import time
+
+from decorator import decorator
+import mechanize
+
+from gmapi.utils.apilogging import LogController
 
 
 class AlreadyLoggedIn(exceptions.Exception):
@@ -43,6 +37,8 @@ class WC_Session():
     def __init__(self):
         self._cookie_jar = cookielib.LWPCookieJar() #to hold the session
         self.logged_in = False
+
+        self.log = LogController().get_logger(__name__ + "." + self.__class__.__name__)
 
     def logout(self):
         self.__init__() #discard our session
@@ -163,26 +159,15 @@ class MM_Session:
 
     def __init__(self):
         self.sid = None
+
         self.android = httplib.HTTPSConnection("android.clients.google.com")
-
-
-        self.mac = hex(getmac())[2:-1]
-        self.mac = ':'.join([self.mac[x:x+2] for x in range(0, 10, 2)])
-
-        self.hostname = gethostname()
-
-        self.uauth = metadata_pb2.UploadAuth()
-        self.uauth.address = self.mac
-        self.uauth.hostname = self.hostname
-
-        self.clientstate = metadata_pb2.ClientState()
-        self.clientstate.address = self.mac
-
-        #These get initialized after login.
-        self.uauthresp = metadata_pb2.UploadAuthResponse()
-        self.clientstateresp = metadata_pb2.ClientStateResponse()
+        self.jumper = httplib.HTTPConnection('uploadsj.clients.google.com')
 
     def login(self, email, password):
+
+        if self.sid:
+            raise AlreadyLoggedIn
+
         payload = {
             'Email': email,
             'Passwd': password,
@@ -198,17 +183,16 @@ class MM_Session:
 
         if first.split("=")[0] == "SID":
             self.sid = first
-            self.uauthresp.ParseFromString(self.protopost("upauth", self.uauth))
-            self.clientstateresp.ParseFromString(self.protopost("clientstate", self.clientstate))
+            #self.uauthresp.ParseFromString(self.protopost("upauth", self.uauth))
+            #self.clientstateresp.ParseFromString(self.protopost("clientstate", self.clientstate))
             return True
         else:
             return False
 
-    @require_auth
-    def get_quota(self):
-        self.clientstateresp.ParseFromString(self.protopost("clientstate", self.clientstate))
 
-        return self.clientstateresp.quota
+    def logout(self):
+        self.sid = None
+        #There's got to be more to do...
 
     @require_auth
     def protopost(self, path, proto):
@@ -224,125 +208,19 @@ class MM_Session:
         })
         r = self.android.getresponse()
 
-
         return r.read()
 
     @require_auth
-    def upload(self, song_filenames):
-        """Uploads the songs stored in the given filenames.
-        Metadata will be read from id3 tags."""
-        
-        filemap = {} #this maps a generated ClientID with a filename
+    def jumper_post(self, url, encoded_data, headers=None):
+        """Returns the response of a post to the MM jumper service."""
 
-        metadata = metadata_pb2.MetadataRequest()
-        metadata.address = self.mac        
+        if not headers:
+            headers = {
+                "Content-Type": "application/x-www-form-urlencoded", #? shouldn't it be json? but that's what the google client sends
+                "Cookie": self.sid}
 
-        for filename in song_filenames:
+        self.jumper.request("POST", url, encoded_data, headers)
 
-            track = metadata.tracks.add()
-
-            audio = MP3(filename, ID3 = EasyID3)
-
-            chars = string.ascii_letters + string.digits 
-            id = ''.join(random.choice(chars) for i in range(20))
-            filemap[id] = filename
-            track.id = id
-
-            filesize = os.path.getsize(filename)
-
-            track.fileSize = filesize
-
-            track.bitrate = audio.info.bitrate / 1000
-            track.duration = int(audio.info.length * 1000)
-            if "album" in audio: track.album = audio["album"][0]
-
-            if "title" in audio: track.title = audio["title"][0]
-            if "artist" in audio: track.artist = audio["artist"][0]
-            if "composer" in audio: track.composer = audio["composer"][0]
-            #I can fix this...
-            #if "albumartistsort" in audio: track.albumArtist = audio["albumartistsort"][0]
-            if "genre" in audio: track.genre = audio["genre"][0]
-            if "date" in audio: track.year = int(audio["date"][0])
-            if "bpm" in audio: track.beatsPerMinute = int(audio["bpm"][0])
-
-            if "tracknumber" in audio: 
-                tracknumber = audio["tracknumber"][0].split("/")
-                track.track = int(tracknumber[0])
-                if len(tracknumber) == 2:
-                    track.totalTracks = int(tracknumber[1])
-
-            if "discnumber" in audio:
-                discnumber = audio["discnumber"][0].split("/")
-                track.disc = int(discnumber[0])
-                if len(discnumber) == 2:
-                    track.totalDiscs = int(discnumber[1])
+        return self.jumper.getresponse()
 
 
-        metadataresp = metadata_pb2.MetadataResponse()
-        metadataresp.ParseFromString(self.protopost("metadata?version=1", metadata))
-
-        jumper = httplib.HTTPConnection('uploadsj.clients.google.com')
-
-        for song in metadataresp.response.uploads:
-            filename = filemap[song.id]
-            audio = MP3(filename, ID3 = EasyID3)
-            print os.path.basename(filename)
-            #if options.verbose: print song
-            inlined = {
-                "title": "jumper-uploader-title-42",
-                "ClientId": song.id,
-                "ClientTotalSongCount": len(metadataresp.response.uploads),
-                "CurrentTotalUploadedCount": "0",
-                "CurrentUploadingTrack": audio["title"][0],
-                "ServerId": song.serverId,
-                "SyncNow": "true",
-                "TrackBitRate": audio.info.bitrate,
-                "TrackDoNotRematch": "false",
-                "UploaderId": self.mac
-            }
-            payload = {
-              "clientId": "Jumper Uploader",
-              "createSessionRequest": {
-                "fields": [
-                    {
-                        "external": {
-                      "filename": os.path.basename(filename),
-                      "name": os.path.abspath(filename),
-                      "put": {},
-                      "size": os.path.getsize(filename)
-                    }
-                    }
-                ]
-              },
-              "protocolVersion": "0.8"
-            }
-            for key in inlined:
-                payload['createSessionRequest']['fields'].append({
-                    "inlined": {
-                        "content": str(inlined[key]),
-                        "name": key
-                    }
-                })
-
-            #print json.dumps(payload)
-
-            while True:
-                jumper.request("POST", "/uploadsj/rupio", json.dumps(payload), {
-                    "Content-Type": "application/x-www-form-urlencoded", #wtf? shouldn't it be json? but that's what the google client sends
-                    "Cookie": self.sid
-                })
-                r = json.loads(jumper.getresponse().read())
-                #if options.verbose: print r
-                if 'sessionStatus' in r: break
-                time.sleep(3)
-                print "Waiting for servers to sync..."
-
-            up = r['sessionStatus']['externalFieldTransfers'][0]
-            print "Uploading a file... this may take a while"
-            jumper.request("POST", up['putInfo']['url'], open(filename), {
-                'Content-Type': up['content_type']
-            })
-            r = json.loads(jumper.getresponse().read())
-            #if options.verbose: print r
-            if r['sessionStatus']['state'] == 'FINALIZED':
-                print "Uploaded File Successfully"

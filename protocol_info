@@ -1,5 +1,7 @@
 Protocol Information:
 
+    All the information in this file is going to be moved into protocol.py, and api docstrings.
+
     Calls are made to music.google.com/music/services/<call name>
 
     Calls also need to send 'u' (I've only seen it =0) and 'xt' (=the same as the cookie) in the url. A sample url:
@@ -45,7 +47,42 @@ Protocol Information:
 	    "requestTime": <some time representation>
 	    }
 
+    modifyentries:
+        Edits song metadata.
+
+	There are a lot of things to be careful of when editing metadata. 
+	Everything known is in  protocol.py.WC_Protocol under Metadata Expectations.
+	You should be safe if you stick to changing these keys:
+
+	    rating to one of:
+	        0 - no thumb
+		1 - down thumb
+		5 - up thumb
+
+	    name - _not_ title. title is reset to whatever name is.
+
+	    album
+	    albumArtist
+	    artist
+	    composer
+	    disc
+	    genre
+	    playCount
+	    totalDiscs
+	    totalTracks
+	    track
+	    year
+
+        Also note that the server response is _not_ to be trusted. 
+	Reload the entire library, then re-read tracks to see updates.
+
+	req: {"entries":[ {<song 1>}, ...]}
+	res: {"songs":[ {<your _exact_ request for song 1; _not_ what's on the server>}, ...],
+	      "success":true}	    
+
     modifyplaylist:
+        Changes the title of a playlist.
+
         req: {"playlistId": "<id>", "playlistName": "<title to change to>"}
 	res: {} - note the lack of success entry here; this is normal.
 
@@ -54,14 +91,15 @@ Protocol Information:
 
 	req: {"songIds":[<id>"]}
 	res: {"downloadCounts": {"<id>":<times it has been downloaded>},
-	     "url":"<download url>"}
+	      "url":"<download url>"}
 
     search:
 	req: {"q": "<query>"}
 	res: {"results":{"artists":[<hits>],"albums":[<hits>],"songs":[<hits>]}}
 
 
-    == Song Metadata Format ==
+    == Song Metadata Example ==
+    (see protocol.WC_Protocol metadata expectations for more information)
 
     Song metadata is sent in dictionaries.
 
