@@ -25,8 +25,7 @@ A Python API for Google Music.
 * song:
     * downloading - gets a link and download count (GM allows 2 downloads per file)
     * metadata changing (to avoid surprises read protocol_info)
-    * ~~uploading (only MP3 files for now - big thanks to [Kevin](https://github.com/antimatter15) for his awesome work on the music manager protocol)~~ (upload support temporarily pulled while deduplication matters are figured out.)
-    
+    * uploading - (upload support temporarily pulled while deduplication matters are figured out.)
     * removal from library
 
 ###Usage
