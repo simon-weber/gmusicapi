@@ -245,63 +245,81 @@ class Api:
     #     #protocol incorrect here...
     #     return (quota.maximumTracks, quota.totalTracks, quota.availableTracks)
 
+    @utils.accept_singleton(basestring)
+    def upload(self, filenames):
+        """Uploads the MP3s stored in the given filenames.
+        Returns a mapping of filename: GM song id for each successful upload.
+        Returns an empty dictionary if all uploads fail.
 
-    #Upload support pulled while deduplication matters are figured out.
-    # @utils.accept_singleton(basestring)
-    # def upload(self, filenames):
-    #     """Uploads the MP3s stored in the given filenames.
-    #     Returns a mapping of filename: GM song id for each successful upload.
-    #     Returns an empty dictionary if all uploads fail.
+        :param filenames: a list of filenames, or a single filename
+        """
 
-    #     :param filenames: a list of filenames, or a single filename
-    #     """
+        #filename -> GM song id
+        fn_sid_map = {}
 
-    #     #filename -> GM song id
-    #     fn_sid_map = {}
+        #Form and send the metadata request.
+        metadata_request, cid_map = self.mm_protocol.make_metadata_request(filenames)
+        metadataresp = self._mm_pb_call("metadata", metadata_request)
 
-    #     #Form and send the metadata request.
-    #     metadata_request, cid_map = self.mm_protocol.make_metadata_request(filenames)
-    #     metadataresp = self._mm_pb_call("metadata", metadata_request)
-
-    #     #Form upload session requests (for songs GM wants).
-    #     session_requests = self.mm_protocol.make_upload_session_requests(cid_map, metadataresp)
+        #Form upload session requests (for songs GM wants).
+        session_requests = self.mm_protocol.make_upload_session_requests(cid_map, metadataresp)
 
     
-    #     for filename, server_id, payload in session_requests:
+        for filename, server_id, payload in session_requests:
 
-    #         post_data = json.dumps(payload)
+            post_data = json.dumps(payload)
 
-    #         #Continuously try for a session.
-    #         while True:
+            success = False
+            attempts = 0
+            while not success and attempts < 3:
                 
-    #             #Pull this out with the below call when it makes sense to.
-    #             res = json.loads(
-    #                 self.mm_session.jumper_post(
-    #                     "/uploadsj/rupio", 
-    #                     post_data).read())
+                #Pull this out with the below call when it makes sense to.
+                res = json.loads(
+                    self.mm_session.jumper_post(
+                        "/uploadsj/rupio", 
+                        post_data).read())
 
-    #             #if options.verbose: print res
-    #             if 'sessionStatus' in res: break
-    #             time.sleep(3)
-    #             #print "Waiting for servers to sync..."
+                if 'sessionStatus' in res:
+                    self.log.info("got a session. full response: %s", str(res))
+                    success = True
+                    break
+                
+                elif 'errorMessage' in res:
+                    self.log.warning("got an error from the GM upload server. full response: %s", str(res))
+                else:
+                    self.log.warning("could not interpret upload session resonse. full response: %s", str(res))
+                    
+                    
+                    
+                time.sleep(3)
+                self.log.info("trying again for a session.")
+                attempts += 1
+                
+                #print "Waiting for servers to sync..."
 
-    #         #Got a session; upload the actual file.
-    #         up = res['sessionStatus']['externalFieldTransfers'][0]
-    #         #print "Uploading a file... this may take a while"
+            if success:
+                #Got a session; upload the actual file.
+                up = res['sessionStatus']['externalFieldTransfers'][0]
+                self.log.info("uploading file. sid: %s", server_id)
+                #print "Uploading a file... this may take a while"
 
-    #         res = json.loads(
-    #             self.mm_session.jumper_post( 
-    #                 up['putInfo']['url'], 
-    #                 open(filename), 
-    #                 {'Content-Type': up['content_type']}).read())
-
-
-    #         #if options.verbose: print res
-    #         if res['sessionStatus']['state'] == 'FINALIZED':
-    #             fn_sid_map[filename] = server_id
+                res = json.loads(
+                    self.mm_session.jumper_post( 
+                        up['putInfo']['url'], 
+                        open(filename), 
+                        {'Content-Type': up['content_type']}).read())
 
 
-    #     return fn_sid_map
+                #if options.verbose: print res
+                if res['sessionStatus']['state'] == 'FINALIZED':
+                    fn_sid_map[filename] = server_id
+                    self.log.info("successfully uploaded sid %s", server_id)
+            else:
+                self.log.warning("could not get an upload session for sid %s", server_id)
+
+
+        
+        return fn_sid_map
 
 
     def _mm_pb_call(self, service_name, req = None):

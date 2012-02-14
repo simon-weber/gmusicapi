@@ -2,22 +2,25 @@
 
 """The protocol layer is a one-to-one mapping of calls to Google Music."""
 
-from .utils import utils
-
-from collections import namedtuple
-import metadata_pb2
-import exceptions
-
-from uuid import getnode as getmac
-from socket import gethostname
-
-from mutagen.easyid3 import EasyID3
-from mutagen.mp3 import MP3
 
 import string
 import os
 import random
+from collections import namedtuple
+import exceptions
+from uuid import getnode as getmac
+from socket import gethostname
+import base64
+import hashlib
 
+from mutagen.easyid3 import EasyID3
+from mutagen.mp3 import MP3
+
+import metadata_pb2
+from .utils import utils
+
+
+supported_filetypes = ("mp3")
 
 class UnsupportedFiletype(exceptions.Exception):
     pass
@@ -216,19 +219,34 @@ class MM_Protocol():
         for filename in filenames:
 
             #Only mp3 supported right now.
-            if not filename.split(".")[-1] == "mp3":
-                raise UnsupportedFiletype
+            if not filename.split(".")[-1] in supported_filetypes:
+                raise UnsupportedFiletype("only these filetypes are supported for uploading: " + str(supported_filetypes))
 
 
             track = metadata.tracks.add()
 
+            #Eventually pull this to supported_filetypes
             audio = MP3(filename, ID3 = EasyID3)
 
 
-            #I have the feeling this is a hash, not random...
-            id = ''.join(
-                random.choice(string.ascii_letters + string.digits) 
-                for i in range(20))
+            #The id is a 22 char hash of the file. It is found by:
+            # stripping tags
+            # getting an md5 sum
+            # converting sum to base64
+            # removing trailing ===
+
+            #My implementation is _not_ the same hash the music manager will send;
+            # they strip tags first. But files are differentiated across accounts,
+            # so this shouldn't cause problems.
+
+            #This will reupload files if their tags chance.
+            
+            with open(filename) as f:
+                file_contents = f.read()
+            
+            h = hashlib.md5(file_contents).digest()
+            h = base64.encodestring(h)[:-3]
+            id = h
 
             filemap[id] = filename
             track.id = id
