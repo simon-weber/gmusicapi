@@ -51,7 +51,7 @@ Protocol Information:
         Edits song metadata.
 
 	There are a lot of things to be careful of when editing metadata. 
-	Everything known is in  protocol.py.WC_Protocol under Metadata Expectations.
+	Everything known is in protocol.py.WC_Protocol under Metadata Expectations.
 	You should be safe if you stick to changing these keys:
 
 	    rating to one of:
@@ -59,7 +59,7 @@ Protocol Information:
 		1 - down thumb
 		5 - up thumb
 
-	    name - _not_ title. title is reset to whatever name is.
+	    name - _don't_ use title. title is reset to whatever name is.
 
 	    album
 	    albumArtist

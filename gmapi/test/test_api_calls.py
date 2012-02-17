@@ -119,8 +119,8 @@ class TestWCApiCalls(unittest.TestCase):
             raise session.NotLoggedIn
         
         #These are assumed to succeed, but errors here will prevent further testing.
-        cls.library = cls.api.get_library_track_metadata()
-        cls.playlists = cls.api.get_playlist_ids()
+        cls.library = cls.api.get_all_songs()
+        cls.playlists = cls.api.get_playlists()
 
 
     @classmethod
@@ -131,20 +131,21 @@ class TestWCApiCalls(unittest.TestCase):
 
 
     def setUp(self):
-        """Get a random playlist and song id."""
+        """Get a random song id."""
 
-        self.r_pl_id = self.playlists[random.choice(list(self.playlists.keys()))]
+        #This will fail is we have no songs.
         self.r_song_id = random.choice(self.library)['id']
-
 
     #---
     #   Utility functions:
     #---
 
     def assert_success(self, response):
-        """Assert the success of a call's response."""
+        """Asserts the success of a call's response.
+        Returns the calls response."""
 
         self.assertTrue(call_succeeded(response))
+        return response
 
     def collect_steps(self, prefix):
         """Yields the steps of a monolithic test in name-sorted order."""
@@ -175,31 +176,49 @@ class TestWCApiCalls(unittest.TestCase):
     def pl_1_create(self):
         """Create a playlist."""
         self.assert_success(
-            self.api.add_playlist('test playlist'))
+            self.api.create_playlist('test playlist'))
 
         #Need to reload playlists so it appears.
-        self.playlists = self.api.get_playlist_ids()
+        self.playlists = self.api.get_playlists()
 
 
     def pl_2_add_song(self):
         """Add a random song to the playlist."""
         self.assert_success(
-            self.api.add_to_playlist(self.playlists['test playlist'], self.r_song_id))
+            self.api.add_songs_to_playlist(self.playlists['test playlist'], self.r_song_id))
 
+        #Verify the playlist has it.
+        tracks = self.api.get_playlist_songs(self.playlists['test playlist'])
+
+        self.assertTrue(tracks[0]["id"] == self.r_song_id)
+        
+
+    def pl_2a_remove_song(self):
+        """Remove a song from the playlist."""
+
+        sid = self.api.get_playlist_songs(self.playlists['test playlist'])[0]["id"]
+        
+        self.assert_success(
+            self.api.remove_song_from_playlist(sid, self.playlists['test playlist']))
+
+        #Verify.
+        tracks = self.api.get_playlist_songs(self.playlists['test playlist'])
+
+        self.assertTrue(len(tracks) == 0)
 
     def pl_3_change_name(self):
         """Change the playlist's name."""
         self.assert_success(
             self.api.change_playlist_name(self.playlists['test playlist'], 'modified playlist'))
 
-        self.playlists = self.api.get_playlist_ids()
+        self.playlists = self.api.get_playlists()
             
     def pl_4_delete(self):
         """Delete the playlist."""
         self.assert_success(
             self.api.delete_playlist(self.playlists['modified playlist']))
 
-        self.playlists = self.api.get_playlist_ids()
+        self.playlists = self.api.get_playlists()
 
 
     def test_playlists(self):
@@ -227,10 +246,10 @@ class TestWCApiCalls(unittest.TestCase):
     #---
 
     #Works, but the protocol isn't mature enough to support the call (yet).
-    # def test_get_track_download_info(self):
+    # def test_get_song_download_info(self):
     #     #The api doesn't expose the actual response here,
     #     # instead we expect a tuple with 2 entries.
-    #     res = self.api.get_track_download_info(self.r_song_id)
+    #     res = self.api.get_song_download_info(self.r_song_id)
     #     self.assertTrue(len(res) == 2 and isinstance(res, tuple))
             
 
@@ -261,7 +280,7 @@ class TestWCApiCalls(unittest.TestCase):
         #Refresh the library to flush the changes, then find the song.
         #Assume the id won't change (testing has shown this to be true).
         time.sleep(3)
-        self.library = self.api.get_library_track_metadata()
+        self.library = self.api.get_all_songs()
         server_md = [s for s in self.library if s["id"] == orig_md["id"]][0]
         
         self.log.debug("server md: %s", repr(server_md))
@@ -299,7 +318,7 @@ class TestWCApiCalls(unittest.TestCase):
 
         #Verify everything is as it was.
         time.sleep(3)
-        self.library = self.api.get_library_track_metadata()
+        self.library = self.api.get_all_songs()
         server_md = [s for s in self.library if s["id"] == orig_md["id"]][0]
 
         self.log.debug("server md: %s", repr(server_md))

@@ -101,13 +101,15 @@ class WC_Protocol:
         return {"id": playlist_id}
 
     @staticmethod
-    def deletesong(song_ids):
-        """Delete a song from the entire library.
+    def deletesong(song_ids, entry_ids = [""], playlist_id = "all"):
+        """Delete a song from the library or playlists.
 
         :param song_ids: a list of song ids
+        :param entry_ids: for deleting from playlists
+        :param list_id: for deleteing from playlists
         """
 
-        return {"songIds": song_ids, "entryIds":[""], "listId": "all"}
+        return {"songIds": song_ids, "entryIds":entry_ids, "listId": playlist_id}
 
     @staticmethod
     def loadalltracks(cont_token = None):
@@ -124,6 +126,17 @@ class WC_Protocol:
             return {}
         else:
             return {"continuationToken": cont_token}
+
+    @staticmethod
+    def loadplaylist(playlist_id):
+        """Loads tracks from a playlist.
+        Tracks include an entryId.
+
+        :param playlist_id: id of the playlist to load.
+        """
+
+        return {"id": playlist_id}
+        
 
     @staticmethod
     def modifyentries(songs):

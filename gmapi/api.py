@@ -53,11 +53,7 @@ class Api:
         if self.is_authenticated():
             #Need some extra init for upload authentication.
             self._mm_pb_call("upload_auth")
-            
             self.log.info("logged in")
-
-            #Probably not needed:
-            #self.mm_pb_call("client_state") - not tested
         else:
             self.log.info("failed to log in")
 
@@ -79,16 +75,10 @@ class Api:
     #   Api features supported by the web client interface:
     #---
 
-    def add_playlist(self, name):
-        """Creates a new playlist.
 
-        :param title: the title of the playlist to create.
-        """
-
-        return self._wc_call("addplaylist", name)
 
     @utils.accept_singleton(basestring, 2) #can also accept a single string in pos 2 (song_ids)
-    def add_to_playlist(self, playlist_id, song_ids):
+    def add_songs_to_playlist(self, playlist_id, song_ids):
         """Adds songs to a playlist.
 
         :param playlist_id: id of the playlist to add to.
@@ -97,6 +87,14 @@ class Api:
 
         return self._wc_call("addtoplaylist", playlist_id, song_ids)
 
+    def change_playlist_name(self, playlist_id, new_name):
+        """Changes the name of a playlist.
+
+        :param playlist_id: id of the playlist to rename.
+        :param new_title: desired title.
+        """
+
+        return self._wc_call("modifyplaylist", playlist_id, new_name)
 
     @utils.accept_singleton(dict)
     def change_song_metadata(self, songs):
@@ -117,15 +115,13 @@ class Api:
 
         return self._wc_call("modifyentries", songs)
         
+    def create_playlist(self, name):
+        """Creates a new playlist.
 
-    def change_playlist_name(self, playlist_id, new_name):
-        """Changes the name of a playlist.
-
-        :param playlist_id: id of the playlist to rename.
-        :param new_title: desired title.
+        :param title: the title of the playlist to create.
         """
 
-        return self._wc_call("modifyplaylist", playlist_id, new_name)
+        return self._wc_call("addplaylist", name)
 
     def delete_playlist(self, playlist_id):
         """Deletes a playlist.
@@ -137,14 +133,14 @@ class Api:
 
     @utils.accept_singleton(basestring) #position defaults to 1
     def delete_song(self, song_ids):
-        """Delete a song from the entire library.
+        """Deletes songs from the entire library.
 
         :param song_ids: a list of song ids, or a single song id.
         """
 
         return self._wc_call("deletesong", song_ids)
 
-    def get_library_track_metadata(self):
+    def get_all_songs(self):
         """Returns a list of song metadata dictionaries.
         """
 
@@ -161,7 +157,15 @@ class Api:
 
         return library
 
-    def get_playlist_ids(self):
+    def get_playlist_songs(self, playlist_id):
+        """Returns a list of track dictionaries, which include enttryIds for the playlist.
+
+        :playlist_id: id of the playlist to load
+        """
+
+        return self._wc_call("loadplaylist", playlist_id)["playlist"]
+
+    def get_playlists(self):
         """Returns a dictionary mapping playlist name to id for all user playlists.
         The dictionary does not include autoplaylists.
         """
@@ -186,7 +190,7 @@ class Api:
 
         return playlists
 
-    def get_track_download_info(self, song_id):
+    def get_song_download_info(self, song_id):
         """Returns a tuple of (download url, download_count).
 
         :param song_id: a single song id.
@@ -197,6 +201,30 @@ class Api:
 
         return (info["url"], info["downloadCounts"][song_id])
 
+    @utils.accept_singleton(basestring)
+    def remove_song_from_playlist(self, song_ids, playlist_id):
+        """Removes songs from a playlist.
+
+        :param song_ids: a list of song ids, or a single song id
+        """
+
+        #Not as easy as just calling deletesong with the playlist;
+        # we need the entryIds for the songs with the playlist as well.
+
+        playlist_tracks = self.get_playlist_songs(playlist_id)
+
+        entry_ids = []
+
+        for sid in song_ids:
+            matched_eids = [t["playlistEntryId"] for t in playlist_tracks if t["id"] == sid]
+            
+            if len(matched_eids) < 1:
+                self.log.warning("could not match song id %s to any entryIds")
+            else:
+                entry_ids.extend(matched_eids)
+
+
+        return self._wc_call("deletesong", song_ids, entry_ids, playlist_id)
 
     def search(self, query):
         """Searches for songs, artists and albums.
@@ -223,7 +251,7 @@ class Api:
         res = json.loads(res.read())
 
         if service_name != "loadalltracks":
-            self.log.debug("wc_call response: [%s]", res)
+            self.log.debug("wc_call response: %s", res)
 
         return res
 
@@ -234,7 +262,7 @@ class Api:
 
 
     #This works, but the protocol isn't quite right.
-    #For now, you're better of just taking len(get_library_track_metadata)
+    #For now, you're better of just taking len(get_all_songs)
     # to get a count of songs in the library.
 
     # def get_quota(self):
