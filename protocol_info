@@ -31,6 +31,9 @@ Protocol Information:
            req: {"songIds": ["<id1>", "<id2>"], "entryIds":[""], "listId": "all"}	
 	   res: {"listId":"all","deleteIds":["<id1>"]}
 
+	delete from playlist:
+	   same as from library, but given entryIds (from loadplaylist) and a listId.
+
     loadalltracks:
         Libraries can be big, so GM sends the tracks down in 'chunks'.
         Requests that don't complete the library have 'continuation tokens' required to get the next chunk.
@@ -46,6 +49,14 @@ Protocol Information:
 	    "playlistID": "all",
 	    "requestTime": <some time representation>
 	    }
+
+    loadplaylist:
+        Loads the songs from a playlist.
+	    req: {"id": "<playlist id>"}
+	    res: {"continuation": False, //never seen true, but my playlists are small. likely works like loadalltracks
+	    	  "playlist": [{<song 1>}, {<song 2>}], //songs also include an entryId 
+		  "playlistId": "<id>", 
+		  "unavailableTrackCount": <number>}
 
     modifyentries:
         Edits song metadata.
