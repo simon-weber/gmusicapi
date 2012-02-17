@@ -32,7 +32,7 @@ def main():
     api = init()
 
     print "Loading library...",
-    library = api.get_library_track_metadata()
+    library = api.get_all_songs()
     print "done"
 
     print len(library), "tracks detected."
@@ -54,7 +54,7 @@ def main():
 
 
     playlist_name = raw_input("New playlist name: ")
-    res = api.add_playlist(playlist_name)
+    res = api.create_playlist(playlist_name)
 
     if not res['success']:
         print "Failed to make the playlist."
@@ -64,7 +64,7 @@ def main():
 
 
     playlist_id = res['id']
-    res = api.add_to_playlist(playlist_id, song_id)
+    res = api.add_songs_to_playlist(playlist_id, song_id)
     print "Added to playlist."
 
     res = api.change_playlist_name(playlist_id, "api playlist")
