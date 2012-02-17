@@ -9,7 +9,8 @@ A Python API for Google Music.
 
 * loading:
     * all song metadata
-    * all user playlists (not auto, yet)
+    * all user playlist titles and ids (not auto, yet)
+    * songs from a specific playlist
 
 * searching:
     * songs
@@ -19,7 +20,7 @@ A Python API for Google Music.
 * playlist:
     * creation
     * name changing
-    * song addition (not removal, yet)
+    * song addition and removal
     * deletion
 
 * song:
@@ -30,14 +31,14 @@ A Python API for Google Music.
 
 ###Usage
 gmapi.api.Api is the user-facing interface.
-To get started, see example.py.  
+To get started, see example.py.
 
 There's not official documentation yet, but the internal docs are kept up-to-date. Just use help(gmapi.api) in an interpreter.
 
 ###Notes
 This is a work in progress, so debug logging is enabled by default.
 All logging is done to gmapi.log, and warnings and above are printed to	the console.
-I don't	    log anything authentication-related - you can check the  logs to	be sure.
+I don't	log anything authentication-related - you can check the  logs to be sure.
 
 
 
@@ -48,5 +49,5 @@ Feel free to contact me	with anything relating to the project. Bug reports, feat
 
 
 
-Copyright (c) 2012 Simon Weber
+Copyright (c) 2012 Simon Weber  
 Licensed under the [GPLv3](http://www.gnu.org/licenses/gpl.txt).
