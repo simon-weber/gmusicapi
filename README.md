@@ -1,4 +1,4 @@
-A Python API for Google Music.
+An unofficial Python API for Google Music. The project is not supported or endorsed by Google.
 
 
 ###Features
