@@ -1,4 +1,4 @@
-An unofficial Python API for Google Music. The project is not supported or endorsed by Google.
+An unofficial Python API for Google Music. The project is not supported nor endorsed by Google.
 
 
 ###Features
@@ -31,22 +31,21 @@ An unofficial Python API for Google Music. The project is not supported or endor
     * removal from library
 
 ###Usage
-gmapi.api.Api is the user-facing interface.
+gmapi.api.Api is the user-facing interface, and its internal documentation is kept up to date.
 To get started, see example.py.
 
-I'm currently working on better documentation. Experimental docs live [here](https://github.com/simon-weber/Unofficial-Google-Music-API/tree/master/docs/build/html/index.html) for now.
+Eventually, this page will serve Sphinx docs. For now, if you clone the repo, you can point your browser at index.html in docs/build/html to see them.
 
 ###Notes
 This is a work in progress, so debug logging is enabled by default.
-All logging is done to gmapi.log, and warnings and above are printed to	the console.
-I don't	log anything authentication-related - you can check the  logs to be sure.
-
+All logging is done to gmapi.log in your working directory, and warnings and above are printed to the console.
+Nothing authentication-related gets logged aside from "logged in" and "logged out" messages.
 
 
 - - -
   
   
-Feel free to contact me	with anything relating to the project. Bug reports, feature requests, and contributions are welcome.
+Feel free to email me or - better yet - open an issue for bugs, feature requests, or contributions.
 
 
 
