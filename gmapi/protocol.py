@@ -25,147 +25,215 @@ supported_filetypes = ("mp3")
 class UnsupportedFiletype(exceptions.Exception):
     pass
 
+class WC_Call:
+    """An abstract class to hold the protocol for a web client call."""
+    
+    _base_url = 'https://music.google.com/music/'
+    
+    #Added to the url after _base_url. Most calls are made to /music/services/<call name>
+    #Expected to end with a forward slash.
+    _suburl = 'services/'
+
+    #Should the request and result of this call be logged?
+    gets_logged = True
+    
+    #Most calls will send u=0 and the xt cookie in the querystring.
+    @classmethod
+    def build_url(cls, query_string=None):
+        """Return the url to make the call at."""
+
+        #Most calls send u=0 and xt=<cookie value>
+        qstring = '?u=0&xt={0}'.format(query_string['xt'])
+
+        return cls._base_url + cls._suburl + cls.__name__ + qstring
+
+    #Calls all have different request bodies.
+    @staticmethod
+    def build_body():
+        """Return the python representation of the json request body."""
+        raise NotImplementedError
+        
+    
 class WC_Protocol:
+    """Holds the protocol for all suppported web client interactions."""
+    
+    #All api calls are named as they appear in the request.
 
-    #Metadata expectations:
+    class addplaylist(WC_Call):
+        """Creates a new playlist."""
 
-    #Entries that accept a limited set of values.
-    #Metadata name -> list of values it can hold.
-    #This needs to be investigated and fleshed out.
-    limited_md = {
-        "rating" : (0, 1, 5)
-    }
-
-    #Entries we have control of, and can change.
-    mutable_md = ('rating', 'disc', 'composer', 'year', 'album', 'albumArtist',
-              'track', 'totalTracks', 'genre', 'playCount', 'name',
-              'artist', 'totalDiscs', 'durationMillis')
-
-    #Entries we cannot change.
-    frozen_md = ('comment', 'id', 'deleted', 'creationDate', 'albumArtUrl', 'type', 'beatsPerMinute',
-                 'url')
-
-    #Metadata whose value depends on another's.
-    #Name -> ('depeds on', transformation)
-    dependent_md = {
-        'title': ('name', lambda x : x),
-        'titleNorm': ('name', string.lower),
-        'albumArtistNorm': ('albumArtist', string.lower),
-        'albumNorm': ('album', string.lower),
-        'artistNorm': ('artist', string.lower)}
-
-    #Metadata that the server has complete control of.
-    #We cannot change the value, and the server may change it without us knowing.
-    server_md = ('lastPlayed', ) #likely an accessed timestamp in actuality?
+        @staticmethod
+        def build_body(title): 
+            """
+            :param title: the title of the playlist to create.
+            """
+            
+            return {"title": title}
 
 
-    @staticmethod
-    def addplaylist(title): 
-        """Creates a new playlist.
 
-        :param title: the title of the playlist to create.
-        """
+    class addtoplaylist(WC_Call):
+        """Adds songs to a playlist."""
 
-        return {"title": title}
+        @staticmethod
+        def build_body(playlist_id, song_ids):
+            """
+            :param playlist_id: id of the playlist to add to.
+            :param song_ids: a list of song ids
+            """
 
-
-    @staticmethod
-    def addtoplaylist(playlist_id, song_ids):
-        """Adds songs to a playlist.
-
-        :param playlist_id: id of the playlist to add to.
-        :param song_ids: a list of song ids
-        """
-
-        return {"playlistId": playlist_id, "songIds": song_ids} 
+            return {"playlistId": playlist_id, "songIds": song_ids} 
 
 
-    @staticmethod
-    def modifyplaylist(playlist_id, new_name):
-        """Changes the name of a playlist.
+    class modifyplaylist(WC_Call):
+        """Changes the name of a playlist."""
 
-        :param playlist_id: id of the playlist to rename.
-        :param new_title: desired title.
-        """
+        @staticmethod
+        def build_body(playlist_id, new_name):
+            """
+            :param playlist_id: id of the playlist to rename.
+            :param new_title: desired title.
+            """
         
-        return {"playlistId": playlist_id, "playlistName": new_name}
+            return {"playlistId": playlist_id, "playlistName": new_name}
 
+    
+    class deleteplaylist(WC_Call):
+        """Deletes a playlist."""
 
-    @staticmethod
-    def deleteplaylist(playlist_id):
-        """Deletes a playlist.
-
-        :param playlist_id: id of the playlist to delete.
-        """
+        @staticmethod
+        def build_body(playlist_id):
+            """
+            :param playlist_id: id of the playlist to delete.
+            """
+            
+            return {"id": playlist_id}
         
-        return {"id": playlist_id}
 
-    @staticmethod
-    def deletesong(song_ids, entry_ids = [""], playlist_id = "all"):
-        """Delete a song from the library or playlists.
+    class deletesong(WC_Call):
+        """Delete a song from the library or a playlist."""
 
-        :param song_ids: a list of song ids
-        :param entry_ids: for deleting from playlists
-        :param list_id: for deleteing from playlists
-        """
+        @staticmethod
+        def build_body(song_ids, entry_ids = [""], playlist_id = "all"):
+            """
+            :param song_ids: a list of song ids
+            :param entry_ids: for deleting from playlists
+            :param list_id: for deleteing from playlists
+            """
+            return {"songIds": song_ids, "entryIds":entry_ids, "listId": playlist_id}
 
-        return {"songIds": song_ids, "entryIds":entry_ids, "listId": playlist_id}
-
-    @staticmethod
-    def loadalltracks(cont_token = None):
+    class loadalltracks(WC_Call):
         """Loads tracks from the library.
         Since libraries can have many tracks, GM gives them back in chunks.
         Chunks will send a continuation token to get the next chunk.
         The first request needs no continuation token.
         The last response will not send a token.
-        
-        :param cont_token: (optional) token to get the next library chunk.
         """
 
-        if not cont_token:
-            return {}
-        else:
-            return {"continuationToken": cont_token}
+        @staticmethod
+        def build_body(cont_token = None):
+            """:param cont_token: (optional) token to get the next library chunk."""
+            if not cont_token:
+                return {}
+            else:
+                return {"continuationToken": cont_token}
 
-    @staticmethod
-    def loadplaylist(playlist_id):
+    class loadplaylist(WC_Call):
         """Loads tracks from a playlist.
         Tracks include an entryId.
-
-        :param playlist_id: id of the playlist to load.
         """
+        
+        @staticmethod
+        def build_body(playlist_id):
+            return {"id": playlist_id}
+        
+    
+    class modifyentries(WC_Call):
+        """Edit the metadata of songs."""
 
-        return {"id": playlist_id}
+        #Metadata expectations:
+
+        #Entries that accept a limited set of values.
+        #Metadata name -> list of values it can hold.
+        #This needs to be investigated and fleshed out.
+        limited_md = {
+            "rating" : (0, 1, 5)
+        }
+
+        #Entries we have control of, and can change.
+        mutable_md = ('rating', 'disc', 'composer', 'year', 'album', 'albumArtist',
+                  'track', 'totalTracks', 'genre', 'playCount', 'name',
+                  'artist', 'totalDiscs', 'durationMillis')
+
+        #Entries we cannot change.
+        frozen_md = ('comment', 'id', 'deleted', 'creationDate', 'albumArtUrl', 'type', 'beatsPerMinute',
+                     'url')
+
+        #Metadata whose value depends on another's.
+        #Name -> ('depeds on', transformation)
+        dependent_md = {
+            'title': ('name', lambda x : x),
+            'titleNorm': ('name', string.lower),
+            'albumArtistNorm': ('albumArtist', string.lower),
+            'albumNorm': ('album', string.lower),
+            'artistNorm': ('artist', string.lower)}
+
+        #Metadata that the server has complete control of.
+        #We cannot change the value, and the server may change it without us knowing.
+        server_md = ('lastPlayed', ) #likely an accessed timestamp in actuality?
+
+
+        @classmethod
+        def build_body(cls, songs):
+            """:param songs: a list of dictionary representations of songs."""
         
 
-    @staticmethod
-    def modifyentries(songs):
-        """Edit the metadata for these songs.
+            #Warn about metadata changes that may cause problems.
+            #If you change the interface in api, you can warn about changing bad categories, too.
+            #Something like safelychange(song, entries) where entries are only those you want to change.
 
-        :param songs: a list of dictionary representations of songs.
-        """
+            for song_md in songs:
+                for key in cls.limited_md:
+                    if key in song_md and song_md[key] not in cls.limited_md[key]:
+                        self.log.warning("setting id (%s)[%s] to a dangerous value. Check metadata expectations in protocol.py", song_md["id"], key)
+                        
 
-        return {"entries": songs}
+            return {"entries": songs}
 
-    @staticmethod
-    def multidownload(song_ids):
-        """Get download links and counts for songs.
 
-        :param song_ids: a list of song ids.
-        """
+    class multidownload(WC_Call):
+        """Get download links and counts for songs."""
 
-        return {"songIds": song_ids}
+        @staticmethod
+        def build_body(song_ids):
+            """:param song_ids: a list of song ids."""
+            return {"songIds": song_ids}
 
-    @staticmethod
-    def search(query):
-        """Searches for songs, artists and albums.
-        GM ignores punctuation.
+    class play(WC_Call):
+        """Get a url that holds a file to stream."""
 
-        :param query: the search query.
-        """
+        #play is strange, it doesn't use music/services/play, just music/play
+        _suburl = ''
 
-        return {"q": query}
+        @classmethod
+        def build_url(cls, query_string):
+            #xt is not sent for play.
+            #Instead, the songid is sent in the querystring, along with pt=e, for unknown reasons.
+            qstring = '?u=0&pt=e'
+            return cls._base_url + cls._suburl + cls.__name__ + qstring
 
+        @staticmethod
+        def build_body():
+            return None #body is completely empty.
+        
+
+    class search(WC_Call):
+        """Search for songs, artists and albums.
+        GM ignores punctuation."""
+    
+        @staticmethod
+        def build_body(query):
+            return {"q": query}
 
 
 class MM_Protocol():

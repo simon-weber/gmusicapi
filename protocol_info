@@ -104,6 +104,14 @@ Protocol Information:
 	res: {"downloadCounts": {"<id>":<times it has been downloaded>},
 	      "url":"<download url>"}
 
+    play:
+        Gets a url that holds a streamable copy of this song. Authentication is _not_ needed to stream this url.
+	This call is unique in that it does not use /services. Its complete url is music.google.com/music/play
+	In addition, it has an empty request body. The songid is passed in the querystring, along with u=0 and pt=e (not sure what pt signifies).
+
+	req: <completely empty>
+	res: {"url":"<url that holds audio file>"}
+
     search:
 	req: {"q": "<query>"}
 	res: {"results":{"artists":[<hits>],"albums":[<hits>],"songs":[<hits>]}}

@@ -23,11 +23,11 @@ from gmapi.utils.apilogging import LogController
 test_filename = "test.mp3"
 
 #Metadata expectations:
-limited_md = WC_Protocol.limited_md #should refactor this
-mutable_md = WC_Protocol.mutable_md
-frozen_md = WC_Protocol.frozen_md
-dependent_md = WC_Protocol.dependent_md
-server_md = WC_Protocol.server_md
+limited_md = WC_Protocol.modifyentries.limited_md #should refactor this
+mutable_md = WC_Protocol.modifyentries.mutable_md
+frozen_md = WC_Protocol.modifyentries.frozen_md
+dependent_md = WC_Protocol.modifyentries.dependent_md
+server_md = WC_Protocol.modifyentries.server_md
 
 
 def init():
@@ -332,6 +332,13 @@ class TestWCApiCalls(unittest.TestCase):
     def test_search(self):
         self.assert_success(
             self.api.search('e'))
+
+    def test_get_stream_url(self):
+        #This should return a valid url.
+        #This is not robust; it's assumed that invalid calls will raise an error before this point.
+        url = self.api.get_stream_url(self.r_song_id)
+        self.assertTrue(url[:4] == "http")
+        
 
 if __name__ == '__main__':
     unittest.main()

@@ -28,7 +28,6 @@ class NotLoggedIn(exceptions.Exception):
 class WC_Session():
     """A session for the GM web client."""
 
-    _base_url = 'https://music.google.com/music/services/'
 
     #The wc requires a common user agent.
     _user_agent = "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.8.1.6) Gecko/20061201 Firefox/2.0.0.6 (Ubuntu-feisty)"
@@ -42,23 +41,39 @@ class WC_Session():
 
     def logout(self):
         self.__init__() #discard our session
-        
-    def open_https_url(self, target_url, encoded_data = None):
+
+    def open_https_url(self, url_builder, extra_url_args=None, encoded_data = None):
         """Opens an https url using the current session and returns the response.
         Code adapted from: http://code.google.com/p/gdatacopier/source/browse/tags/gdatacopier-1.0.2/gdatacopier.py
-
-        :param target_url: full https url to open.
+        :param url_builder: the url, or a function to receieve a dictionary of querystring arg/val pairs and return the url.
+        :extra_url_args: (optional) key/val querystring pairs.
         :param encoded_data: (optional) encoded POST data.
         """
 
+        if isinstance(url_builder, basestring):
+            url = url_builder
+        else:
+            url = url_builder({'xt':self.get_cookie("xt").value})
+        
+        #Add in optional pairs to the querystring.
+        if extra_url_args:
+            #Assumes that a qs has already been started (ie we don't need to put a ? first)
+            assert (url.find('?') >= 0)
+
+            extra_args = ""
+            for name, val in extra_url_args.iteritems():
+                extra_args += "&{0}={1}".format(name, val)
+
+            url += extra_args
+        
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self._cookie_jar))
 
         opener.addheaders = [('User-agent', self._user_agent)]
         
         if encoded_data:
-            response = opener.open(target_url, encoded_data)
+            response = opener.open(url, encoded_data)
         else:
-            response = opener.open(target_url)
+            response = opener.open(url)
             
         return response
 
@@ -121,26 +136,6 @@ class WC_Session():
         self.logged_in = True if self.get_cookie("SID") else False
 
         return self.logged_in
-    
-    def make_request(self, call, data):
-        """Sends a request to Google Music; returns the response.
-
-        :param call: the name of the service, eg 'search'.
-        :param data: Python representation of the json query.
-        """
-
-        if not self.logged_in:
-            raise NotLoggedIn
-
-        xt_val = self.get_cookie("xt").value
-
-        #The url passes u=0 and the xt cookie's value. Not sure what the u is for.
-        url = self._base_url + call + '?u=0&xt=' + xt_val
-
-        #GM needs the input to be named json.
-        encoded_data = "json=" + urllib.quote_plus(json.dumps(data))
-        
-        return self.open_https_url(url, encoded_data)
 
 
 class MM_Session:    

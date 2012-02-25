@@ -16,9 +16,6 @@ from gmapi.utils import utils
 from gmapi.utils.apilogging import LogController
 
 class Api:
-    """ Contains abstractions of API calls."""
-
-
     def __init__(self):
         self.wc_session = WC_Session()
         self.wc_protocol = WC_Protocol()
@@ -42,9 +39,8 @@ class Api:
         """Authenticates the api with the given credentials.
         Returns True on success, False on failure.
 
-        :param email: eg test@gmail.com
-        :param password
-        """
+        :param email: eg `test@gmail.com`
+        :param password: plaintext password. It will not be stored and is sent over ssl."""
 
         self.wc_session.login(email, password)
         self.mm_session.login(email, password)
@@ -60,7 +56,7 @@ class Api:
         return self.is_authenticated()
 
     def logout(self):
-        """Log out of the Api.
+        """Logs out of the api.
         Returns True on success, False on failure."""
 
         self.wc_session.logout()
@@ -98,20 +94,11 @@ class Api:
 
     @utils.accept_singleton(dict)
     def change_song_metadata(self, songs):
-        """Change the metadata for some songs.
+        """Changes the metadata for songs.
         Songs are presumed to be in GM dictionary format.
 
-        :param songs: a list of songs, or a single song.
+        :param songs: a list of song dictionaries, or a single song dictionary.
         """
-
-        #Warn about metadata changes that may cause problems.
-        #If you change the interface, you can warn about changing bad categories, too.
-        #Something like safelychange(song, entries) where entries are only those you want to change.
-        limited_md = self.wc_protocol.limited_md
-        for song_md in songs:
-            for key in limited_md:
-                if key in song_md and song_md[key] not in limited_md[key]:
-                    self.log.warning("setting id (%s)[%s] to a dangerous value. Check metadata expectations in protocol.py", song_md["id"], key)
 
         return self._wc_call("modifyentries", songs)
         
@@ -131,7 +118,7 @@ class Api:
 
         return self._wc_call("deleteplaylist", playlist_id)
 
-    @utils.accept_singleton(basestring) #position defaults to 1
+    @utils.accept_singleton(basestring)
     def delete_song(self, song_ids):
         """Deletes songs from the entire library.
 
@@ -141,8 +128,7 @@ class Api:
         return self._wc_call("deletesong", song_ids)
 
     def get_all_songs(self):
-        """Returns a list of song metadata dictionaries.
-        """
+        """Returns a list of song dictionaries."""
 
         library = []
 
@@ -158,15 +144,15 @@ class Api:
         return library
 
     def get_playlist_songs(self, playlist_id):
-        """Returns a list of track dictionaries, which include enttryIds for the playlist.
+        """Returns a list of song dictionaries, which include entryIds keys for the given playlist.
 
-        :playlist_id: id of the playlist to load
+        :param playlist_id: id of the playlist to load.
         """
 
         return self._wc_call("loadplaylist", playlist_id)["playlist"]
 
     def get_playlists(self):
-        """Returns a dictionary mapping playlist name to id for all user playlists.
+        """Returns a dictionary which maps playlist name to id for all user-defined playlists.
         The dictionary does not include autoplaylists.
         """
         
@@ -192,6 +178,7 @@ class Api:
 
     def get_song_download_info(self, song_id):
         """Returns a tuple of (download url, download_count).
+        GM allows 2 downloads per song.
 
         :param song_id: a single song id.
         """
@@ -201,11 +188,24 @@ class Api:
 
         return (info["url"], info["downloadCounts"][song_id])
 
+    def get_stream_url(self, song_id):
+        """Returns a url that points to the audio file for this song. Reading the file does not require authentication.
+        *This is only intended for streaming*. The streamed audio does not contain metadata. Use :func:`get_song_download_info` to download complete files.
+        
+        :param song_id: a single song id.
+        """
+
+        #This call is strange. The body is empty, and the songid is passed in the querystring.
+        res = self._wc_call("play", query_args={'songid': song_id})
+        
+        return res['url']
+        
+
     @utils.accept_singleton(basestring)
     def remove_song_from_playlist(self, song_ids, playlist_id):
         """Removes songs from a playlist.
 
-        :param song_ids: a list of song ids, or a single song id
+        :param song_ids: a list of song ids, or a single song id.
         """
 
         #Not as easy as just calling deletesong with the playlist;
@@ -237,20 +237,36 @@ class Api:
 
 
     def _wc_call(self, service_name, *args, **kw):
-        """Returns the response of a call with the web client session and protocol."""
+        """Returns the response of a web client call.
+        :param service_name: the name of the call, eg ``search``
+        additional positional arguments are passed to ``build_body``for the retrieved protocol.
+        if a 'query_args' key is present in kw, it is assumed to be a dictionary of additional key/val pairs to append to the query string.
+        """
 
-        #Pull these suppressed calls out somewhere.
-        if service_name != "loadalltracks":
+        #TODO check if we're logged in!
+        protocol = getattr(self.wc_protocol, service_name)
+
+        if protocol.gets_logged:
             self.log.debug("wc_call: %s(%s)", service_name, str(args))
+        
+        url_builder = protocol.build_url
+        body = protocol.build_body(*args)
+        
 
-        protocol_builder = getattr(self.wc_protocol, service_name)
+        #Encode the body. It might be None (empty).
+        #This should probably be done in protocol, and an encoded body grabbed here.
+        if body != None: #body can be {}, which is different from None. {} is falsey.
+            body = "json=" + urllib.quote_plus(json.dumps(body))
 
-        res = self.wc_session.make_request(service_name, 
-                                           protocol_builder(*args, **kw))
+        extra_query_args = None
+        if 'query_args' in kw:
+            extra_query_args = kw['query_args']
+
+        res = self.wc_session.open_https_url(url_builder, extra_query_args, body)
         
         res = json.loads(res.read())
 
-        if service_name != "loadalltracks":
+        if protocol.gets_logged:
             self.log.debug("wc_call response: %s", res)
 
         return res
@@ -262,7 +278,7 @@ class Api:
 
 
     #This works, but the protocol isn't quite right.
-    #For now, you're better of just taking len(get_all_songs)
+    #For now, you're better off just taking len(get_all_songs)
     # to get a count of songs in the library.
 
     # def get_quota(self):
