@@ -13,6 +13,13 @@
 
 import sys, os
 
+
+# If extensions (or modules to document with autodoc) are in another directory,
+# add these directories to sys.path here. If the directory is relative to the
+# documentation root, use os.path.abspath to make it absolute, like shown here.
+sys.path.insert(0, os.path.abspath('../../'))
+
+
 #Mock out 3rd party modules, so documentation can be built.
 #From http://readthedocs.org/docs/read-the-docs/en/latest/faq.html
 class Mock(object):
@@ -31,14 +38,10 @@ class Mock(object):
         else:
             return Mock()
 
-MOCK_MODULES = ['mutagen', 'easyid3', 'mp3', 'mechanize', 'decorator']
+MOCK_MODULES = ['mutagen', 'mechanize', 'decorator']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../../'))
 
 # -- General configuration -----------------------------------------------------
 
