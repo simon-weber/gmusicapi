@@ -5,13 +5,22 @@
 import string
 import re
 
+#From https://github.com/six8/python-clom/blob/97e20517886e595cce7d498136e8a1242d6adcad/src/clom/command.py
 try:
-    from decorator import decorator
+    from decorator import decoratorasd
 except ImportError:
     # No decorator package available. Create a no-op "decorator".
     def decorator(f):
-        return f
+        def decorate(_func):
+            def inner(*args, **kwargs):
+                return f(_func, *args, **kwargs)
+            
+            inner.__doc__ = _func.__doc__
+            inner.__repr__ = _func.__repr__
 
+            return inner
+        
+        return decorate
 
 def to_camel_case(s):
     """Given a sring in underscore form, returns a copy of it in camel case.

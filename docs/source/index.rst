@@ -20,17 +20,25 @@ Getting Library Information
 Song download, streaming, and upload
 ------------------------------------
 .. autoclass:: Api
-    :members: get_song_download_info, get_stream_url, upload
+    :members: get_song_download_info, get_stream_url
+
+    .. automethod:: upload(filenames)
 
 Playlist manipulation
 ---------------------
 .. autoclass:: Api
-    :members: add_songs_to_playlist, change_playlist_name, create_playlist, delete_playlist, remove_song_from_playlist
+    :members: change_playlist_name, create_playlist, delete_playlist
+
+    .. automethod:: add_songs_to_playlist(playlist_id, song_ids)
+    .. automethod:: remove_song_from_playlist(song_ids, playlist_id)
 
 Song manipulation
 -----------------
 .. autoclass:: Api
-    :members: change_song_metadata, delete_song
+
+    .. automethod:: change_song_metadata(songs)
+    .. automethod:: delete_song(song_ids)
+
 
 Searching
 ---------
