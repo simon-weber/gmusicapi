@@ -1,5 +1,6 @@
-An unofficial Python API for Google Music. The project is not supported nor endorsed by Google.
+An unofficial Python API for Google Music. The project is not supported nor endorsed by Google.  
 
+Official documentation is provided by Read the Docs: [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest).  
 
 ###Features
 
@@ -33,8 +34,6 @@ An unofficial Python API for Google Music. The project is not supported nor endo
 ###Usage
 gmapi.api.Api is the user-facing interface, and its internal documentation is kept up to date.
 To get started, see example.py.
-
-Eventually, this page will serve Sphinx docs. For now, if you clone the repo, you can point your browser at index.html in docs/build/html to see them.
 
 ###Notes
 This is a work in progress, so debug logging is enabled by default.
