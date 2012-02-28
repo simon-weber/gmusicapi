@@ -20,7 +20,7 @@ import sys, os
 sys.path.insert(0, os.path.abspath('../../'))
 
 
-#Mock out 3rd party modules, so documentation can be built.
+#Mock out modules, so documentation can be built.
 #From http://readthedocs.org/docs/read-the-docs/en/latest/faq.html
 class Mock(object):
     def __init__(self, *args, **kwargs):
@@ -39,7 +39,7 @@ class Mock(object):
             return Mock()
 
 MOCK_MODULES = ['mutagen', 'mutagen.easyid3', 'mutagen.mp3', 
-                'gmapi.session', 'gmapi.protocol', 'gmapi.utils', 'gmapi.utils.apilogging']
+                'gmapi.session', 'gmapi.protocol', 'gmapi.utils.apilogging']
 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()

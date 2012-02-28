@@ -4,7 +4,14 @@
 
 import string
 import re
-from decorator import decorator
+
+try:
+    from decorator import decorator
+except ImportError:
+    # No decorator package available. Create a no-op "decorator".
+    def decorator(f):
+        return f
+
 
 def to_camel_case(s):
     """Given a sring in underscore form, returns a copy of it in camel case.
