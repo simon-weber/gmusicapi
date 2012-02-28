@@ -38,7 +38,9 @@ class Mock(object):
         else:
             return Mock()
 
-MOCK_MODULES = ['mutagen', 'mutagen.easyid3', 'mutagen.mp3', 'google.protobuf', 'mechanize', 'decorator']
+MOCK_MODULES = ['mutagen', 'mutagen.easyid3', 'mutagen.mp3', 
+                'gmapi.session', 'gmapi.protocol', 'gmapi.utils', 'gmapi.utils.apilogging']
+
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
 
