@@ -6,12 +6,13 @@ import json
 import re
 import string
 import time
+import urllib
 
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 
-from gmapi.session import *
-from gmapi.protocol import *
+from gmapi.session import WC_Session, MM_Session
+from gmapi.protocol import WC_Protocol, MM_Protocol
 from gmapi.utils import utils
 from gmapi.utils.apilogging import LogController
 
