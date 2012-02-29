@@ -4,36 +4,32 @@ Official documentation is provided by Read the Docs: [documentation](http://read
 
 ###Features
 
-* authentication
+* Authentication:
     * web client
     * music manager
 
-* loading:
+* Getting library information:
     * all song metadata
     * all user playlist titles and ids (not auto, yet)
     * songs from a specific playlist
 
-* searching:
-    * songs
-    * artists
-    * albums
+* Song streaming, downloading, and uploading (mp3 only, currently).
 
-* playlist:
+* Playlist manipulation:
     * creation
     * name changing
     * song addition and removal
     * deletion
 
-* song:
-    * downloading - gets a link and download count (GM allows 2 downloads per file)
+* Song manipulation:
     * metadata changing (to avoid surprises read protocol_info)
-    * uploading - mp3 only as of now (unlike Google's music manager, it will upload multiple copies of the same file if tags differ. Google's backend will actively reject duplicate uploads, however.)
-    * streaming - gets a url that works without authentication
     * removal from library
 
+* Searching for songs, artists, and albums.
+
 ###Usage
-gmapi.api.Api is the user-facing interface, and its internal documentation is kept up to date.
-To get started, see example.py.
+gmapi.api.Api is the user-facing interface.
+To get started, see example.py. For other examples, see the testing code.
 
 ###Dependencies
 The API has been tested on Python 2.7.1+ on linux.
