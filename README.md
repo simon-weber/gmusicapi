@@ -35,6 +35,20 @@ Official documentation is provided by Read the Docs: [documentation](http://read
 gmapi.api.Api is the user-facing interface, and its internal documentation is kept up to date.
 To get started, see example.py.
 
+###Dependencies
+The API has been tested on Python 2.7.1+ on linux.
+
+Currently, the following third party modules are used:
+* [decorator](http://pypi.python.org/pypi/decorator)
+* [mutagen](http://code.google.com/p/mutagen)
+* [protobuf](http://code.google.com/p/protobuf)
+* [mechanize](http://wwwsearch.sourceforge.net/mechanize/)
+
+These correspond to the following Ubuntu packages:
+    
+    python-decorator python-mutagen python-protobuf python-mechanize
+
+
 ###Notes
 This is a work in progress, so debug logging is enabled by default.
 All logging is done to gmapi.log in your working directory, and warnings and above are printed to the console.
