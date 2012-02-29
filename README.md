@@ -39,9 +39,13 @@ To get started, see example.py.
 The API has been tested on Python 2.7.1+ on linux.
 
 Currently, the following third party modules are used:
+
 * [decorator](http://pypi.python.org/pypi/decorator)
+
 * [mutagen](http://code.google.com/p/mutagen)
+
 * [protobuf](http://code.google.com/p/protobuf)
+
 * [mechanize](http://wwwsearch.sourceforge.net/mechanize/)
 
 These correspond to the following Ubuntu packages:
