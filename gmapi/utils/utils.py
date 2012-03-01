@@ -42,7 +42,7 @@ except ImportError:
 def to_camel_case(s):
     """Given a sring in underscore form, returns a copy of it in camel case.
     eg, camel_case('test_string') => 'TestString'. """
-    return ''.join(map(lambda x: x.title(), a.split('_')))
+    return ''.join(map(lambda x: x.title(), s.split('_')))
 
 def accept_singleton(expected_type, position=1):
     """Allows a function expecting a list to accept a single item as well.
