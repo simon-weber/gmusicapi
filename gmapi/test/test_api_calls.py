@@ -28,7 +28,6 @@ import time
 
 
 from gmapi.protocol import WC_Protocol
-from gmapi import session
 from gmapi.utils.apilogging import LogController
 import gmapi.test.utils as test_utils
 
@@ -119,7 +118,11 @@ class TestWCApiCalls(test_utils.BaseTest):
 
     def updel_1_upload(self):
         """Upload the test file."""
-        self.uploaded_id = self.api.upload(self.test_filename)[self.test_filename]
+        result = self.api.upload(self.test_filename)
+        self.assertTrue(self.test_filename in result)
+
+        #A bit messy; need to pass the id on to the next step.
+        self.uploaded_id = result[self.test_filename]
 
     def updel_2_delete(self):
         """Delete the uploaded test file."""
