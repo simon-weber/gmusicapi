@@ -88,7 +88,6 @@ class WC_Protocol:
             return {"title": title}
 
 
-
     class addtoplaylist(WC_Call):
         """Adds songs to a playlist."""
 
@@ -146,6 +145,8 @@ class WC_Protocol:
         The first request needs no continuation token.
         The last response will not send a token.
         """
+
+        gets_logged = False
 
         @staticmethod
         def build_body(cont_token = None):
@@ -337,7 +338,10 @@ class MM_Protocol():
             # they strip tags first. But files are differentiated across accounts,
             # so this shouldn't cause problems.
 
-            #This will reupload files if their tags chance.
+            #This will reupload files if their tags change.
+            
+            #It looks like we can turn on/off rematching of tracks (in session request);
+            # might be better to comply and then give the option.
             
             with open(filename) as f:
                 file_contents = f.read()
@@ -355,8 +359,11 @@ class MM_Protocol():
 
             track.bitrate = audio.info.bitrate / 1000
             track.duration = int(audio.info.length * 1000)
+
+            #GM requires at least a title.
+            track.title = audio["title"][0] if "title" in audio else filename.split(r'/')[-1]
+
             if "album" in audio: track.album = audio["album"][0]
-            if "title" in audio: track.title = audio["title"][0]
             if "artist" in audio: track.artist = audio["artist"][0]
             if "composer" in audio: track.composer = audio["composer"][0]
 
@@ -397,15 +404,14 @@ class MM_Protocol():
         for upload in server_response.response.uploads:
             filename = filemap[upload.id]
             audio = MP3(filename, ID3 = EasyID3)
-            #print "preparing session for:", os.path.basename(filename)
-            #if options.verbose: print upload
+            upload_title = audio["title"] if "title" in audio else filename.split(r'/')[-1]
 
             inlined = {
                 "title": "jumper-uploader-title-42",
                 "ClientId": upload.id,
                 "ClientTotalSongCount": len(server_response.response.uploads),
                 "CurrentTotalUploadedCount": "0",
-                "CurrentUploadingTrack": audio["title"][0], #there's an assumption here...
+                "CurrentUploadingTrack": upload_title,
                 "ServerId": upload.serverId,
                 "SyncNow": "true",
                 "TrackBitRate": audio.info.bitrate,

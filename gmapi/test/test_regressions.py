@@ -72,7 +72,7 @@ class TestRegressions(test_utils.BaseTest):
         
         self.hastags_uploaded_id = result[self.has_tags_filename]
 
-    def updel_2_delete(self):
+    def notags_3_delete(self):
         """Delete the uploaded files."""
         self.assert_success(
             self.api.delete_song(self.notags_uploaded_id))

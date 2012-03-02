@@ -346,7 +346,11 @@ class Api:
                     self.log.info("got a session. full response: %s", str(res))
                     success = True
                     break
-                
+
+                #Think 503 == syncing
+                #200 == already uploaded
+                #404 == bad request
+
                 elif 'errorMessage' in res:
                     self.log.warning("got an error from the GM upload server. full response: %s", str(res))
                 else:
