@@ -21,24 +21,21 @@
 
 
 import unittest
-import random
-import inspect
 import os
 import string
-import numbers
 import copy
 import time
-from getpass import getpass
 
-from gmapi.api import Api
+
 from gmapi.protocol import WC_Protocol
 from gmapi import session
 from gmapi.utils.apilogging import LogController
+import gmapi.test.utils as test_utils
 
 
 #Expected to be in this directory.
 test_filename = "test.mp3"
-
+    
 #Metadata expectations:
 limited_md = WC_Protocol.modifyentries.limited_md #should refactor this
 mutable_md = WC_Protocol.modifyentries.mutable_md
@@ -47,142 +44,20 @@ dependent_md = WC_Protocol.modifyentries.dependent_md
 server_md = WC_Protocol.modifyentries.server_md
 
 
-def init():
-    """Makes an instance of the api and attempts to login with it.
-    Returns the authenticated api.
-    """
-
-    api = Api()
-    
-    logged_in = False
-    attempts = 0
-
-    print "Warning: this test suite _might_ modify the library it is run on."
-
-    while not logged_in and attempts < 3:
-        email = raw_input("Email: ")
-        password = getpass()
-
-        logged_in = api.login(email, password)
-        attempts += 1
-
-    return api
-
-def modify_md(md_name, val):
-    """Returns a value of the same type as val that will not equal val."""
-
-    #Check for metadata that must get specific values.
-    if md_name in limited_md:
-        #Assume old_val is a possible value, and return
-        # the value one index after it.
-
-        possible = limited_md[md_name]
-        val_i = possible.index(val)
-        return possible[(val_i + 1) % len(possible)]
-
-    #Generic handlers for other data types.
-    if isinstance(val, basestring):
-        return val + "_mod"
-
-    #Need to check for bool first, bools are instances of Number
-    elif isinstance(val, bool):
-        return not val
-    elif isinstance(val, numbers.Number):
-        return val + 1
-    else:
-        raise TypeError("modify expects only strings, numbers, and bools")
-
-def md_entry_same(entry_name, s1, s2):
-    """Returns (s1 and s2 have the same value for entry_name?, message)."""
-    
-    s1_val = s1[entry_name]
-    s2_val = s2[entry_name]
-    
-    return (s1_val == s2_val, "(" + entry_name + ") " + repr(s1_val) + ", " + repr(s2_val))
-    
-
-def call_succeeded(response):
-    """Returns True if the call succeeded, False otherwise."""
-    
-    #Failed responses always have a success=False key.
-    #Some successful responses do not have a success=True key, however.
-
-    #print response
-
-    if 'success' in response.keys():
-        return response['success']
-    else:
-        return True
-    
-
-class TestWCApiCalls(unittest.TestCase):
+class TestWCApiCalls(test_utils.BaseTest):
     """Runs integration tests for api calls.
     Tests are intended not to modify the library, but no guarantees are made.
     """
 
     @classmethod
     def setUpClass(cls):
-        """Init and log in to an api, then get the library and playlists."""
+        super(TestWCApiCalls, cls).setUpClass()
 
         cls.log = LogController().get_logger("gmapi.test.TestWcApiCalls")
 
         #Get the full path of the test file.
         path = os.path.realpath(__file__)
         cls.test_filename = path[:string.rfind(path, r'/')] + r'/' + test_filename
-
-        cls.api = init()
-    
-        if not cls.api.is_authenticated():
-            raise session.NotLoggedIn
-        
-        #These are assumed to succeed, but errors here will prevent further testing.
-        cls.library = cls.api.get_all_songs()
-        cls.playlists = cls.api.get_playlists()
-
-
-    @classmethod
-    def tearDownClass(cls):
-        """Log out of the api."""
-
-        cls.api.logout()
-
-
-    def setUp(self):
-        """Get a random song id."""
-
-        #This will fail is we have no songs.
-        self.r_song_id = random.choice(self.library)['id']
-
-    #---
-    #   Utility functions:
-    #---
-
-    def assert_success(self, response):
-        """Asserts the success of a call's response.
-        Returns the calls response."""
-
-        self.assertTrue(call_succeeded(response))
-        return response
-
-    def collect_steps(self, prefix):
-        """Yields the steps of a monolithic test in name-sorted order."""
-
-        methods = inspect.getmembers(self, predicate=inspect.ismethod)
-        
-        #Sort functions based on name.
-        for name, func in sorted(methods, key=lambda m: m[0]):
-            if name.startswith(prefix):
-                yield name, func
-
-    def run_steps(self, prefix):
-        """Run the steps defined by this prefix in order."""
-
-        for name, step in self.collect_steps(prefix):
-            try:
-                step()
-            except Exception as e:
-                self.fail("{} failed ({}: {})".format(step, type(e), e))
-
 
     #---
     #   Monolithic tests: 
@@ -281,7 +156,7 @@ class TestWCApiCalls(unittest.TestCase):
         for key in mutable_md:
             if key in orig_md:
                 old_val = orig_md[key]
-                new_val = modify_md(key, old_val)
+                new_val = test_utils.modify_md(key, old_val)
 
                 self.log.debug("%s: %s modified to %s", key, repr(old_val), repr(new_val))
                 self.assertTrue(new_val != old_val)
@@ -298,21 +173,21 @@ class TestWCApiCalls(unittest.TestCase):
         #Assume the id won't change (testing has shown this to be true).
         time.sleep(3)
         self.library = self.api.get_all_songs()
-        server_md = [s for s in self.library if s["id"] == orig_md["id"]][0]
+        result_md = [s for s in self.library if s["id"] == orig_md["id"]][0]
         
-        self.log.debug("server md: %s", repr(server_md))
+        self.log.debug("result md: %s", repr(result_md))
 
         #Verify everything went as expected:
         # things that should change did
         for md_name in mutable_md:
             if md_name in orig_md: #some songs are missing entries (eg albumArtUrl)
-                truth, message = md_entry_same(md_name, orig_md, server_md)
+                truth, message = test_utils.md_entry_same(md_name, orig_md, result_md)
                 self.assertTrue(not truth, "should not equal " + message)
 
         # things that shouldn't change didn't
         for md_name in frozen_md:
             if md_name in orig_md:
-                truth, message = md_entry_same(md_name, orig_md, server_md)
+                truth, message = test_utils.md_entry_same(md_name, orig_md, result_md)
                 self.assertTrue(truth, "should equal " + message)
 
         #Recreate the dependent md to what they should be (based on how orig_md was changed)
@@ -325,7 +200,7 @@ class TestWCApiCalls(unittest.TestCase):
 
         #Make sure dependent md is correct.
         for dep_key in correct_dependent_md:
-            truth, message = md_entry_same(dep_key, correct_dependent_md, server_md)
+            truth, message = test_utils.md_entry_same(dep_key, correct_dependent_md, result_md)
             self.assertTrue(truth, "should equal: " + message)
 
             
@@ -336,13 +211,13 @@ class TestWCApiCalls(unittest.TestCase):
         #Verify everything is as it was.
         time.sleep(3)
         self.library = self.api.get_all_songs()
-        server_md = [s for s in self.library if s["id"] == orig_md["id"]][0]
+        result_md = [s for s in self.library if s["id"] == orig_md["id"]][0]
 
-        self.log.debug("server md: %s", repr(server_md))
+        self.log.debug("result md: %s", repr(result_md))
 
         for md_name in orig_md:
             if md_name not in server_md: #server md _can_ change
-                truth, message = md_entry_same(md_name, orig_md, server_md)
+                truth, message = test_utils.md_entry_same(md_name, orig_md, result_md)
                 self.assertTrue(truth, "should equal: " + message)
         
 
