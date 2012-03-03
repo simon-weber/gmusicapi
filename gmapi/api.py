@@ -272,6 +272,8 @@ class Api:
         :markup: (optional) markup of the page."""
         
         #Instant mixes and playlists are built in to the markup server-side.
+        #Generally, we don't use open_https_url directly; this is an exception.
+
         #There's a lot of html; rather than parse, it's easier to just cut
         # out the playlists ul, then use a regex.
 
@@ -381,8 +383,8 @@ class Api:
 
         protocol = getattr(self.wc_protocol, service_name)
 
-        if protocol.gets_logged:
-            self.log.debug("wc_call: %s(%s)", service_name, str(args))
+        #Always log the request.
+        self.log.debug("wc_call: %s(%s)", service_name, str(args))
         
         body = protocol.build_body(*args)
         
@@ -405,6 +407,8 @@ class Api:
 
         if protocol.gets_logged:
             self.log.debug("wc_call response: %s", res)
+        else:
+            self.log.debug("wc_call response suppressed")
 
         return res
 

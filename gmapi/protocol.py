@@ -163,7 +163,9 @@ class WC_Protocol:
         """Loads tracks from a playlist.
         Tracks include an entryId.
         """
-        
+
+        gets_logged = False
+
         @staticmethod
         def build_body(playlist_id):
             return {"id": playlist_id}
