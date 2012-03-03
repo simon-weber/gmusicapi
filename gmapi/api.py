@@ -29,10 +29,10 @@ import urllib
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 
-from gmapi.session import WC_Session, MM_Session
-from gmapi.protocol import WC_Protocol, MM_Protocol
-from gmapi.utils import utils
-from gmapi.utils.apilogging import LogController
+from session import WC_Session, MM_Session
+from protocol import WC_Protocol, MM_Protocol
+from utils import utils
+from utils.apilogging import LogController
 
 class Api:
     def __init__(self):

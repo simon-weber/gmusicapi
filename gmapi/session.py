@@ -33,7 +33,7 @@ import httplib
 from decorator import decorator
 import mechanize
 
-from gmapi.utils.apilogging import LogController
+from utils.apilogging import LogController
 
 
 class AlreadyLoggedIn(exceptions.Exception):
