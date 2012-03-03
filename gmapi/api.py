@@ -18,7 +18,12 @@
 #along with gmapi.  If not, see <http://www.gnu.org/licenses/>.
 
 
-"""Python api for Google Music."""
+"""`gmapi` enables interaction with Google Music. This includes both web-client and Music Manager features.
+
+This api is not supported nor endorsed by Google, and could break at any time.
+
+**Respect Google in your use of the API.** Use common sense: protocol compliance, reasonable load, etc.
+"""
 
 import json
 import re
@@ -58,7 +63,9 @@ class Api:
         """Authenticates the api with the given credentials.
         Returns True on success, False on failure.
 
-        :param email: eg `test@gmail.com`
+        Two factor authentication is currently unsupported.
+
+        :param email: eg "`test@gmail.com`"
         :param password: plaintext password. It will not be stored and is sent over ssl."""
 
         self.wc_session.login(email, password)
@@ -67,7 +74,7 @@ class Api:
 
         if self.is_authenticated():
             #Need some extra init for upload authentication.
-            self._mm_pb_call("upload_auth")
+            self._mm_pb_call("upload_auth") #what if this fails? can it?
             self.log.info("logged in")
         else:
             self.log.info("failed to log in")
@@ -91,8 +98,7 @@ class Api:
     #---
 
 
-
-    @utils.accept_singleton(basestring, 2) #can also accept a single string in pos 2 (song_ids)
+    @utils.accept_singleton(basestring, 2) #can also accept a single string in pos 2 (base 0 - song_ids)
     def add_songs_to_playlist(self, playlist_id, song_ids):
         """Adds songs to a playlist.
 
@@ -113,10 +119,51 @@ class Api:
 
     @utils.accept_singleton(dict)
     def change_song_metadata(self, songs):
-        """Changes the metadata for songs.
-        Songs are presumed to be in GM dictionary format.
+        """Changes the metadata for songs given in `GM Metadata Format`_.
 
         :param songs: a list of song dictionaries, or a single song dictionary.
+
+
+        The server response is *not* to be trusted. Instead, reload the library; this will always reflect changes.
+
+        These metadata keys are able to be changed:
+        
+        * rating: set to 0 (no thumb), 1 (down thumb), or 5 (up thumb)
+        * name: use this instead of `title`
+        * album
+        * albumArtist
+        * artist
+        * composer
+        * disc
+        * genre
+        * playCount
+        * totalDiscs
+        * totalTracks
+        * track
+        * year
+
+        These keys cannot be changed:
+        
+        * comment
+        * id 
+        * deleted
+        * creationDate
+        * albumArtUrl
+        * type
+        * beatsPerMinute
+        * url
+
+        These keys cannot be changed; their values are determined by another key's value:
+
+        * title: set to `name`
+        * titleNorm: set to lowercase of `name`
+        * albumArtistNorm: set to lowercase of `albumArtist`
+        * albumNorm: set to lowercase of `album`
+        * artistNorm: set to lowercase of `artist`
+
+        These keys cannot be changed, and may change unpredictably:
+
+        * lastPlayed: likely some kind of last-accessed timestamp
         """
 
         return self._wc_call("modifyentries", songs)
@@ -147,7 +194,12 @@ class Api:
         return self._wc_call("deletesong", song_ids)
 
     def get_all_songs(self):
-        """Returns a list of song dictionaries."""
+        """Returns a list of `song dictionaries`__.
+        
+        __ `GM Metadata Format`_
+        """
+
+
 
         library = []
 
@@ -163,40 +215,96 @@ class Api:
         return library
 
     def get_playlist_songs(self, playlist_id):
-        """Returns a list of song dictionaries, which include entryIds keys for the given playlist.
+        """Returns a list of `song dictionaries`__, which include `entryId` keys for the given playlist.
 
         :param playlist_id: id of the playlist to load.
+
+        __ `GM Metadata Format`_
         """
 
         return self._wc_call("loadplaylist", playlist_id)["playlist"]
 
-    def get_playlists(self):
-        """Returns a dictionary which maps playlist name to id for all user-defined playlists.
-        The dictionary does not include autoplaylists.
+    def get_playlists(self, auto=True, instant=True, user=True):
+        """Returns a dictionary mapping playlist types to dictionaries of ``{"<playlist name>": "<playlist id>"}`` pairs.
+
+        Available playlist types are:
+
+        * "`auto`" - auto playlists
+        * "`instant`" - instant mixes
+        * "`user`" - user-defined playlists
+
+        Playlist names can be unicode strings.
+
+        :param auto: make an "`auto`" entry in the result.
+        :param instant: make an "`instant`" entry in the result.
+        :param user: make a "`user`" entry in the result.
         """
+
+        playlists = {}
         
-        #Playlists are built in to the markup server-side.
-        #There's a lot of html; rather than parse, it's easier to just cut
-        # out the playlists ul, then use a regex.
-        res = self.wc_session.open_https_url("https://music.google.com/music/listen?u=0")
+        #Only hit the page once for all playlists.
+        res = self.wc_session.open_authed_https_url("https://music.google.com/music/listen?u=0")
         markup = res.read()
 
-        #Get the playlists ul.
-        markup = markup[markup.index(r'<ul id="playlists" class="playlistContainer">'):]
-        markup = markup[:markup.index(r'</ul>') + 5]
+        if auto:
+            playlists['auto'] = self._get_auto_playlists()
+        if instant:
+            playlists['instant'] = self._get_instant_mixes(markup)
+        if user:
+            playlists['user'] = self._get_user_playlists(markup)
 
+        return playlists
+        
+    def _get_auto_playlists(self):
+        """For auto playlists, returns a dictionary which maps autoplaylist name to id."""
+        
+        #Auto playlist ids are hardcoded in the wc javascript.
+        #If Google releases Music internationally, this will be broken.
+        return {"Thumbs up": "auto-playlist-thumbs-up", 
+                "Last added": "auto-playlist-recent",
+                "Free and purchased": "auto-playlist-promo"}
+
+    
+    def _get_playlists_in(self, ul_id, markup=None):
+        """Returns a dictionary mapping playlist name to id for the given ul id in the markup.
+
+        :param ul_id: the id of the unordered list that defines the playlists.
+        :markup: (optional) markup of the page."""
+        
+        #Instant mixes and playlists are built in to the markup server-side.
+        #There's a lot of html; rather than parse, it's easier to just cut
+        # out the playlists ul, then use a regex.
+
+        if not markup:
+            res = self.wc_session.open_authed_https_url("https://music.google.com/music/listen?u=0")
+            markup = res.read()
+
+        ul_start = r'<ul id="{0}" class="playlistContainer">'.format(ul_id)
+
+        #Cut out the unordered list containing the playlists.
+        markup = markup[markup.index(ul_start):]
+        markup = markup[:markup.index(r'</ul>') + 5]
 
         id_name = re.findall(r'<li id="(.*?)" class="nav-item-container".*?title="(.*?)">', markup)
         
         playlists = {}
         
         for p_id, p_name in id_name:
-            playlists[p_name] = p_id
+            playlists[utils.unescape_html(p_name)] = p_id
 
         return playlists
+        
+    def _get_instant_mixes(self, markup=None):
+        """For instant mixes, returns a dictionary which maps instant mix name to id."""
+        return self._get_playlists_in("magic-playlists", markup)
+
+    def _get_user_playlists(self, markup=None):
+        """For user-created playlists, returns a dictionary which maps playlist name to id."""
+        return self._get_playlists_in("playlists", markup)
 
     def get_song_download_info(self, song_id):
-        """Returns a tuple of (download url, download_count).
+        """Returns a tuple ``("<download url>", <download count>)``.
+
         GM allows 2 downloads per song.
 
         :param song_id: a single song id.
@@ -208,8 +316,11 @@ class Api:
         return (info["url"], info["downloadCounts"][song_id])
 
     def get_stream_url(self, song_id):
-        """Returns a url that points to the audio file for this song. Reading the file does not require authentication.
-        *This is only intended for streaming*. The streamed audio does not contain metadata. Use :func:`get_song_download_info` to download complete files.
+        """Returns a url that points to a streamable version of this song. 
+
+        *This is only intended for streaming*. The streamed audio does not contain metadata. Use :func:`get_song_download_info` to download complete files with metadata.
+
+        Reading the file does not require authentication.
         
         :param song_id: a single song id.
         """
@@ -250,6 +361,11 @@ class Api:
         GM ignores punctuation.
 
         :param query: the search query.
+
+        Example response, where <hits> are matching `song dictionaries`__:
+        ``{"results":{"artists":[<hits>],"albums":[<hits>],"songs":[<hits>]}}``
+
+        __ `GM Metadata Format`_
         """
 
         return self._wc_call("search", query)
@@ -262,13 +378,12 @@ class Api:
         if a 'query_args' key is present in kw, it is assumed to be a dictionary of additional key/val pairs to append to the query string.
         """
 
-        #TODO check if we're logged in!
+
         protocol = getattr(self.wc_protocol, service_name)
 
         if protocol.gets_logged:
             self.log.debug("wc_call: %s(%s)", service_name, str(args))
         
-        url_builder = protocol.build_url
         body = protocol.build_body(*args)
         
 
@@ -281,7 +396,10 @@ class Api:
         if 'query_args' in kw:
             extra_query_args = kw['query_args']
 
-        res = self.wc_session.open_https_url(url_builder, extra_query_args, body)
+        if protocol.requires_login:
+            res = self.wc_session.open_authed_https_url(protocol.build_url, extra_query_args, body)
+        else:
+            res = self.wc_session.open_https_url(protocol.build_url, extra_query_args, body)
         
         res = json.loads(res.read())
 
@@ -298,7 +416,7 @@ class Api:
 
     #This works, but the protocol isn't quite right.
     #For now, you're better off just taking len(get_all_songs)
-    # to get a count of songs in the library.
+    # to get a count of songs in the library. 20,000 songs is the limit for free users.
 
     # def get_quota(self):
     #     """Returns a tuple of (allowed number of tracks, total tracks, available tracks)."""
@@ -310,11 +428,13 @@ class Api:
 
     @utils.accept_singleton(basestring)
     def upload(self, filenames):
-        """Uploads the MP3s stored in the given filenames.
-        Returns a mapping of filename: GM song id for each successful upload.
+        """Uploads the MP3s stored in the given filenames. Returns a dictionary with ``{"<filename>": "<new song id>"}`` pairs for each successful upload.
+
         Returns an empty dictionary if all uploads fail.
 
-        :param filenames: a list of filenames, or a single filename
+        :param filenames: a list of filenames, or a single filename.
+
+        Unlike Google's Music Manager, this function will currently allow the same song to be uploaded more than once if its tags are changed. This is subject to change in the future.
         """
 
         #filename -> GM song id
@@ -327,13 +447,16 @@ class Api:
         #Form upload session requests (for songs GM wants).
         session_requests = self.mm_protocol.make_upload_session_requests(cid_map, metadataresp)
 
-    
+        #Try to get upload sessions and upload each song.
+        #This section is in bad need of refactoring.
         for filename, server_id, payload in session_requests:
 
             post_data = json.dumps(payload)
 
             success = False
+            already_uploaded = False
             attempts = 0
+
             while not success and attempts < 3:
                 
                 #Pull this out with the below call when it makes sense to.
@@ -343,32 +466,49 @@ class Api:
                         post_data).read())
 
                 if 'sessionStatus' in res:
-                    self.log.info("got a session. full response: %s", str(res))
+                    self.log.debug("got a session. full response: %s", str(res))
                     success = True
                     break
 
-                #Think 503 == syncing
-                #200 == already uploaded
-                #404 == bad request
 
                 elif 'errorMessage' in res:
-                    self.log.warning("got an error from the GM upload server. full response: %s", str(res))
+                    self.log.debug("upload error. full response: %s", str(res))
+
+                    error_code = res['errorMessage']['additionalInfo']['uploader_service.GoogleRupioAdditionalInfo']['completionInfo']['customerSpecificInfo']['ResponseCode']
+
+                    #This seems more like protocol-worthy information.
+                    if error_code == 503:
+                        #Servers still syncing; retry with no penalty.
+                        self.log.info("upload servers still syncing; trying again.")
+                        attempts -= 1
+
+                    elif error_code == 200:
+                        #GM reports that the file is already uploaded, probably because the hash matched a server-side file.
+                        self.log.warning("GM upload server reports %s is already uploaded as sid: %s", filename, server_id)
+                        success = True
+                        already_uploaded = True
+                        break
+
+                    elif error_code == 404:
+                        #Bad request. I've never seen this resolve through retries.
+                        self.log.warning("GM upload server")
+
+                    else:
+                        #Unknown error code.
+                        self.log.warning("upload service reported an unknown error code. Please report this to the project.\n  entire response: %s", str(res))
+                    
                 else:
-                    self.log.warning("could not interpret upload session resonse. full response: %s", str(res))
+                    self.log.warning("upload service sent back a response that could not be interpreted. Please report this to the project.\n  entire response: %s", str(res))
                     
-                    
-                    
+                                        
                 time.sleep(3)
                 self.log.info("trying again for a session.")
                 attempts += 1
-                
-                #print "Waiting for servers to sync..."
 
-            if success:
+            if success and not already_uploaded:
                 #Got a session; upload the actual file.
                 up = res['sessionStatus']['externalFieldTransfers'][0]
                 self.log.info("uploading file. sid: %s", server_id)
-                #print "Uploading a file... this may take a while"
 
                 res = json.loads(
                     self.mm_session.jumper_post( 
@@ -376,13 +516,16 @@ class Api:
                         open(filename), 
                         {'Content-Type': up['content_type']}).read())
 
-
-                #if options.verbose: print res
+            
                 if res['sessionStatus']['state'] == 'FINALIZED':
                     fn_sid_map[filename] = server_id
                     self.log.info("successfully uploaded sid %s", server_id)
+
+            elif already_uploaded:
+                fn_sid_map[filename] = server_id
+
             else:
-                self.log.warning("could not get an upload session for sid %s", server_id)
+                self.log.warning("could not upload file %s (sid %s)", filename, server_id)
 
 
         

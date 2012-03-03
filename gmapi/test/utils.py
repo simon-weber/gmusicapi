@@ -118,7 +118,9 @@ class BaseTest(unittest.TestCase):
         
         #These are assumed to succeed, but errors here will prevent further testing.
         cls.library = cls.api.get_all_songs()
-        cls.playlists = cls.api.get_playlists()
+
+        #I can't think of a way to test auto playlists and instant mixes.
+        cls.playlists = cls.api.get_playlists()['user']
 
 
     @classmethod

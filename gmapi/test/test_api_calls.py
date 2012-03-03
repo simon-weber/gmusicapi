@@ -70,7 +70,7 @@ class TestWCApiCalls(test_utils.BaseTest):
             self.api.create_playlist('test playlist'))
 
         #Need to reload playlists so it appears.
-        self.playlists = self.api.get_playlists()
+        self.playlists = self.api.get_playlists()['user']
 
 
     def pl_2_add_song(self):
@@ -102,14 +102,14 @@ class TestWCApiCalls(test_utils.BaseTest):
         self.assert_success(
             self.api.change_playlist_name(self.playlists['test playlist'], 'modified playlist'))
 
-        self.playlists = self.api.get_playlists()
+        self.playlists = self.api.get_playlists()['user']
             
     def pl_4_delete(self):
         """Delete the playlist."""
         self.assert_success(
             self.api.delete_playlist(self.playlists['modified playlist']))
 
-        self.playlists = self.api.get_playlists()
+        self.playlists = self.api.get_playlists()['user']
 
 
     def test_playlists(self):

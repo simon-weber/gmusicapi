@@ -53,6 +53,9 @@ class WC_Call:
 
     #Should the request and result of this call be logged?
     gets_logged = True
+
+    #Do we need to be logged in before making the call?
+    requires_login = True
     
     #Most calls will send u=0 and the xt cookie in the querystring.
     @classmethod

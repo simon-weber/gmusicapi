@@ -59,6 +59,14 @@ class WC_Session():
     def logout(self):
         self.__init__() #discard our session
 
+
+    def open_authed_https_url(self, url_builder, extra_url_args=None, encoded_data = None):
+        """Same as open_https_url, but raises an exception if the session isn't logged in."""
+        if not self.logged_in:
+            raise NotLoggedIn
+
+        return self.open_https_url(url_builder, extra_url_args, encoded_data)
+
     def open_https_url(self, url_builder, extra_url_args=None, encoded_data = None):
         """Opens an https url using the current session and returns the response.
         Code adapted from: http://code.google.com/p/gdatacopier/source/browse/tags/gdatacopier-1.0.2/gdatacopier.py
