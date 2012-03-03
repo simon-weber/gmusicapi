@@ -4,7 +4,7 @@ The project is not supported nor endorsed by Google. I'll be interning for Googl
 
 **Respect Google in your use of the API**. Use common sense (protocol compliance, reasonable load, etc) and don't ruin the fun for everyone else.
 
-Official documentation is provided by Read the Docs: [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest). More information will be added to these shortly. 
+Official documentation is provided by Read the Docs: [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest).
 
 Feel free to email me or - better yet - open an issue for bugs, feature requests, or contributions.
 
@@ -12,7 +12,7 @@ Feel free to email me or - better yet - open an issue for bugs, feature requests
 
 * Getting library information:
     * all song metadata
-    * all user playlist titles and ids (not autoplaylists, yet)
+    * all user playlist (auto, instant mix, and user-defined) titles and ids
     * songs from a specific playlist
 
 * Song streaming and downloading
@@ -33,8 +33,8 @@ Feel free to email me or - better yet - open an issue for bugs, feature requests
 
 What's on the way:
 
-* better docs, including expected responses
-* autoplaylist support
+* better packaging
+* verification of call responses
 
 ##Usage
 
