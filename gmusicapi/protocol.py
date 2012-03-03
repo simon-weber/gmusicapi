@@ -2,7 +2,7 @@
 
 #Copyright 2012 Simon Weber.
 
-#This file is part of gmapi - the Unofficial Google Music API.
+#This file is part of gmusicapi - the Unofficial Google Music API.
 
 #Gmapi is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 #GNU General Public License for more details.
 
 #You should have received a copy of the GNU General Public License
-#along with gmapi.  If not, see <http://www.gnu.org/licenses/>.
+#along with gmusicapi.  If not, see <http://www.gnu.org/licenses/>.
 
 """The protocol layer is a one-to-one mapping of calls to Google Music."""
 

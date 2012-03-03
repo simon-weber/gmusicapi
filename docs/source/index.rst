@@ -1,7 +1,7 @@
 The Unofficial Google Music Api
 *******************************
 
-.. automodule:: gmapi.api
+.. automodule:: gmusicapi.api
 
 
 Api Features

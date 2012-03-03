@@ -39,7 +39,7 @@ class Mock(object):
             return Mock()
 
 MOCK_MODULES = ['mutagen', 'mutagen.easyid3', 'mutagen.mp3', 
-                'gmapi.session', 'gmapi.protocol', 'gmapi.utils.apilogging']
+                'gmusicapi.session', 'gmusicapi.protocol', 'gmusicapi.utils.apilogging']
 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()

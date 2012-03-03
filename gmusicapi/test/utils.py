@@ -2,7 +2,7 @@
 
 #Copyright 2012 Simon Weber.
 
-#This file is part of gmapi - the Unofficial Google Music API.
+#This file is part of gmusicapi - the Unofficial Google Music API.
 
 #Gmapi is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 #GNU General Public License for more details.
 
 #You should have received a copy of the GNU General Public License
-#along with gmapi.  If not, see <http://www.gnu.org/licenses/>.
+#along with gmusicapi.  If not, see <http://www.gnu.org/licenses/>.
 
 """Utilities used in testing."""
 
@@ -25,8 +25,8 @@ import random
 import inspect
 from getpass import getpass
 
-from gmapi.api import Api
-from gmapi.protocol import WC_Protocol
+from gmusicapi.api import Api
+from gmusicapi.protocol import WC_Protocol
 
 
 #Metadata expectations:

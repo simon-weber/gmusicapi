@@ -2,7 +2,7 @@
 
 #Copyright 2012 Simon Weber.
 
-#This file is part of gmapi - the Unofficial Google Music API.
+#This file is part of gmusicapi - the Unofficial Google Music API.
 
 #Gmapi is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
@@ -15,12 +15,12 @@
 #GNU General Public License for more details.
 
 #You should have received a copy of the GNU General Public License
-#along with gmapi.  If not, see <http://www.gnu.org/licenses/>.
+#along with gmusicapi.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 
-root_logger_name = "gmapi"
-log_filename = "gmapi.log"
+root_logger_name = "gmusicapi"
+log_filename = "gmusicapi.log"
 
 #Logging code adapted from: 
 # http://docs.python.org/howto/logging-cookbook.html#logging-cookbook
