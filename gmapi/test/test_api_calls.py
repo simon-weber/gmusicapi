@@ -27,9 +27,9 @@ import copy
 import time
 
 
-from gmapi.protocol import WC_Protocol
-from gmapi.utils.apilogging import LogController
-import gmapi.test.utils as test_utils
+from ..protocol import WC_Protocol
+from ..utils.apilogging import LogController
+from ..test import utils as test_utils
 
 
 #Expected to be in this directory.

@@ -24,8 +24,8 @@ import random
 import os
 import string
 
-from gmapi.utils.apilogging import LogController
-import gmapi.test.utils as test_utils
+from ..utils.apilogging import LogController
+from ..test import utils as test_utils
 
 
 #Expected to be in this directory.
