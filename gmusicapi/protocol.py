@@ -125,12 +125,28 @@ class Metadata_Expectations:
     #Clashes are prefixed with a gm_ (eg gm_type).
 
     @classmethod
-    def get_entry(cls, key):
+    def get_key(cls, key):
+        """Get the _Metadata class associated with the given key name.
+        Return None if there is no class for that name."""
+
         try:
             return getattr(cls, key)
         except AttributeError:
-            return getattr(cls, "gm_"+key
+            prefixed = getattr(cls, "gm_"+key)
+            if prefixed: return prefixed
+            return None
 
+    @classmethod
+    def get_all_keys(cls):
+
+        keys = []
+
+        for name in dir(cls):
+            member = cls.get_key(name)
+            if member: keys.add(member)
+        
+        return keys
+        
 
     #Mutable metadata:
     class rating(_Metadata):
@@ -246,8 +262,6 @@ class Metadata_Expectations:
 class WC_Protocol:
     """Holds the protocol for all suppported web client interactions."""
 
-
-
     #Shared response schemas.
     playlist_entry_schema = {"type": "object",
                              "properties":{
@@ -256,28 +270,7 @@ class WC_Protocol:
                              }
 
 
-    #The song schema is built automatically from the above metadata expectations.
-
-    #List of (md dictionary, transformation) pairs.
-    #Transformations take a pair from the dictionary and return the expected type.
-    direct_map = lambda name, ptype: ptype
-    val_map = lambda name, vals: type(vals[0]) #assumes all possible values are of same type
-    dependent_map = lambda name, depend_info: depend_info[0] #assumes the dependent key is already added.
-    
-
-    md_schema_transformations = (
-        (mutable_md, name_type),
-        (frozen_md, name_type),
-        (server_md, name_type),
-        (limited_md, name_vals),
-        
-        )
-
-    md_prop_schema = {} #metadata properties
-
-
-    
-
+    #The song schema is built automatically from metadata expectations.
     for name, vals in limited_md.items():
         md_prop_schema[name] = t2s(type(vals[0]), name in optional_md) #assumes all possible values are of same type
        
