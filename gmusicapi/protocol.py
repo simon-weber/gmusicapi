@@ -114,8 +114,9 @@ class _Metadata_Expectation():
     #Can the value change without us changing it?
     volatile = False
 
-    #The Metadata class our value depends on, or None.
+    #The name of the Metadata class our value depends on, or None.
     depends_on = None 
+
     #A function that takes the dependent key's value
     # and returns our own. Only implemented for dependent keys.
     @staticmethod
@@ -131,9 +132,9 @@ class _Metadata_Expectation():
         schema = {}
         schema["type"] = cls.val_type
         if cls.val_type == "string":
-            schema["blank" = True] #Allow blank strings.
+            schema["blank"] = True #Allow blank strings.
         if cls.optional:
-            schema["required" = False]
+            schema["required"] = False
 
         return schema
     
@@ -149,11 +150,17 @@ class Metadata_Expectations:
         """Get the Expectation associated with the given key name.
         Return None if there is no Expectation for that name."""
 
+        expt = None
+
         try:
-            return getattr(cls, key)
+            expt = getattr(cls, key)
         except AttributeError:
-            prefixed = getattr(cls, "gm_"+key)
-            if prefixed: return prefixed
+            expt = getattr(cls, "gm_"+key)
+        
+        try:
+            if issubclass(expt, _Metadata_Expectation):
+                return expt
+        except TypeError:
             return None
 
     @classmethod
@@ -237,35 +244,35 @@ class Metadata_Expectations:
     
     #Dependent metadata:
     class title(_Metadata_Expectation):
-        depends_on = name
-
+        depends_on = "name"
+        
         @staticmethod
         def dependent_transformation(other_value):
             return other_value #nothing changes
 
     class titleNorm(_Metadata_Expectation):
-        depends_on = name
+        depends_on = "name"
 
         @staticmethod
         def dependent_transformation(other_value):
             return string.lower(other_value)
 
     class albumArtistNorm(_Metadata_Expectation):
-        depends_on = albumArtist
+        depends_on = "albumArtist"
 
         @staticmethod
         def dependent_transformation(other_value):
             return string.lower(other_value)
 
     class albumNorm(_Metadata_Expectation):
-        depends_on = album
+        depends_on = "album"
 
         @staticmethod
         def dependent_transformation(other_value):
             return string.lower(other_value)    
 
     class artistNorm(_Metadata_Expectation):
-        depends_on = artist
+        depends_on = "artist"
 
         @staticmethod
         def dependent_transformation(other_value):
@@ -297,7 +304,7 @@ class WC_Protocol:
                    #don't metadata not in expectations
                    "additionalProperties":False} 
 
-    for name, expt in Metadata_Expectations.get_all_expectations().items()
+    for name, expt in Metadata_Expectations.get_all_expectations().items():
         song_schema["properties"][name] = expt.get_schema()
         
 
@@ -479,13 +486,13 @@ class WC_Protocol:
             #If you change the interface in api, you can warn about changing bad categories, too.
             #Something like safelychange(song, entries) where entries are only those you want to change.
 
-            for song_md in songs:
-                for key in WC_Protocol.limited_md:
-                    if key in song_md and song_md[key] not in WC_Protocol.limited_md[key]:
-                        if not cls.log:
-                            cls.init_class_logger()
+            for song in songs:
+                for key in song:
+                    allowed_values = Metadata_Expectations.get_expectation(key).allowed_values
+                    if allowed_values and song[key] not in allowed_values:
+                        if not cls.log: cls.init_class_logger()
 
-                        cls.log.warning("setting id (%s)[%s] to a dangerous value. Check metadata expectations in protocol.py", song_md["id"], key)
+                        cls.log.warning("setting id (%s)[%s] to a dangerous value. Check metadata expectations in protocol.py", song_md["id"], key)                        
                         
 
             req = {"entries": songs}

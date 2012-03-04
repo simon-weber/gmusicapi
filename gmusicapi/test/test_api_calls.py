@@ -150,7 +150,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         new_md = copy.deepcopy(orig_md)
         expts = Metadata_Expectations.get_all_expectations()
 
-        for name, expt in expcts:
+        for name, expt in expts.items():
             if name in orig_md:
                 old_val = orig_md[name]
                 new_val = test_utils.modify_md(name, old_val)
@@ -175,23 +175,23 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         #Recreate the dependent md to what they should be (based on how orig_md was changed)
         correct_dependent_md = {}
-        for name, expt in expts:
+        for name, expt in expts.items():
             if expt.depends_on and name in orig_md:
-                master_expt = expt.depends_on
-                correct_dependent_md[name] = expt.dependent_transformation(new_md[master_expt.name])
+                master_name = expt.depends_on
+                correct_dependent_md[name] = expt.dependent_transformation(new_md[master_name])
 
                 # master_key, trans = dependent_md[name]
                 # correct_dependent_md[dep_key] = trans(new_md[master_key])
 
-                self.log.debug("dependents (%s): %s -> %s", name, new_md[master_expt.name], correct_dependent_md[name])
+                self.log.debug("dependents (%s): %s -> %s", name, new_md[master_name], correct_dependent_md[name])
 
         #Verify everything went as expected:
-        for name, expt in expts:
+        for name, expt in expts.items():
             if name in orig_md:
                 #Check mutability if it's not a volatile key.
                 if not expt.volatile:
                     same, message = test_utils.md_entry_same(name, orig_md, result_md)
-                    self.assertTrue(same == not expt.mutable, "metadata mutability incorrect: " + message)
+                    self.assertTrue(same == (not expt.mutable), "metadata mutability incorrect: " + message)
                 
                 #Check dependent md.
                 if expt.depends_on:
@@ -238,7 +238,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         for name in orig_md:
             #If it's not volatile, it should be back to what it was.
-            if not expts.get_expectation(name).volatile:
+            if not expts[name].volatile:
                 same, message = test_utils.md_entry_same(name, orig_md, result_md)
                 self.assertTrue(same, "failed to revert: " + message)
                 

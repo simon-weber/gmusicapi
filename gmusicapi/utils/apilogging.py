@@ -55,7 +55,8 @@ class LogController():
     distrib_names = {}
     distrib_names[root_logger_name] = 1
 
-    def get_logger(self, name, unique=False):
+    @classmethod
+    def get_logger(cls, name, unique=False):
         """Returns a logger for the given name. The root name is prepended.
         
         :param name: the base name desired.
@@ -63,14 +64,14 @@ class LogController():
 
         name_to_give = "{0}.{1}".format(root_logger_name, name)
 
-        already_distributed = name in self.distrib_names
+        already_distributed = name in cls.distrib_names
 
         if not already_distributed:
-            self.distrib_names[name] = 1
+            cls.distrib_names[name] = 1
         else:
             if unique:
-                self.distrib_names[name] += 1
-                name_to_give = "{0}.{1}_{2}".format(root_logger_name, name, self.distrib_names[name])
+                cls.distrib_names[name] += 1
+                name_to_give = "{0}.{1}_{2}".format(root_logger_name, name, cls.distrib_names[name])
 
         return logging.getLogger(name_to_give)
 
