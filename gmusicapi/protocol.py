@@ -77,10 +77,20 @@ class WC_Call:
         """Return a tuple of (filled request, response schemas)."""
         raise NotImplementedError
 
+class _DefinesNameMetaclass(type):
+    """A metaclass to create a 'name' attribute for _Metadata that respects
+    any necessary name mangling."""
+
+    def __new__(cls, name, bases, dct):
+        dct['name'] = name.split('gm_')[-1]
+        return super(_DefinesNameMetaclass, cls).__new__(cls, name, bases, dct)
+
 class _Metadata():
     """An abstract class to hold expectations for a particular metadata entry.
 
     Its default values are correct for most entries."""
+
+    __metaclass__ = _DefinesNameMetaclass
 
     #Most keys have the same expectations.
     #In most cases, overriding val_type is all that is needed.
