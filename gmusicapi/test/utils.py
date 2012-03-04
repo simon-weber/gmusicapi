@@ -25,16 +25,12 @@ import random
 import inspect
 from getpass import getpass
 
-from gmusicapi.api import Api
-from gmusicapi.protocol import WC_Protocol
+from ..api import Api
+from ..protocol import WC_Protocol, Metadata_Expectations
+from ..utils.apilogging import LogController
 
-
-#Metadata expectations:
-limited_md = WC_Protocol.limited_md #should refactor this
-mutable_md = WC_Protocol.mutable_md
-frozen_md = WC_Protocol.frozen_md
-dependent_md = WC_Protocol.dependent_md
-server_md = WC_Protocol.server_md
+md_expts = Metadata_Expectations.get_all_expectations()
+log = LogController.get_logger("utils")
 
 def init():
     """Makes an instance of the api and attempts to login with it.
@@ -61,19 +57,24 @@ def modify_md(md_name, val):
     """Returns a value of the same type as val that will not equal val."""
 
     #Check for metadata that must get specific values.
-    if md_name in limited_md:
+    if md_expts[md_name].allowed_values != None:
         #Assume old_val is a possible value, and return
         # the value one index after it.
 
-        possible = limited_md[md_name]
-        val_i = possible.index(val)
+        possible = md_expts[md_name].allowed_values
+        val_i = 0
+        try:
+            val_i = possible.index(val)
+        except ValueError:
+            log.warning("non-allowed metadata value '%s' for key %s", val, md_name)
+
         return possible[(val_i + 1) % len(possible)]
 
     #Generic handlers for other data types.
     if isinstance(val, basestring):
         return val + "_mod"
 
-    #Need to check for bool first, bools are instances of Number
+    #Need to check for bool first, bools are instances of Number for some reason.
     elif isinstance(val, bool):
         return not val
     elif isinstance(val, numbers.Number):
