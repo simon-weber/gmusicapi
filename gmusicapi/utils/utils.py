@@ -84,20 +84,6 @@ schema_for = {int: {"type": "number"},
               str: {"type": "string", "blank":True}, #allow any string field to be blank
               bool: {"type": "boolean"}}
 
-def type_to_schema(t, optional=True):
-    """Given a Python type, return a schema."""
-
-    sch = {}
-
-    #Copy in the pairs, so the user can modify them,
-    # ie we're not returning references to schema_for values.
-    for k,v in schema_for[t].items():
-        sch[k] = v
-    
-    sch["required"] = not optional
-
-    return sch
-
 #Used to mark a field as unimplemented.
 #From: http://stackoverflow.com/questions/1151212/equivalent-of-notimplementederror-for-fields-in-python
 @property

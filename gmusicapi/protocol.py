@@ -35,8 +35,6 @@ from mutagen.mp3 import MP3
 
 import metadata_pb2
 from utils import utils
-#terse name; this is used all over.
-from utils import type_to_schema as t2s 
 from utils.apilogging import UsesLog
 
 
@@ -148,6 +146,7 @@ class Metadata_Expectations:
 
     @classmethod
     def get_all_keys(cls):
+        """Return a list of all Metadata classses."""
 
         keys = []
 
@@ -156,7 +155,18 @@ class Metadata_Expectations:
             if member: keys.add(member)
         
         return keys
-        
+
+    @classmethod
+    def get_schema(cls):
+        """Return the schema to validate this class with."""
+        schema = {}
+        schema["type"] = cls.val_type
+        if cls.val_type == "string":
+            schema["blank" = True] #Allow blank strings.
+        if cls.optional:
+            schema["required" = False]
+
+        return schema
 
     #Mutable metadata:
     class rating(_Metadata):
@@ -279,26 +289,11 @@ class WC_Protocol:
                                "songId": {"type":"string"}}
                              }
 
-
-    #The song schema is built automatically from metadata expectations.
-    for name, vals in limited_md.items():
-        md_prop_schema[name] = t2s(type(vals[0]), name in optional_md) #assumes all possible values are of same type
-       
-    for md_dict in (mutable_md, frozen_md, server_md):
-
-        #ptype == python type
-        for name, ptype in md_dict.items():
-            md_prop_schema[name] = t2s(ptype, name in optional_md)
-
-    for name, depend_info in dependent_md.items():
-        md_prop_schema[name] = md_prop_schema[depend_info[0]] #assumes the dependent key is already added.
-        
-
-    #ADDITIONAL PROPERTIES DON'T INCLUDE NAME! OF COURSE YOU'RE GOING TO GET AN ERROR HERE!
-    #YOU SHOULD USE 'requred' INSTEAD OF ADDITIONALpROPERRTIES
     song_schema = {"type": "object",
-                   "additionalProperties": [md_prop_schema]}
-
+                   "properties":{}}
+    for md in Metadata_Expectations.get_all_keys():
+        song_schema["properties"][md.name] = md.get_schema()
+        
 
     #All api calls are named as they appear in the request.
 
