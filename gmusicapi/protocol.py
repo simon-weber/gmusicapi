@@ -83,7 +83,7 @@ class _DefinesNameMetaclass(type):
         dct['name'] = name.split('gm_')[-1]
         return super(_DefinesNameMetaclass, cls).__new__(cls, name, bases, dct)
 
-class _Metadata():
+class _Metadata_Expectation():
     """An abstract class to hold expectations for a particular metadata entry.
 
     Its default values are correct for most entries."""
@@ -124,37 +124,6 @@ class _Metadata():
 
     #Is this entry optional?
     optional = False
-    
-
-class Metadata_Expectations:
-    """Holds expectations about metadata."""
-
-    #Class names are GM response keys.
-    #Clashes are prefixed with a gm_ (eg gm_type).
-
-    @classmethod
-    def get_key(cls, key):
-        """Get the _Metadata class associated with the given key name.
-        Return None if there is no class for that name."""
-
-        try:
-            return getattr(cls, key)
-        except AttributeError:
-            prefixed = getattr(cls, "gm_"+key)
-            if prefixed: return prefixed
-            return None
-
-    @classmethod
-    def get_all_keys(cls):
-        """Return a list of all Metadata classses."""
-
-        keys = []
-
-        for name in dir(cls):
-            member = cls.get_key(name)
-            if member: keys.add(member)
-        
-        return keys
 
     @classmethod
     def get_schema(cls):
@@ -167,9 +136,40 @@ class Metadata_Expectations:
             schema["required" = False]
 
         return schema
+    
+
+class Metadata_Expectations:
+    """Holds expectations about metadata."""
+
+    #Class names are GM response keys.
+    #Clashes are prefixed with a gm_ (eg gm_type).
+
+    @classmethod
+    def get_expectation(cls, key):
+        """Get the Expectation associated with the given key name.
+        Return None if there is no Expectation for that name."""
+
+        try:
+            return getattr(cls, key)
+        except AttributeError:
+            prefixed = getattr(cls, "gm_"+key)
+            if prefixed: return prefixed
+            return None
+
+    @classmethod
+    def get_all_expectations(cls):
+        """Return a dictionary mapping key name to Expectation for all known keys."""
+
+        expts = {}
+
+        for name in dir(cls):
+            member = cls.get_expectation(name)
+            if member: expts[member.name]=member
+        
+        return expts
 
     #Mutable metadata:
-    class rating(_Metadata):
+    class rating(_Metadata_Expectation):
         val_type = "integer"
         #0 = no thumb
         #1 = down thumb
@@ -177,94 +177,94 @@ class Metadata_Expectations:
         allowed_values = (0, 1, 5) 
 
     #strings (the default value for val_type
-    class composer(_Metadata):
+    class composer(_Metadata_Expectation):
         pass
-    class album(_Metadata):
+    class album(_Metadata_Expectation):
         pass
-    class albumArtist(_Metadata):
+    class albumArtist(_Metadata_Expectation):
         pass
-    class genre(_Metadata):
+    class genre(_Metadata_Expectation):
         pass
-    class name(_Metadata):
+    class name(_Metadata_Expectation):
         pass
-    class artist(_Metadata):
+    class artist(_Metadata_Expectation):
         pass
 
     #integers
-    class disc(_Metadata):
+    class disc(_Metadata_Expectation):
         val_type = "integer"
-    class year(_Metadata):
+    class year(_Metadata_Expectation):
         val_type = "integer"
-    class track(_Metadata):
+    class track(_Metadata_Expectation):
         val_type = "integer"
-    class totalTracks(_Metadata):
+    class totalTracks(_Metadata_Expectation):
         val_type = "integer"
-    class playCount(_Metadata):
+    class playCount(_Metadata_Expectation):
         val_type = "integer"
-    class totalDiscs(_Metadata):
+    class totalDiscs(_Metadata_Expectation):
         val_type = "integer"
-    class durationMillis(_Metadata):
+    class durationMillis(_Metadata_Expectation):
         val_type = "integer"    
 
 
 
     #Immutable metadata:
-    class comment(_Metadata):
+    class comment(_Metadata_Expectation):
         mutable = False
-    class id(_Metadata):
+    class id(_Metadata_Expectation):
         mutable = False
-    class deleted(_Metadata):
+    class deleted(_Metadata_Expectation):
         mutable = False
         val_type = "boolean"
-    class creationDate(_Metadata):
+    class creationDate(_Metadata_Expectation):
         mutable = False
         val_type = "integer"
-    class albumArtUrl(_Metadata):
+    class albumArtUrl(_Metadata_Expectation):
         mutable = False
         optional = True #only seen when there is album art.
-    class gm_type(_Metadata):
+    class gm_type(_Metadata_Expectation):
         mutable = False
         val_type = "integer"
-    class beatsPerMinute(_Metadata):
+    class beatsPerMinute(_Metadata_Expectation):
         mutable = False
         val_type = "integer"
-    class url(_Metadata):
+    class url(_Metadata_Expectation):
         mutable = False
-    class entryId(_Metadata):
+    class entryId(_Metadata_Expectation):
         mutable = False
         optional = True #only seen when songs are in the context of a playlist.
         
     
     #Dependent metadata:
-    class title(_Metadata):
+    class title(_Metadata_Expectation):
         depends_on = name
 
         @staticmethod
         def dependent_transformation(other_value):
             return other_value #nothing changes
 
-    class titleNorm(_Metadata):
+    class titleNorm(_Metadata_Expectation):
         depends_on = name
 
         @staticmethod
         def dependent_transformation(other_value):
             return string.lower(other_value)
 
-    class albumArtistNorm(_Metadata):
+    class albumArtistNorm(_Metadata_Expectation):
         depends_on = albumArtist
 
         @staticmethod
         def dependent_transformation(other_value):
             return string.lower(other_value)
 
-    class albumNorm(_Metadata):
+    class albumNorm(_Metadata_Expectation):
         depends_on = album
 
         @staticmethod
         def dependent_transformation(other_value):
             return string.lower(other_value)    
 
-    class artistNorm(_Metadata):
+    class artistNorm(_Metadata_Expectation):
         depends_on = artist
 
         @staticmethod
@@ -273,7 +273,7 @@ class Metadata_Expectations:
 
     
     #Metadata we have no control over:
-    class lastPlayed(_Metadata):
+    class lastPlayed(_Metadata_Expectation):
         mutable = False
         volatile = True
         val_type = "integer"
@@ -290,9 +290,15 @@ class WC_Protocol:
                              }
 
     song_schema = {"type": "object",
-                   "properties":{}}
-    for md in Metadata_Expectations.get_all_keys():
-        song_schema["properties"][md.name] = md.get_schema()
+
+                   #filled out next
+                   "properties":{},
+
+                   #don't metadata not in expectations
+                   "additionalProperties":False} 
+
+    for name, expt in Metadata_Expectations.get_all_expectations().items()
+        song_schema["properties"][name] = expt.get_schema()
         
 
     #All api calls are named as they appear in the request.

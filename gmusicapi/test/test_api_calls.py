@@ -27,7 +27,7 @@ import copy
 import time
 
 
-from ..protocol import WC_Protocol
+from ..protocol import WC_Protocol, Metadata_Expectations
 from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
 
@@ -156,16 +156,17 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         #Generate noticably changed metadata for ones we can change.
         new_md = copy.deepcopy(orig_md)
-        for key in mutable_md:
-            if key in orig_md:
-                old_val = orig_md[key]
-                new_val = test_utils.modify_md(key, old_val)
+        expts = Metadata_Expectations.get_all_expectations()
 
-                self.log.debug("%s: %s modified to %s", key, repr(old_val), repr(new_val))
+        for name, expt in expcts:
+            if name in orig_md:
+                old_val = orig_md[name]
+                new_val = test_utils.modify_md(name, old_val)
+
+                self.log.debug("%s: %s modified to %s", name, repr(old_val), repr(new_val))
                 self.assertTrue(new_val != old_val)
-                new_md[key] = new_val
-                            
-        
+                new_md[name] = new_val
+
         #Make the call to change the metadata.
         #This should succeed, even though we _shouldn't_ be able to change some entries.
         #The call only fails if you give the wrong datatype.
@@ -180,31 +181,56 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         
         self.log.debug("result md: %s", repr(result_md))
 
-        #Verify everything went as expected:
-        # things that should change did
-        for md_name in mutable_md:
-            if md_name in orig_md: #some songs are missing entries (eg albumArtUrl)
-                truth, message = test_utils.md_entry_same(md_name, orig_md, result_md)
-                self.assertTrue(not truth, "should not equal " + message)
-
-        # things that shouldn't change didn't
-        for md_name in frozen_md:
-            if md_name in orig_md:
-                truth, message = test_utils.md_entry_same(md_name, orig_md, result_md)
-                self.assertTrue(truth, "should equal " + message)
-
         #Recreate the dependent md to what they should be (based on how orig_md was changed)
         correct_dependent_md = {}
-        for dep_key in dependent_md:
-            if dep_key in orig_md:
-                master_key, trans = dependent_md[dep_key]
-                correct_dependent_md[dep_key] = trans(new_md[master_key])
-                self.log.debug("dependents (%s): %s -> %s", dep_key, new_md[master_key], correct_dependent_md[dep_key])
+        for name, expt in expts:
+            if expt.depends_on and name in orig_md:
+                master_expt = expt.depends_on
+                correct_dependent_md[name] = expt.dependent_transformation(new_md[master_expt.name])
 
-        #Make sure dependent md is correct.
-        for dep_key in correct_dependent_md:
-            truth, message = test_utils.md_entry_same(dep_key, correct_dependent_md, result_md)
-            self.assertTrue(truth, "should equal: " + message)
+                # master_key, trans = dependent_md[name]
+                # correct_dependent_md[dep_key] = trans(new_md[master_key])
+
+                self.log.debug("dependents (%s): %s -> %s", name, new_md[master_expt.name], correct_dependent_md[name])
+
+        #Verify everything went as expected:
+        for name, expt in expts:
+            if name in orig_md:
+                #Check mutability if it's not a volatile key.
+                if not expt.volatile:
+                    same, message = test_utils.md_entry_same(name, orig_md, result_md)
+                    self.assertTrue(same == not expt.mutable, "metadata mutability incorrect: " + message)
+                
+                #Check dependent md.
+                if expt.depends_on:
+                    same, message = test_utils.md_entry_same(name, correct_dependent_md, result_md)
+                    self.assertTrue(same, "dependent metadata incorrect: " + message)
+                
+        #-------- old
+        # # things that should change did
+        # for md_name in mutable_md:
+        #     if md_name in orig_md: #some songs are missing entries (eg albumArtUrl)
+        #         truth, message = test_utils.md_entry_same(md_name, orig_md, result_md)
+        #         self.assertTrue(not truth, "should not equal " + message)
+
+        # # things that shouldn't change didn't
+        # for md_name in frozen_md:
+        #     if md_name in orig_md:
+        #         truth, message = test_utils.md_entry_same(md_name, orig_md, result_md)
+        #         self.assertTrue(truth, "should equal " + message)
+
+        # #Recreate the dependent md to what they should be (based on how orig_md was changed)
+        # correct_dependent_md = {}
+        # for dep_key in dependent_md:
+        #     if dep_key in orig_md:
+        #         master_key, trans = dependent_md[dep_key]
+        #         correct_dependent_md[dep_key] = trans(new_md[master_key])
+        #         self.log.debug("dependents (%s): %s -> %s", dep_key, new_md[master_key], correct_dependent_md[dep_key])
+
+        # #Make sure dependent md is correct.
+        # for dep_key in correct_dependent_md:
+        #     truth, message = test_utils.md_entry_same(dep_key, correct_dependent_md, result_md)
+        #     self.assertTrue(truth, "should equal: " + message)
 
             
         #Revert the metadata.
@@ -218,10 +244,12 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         self.log.debug("result md: %s", repr(result_md))
 
-        for md_name in orig_md:
-            if md_name not in server_md: #server md _can_ change
-                truth, message = test_utils.md_entry_same(md_name, orig_md, result_md)
-                self.assertTrue(truth, "should equal: " + message)
+        for name in orig_md:
+            #If it's not volatile, it should be back to what it was.
+            if not expts.get_expectation(name).volatile:
+                same, message = test_utils.md_entry_same(name, orig_md, result_md)
+                self.assertTrue(same, "failed to revert: " + message)
+                
         
 
     def test_search(self):
