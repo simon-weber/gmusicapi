@@ -4,12 +4,12 @@
 
 #This file is part of gmusicapi - the Unofficial Google Music API.
 
-#Gmapi is free software: you can redistribute it and/or modify
+#Gmusicapi is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
 #the Free Software Foundation, either version 3 of the License, or
 #(at your option) any later version.
 
-#Gmapi is distributed in the hope that it will be useful,
+#Gmusicapi is distributed in the hope that it will be useful,
 #but WITHOUT ANY WARRANTY; without even the implied warranty of
 #MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #GNU General Public License for more details.
@@ -34,7 +34,8 @@ from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 
 import metadata_pb2
-from .utils import utils
+from utils import utils
+from utils.apilogging import UsesLog
 
 
 supported_filetypes = ("mp3")
@@ -171,7 +172,7 @@ class WC_Protocol:
             return {"id": playlist_id}
         
     
-    class modifyentries(WC_Call):
+    class modifyentries(WC_Call, UsesLog):
         """Edit the metadata of songs."""
 
         #Metadata expectations:
@@ -205,7 +206,6 @@ class WC_Protocol:
         #We cannot change the value, and the server may change it without us knowing.
         server_md = ('lastPlayed', ) #likely an accessed timestamp in actuality?
 
-
         @classmethod
         def build_body(cls, songs):
             """:param songs: a list of dictionary representations of songs."""
@@ -218,7 +218,10 @@ class WC_Protocol:
             for song_md in songs:
                 for key in cls.limited_md:
                     if key in song_md and song_md[key] not in cls.limited_md[key]:
-                        self.log.warning("setting id (%s)[%s] to a dangerous value. Check metadata expectations in protocol.py", song_md["id"], key)
+                        if not cls.log:
+                            cls.init_class_logger()
+
+                        cls.log.warning("setting id (%s)[%s] to a dangerous value. Check metadata expectations in protocol.py", song_md["id"], key)
                         
 
             return {"entries": songs}

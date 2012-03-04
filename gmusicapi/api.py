@@ -4,12 +4,12 @@
 
 #This file is part of gmusicapi - the Unofficial Google Music API.
 
-#Gmapi is free software: you can redistribute it and/or modify
+#Gmusicapi is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
 #the Free Software Foundation, either version 3 of the License, or
 #(at your option) any later version.
 
-#Gmapi is distributed in the hope that it will be useful,
+#Gmusicapi is distributed in the hope that it will be useful,
 #but WITHOUT ANY WARRANTY; without even the implied warranty of
 #MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #GNU General Public License for more details.
@@ -37,9 +37,9 @@ from mutagen.mp3 import MP3
 from session import WC_Session, MM_Session
 from protocol import WC_Protocol, MM_Protocol
 from utils import utils
-from utils.apilogging import LogController
+from utils.apilogging import UsesLog
 
-class Api:
+class Api(UsesLog):
     def __init__(self):
         self.wc_session = WC_Session()
         self.wc_protocol = WC_Protocol()
@@ -47,8 +47,7 @@ class Api:
         self.mm_session = MM_Session()
         self.mm_protocol = MM_Protocol()
 
-        self.log = LogController().get_logger(__name__ + "." + self.__class__.__name__)
-
+        self.init_logger()
 
     #---
     #   Authentication:

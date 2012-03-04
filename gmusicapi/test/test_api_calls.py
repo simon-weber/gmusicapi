@@ -4,12 +4,12 @@
 
 #This file is part of gmusicapi - the Unofficial Google Music API.
 
-#Gmapi is free software: you can redistribute it and/or modify
+#Gmusicapi is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
 #the Free Software Foundation, either version 3 of the License, or
 #(at your option) any later version.
 
-#Gmapi is distributed in the hope that it will be useful,
+#Gmusicapi is distributed in the hope that it will be useful,
 #but WITHOUT ANY WARRANTY; without even the implied warranty of
 #MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #GNU General Public License for more details.
@@ -28,7 +28,7 @@ import time
 
 
 from ..protocol import WC_Protocol
-from ..utils.apilogging import LogController
+from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
 
 
@@ -43,7 +43,7 @@ dependent_md = WC_Protocol.modifyentries.dependent_md
 server_md = WC_Protocol.modifyentries.server_md
 
 
-class TestWCApiCalls(test_utils.BaseTest):
+class TestWCApiCalls(test_utils.BaseTest, UsesLog):
     """Runs integration tests for api calls.
     Tests are intended not to modify the library, but no guarantees are made.
     """
@@ -52,7 +52,7 @@ class TestWCApiCalls(test_utils.BaseTest):
     def setUpClass(cls):
         super(TestWCApiCalls, cls).setUpClass()
 
-        cls.log = LogController().get_logger("gmusicapi.test.TestWcApiCalls")
+        cls.init_class_logger()
 
         #Get the full path of the test file.
         path = os.path.realpath(__file__)
