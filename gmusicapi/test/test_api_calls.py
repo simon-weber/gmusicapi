@@ -147,11 +147,12 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         self.log.debug("original md: %s", repr(orig_md))
 
         #Generate noticably changed metadata for ones we can change.
+        #Changing immutable ones voids the request (although we get back success:True and our expected values).
         new_md = copy.deepcopy(orig_md)
         expts = Metadata_Expectations.get_all_expectations()
 
         for name, expt in expts.items():
-            if name in orig_md:
+            if name in orig_md and expt.mutable:
                 old_val = orig_md[name]
                 new_val = test_utils.modify_md(name, old_val)
 

@@ -215,12 +215,13 @@ class Metadata_Expectations:
     class totalDiscs(_Metadata_Expectation):
         optional = True
         val_type = "integer"
-    class durationMillis(_Metadata_Expectation):
-        val_type = "integer"    
 
 
 
     #Immutable metadata:
+    class durationMillis(_Metadata_Expectation):
+        mutable = False #you can change this, but probably don't want to.
+        val_type = "integer"
     class comment(_Metadata_Expectation):
         mutable = False
     class id(_Metadata_Expectation):
