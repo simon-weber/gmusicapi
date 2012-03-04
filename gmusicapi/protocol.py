@@ -78,90 +78,175 @@ class WC_Call:
         raise NotImplementedError
 
 class _Metadata():
-    """An abstract class to hold expectations for a particular metadata entry."""
+    """An abstract class to hold expectations for a particular metadata entry.
+
+    Its default values are correct for most entries."""
+
+    #Most keys have the same expectations.
+    #In most cases, overriding val_type is all that is needed.
+
+    #The validictory type we expect to see.
+    #Possible values are:
+        # "string" - str and unicode objects
+        # "integer" - ints
+        # "number" - ints and floats
+        # "boolean" - bools
+        # "object" - dicts
+        # "array" - lists and tuples
+        # "null" - None
+        # "any" - any type is acceptable
+    val_type = "string"
 
     #Can we change the value?
     mutable = True
+
+    #A list of allowed values, or None for no restriction.
+    allowed_values = None
     
     #Can the value change without us changing it?
     volatile = False
 
-    #Is the value determined from another key's value? 
-    dependent = False
-    #The key we depend on.
-    dependent_key = None 
+    #The Metadata class our value depends on, or None.
+    depends_on = None 
     #A function that takes the dependent key's value
-    # and returns our own.
-    @classmethod
-    def dependent_transformation(cls, value):
+    # and returns our own. Only implemented for dependent keys.
+    @staticmethod
+    def dependent_transformation(value):
         raise NotImplementedError
 
     #Is this entry optional?
     optional = False
     
+
+class Metadata_Expectations:
+    """Holds expectations about metadata."""
+
+    #Class names are GM response keys.
+    #Clashes are prefixed with a gm_ (eg gm_type).
+
+    @classmethod
+    def get_entry(cls, key):
+        try:
+            return getattr(cls, key)
+        except AttributeError:
+            return getattr(cls, "gm_"+key
+
+
+    #Mutable metadata:
+    class rating(_Metadata):
+        val_type = "integer"
+        #0 = no thumb
+        #1 = down thumb
+        #5 = up thumb
+        allowed_values = (0, 1, 5) 
+
+    #strings (the default value for val_type
+    class composer(_Metadata):
+        pass
+    class album(_Metadata):
+        pass
+    class albumArtist(_Metadata):
+        pass
+    class genre(_Metadata):
+        pass
+    class name(_Metadata):
+        pass
+    class artist(_Metadata):
+        pass
+
+    #integers
+    class disc(_Metadata):
+        val_type = "integer"
+    class year(_Metadata):
+        val_type = "integer"
+    class track(_Metadata):
+        val_type = "integer"
+    class totalTracks(_Metadata):
+        val_type = "integer"
+    class playCount(_Metadata):
+        val_type = "integer"
+    class totalDiscs(_Metadata):
+        val_type = "integer"
+    class durationMillis(_Metadata):
+        val_type = "integer"    
+
+
+
+    #Immutable metadata:
+    class comment(_Metadata):
+        mutable = False
+    class id(_Metadata):
+        mutable = False
+    class deleted(_Metadata):
+        mutable = False
+        val_type = "boolean"
+    class creationDate(_Metadata):
+        mutable = False
+        val_type = "integer"
+    class albumArtUrl(_Metadata):
+        mutable = False
+        optional = True #only seen when there is album art.
+    class gm_type(_Metadata):
+        mutable = False
+        val_type = "integer"
+    class beatsPerMinute(_Metadata):
+        mutable = False
+        val_type = "integer"
+    class url(_Metadata):
+        mutable = False
+    class entryId(_Metadata):
+        mutable = False
+        optional = True #only seen when songs are in the context of a playlist.
+        
+    
+    #Dependent metadata:
+    class title(_Metadata):
+        depends_on = name
+
+        @staticmethod
+        def dependent_transformation(other_value):
+            return other_value #nothing changes
+
+    class titleNorm(_Metadata):
+        depends_on = name
+
+        @staticmethod
+        def dependent_transformation(other_value):
+            return string.lower(other_value)
+
+    class albumArtistNorm(_Metadata):
+        depends_on = albumArtist
+
+        @staticmethod
+        def dependent_transformation(other_value):
+            return string.lower(other_value)
+
+    class albumNorm(_Metadata):
+        depends_on = album
+
+        @staticmethod
+        def dependent_transformation(other_value):
+            return string.lower(other_value)    
+
+    class artistNorm(_Metadata):
+        depends_on = artist
+
+        @staticmethod
+        def dependent_transformation(other_value):
+            return string.lower(other_value)
+
+    
+    #Metadata we have no control over:
+    class lastPlayed(_Metadata):
+        mutable = False
+        volatile = True
+        val_type = "integer"
+
     
 class WC_Protocol:
     """Holds the protocol for all suppported web client interactions."""
 
 
-    #Metadata expectations:
-
-    #These five dictionaries define all the metadata entries we know about,
-    # dividing them up based on what kind of control we have over their values.
-
-    #Entries that accept a limited set of values.
-    #Metadata name -> list of values it can hold.
-    #This needs to be investigated and fleshed out.
-    limited_md = {
-        "rating" : (0, 1, 5)
-    }
-
-    #Entries we have control of, and can change.
-    #metadata name -> type
-    # (this is just shorthand for building schemas,
-    #  and may not be the type we get back)
-    mutable_md = {'rating': int,
-                  'disc':int,
-                  'composer':str,
-                  'year':int,
-                  'album':str,
-                  'albumArtist':str,
-                  'track':int,
-                  'totalTracks':int,
-                  'genre':str,
-                  'playCount':int,
-                  'name':str,
-                  'artist':str,
-                  'totalDiscs':int,
-                  'durationMillis':int}
-
-    #Entries we cannot change.
-    frozen_md = {'comment':str,
-                 'id':str,
-                 'deleted': bool,
-                 'creationDate':int,
-                 'albumArtUrl':str, #only present when there is album art
-                 'type':int,
-                 'beatsPerMinute':int,
-                 'url':str,
-                 'entryId':str #only present when the song is loaded from a playlist
-                 }
-
-    #Metadata whose value depends on another's.
-    #Name -> ('depeds on', transformation)
-    dependent_md = {
-        'title': ('name', lambda x : x),
-        'titleNorm': ('name', string.lower),
-        'albumArtistNorm': ('albumArtist', string.lower),
-        'albumNorm': ('album', string.lower),
-        'artistNorm': ('artist', string.lower)}
-
-    #Metadata that the server has complete control of.
-    #We cannot change the value, and the server may change it without us knowing.
-    server_md = {'lastPlayed':int} #likely an accessed timestamp in actuality?
-
-    #Metadata that isn't always in a song.
-    optional_md = set(("albumArtUrl",))
 
     #Shared response schemas.
     playlist_entry_schema = {"type": "object",

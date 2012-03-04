@@ -97,3 +97,9 @@ def type_to_schema(t, optional=True):
     sch["required"] = not optional
 
     return sch
+
+#Used to mark a field as unimplemented.
+#From: http://stackoverflow.com/questions/1151212/equivalent-of-notimplementederror-for-fields-in-python
+@property
+def NotImplementedField(self):
+    raise NotImplementedError
