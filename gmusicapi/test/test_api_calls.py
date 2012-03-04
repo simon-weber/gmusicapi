@@ -36,11 +36,11 @@ from ..test import utils as test_utils
 test_filename = "test.mp3"
     
 #Metadata expectations:
-limited_md = WC_Protocol.modifyentries.limited_md #should refactor this
-mutable_md = WC_Protocol.modifyentries.mutable_md
-frozen_md = WC_Protocol.modifyentries.frozen_md
-dependent_md = WC_Protocol.modifyentries.dependent_md
-server_md = WC_Protocol.modifyentries.server_md
+limited_md = WC_Protocol.limited_md #should refactor this
+mutable_md = WC_Protocol.mutable_md
+frozen_md = WC_Protocol.frozen_md
+dependent_md = WC_Protocol.dependent_md
+server_md = WC_Protocol.server_md
 
 
 class TestWCApiCalls(test_utils.BaseTest, UsesLog):

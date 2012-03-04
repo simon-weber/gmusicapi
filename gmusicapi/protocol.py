@@ -35,6 +35,8 @@ from mutagen.mp3 import MP3
 
 import metadata_pb2
 from utils import utils
+#terse name; this is used all over.
+from utils import type_to_schema as t2s 
 from utils.apilogging import UsesLog
 
 
@@ -52,7 +54,8 @@ class WC_Call:
     #Expected to end with a forward slash.
     _suburl = 'services/'
 
-    #Should the request and result of this call be logged?
+    #Should the response to this call be logged?
+    #The request is always logged, currently.
     gets_logged = True
 
     #Do we need to be logged in before making the call?
@@ -68,79 +71,263 @@ class WC_Call:
 
         return cls._base_url + cls._suburl + cls.__name__ + qstring
 
-    #Calls all have different request bodies.
+    #Calls all have different request and response formats.
     @staticmethod
-    def build_body():
-        """Return the python representation of the json request body."""
+    def build_transaction():
+        """Return a tuple of (filled request, response schemas)."""
         raise NotImplementedError
-        
+
+class _Metadata():
+    """An abstract class to hold expectations for a particular metadata entry."""
+
+    #Can we change the value?
+    mutable = True
+    
+    #Can the value change without us changing it?
+    volatile = False
+
+    #Is the value determined from another key's value? 
+    dependent = False
+    #The key we depend on.
+    dependent_key = None 
+    #A function that takes the dependent key's value
+    # and returns our own.
+    @classmethod
+    def dependent_transformation(cls, value):
+        raise NotImplementedError
+
+    #Is this entry optional?
+    optional = False
+    
     
 class WC_Protocol:
     """Holds the protocol for all suppported web client interactions."""
+
+
+    #Metadata expectations:
+
+    #These five dictionaries define all the metadata entries we know about,
+    # dividing them up based on what kind of control we have over their values.
+
+    #Entries that accept a limited set of values.
+    #Metadata name -> list of values it can hold.
+    #This needs to be investigated and fleshed out.
+    limited_md = {
+        "rating" : (0, 1, 5)
+    }
+
+    #Entries we have control of, and can change.
+    #metadata name -> type
+    # (this is just shorthand for building schemas,
+    #  and may not be the type we get back)
+    mutable_md = {'rating': int,
+                  'disc':int,
+                  'composer':str,
+                  'year':int,
+                  'album':str,
+                  'albumArtist':str,
+                  'track':int,
+                  'totalTracks':int,
+                  'genre':str,
+                  'playCount':int,
+                  'name':str,
+                  'artist':str,
+                  'totalDiscs':int,
+                  'durationMillis':int}
+
+    #Entries we cannot change.
+    frozen_md = {'comment':str,
+                 'id':str,
+                 'deleted': bool,
+                 'creationDate':int,
+                 'albumArtUrl':str, #only present when there is album art
+                 'type':int,
+                 'beatsPerMinute':int,
+                 'url':str,
+                 'entryId':str #only present when the song is loaded from a playlist
+                 }
+
+    #Metadata whose value depends on another's.
+    #Name -> ('depeds on', transformation)
+    dependent_md = {
+        'title': ('name', lambda x : x),
+        'titleNorm': ('name', string.lower),
+        'albumArtistNorm': ('albumArtist', string.lower),
+        'albumNorm': ('album', string.lower),
+        'artistNorm': ('artist', string.lower)}
+
+    #Metadata that the server has complete control of.
+    #We cannot change the value, and the server may change it without us knowing.
+    server_md = {'lastPlayed':int} #likely an accessed timestamp in actuality?
+
+    #Metadata that isn't always in a song.
+    optional_md = set(("albumArtUrl",))
+
+    #Shared response schemas.
+    playlist_entry_schema = {"type": "object",
+                             "properties":{
+                               "playlistEntryId": {"type":"string"},
+                               "songId": {"type":"string"}}
+                             }
+
+
+    #The song schema is built automatically from the above metadata expectations.
+
+    #List of (md dictionary, transformation) pairs.
+    #Transformations take a pair from the dictionary and return the expected type.
+    direct_map = lambda name, ptype: ptype
+    val_map = lambda name, vals: type(vals[0]) #assumes all possible values are of same type
+    dependent_map = lambda name, depend_info: depend_info[0] #assumes the dependent key is already added.
     
+
+    md_schema_transformations = (
+        (mutable_md, name_type),
+        (frozen_md, name_type),
+        (server_md, name_type),
+        (limited_md, name_vals),
+        
+        )
+
+    md_prop_schema = {} #metadata properties
+
+
+    
+
+    for name, vals in limited_md.items():
+        md_prop_schema[name] = t2s(type(vals[0]), name in optional_md) #assumes all possible values are of same type
+       
+    for md_dict in (mutable_md, frozen_md, server_md):
+
+        #ptype == python type
+        for name, ptype in md_dict.items():
+            md_prop_schema[name] = t2s(ptype, name in optional_md)
+
+    for name, depend_info in dependent_md.items():
+        md_prop_schema[name] = md_prop_schema[depend_info[0]] #assumes the dependent key is already added.
+        
+
+    #ADDITIONAL PROPERTIES DON'T INCLUDE NAME! OF COURSE YOU'RE GOING TO GET AN ERROR HERE!
+    #YOU SHOULD USE 'requred' INSTEAD OF ADDITIONALpROPERRTIES
+    song_schema = {"type": "object",
+                   "additionalProperties": [md_prop_schema]}
+
+
     #All api calls are named as they appear in the request.
 
     class addplaylist(WC_Call):
         """Creates a new playlist."""
 
         @staticmethod
-        def build_body(title): 
+        def build_transaction(title): 
             """
             :param title: the title of the playlist to create.
             """
             
-            return {"title": title}
+            req = {"title": title}
+
+            #{"id":"<new playlist id>","title":"<name>","success":true}
+            res = {"type": "object",
+                      "properties":{
+                        "id": {"type":"string"},
+                        "title": {"type": "string"},
+                        "success": {"type": "boolean"}
+                        }}
+                     
+
+            return (req, res)
 
 
     class addtoplaylist(WC_Call):
         """Adds songs to a playlist."""
 
         @staticmethod
-        def build_body(playlist_id, song_ids):
+        def build_transaction(playlist_id, song_ids):
             """
             :param playlist_id: id of the playlist to add to.
             :param song_ids: a list of song ids
             """
 
-            return {"playlistId": playlist_id, "songIds": song_ids} 
+            req = {"playlistId": playlist_id, "songIds": song_ids} 
+                                      
+            #{"playlistId":"<same as above>","songIds":[{"playlistEntryId":"<new id>","songId":"<same as above>"}]}
+            res = {"type": "object",
+                      "properties":{
+                        "playlistId": {"type":"string"},
+                        "songIds": {
+                            "type": "array",
+                            "items": WC_Protocol.playlist_entry_schema
+                            }
+                        }
+                      }
+                     
+
+            return (req, res)
 
 
     class modifyplaylist(WC_Call):
         """Changes the name of a playlist."""
 
         @staticmethod
-        def build_body(playlist_id, new_name):
+        def build_transaction(playlist_id, new_name):
             """
             :param playlist_id: id of the playlist to rename.
             :param new_title: desired title.
             """
         
-            return {"playlistId": playlist_id, "playlistName": new_name}
+            req = {"playlistId": playlist_id, "playlistName": new_name}
+
+            #{}
+            res = {"type": "object",
+                   "properties":{},
+                   "additionalProperties": False}
+
+            return (req, res)
 
     
     class deleteplaylist(WC_Call):
         """Deletes a playlist."""
 
         @staticmethod
-        def build_body(playlist_id):
+        def build_transaction(playlist_id):
             """
             :param playlist_id: id of the playlist to delete.
             """
             
-            return {"id": playlist_id}
+            req = {"id": playlist_id}
+
+            #{"deleteId": "<id>"}
+            res = {"type": "object",
+                     "properties":{
+                       "deleteId": {"type":"string"}
+                       }}
+                     
+            return (req, res)
         
 
     class deletesong(WC_Call):
         """Delete a song from the library or a playlist."""
 
         @staticmethod
-        def build_body(song_ids, entry_ids = [""], playlist_id = "all"):
+        def build_transaction(song_ids, entry_ids = [""], playlist_id = "all"):
             """
             :param song_ids: a list of song ids
             :param entry_ids: for deleting from playlists
             :param list_id: for deleteing from playlists
             """
-            return {"songIds": song_ids, "entryIds":entry_ids, "listId": playlist_id}
+            req = {"songIds": song_ids, "entryIds":entry_ids, "listId": playlist_id}
+
+            #{"listId":"<playlistId>","deleteIds":["<id1>"]}
+            #playlistId might be "all" - meaning deletion from the library
+            res = {"type": "object",
+                     "properties":{
+                       "listId": {"type":"string"},
+                       "deleteIds":
+                           {"type": "array",
+                            "items": {"type": "string"}
+                            }
+                       }
+                   }
+            return (req, res)
 
     class loadalltracks(WC_Call):
         """Loads tracks from the library.
@@ -153,12 +340,29 @@ class WC_Protocol:
         gets_logged = False
 
         @staticmethod
-        def build_body(cont_token = None):
+        def build_transaction(cont_token = None):
             """:param cont_token: (optional) token to get the next library chunk."""
             if not cont_token:
-                return {}
+                req = {}
             else:
-                return {"continuationToken": cont_token}
+                req = {"continuationToken": cont_token}
+
+
+            res = {"type": "object",
+                   "properties":{
+                      "continuation": {"type":"boolean"},
+                      "differentialUpdate": {"type":"boolean"},
+                      "playlistId": {"type": "string"},
+                      "requestTime": {"type": "integer"},
+                      "playlist":
+                          {"type": "array",
+                           "items": WC_Protocol.song_schema}
+                    },
+                   "additionalProperties":{
+                       "continuationToken": {"type":"string"}}
+                   }
+
+            return (req, res)
 
     class loadplaylist(WC_Call):
         """Loads tracks from a playlist.
@@ -168,46 +372,17 @@ class WC_Protocol:
         gets_logged = False
 
         @staticmethod
-        def build_body(playlist_id):
-            return {"id": playlist_id}
+        def build_transaction(playlist_id):
+            req = {"id": playlist_id}
+            res = None
+            return (req, res)
         
     
     class modifyentries(WC_Call, UsesLog):
         """Edit the metadata of songs."""
 
-        #Metadata expectations:
-
-        #Entries that accept a limited set of values.
-        #Metadata name -> list of values it can hold.
-        #This needs to be investigated and fleshed out.
-        limited_md = {
-            "rating" : (0, 1, 5)
-        }
-
-        #Entries we have control of, and can change.
-        mutable_md = ('rating', 'disc', 'composer', 'year', 'album', 'albumArtist',
-                  'track', 'totalTracks', 'genre', 'playCount', 'name',
-                  'artist', 'totalDiscs', 'durationMillis')
-
-        #Entries we cannot change.
-        frozen_md = ('comment', 'id', 'deleted', 'creationDate', 'albumArtUrl', 'type', 'beatsPerMinute',
-                     'url')
-
-        #Metadata whose value depends on another's.
-        #Name -> ('depeds on', transformation)
-        dependent_md = {
-            'title': ('name', lambda x : x),
-            'titleNorm': ('name', string.lower),
-            'albumArtistNorm': ('albumArtist', string.lower),
-            'albumNorm': ('album', string.lower),
-            'artistNorm': ('artist', string.lower)}
-
-        #Metadata that the server has complete control of.
-        #We cannot change the value, and the server may change it without us knowing.
-        server_md = ('lastPlayed', ) #likely an accessed timestamp in actuality?
-
         @classmethod
-        def build_body(cls, songs):
+        def build_transaction(cls, songs):
             """:param songs: a list of dictionary representations of songs."""
         
 
@@ -216,24 +391,27 @@ class WC_Protocol:
             #Something like safelychange(song, entries) where entries are only those you want to change.
 
             for song_md in songs:
-                for key in cls.limited_md:
-                    if key in song_md and song_md[key] not in cls.limited_md[key]:
+                for key in WC_Protocol.limited_md:
+                    if key in song_md and song_md[key] not in WC_Protocol.limited_md[key]:
                         if not cls.log:
                             cls.init_class_logger()
 
                         cls.log.warning("setting id (%s)[%s] to a dangerous value. Check metadata expectations in protocol.py", song_md["id"], key)
                         
 
-            return {"entries": songs}
-
+            req = {"entries": songs}
+            res = None
+            return (req, res)
 
     class multidownload(WC_Call):
         """Get download links and counts for songs."""
 
         @staticmethod
-        def build_body(song_ids):
+        def build_transaction(song_ids):
             """:param song_ids: a list of song ids."""
-            return {"songIds": song_ids}
+            req = {"songIds": song_ids}
+            res = None
+            return (req, res)
 
     class play(WC_Call):
         """Get a url that holds a file to stream."""
@@ -249,8 +427,10 @@ class WC_Protocol:
             return cls._base_url + cls._suburl + cls.__name__ + qstring
 
         @staticmethod
-        def build_body():
-            return None #body is completely empty.
+        def build_transaction():
+            req = None #body is completely empty.
+            res = None
+            return (req, res)
         
 
     class search(WC_Call):
@@ -258,8 +438,10 @@ class WC_Protocol:
         GM ignores punctuation."""
     
         @staticmethod
-        def build_body(query):
-            return {"q": query}
+        def build_transaction(query):
+            req = {"q": query}
+            res = None
+            return (req, res)
 
 
 class MM_Protocol():

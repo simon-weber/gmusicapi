@@ -30,11 +30,11 @@ from gmusicapi.protocol import WC_Protocol
 
 
 #Metadata expectations:
-limited_md = WC_Protocol.modifyentries.limited_md #should refactor this
-mutable_md = WC_Protocol.modifyentries.mutable_md
-frozen_md = WC_Protocol.modifyentries.frozen_md
-dependent_md = WC_Protocol.modifyentries.dependent_md
-server_md = WC_Protocol.modifyentries.server_md
+limited_md = WC_Protocol.limited_md #should refactor this
+mutable_md = WC_Protocol.mutable_md
+frozen_md = WC_Protocol.frozen_md
+dependent_md = WC_Protocol.dependent_md
+server_md = WC_Protocol.server_md
 
 def init():
     """Makes an instance of the api and attempts to login with it.
