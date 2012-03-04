@@ -1,0 +1,14 @@
+Thumbs.db
+#~
+.DS_Store
+\#*\#
+.\#*
+.*.swp
+.*.swo
+*.tmproj
+
+*.pyc
+
+docs/build
+__pycache__
+gmapi.log
