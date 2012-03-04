@@ -416,7 +416,7 @@ class Api(UsesLog):
                 self.log.warning("Received an unexpected response from call %s.", service_name)
                 self.log.debug("full response: %s", res)
                 self.log.debug("failed schema: %s", res_schema)
-                self.log.debug("with error: %s", details)
+                self.log.warning("error was: %s", details)
                     
         if protocol.gets_logged:
             self.log.debug("wc_call response %s", res)

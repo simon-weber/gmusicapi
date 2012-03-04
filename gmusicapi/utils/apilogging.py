@@ -84,9 +84,7 @@ class UsesLog():
 
     @classmethod
     def init_class_logger(cls):
-        cls.log = LogController().get_logger(
-            "{0}.{1}".format(root_logger_name, cls.__name__), unique=True)
+        cls.log = LogController().get_logger(cls.__name__, unique=True)
 
     def init_logger(self):
-        self.log = LogController().get_logger(
-            "{0}.{1}".format(root_logger_name, self.__class__.__name__), unique=True)
+        self.log = LogController().get_logger(self.__class__.__name__, unique=True)

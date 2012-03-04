@@ -199,16 +199,21 @@ class Metadata_Expectations:
 
     #integers
     class disc(_Metadata_Expectation):
+        optional = True
         val_type = "integer"
     class year(_Metadata_Expectation):
+        optional = True
         val_type = "integer"
     class track(_Metadata_Expectation):
+        optional = True
         val_type = "integer"
     class totalTracks(_Metadata_Expectation):
+        optional = True
         val_type = "integer"
     class playCount(_Metadata_Expectation):
         val_type = "integer"
     class totalDiscs(_Metadata_Expectation):
+        optional = True
         val_type = "integer"
     class durationMillis(_Metadata_Expectation):
         val_type = "integer"    
