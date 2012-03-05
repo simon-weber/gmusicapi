@@ -1,4 +1,4 @@
-#GMAPI: an unofficial Python API for Google Music
+#gmusicapi: an unofficial Python API for Google Music
 
 The project is not supported nor endorsed by Google. I'll be interning for Google this summer, so to avoid conflicts of interest I'll stop contributing sometime in May. Get in touch if you're interested in taking over maintenance.
 
@@ -38,7 +38,7 @@ What's on the way:
 
 ##Usage
 
-gmapi.api.Api is the user-facing interface.
+gmusicapi.api.Api is the user-facing interface.
 To get started, install the dependencies and see example.py. For more information, see the [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest) and testing code.
 
 ##Dependencies
@@ -71,12 +71,12 @@ If you're working on a port, get in touch; I may be able to help out.
 ##Notes
 
 This is a work in progress, so debug logging is enabled by default.
-All logging is done to gmapi.log in your working directory, and warnings and above are printed to the console.
+All logging is done to gmusicapi.log in your working directory, and warnings and above are printed to the console.
 Nothing authentication-related gets logged aside from "logged in" and "logged out" messages.
 
 
 - - -
   
 
-Copyright 2012 [Simon Weber](https://plus.google.com/103350848301234480355)  
+Copyright 2012 [Simon Weber](https://plus.google.com/103350848301234480355).  
 Licensed under the [GPLv3](http://www.gnu.org/licenses/gpl.txt).
