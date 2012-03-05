@@ -514,7 +514,16 @@ class WC_Protocol:
                         
 
             req = {"entries": songs}
-            res = None
+
+            res = {"type": "object",
+                   "properties":{
+                       "success": {"type":"boolean"},
+                       "songs":{
+                           "type":"array",
+                           "items":WC_Protocol.song_schema
+                           }
+                       }
+                   }
             return (req, res)
 
     class multidownload(WC_Call):
