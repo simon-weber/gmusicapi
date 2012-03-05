@@ -35,7 +35,7 @@ from mutagen.mp3 import MP3
 
 import metadata_pb2
 from utils import utils
-from utils.apilogging import UsesLog
+from utils.apilogging import LogController
 
 
 supported_filetypes = ("mp3")
@@ -295,6 +295,8 @@ class Metadata_Expectations:
 class WC_Protocol:
     """Holds the protocol for all suppported web client interactions."""
 
+    log = LogController.get_logger("WC_Protocol")
+
     #Shared response schemas.
     song_schema = {"type": "object",
 
@@ -489,7 +491,7 @@ class WC_Protocol:
             return (req, res)
         
     
-    class modifyentries(WC_Call, UsesLog):
+    class modifyentries(WC_Call):
         """Edit the metadata of songs."""
 
         @classmethod
@@ -505,9 +507,7 @@ class WC_Protocol:
                 for key in song:
                     allowed_values = Metadata_Expectations.get_expectation(key).allowed_values
                     if allowed_values and song[key] not in allowed_values:
-                        if not cls.log: cls.init_class_logger()
-
-                        cls.log.warning("setting id (%s)[%s] to a dangerous value. Check metadata expectations in protocol.py", song_md["id"], key)                        
+                        log.warning("setting id (%s)[%s] to a dangerous value. Check metadata expectations in protocol.py", song_md["id"], key)                        
                         
 
             req = {"entries": songs}

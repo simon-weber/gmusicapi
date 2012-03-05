@@ -1,0 +1,5 @@
+2012.03.04:
+	change name to gmusicapi to avoid ambiguity
+	add verification of WC json responses
+	setup a sane branch model
+	improve logging

@@ -10,6 +10,8 @@ Feel free to email me or - better yet - open an issue for bugs, feature requests
 
 ##Features
 
+Implemented in version 2012.03.04:
+
 * Getting library information:
     * all song metadata
     * all user playlist (auto, instant mix, and user-defined) titles and ids
@@ -33,8 +35,8 @@ Feel free to email me or - better yet - open an issue for bugs, feature requests
 
 What's on the way:
 
+* integration with the Android service api
 * better packaging
-* verification of call responses
 
 ##Usage
 
@@ -43,7 +45,7 @@ To get started, install the dependencies and see example.py. For more informatio
 
 ##Dependencies
 
-The API has been tested on Python 2.7.1+ on Linux.
+The API has been tested on Python 2.7.2 on Linux.
 
 Currently, the following third party modules are used:
 
@@ -55,9 +57,13 @@ Currently, the following third party modules are used:
 
 * [mechanize](http://wwwsearch.sourceforge.net/mechanize/)
 
-These correspond to the following Ubuntu packages:
+* [validictory](http://pypi.python.org/pypi/validictory) 0.8.1+
+
+The first four are in Ubuntu's repos:
     
     python-decorator python-mutagen python-protobuf python-mechanize
+
+You probably want to use easy_install to get validictory.
 
 
 ##Ports and Forks
