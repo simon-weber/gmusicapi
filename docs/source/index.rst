@@ -30,14 +30,14 @@ Playlist manipulation
     :members: change_playlist_name, create_playlist, delete_playlist
 
     .. automethod:: add_songs_to_playlist(playlist_id, song_ids)
-    .. automethod:: remove_song_from_playlist(song_ids, playlist_id)
+    .. automethod:: remove_songs_from_playlist(song_ids, playlist_id)
 
 Song manipulation
 -----------------
 .. autoclass:: Api
 
     .. automethod:: change_song_metadata(songs)
-    .. automethod:: delete_song(song_ids)
+    .. automethod:: delete_songs(song_ids)
 
 
 Searching
@@ -51,7 +51,7 @@ GM Metadata Format
 
 Google Music sends song metadata in dictionaries.
 
-These dictionaries normally have 27 or 28 keys. Here is an example::
+These dictionaries have up to 27 or 28 keys. Here is an example::
 
     {'comment': ''
      'rating': 0
@@ -85,4 +85,6 @@ These dictionaries normally have 27 or 28 keys. Here is an example::
      }
 
 
-In addition, songs retrieved in the context of a playlist will contain an `entryId` which is unique to the relevant playlist.
+In addition, songs retrieved in the context of a playlist will contain a `playlistEntryId` which is unique to the relevant playlist.
+
+See ``Metadata_Expectations`` in ``protocol.py`` for complete information.
