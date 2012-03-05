@@ -36,7 +36,7 @@ from mutagen.mp3 import MP3
 import validictory
 
 from session import WC_Session, MM_Session
-from .protocol import WC_Protocol, MM_Protocol
+from protocol import WC_Protocol, MM_Protocol
 from utils import utils
 from utils.apilogging import UsesLog
 
