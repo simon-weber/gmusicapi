@@ -123,8 +123,8 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         del self.uploaded_id
 
-    # def test_up_deletion(self):
-    #     self.run_steps("updel_")
+    def test_up_deletion(self):
+        self.run_steps("updel_")
 
         
 
