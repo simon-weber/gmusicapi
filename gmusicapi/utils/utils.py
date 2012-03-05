@@ -24,11 +24,6 @@ import re
 import copy
 from htmlentitydefs import name2codepoint
 
-try:
-    from decorator import decorator
-except ImportError:
-    decorator = mock_decorator
-
 #Mock version of decorator.
 #Used when docs are built, we need docstrings to be copied, but
 # remotes won't have the module installed.
@@ -43,6 +38,11 @@ def mock_decorator(f):
         return inner
 
     return decorate
+
+try:
+    from decorator import decorator
+except ImportError:
+    decorator =  mock_decorator
 
 def to_camel_case(s):
     """Given a sring in underscore form, returns a copy of it in camel case.
