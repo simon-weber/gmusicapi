@@ -68,11 +68,13 @@ You probably want to use easy_install to get validictory.
 
 ##Ports and Forks
 
-I've seen a lot of excitement about possible ports, especially for mobile and web use. If you want to, go for it! You'll probably want to ignore anything related to Music Manager, since that's just for uploading.
+I've seen a lot of excitement about possible ports, especially for mobile and web use. If you want to, go for it! 
+
+You'll probably want to ignore anything related to Music Manager, since that's just for uploading. Information on uploading is [here](https://github.com/simon-weber/google-music-protocol).
 
 Keep in mind that ports are likely to be considered derivative works under the GPL, and, again, be sure to respect Google.
 
-If you're working on a port, get in touch; I may be able to help out.
+Lastly, get in touch if you're working on a port. I might be able to help out.
 
 ##Notes
 

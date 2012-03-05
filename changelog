@@ -1,5 +1,6 @@
 2012.03.04:
 	change name to gmusicapi to avoid ambiguity
+	change delete_song and remove_song_from_playlist to delete_songs and remove_songs_from_playlist, for consistency with other functions
 	add verification of WC json responses
-	setup a sane branch model
+	setup a sane branch model. see http://nvie.com/posts/a-successful-git-branching-model/
 	improve logging
