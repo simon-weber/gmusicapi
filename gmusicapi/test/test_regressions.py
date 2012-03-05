@@ -75,10 +75,10 @@ class TestRegressions(test_utils.BaseTest, UsesLog):
     def notags_3_delete(self):
         """Delete the uploaded files."""
         self.assert_success(
-            self.api.delete_song(self.notags_uploaded_id))
+            self.api.delete_songs(self.notags_uploaded_id))
 
         self.assert_success(
-            self.api.delete_song(self.hastags_uploaded_id))
+            self.api.delete_songs(self.hastags_uploaded_id))
 
         del self.notags_uploaded_id
         del self.hastags_uploaded_id

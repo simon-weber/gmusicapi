@@ -188,7 +188,7 @@ class Api(UsesLog):
         return self._wc_call("deleteplaylist", playlist_id)
 
     @utils.accept_singleton(basestring)
-    def delete_song(self, song_ids):
+    def delete_songs(self, song_ids):
         """Deletes songs from the entire library.
 
         :param song_ids: a list of song ids, or a single song id.
@@ -337,7 +337,7 @@ class Api(UsesLog):
         
 
     @utils.accept_singleton(basestring)
-    def remove_song_from_playlist(self, song_ids, playlist_id):
+    def remove_songs_from_playlist(self, song_ids, playlist_id):
         """Removes songs from a playlist.
 
         :param song_ids: a list of song ids, or a single song id.

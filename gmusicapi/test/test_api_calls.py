@@ -82,7 +82,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         sid = self.api.get_playlist_songs(self.playlists['test playlist'])[0]["id"]
         
         self.assert_success(
-            self.api.remove_song_from_playlist(sid, self.playlists['test playlist']))
+            self.api.remove_songs_from_playlist(sid, self.playlists['test playlist']))
 
         #Verify.
         tracks = self.api.get_playlist_songs(self.playlists['test playlist'])
@@ -119,7 +119,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
     def updel_2_delete(self):
         """Delete the uploaded test file."""
         self.assert_success(
-            self.api.delete_song(self.uploaded_id))
+            self.api.delete_songs(self.uploaded_id))
 
         del self.uploaded_id
 
