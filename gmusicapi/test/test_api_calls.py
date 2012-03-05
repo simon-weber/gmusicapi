@@ -27,21 +27,13 @@ import copy
 import time
 
 
-from ..protocol import WC_Protocol
+from ..protocol import WC_Protocol, Metadata_Expectations
 from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
 
 
 #Expected to be in this directory.
 test_filename = "test.mp3"
-    
-#Metadata expectations:
-limited_md = WC_Protocol.modifyentries.limited_md #should refactor this
-mutable_md = WC_Protocol.modifyentries.mutable_md
-frozen_md = WC_Protocol.modifyentries.frozen_md
-dependent_md = WC_Protocol.modifyentries.dependent_md
-server_md = WC_Protocol.modifyentries.server_md
-
 
 class TestWCApiCalls(test_utils.BaseTest, UsesLog):
     """Runs integration tests for api calls.
@@ -90,7 +82,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         sid = self.api.get_playlist_songs(self.playlists['test playlist'])[0]["id"]
         
         self.assert_success(
-            self.api.remove_song_from_playlist(sid, self.playlists['test playlist']))
+            self.api.remove_songs_from_playlist(sid, self.playlists['test playlist']))
 
         #Verify.
         tracks = self.api.get_playlist_songs(self.playlists['test playlist'])
@@ -127,7 +119,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
     def updel_2_delete(self):
         """Delete the uploaded test file."""
         self.assert_success(
-            self.api.delete_song(self.uploaded_id))
+            self.api.delete_songs(self.uploaded_id))
 
         del self.uploaded_id
 
@@ -155,56 +147,76 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         self.log.debug("original md: %s", repr(orig_md))
 
         #Generate noticably changed metadata for ones we can change.
+        #Changing immutable ones voids the request (although we get back success:True and our expected values).
         new_md = copy.deepcopy(orig_md)
-        for key in mutable_md:
-            if key in orig_md:
-                old_val = orig_md[key]
-                new_val = test_utils.modify_md(key, old_val)
+        expts = Metadata_Expectations.get_all_expectations()
 
-                self.log.debug("%s: %s modified to %s", key, repr(old_val), repr(new_val))
+        for name, expt in expts.items():
+            if name in orig_md and expt.mutable:
+                old_val = orig_md[name]
+                new_val = test_utils.modify_md(name, old_val)
+
+                self.log.debug("%s: %s modified to %s", name, repr(old_val), repr(new_val))
                 self.assertTrue(new_val != old_val)
-                new_md[key] = new_val
-                            
-        
+                new_md[name] = new_val
+
         #Make the call to change the metadata.
         #This should succeed, even though we _shouldn't_ be able to change some entries.
         #The call only fails if you give the wrong datatype.
         self.assert_success(
             self.api.change_song_metadata(new_md))
 
-        #Refresh the library to flush the changes, then find the song.
-        #Assume the id won't change (testing has shown this to be true).
-        time.sleep(3)
-        self.library = self.api.get_all_songs()
-        result_md = [s for s in self.library if s["id"] == orig_md["id"]][0]
-        
-        self.log.debug("result md: %s", repr(result_md))
-
-        #Verify everything went as expected:
-        # things that should change did
-        for md_name in mutable_md:
-            if md_name in orig_md: #some songs are missing entries (eg albumArtUrl)
-                truth, message = test_utils.md_entry_same(md_name, orig_md, result_md)
-                self.assertTrue(not truth, "should not equal " + message)
-
-        # things that shouldn't change didn't
-        for md_name in frozen_md:
-            if md_name in orig_md:
-                truth, message = test_utils.md_entry_same(md_name, orig_md, result_md)
-                self.assertTrue(truth, "should equal " + message)
 
         #Recreate the dependent md to what they should be (based on how orig_md was changed)
         correct_dependent_md = {}
-        for dep_key in dependent_md:
-            if dep_key in orig_md:
-                master_key, trans = dependent_md[dep_key]
-                correct_dependent_md[dep_key] = trans(new_md[master_key])
-                self.log.debug("dependents (%s): %s -> %s", dep_key, new_md[master_key], correct_dependent_md[dep_key])
+        for name, expt in expts.items():
+            if expt.depends_on and name in orig_md:
+                master_name = expt.depends_on
+                correct_dependent_md[name] = expt.dependent_transformation(new_md[master_name])
 
-        #Make sure dependent md is correct.
-        for dep_key in correct_dependent_md:
-            truth, message = test_utils.md_entry_same(dep_key, correct_dependent_md, result_md)
-            self.assertTrue(truth, "should equal: " + message)
+                # master_key, trans = dependent_md[name]
+                # correct_dependent_md[dep_key] = trans(new_md[master_key])
+
+                self.log.debug("dependents (%s): %s -> %s", name, new_md[master_name], correct_dependent_md[name])
+
+        #The library needs to be refreshed to flush the changes.
+        #This might not happen right away, so we allow a few retries.
+
+        max_attempts = 3
+        sleep_for = 3
+
+        attempts = 0
+        success = False
+
+        while not success and attempts < max_attempts:
+            time.sleep(sleep_for)
+            self.library = self.api.get_all_songs()
+
+            attempts += 1
+
+            result_md = [s for s in self.library if s["id"] == orig_md["id"]][0]
+            self.log.debug("result md: %s", repr(result_md))
+
+
+            try:
+                #Verify everything went as expected:
+                for name, expt in expts.items():
+                    if name in orig_md:
+                        #Check mutability if it's not a volatile key.
+                        if not expt.volatile:
+                            same, message = test_utils.md_entry_same(name, orig_md, result_md)
+                            self.assertTrue(same == (not expt.mutable), "metadata mutability incorrect: " + message)
+
+                        #Check dependent md.
+                        if expt.depends_on:
+                            same, message = test_utils.md_entry_same(name, correct_dependent_md, result_md)
+                            self.assertTrue(same, "dependent metadata incorrect: " + message)
+
+            except AssertionError:
+                self.log.info("retrying server for changed metadata")
+                if not attempts < max_attempts: raise
+            else:
+                success = True
 
             
         #Revert the metadata.
@@ -212,16 +224,31 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
             self.api.change_song_metadata(orig_md))
 
         #Verify everything is as it was.
-        time.sleep(3)
-        self.library = self.api.get_all_songs()
-        result_md = [s for s in self.library if s["id"] == orig_md["id"]][0]
 
-        self.log.debug("result md: %s", repr(result_md))
+        attempts = 0
+        success = False
 
-        for md_name in orig_md:
-            if md_name not in server_md: #server md _can_ change
-                truth, message = test_utils.md_entry_same(md_name, orig_md, result_md)
-                self.assertTrue(truth, "should equal: " + message)
+        while not success and attempts < max_attempts:
+            time.sleep(sleep_for)
+            self.library = self.api.get_all_songs()
+
+            attempts += 1
+
+            result_md = [s for s in self.library if s["id"] == orig_md["id"]][0]
+            self.log.debug("result md: %s", repr(result_md))
+
+            try:
+                for name in orig_md:
+                    #If it's not volatile, it should be back to what it was.
+                    if not expts[name].volatile:
+                        same, message = test_utils.md_entry_same(name, orig_md, result_md)
+                        self.assertTrue(same, "failed to revert: " + message)
+                
+            except AssertionError:
+                self.log.info("retrying server for reverted metadata")
+                if not attempts < max_attempts: raise
+            else:
+                success = True
         
 
     def test_search(self):

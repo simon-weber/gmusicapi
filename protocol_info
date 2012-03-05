@@ -1,6 +1,10 @@
 Protocol Information:
 
-    All the information in this file is going to be moved into protocol.py, and api docstrings.
+    #-------------------------------------------------#
+     This file is obsolete, and might be out of date.
+     Check protocol.py for current information.
+    #-------------------------------------------------#
+
 
     Calls are made to music.google.com/music/services/<call name>
 
