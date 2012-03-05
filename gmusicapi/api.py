@@ -33,9 +33,10 @@ import urllib
 
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
+import validictory
 
 from session import WC_Session, MM_Session
-from protocol import WC_Protocol, MM_Protocol
+from .protocol import WC_Protocol, MM_Protocol
 from utils import utils
 from utils.apilogging import UsesLog
 
@@ -48,6 +49,9 @@ class Api(UsesLog):
         self.mm_protocol = MM_Protocol()
 
         self.init_logger()
+
+        #There seems to be a bug in validictory.
+        self.validate = validictory.SchemaValidator(blank_by_default=True).validate
 
     #---
     #   Authentication:
@@ -383,9 +387,9 @@ class Api(UsesLog):
         protocol = getattr(self.wc_protocol, service_name)
 
         #Always log the request.
-        self.log.debug("wc_call: %s(%s)", service_name, str(args))
+        self.log.debug("wc_call %s(%s)", service_name, args)
         
-        body = protocol.build_body(*args)
+        body, res_schema = protocol.build_transaction(*args)
         
 
         #Encode the body. It might be None (empty).
@@ -404,10 +408,20 @@ class Api(UsesLog):
         
         res = json.loads(res.read())
 
+        #Protocols don't need to set schemas.
+        if res_schema:
+            try:
+                self.validate(res, res_schema)
+            except ValueError as details:
+                self.log.warning("Received an unexpected response from call %s.", service_name)
+                self.log.debug("full response: %s", res)
+                self.log.debug("failed schema: %s", res_schema)
+                self.log.warning("error was: %s", details)
+                    
         if protocol.gets_logged:
-            self.log.debug("wc_call response: %s", res)
+            self.log.debug("wc_call response %s", res)
         else:
-            self.log.debug("wc_call response suppressed")
+            self.log.debug("wc_call response <suppressed>")
 
         return res
 

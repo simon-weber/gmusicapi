@@ -21,6 +21,7 @@
 
 import string
 import re
+import copy
 from htmlentitydefs import name2codepoint
 
 #From https://github.com/six8/python-clom/blob/97e20517886e595cce7d498136e8a1242d6adcad/src/clom/command.py
@@ -69,9 +70,22 @@ def accept_singleton(expected_type, position=1):
 
 
 #From http://stackoverflow.com/questions/275174/how-do-i-perform-html-decoding-encoding-using-python-django
-
 name2codepoint['#39'] = 39
 def unescape_html(s):
-    "unescape HTML code refs; c.f. http://wiki.python.org/moin/EscapingHtml"
+    """Return unescaped HTML code.
+
+    see http://wiki.python.org/moin/EscapingHtml."""
     return re.sub('&(%s);' % '|'.join(name2codepoint),
               lambda m: unichr(name2codepoint[m.group(1)]), s)
+
+
+
+schema_for = {int: {"type": "number"},
+              str: {"type": "string", "blank":True}, #allow any string field to be blank
+              bool: {"type": "boolean"}}
+
+#Used to mark a field as unimplemented.
+#From: http://stackoverflow.com/questions/1151212/equivalent-of-notimplementederror-for-fields-in-python
+@property
+def NotImplementedField(self):
+    raise NotImplementedError

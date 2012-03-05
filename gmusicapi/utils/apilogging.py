@@ -55,14 +55,25 @@ class LogController():
     distrib_names = {}
     distrib_names[root_logger_name] = 1
 
-    def get_logger(self, name):
-        """Returns a unique logger for the given name."""
-        if name in self.distrib_names:
-            self.distrib_names[name] += 1
-            return logging.getLogger("{0}_{1}".format(name, self.distrib_names[name]))
+    @classmethod
+    def get_logger(cls, name, unique=False):
+        """Returns a logger for the given name. The root name is prepended.
+        
+        :param name: the base name desired.
+        :param unique: if True, return a unique version of the base name."""
+
+        name_to_give = "{0}.{1}".format(root_logger_name, name)
+
+        already_distributed = name in cls.distrib_names
+
+        if not already_distributed:
+            cls.distrib_names[name] = 1
         else:
-            self.distrib_names[name] = 1
-            return logging.getLogger(name)
+            if unique:
+                cls.distrib_names[name] += 1
+                name_to_give = "{0}.{1}_{2}".format(root_logger_name, name, cls.distrib_names[name])
+
+        return logging.getLogger(name_to_give)
 
 class UsesLog():
     """A mixin to provide the ability to get a unique logger."""
@@ -73,9 +84,7 @@ class UsesLog():
 
     @classmethod
     def init_class_logger(cls):
-        cls.log = LogController().get_logger(
-            "{0}.{1}".format(root_logger_name, cls.__name__))
+        cls.log = LogController().get_logger(cls.__name__, unique=True)
 
     def init_logger(self):
-        self.log = LogController().get_logger(
-            "{0}.{1}".format(root_logger_name, self.__class__.__name__))
+        self.log = LogController().get_logger(self.__class__.__name__, unique=True)
