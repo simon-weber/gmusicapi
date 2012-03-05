@@ -296,23 +296,19 @@ class WC_Protocol:
     """Holds the protocol for all suppported web client interactions."""
 
     #Shared response schemas.
-    playlist_entry_schema = {"type": "object",
-                             "properties":{
-                               "playlistEntryId": {"type":"string"},
-                               "songId": {"type":"string"}}
-                             }
-
     song_schema = {"type": "object",
 
                    #filled out next
                    "properties":{},
 
-                   #don't metadata not in expectations
+                   #don't allow metadata not in expectations
                    "additionalProperties":False} 
 
     for name, expt in Metadata_Expectations.get_all_expectations().items():
         song_schema["properties"][name] = expt.get_schema()
-        
+
+    song_array = {"type":"array",
+                  "items": song_schema}        
 
     #All api calls are named as they appear in the request.
 
@@ -333,7 +329,8 @@ class WC_Protocol:
                         "id": {"type":"string"},
                         "title": {"type": "string"},
                         "success": {"type": "boolean"}
-                        }}
+                        }
+                   }
                      
 
             return (req, res)
@@ -355,14 +352,19 @@ class WC_Protocol:
             res = {"type": "object",
                       "properties":{
                         "playlistId": {"type":"string"},
-                        "songIds": {
-                            "type": "array",
-                            "items": WC_Protocol.playlist_entry_schema
+                        "songIds":{
+                            "type":"array",
+                            "items":{
+                                "type":"object",
+                                "properties":{
+                                    "songId":{"type":"string"},
+                                    "playlistEntryId":{"type":"string"}
+                                    }
+                                }
                             }
                         }
-                      }
-                     
-
+                   }
+                    
             return (req, res)
 
 
@@ -456,10 +458,8 @@ class WC_Protocol:
                       "differentialUpdate": {"type":"boolean"},
                       "playlistId": {"type": "string"},
                       "requestTime": {"type": "integer"},
-                      "playlist":
-                          {"type": "array",
-                           "items": WC_Protocol.song_schema}
-                    },
+                      "playlist": WC_Protocol.song_array
+                      },
                    "additionalProperties":{
                        "continuationToken": {"type":"string"}}
                    }
@@ -480,10 +480,7 @@ class WC_Protocol:
             res = {"type": "object",
                    "properties":{
                        "continuation":{"type":"boolean"},
-                       "playlist":{
-                           "type":"array",
-                           "items":WC_Protocol.song_schema
-                           },
+                       "playlist":WC_Protocol.song_array,
                        "playlistId":{"type":"string"},
                        "unavailableTrackCount": {"type": "integer"}
                        }
@@ -518,10 +515,7 @@ class WC_Protocol:
             res = {"type": "object",
                    "properties":{
                        "success": {"type":"boolean"},
-                       "songs":{
-                           "type":"array",
-                           "items":WC_Protocol.song_schema
-                           }
+                       "songs":WC_Protocol.song_array
                        }
                    }
             return (req, res)
@@ -533,7 +527,22 @@ class WC_Protocol:
         def build_transaction(song_ids):
             """:param song_ids: a list of song ids."""
             req = {"songIds": song_ids}
-            res = None
+
+            #This hasn't been tested yet.
+            res = {"type":"object",
+                   "properties":{
+                       "downloadCounts":{
+                           "type":"array",
+                           "items":{
+                               "type":"object",
+                               "properties":{
+                                   "id":{"type":"integer"}
+                                   }
+                               }
+                           },
+                       "url":{"type":"string"}
+                       }
+                   }
             return (req, res)
 
     class play(WC_Call):
@@ -552,6 +561,11 @@ class WC_Protocol:
         @staticmethod
         def build_transaction():
             req = None #body is completely empty.
+            res = {"type":"object",
+                   "properties":{
+                       "url":{"type":"string"}
+                       }
+                   }
             res = None
             return (req, res)
         
@@ -563,7 +577,21 @@ class WC_Protocol:
         @staticmethod
         def build_transaction(query):
             req = {"q": query}
-            res = None
+
+            res = {"type":"object",
+                   "properties":{
+                       "results":{
+                           "type":"object",
+                           "properties":{
+                               "artists": WC_Protocol.song_array,
+                               "albums": WC_Protocol.song_array,
+                               "songs": WC_Protocol.song_array
+                               }
+                           }
+                       }
+                   }
+                                  
+                    
             return (req, res)
 
 
