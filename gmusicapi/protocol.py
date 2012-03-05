@@ -243,7 +243,7 @@ class Metadata_Expectations:
         val_type = "integer"
     class url(_Metadata_Expectation):
         mutable = False
-    class entryId(_Metadata_Expectation):
+    class playlistEntryId(_Metadata_Expectation):
         mutable = False
         optional = True #only seen when songs are in the context of a playlist.
         
@@ -476,7 +476,19 @@ class WC_Protocol:
         @staticmethod
         def build_transaction(playlist_id):
             req = {"id": playlist_id}
-            res = None
+
+            res = {"type": "object",
+                   "properties":{
+                       "continuation":{"type":"boolean"},
+                       "playlist":{
+                           "type":"array",
+                           "items":WC_Protocol.song_schema
+                           },
+                       "playlistId":{"type":"string"},
+                       "unavailableTrackCount": {"type": "integer"}
+                       }
+                   }
+                           
             return (req, res)
         
     
