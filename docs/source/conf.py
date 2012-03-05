@@ -39,7 +39,7 @@ class Mock(object):
             return Mock()
 
 MOCK_MODULES = ['mutagen', 'mutagen.easyid3', 'mutagen.mp3', 
-                'mechanize', 'validictory', 'google.protobuf']
+                'mechanize', 'validictory', 'google', 'google.protobuf']
 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
