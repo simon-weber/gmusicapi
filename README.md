@@ -4,9 +4,11 @@ The project is not supported nor endorsed by Google. I'll be interning for Googl
 
 **Respect Google in your use of the API**. Use common sense (protocol compliance, reasonable load, etc) and don't ruin the fun for everyone else.
 
-Official documentation is provided by Read the Docs: [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest).
+For those looking to use the api, documentation is hosted at Read the Docs: [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest).
 
-Feel free to email me or - better yet - open an issue for bugs, feature requests, or contributions.
+For those looking to port or contribute, check out the code overview on the wiki: [wiki](https://github.com/simon-weber/Unofficial-Google-Music-API/wiki/Codebase-Overview).
+
+For bugs reports, feature requests, and contributions, [open an issue](https://github.com/simon-weber/Unofficial-Google-Music-API/issues/new).
 
 ##Features
 
@@ -66,11 +68,11 @@ The first four are in Ubuntu's repos:
 You probably want to use easy_install to get validictory.
 
 
-##Ports and Forks
+##Porting
 
 I've seen a lot of excitement about possible ports, especially for mobile and web use. If you want to, go for it! 
 
-You'll probably want to ignore anything related to Music Manager, since that's just for uploading. Information on uploading is [here](https://github.com/simon-weber/google-music-protocol).
+You'll probably want to ignore anything related to Music Manager, since that's just for uploading. Information on uploading is [here](https://github.com/simon-weber/google-music-protocol). The [code overview on the wiki](https://github.com/simon-weber/Unofficial-Google-Music-API/wiki/Codebase-Overview) will probably also be useful.
 
 Keep in mind that ports are likely to be considered derivative works under the GPL, and, again, be sure to respect Google.
 
