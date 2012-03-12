@@ -50,7 +50,7 @@ class Api(UsesLog):
 
         self.init_logger()
 
-        #There seems to be a bug in validictory.
+        #TODO get rid of this; blank problem is fixed in protocol.py
         self.validate = validictory.SchemaValidator(blank_by_default=True).validate
 
     #---

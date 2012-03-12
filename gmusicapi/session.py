@@ -30,7 +30,11 @@ from urllib2  import *
 from urlparse import *
 import httplib
 
-from decorator import decorator
+try:
+    from decorator import decorator
+except ImportError:
+    from utils.utils import mock_decorator as decorator
+
 import mechanize
 
 from utils.apilogging import UsesLog

@@ -24,22 +24,25 @@ import re
 import copy
 from htmlentitydefs import name2codepoint
 
-#From https://github.com/six8/python-clom/blob/97e20517886e595cce7d498136e8a1242d6adcad/src/clom/command.py
+#Mock version of decorator.
+#Used when docs are built, we need docstrings to be copied, but
+# remotes won't have the module installed.
+def mock_decorator(f):
+    def decorate(_func):
+        def inner(*args, **kwargs):
+            return f(_func, *args, **kwargs)
+
+        inner.__doc__ = _func.__doc__
+        inner.__repr__ = _func.__repr__
+
+        return inner
+
+    return decorate
+
 try:
     from decorator import decorator
 except ImportError:
-    # No decorator package available, copy docstrings manually.
-    def decorator(f):
-        def decorate(_func):
-            def inner(*args, **kwargs):
-                return f(_func, *args, **kwargs)
-            
-            inner.__doc__ = _func.__doc__
-            inner.__repr__ = _func.__repr__
-
-            return inner
-        
-        return decorate
+    decorator =  mock_decorator
 
 def to_camel_case(s):
     """Given a sring in underscore form, returns a copy of it in camel case.

@@ -35,7 +35,7 @@ from mutagen.mp3 import MP3
 
 import metadata_pb2
 from utils import utils
-from utils.apilogging import LogController
+from utils.apilogging import LogController #TODO this is a hack
 
 
 supported_filetypes = ("mp3")
@@ -295,8 +295,6 @@ class Metadata_Expectations:
 class WC_Protocol:
     """Holds the protocol for all suppported web client interactions."""
 
-    log = LogController.get_logger("WC_Protocol")
-
     #Shared response schemas.
     song_schema = {"type": "object",
 
@@ -498,7 +496,6 @@ class WC_Protocol:
         def build_transaction(cls, songs):
             """:param songs: a list of dictionary representations of songs."""
         
-
             #Warn about metadata changes that may cause problems.
             #If you change the interface in api, you can warn about changing bad categories, too.
             #Something like safelychange(song, entries) where entries are only those you want to change.
@@ -507,7 +504,7 @@ class WC_Protocol:
                 for key in song:
                     allowed_values = Metadata_Expectations.get_expectation(key).allowed_values
                     if allowed_values and song[key] not in allowed_values:
-                        log.warning("setting id (%s)[%s] to a dangerous value. Check metadata expectations in protocol.py", song_md["id"], key)                        
+                        LogController.get_logger("modifyentries").warning("setting key {0} to unallowed value {1} for id {2}. Check metadata expectations in protocol.py".format(key, song[key], song["id"]))
                         
 
             req = {"entries": songs}
