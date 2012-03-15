@@ -25,12 +25,11 @@ import os
 import string
 import copy
 import time
-
+import random
 
 from ..protocol import WC_Protocol, Metadata_Expectations
 from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
-
 
 #Expected to be in this directory.
 test_filename = "test.mp3"
@@ -106,6 +105,54 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
     def test_playlists(self):
         self.run_steps("pl")
+        
+    def cpl_1_create(self):
+        """Create and populate a random playlist."""
+        self.assert_success(
+            self.api.create_playlist('playlist to change'))
+
+        #Need to reload playlists so it appears.
+        self.playlists = self.api.get_playlists()['user']
+
+        p_id = self.playlists['playlist to change']
+        self.assert_success(
+            self.api.add_songs_to_playlist(p_id, random.choice(self.library, 10)))
+                
+    def cpl_2_change(self):
+        """Change the playlist with random deletions, additions and reordering."""
+        p_id = self.playlists['playlist to change']
+        tracks = self.assert_success(
+            self.api.get_playlist_songs(p_id))
+
+        delete, add, reorder = random.sample([True, False], 3)
+        if delete:
+            del_is = set(random.sample(xrange(len(tracks)), random.choice(len(tracks))))
+            tracks = [track for i, track in enumerate(tracks) if not i in del_is]
+        if add:
+            tracks.extend(random.choice(self.library, 10))
+        if reorder:
+            random.shuffle(tracks)
+
+        self.api.change_playlist(p_id, tracks)
+        
+        server_tracks = self.assert_success(
+            self.api.get_playlist_songs(p_id))
+
+        self.assertTrue(len(tracks) == len(server_tracks))
+
+        self.assertTrue(
+            all((local_t["id"] == server_t["id"]
+                 for local_t, server_t in zip(tracks, server_tracks))))
+
+    def cpl_3_delete(self):
+        """Delete the playlist."""
+        self.assert_success(
+            self.api.delete_playlist(self.playlists['playlist to change']))
+
+        self.playlists = self.api.get_playlists()['user']
+        
+    def test_change_playlist(self):
+        self.run_steps("cpl")
 
 
     def updel_1_upload(self):
@@ -138,7 +185,6 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
     #     # instead we expect a tuple with 2 entries.
     #     res = self.api.get_song_download_info(self.r_song_id)
     #     self.assertTrue(len(res) == 2 and isinstance(res, tuple))
-            
 
     def test_change_song_metadata(self):
         """Change a song's metadata, then restore it."""

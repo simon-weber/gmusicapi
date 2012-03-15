@@ -28,6 +28,7 @@ from getpass import getpass
 from ..api import Api
 from ..protocol import WC_Protocol, Metadata_Expectations
 from ..utils.apilogging import LogController
+from ..utils import utils
 
 md_expts = Metadata_Expectations.get_all_expectations()
 log = LogController.get_logger("utils")
@@ -89,20 +90,6 @@ def md_entry_same(entry_name, s1, s2):
     s2_val = s2[entry_name]
     
     return (s1_val == s2_val, "(" + entry_name + ") " + repr(s1_val) + ", " + repr(s2_val))
-    
-
-def call_succeeded(response):
-    """Returns True if the call succeeded, False otherwise."""
-    
-    #Failed responses always have a success=False key.
-    #Some successful responses do not have a success=True key, however.
-
-    #print response
-
-    if 'success' in response.keys():
-        return response['success']
-    else:
-        return True
 
 
 class BaseTest(unittest.TestCase):
@@ -145,7 +132,7 @@ class BaseTest(unittest.TestCase):
         """Asserts the success of a call's response.
         Returns the calls response."""
 
-        self.assertTrue(call_succeeded(response))
+        self.assertTrue(utils.call_succeeded(response))
         return response
 
     def collect_steps(self, prefix):
