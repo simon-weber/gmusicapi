@@ -341,9 +341,10 @@ class Api(UsesLog):
         server_tracks = self.get_playlist_songs(playlist_id)
 
         if safe:
-            names_to_ids = self.get_playlists()
+            names_to_ids = self.get_playlists()['user']
+
             playlist_name = (ni_pair[0] 
-                             for ni_pair in ids_to_names.iteritems()
+                             for ni_pair in names_to_ids.iteritems()
                              if ni_pair[1] == playlist_id).next()
 
             #The backup is stored on the server as a new playlist with "_gmusicapi_backup" appended to the backed up name.

@@ -125,13 +125,16 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         delete, add, reorder = [random.choice([True, False]) for i in xrange(3)]
         if delete:
+            self.log.debug("deleting tracks")
             track_is = range(len(tracks))
             #Select a random number of indices to delete.
             del_is = set(random.sample(track_is, random.choice(track_is)))
             tracks = [track for i, track in enumerate(tracks) if not i in del_is]
         if add:
-            tracks.extend(random.choice(self.library, 10))
+            self.log.debug("adding tracks")
+            tracks.extend(random.sample(self.library, 10))
         if reorder:
+            self.log.debug("shuffling tracks")
             random.shuffle(tracks)
 
         self.api.change_playlist(p_id, tracks)
