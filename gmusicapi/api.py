@@ -375,7 +375,7 @@ class Api(UsesLog):
 
                 #Assuming added tracks are appended to the playlist in order.
                 added_tracks = server_tracks[-1 * num_added:]
-                for desired, server in zip(desired_playlist[-1 * num_added:], added_tracks)
+                for desired, server in zip(desired_playlist[-1 * num_added:], added_tracks):
                     desired["playlistEntryId"] = server["playlistEntryId"]
 
 

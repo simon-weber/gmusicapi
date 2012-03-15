@@ -404,7 +404,7 @@ class WC_Protocol:
             req = {"playlistId": playlist_id,
                    "movedSongIds": song_ids_moving,
                    "movedEntryIds": entry_ids_moving,
-                   "afterEntryId":, after_entry_id,
+                   "afterEntryId": after_entry_id,
                    "beforeEntryId": before_entry_id}
 
             res = {"type": "object",

@@ -116,17 +116,18 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         p_id = self.playlists['playlist to change']
         self.assert_success(
-            self.api.add_songs_to_playlist(p_id, random.choice(self.library, 10)))
+            self.api.add_songs_to_playlist(p_id, [s["id"] for s in random.sample(self.library, 10)]))
                 
     def cpl_2_change(self):
         """Change the playlist with random deletions, additions and reordering."""
         p_id = self.playlists['playlist to change']
-        tracks = self.assert_success(
-            self.api.get_playlist_songs(p_id))
+        tracks = self.api.get_playlist_songs(p_id)
 
-        delete, add, reorder = random.sample([True, False], 3)
+        delete, add, reorder = [random.choice([True, False]) for i in xrange(3)]
         if delete:
-            del_is = set(random.sample(xrange(len(tracks)), random.choice(len(tracks))))
+            track_is = range(len(tracks))
+            #Select a random number of indices to delete.
+            del_is = set(random.sample(track_is, random.choice(track_is)))
             tracks = [track for i, track in enumerate(tracks) if not i in del_is]
         if add:
             tracks.extend(random.choice(self.library, 10))

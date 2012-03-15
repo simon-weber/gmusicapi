@@ -152,4 +152,5 @@ class BaseTest(unittest.TestCase):
             try:
                 step()
             except Exception as e:
-                self.fail("{} failed ({}: {})".format(step, type(e), e))
+                #self.fail("{} failed ({}: {})".format(step, type(e), e))
+                raise
