@@ -154,7 +154,7 @@ class WC_Session(UsesLog):
         # Google auth requires a common user-agent.
         br.addheaders = [('User-agent', self._user_agent)]
 
-        br.open('https://music.google.com')
+        br.open('https://play.google.com/music')
 
         br.select_form(nr=0)
 

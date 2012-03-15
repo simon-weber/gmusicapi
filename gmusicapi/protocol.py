@@ -46,7 +46,7 @@ class UnsupportedFiletype(exceptions.Exception):
 class WC_Call:
     """An abstract class to hold the protocol for a web client call."""
     
-    _base_url = 'https://music.google.com/music/'
+    _base_url = 'https://play.google.com/music/'
     
     #Added to the url after _base_url. Most calls are made to /music/services/<call name>
     #Expected to end with a forward slash.
