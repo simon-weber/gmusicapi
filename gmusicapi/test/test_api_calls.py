@@ -61,46 +61,51 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
             self.api.create_playlist('test playlist'))
 
         #Need to reload playlists so it appears.
-        self.playlists = self.api.get_playlists()['user']
+        self.playlists = self.api.get_playlists(always_id_lists=True)['user']
 
 
     def pl_2_add_song(self):
         """Add a random song to the playlist."""
+        p_id = self.playlists['test playlist'][-1]
+
         self.assert_success(
-            self.api.add_songs_to_playlist(self.playlists['test playlist'], self.r_song_id))
+            self.api.add_songs_to_playlist(p_id, self.r_song_id))
 
         #Verify the playlist has it.
-        tracks = self.api.get_playlist_songs(self.playlists['test playlist'])
+        tracks = self.api.get_playlist_songs(p_id)
 
         self.assertTrue(tracks[0]["id"] == self.r_song_id)
         
 
     def pl_2a_remove_song(self):
         """Remove a song from the playlist."""
+        p_id = self.playlists['test playlist'][-1]
 
-        sid = self.api.get_playlist_songs(self.playlists['test playlist'])[0]["id"]
+        sid = self.api.get_playlist_songs(p_id)[0]["id"]
         
         self.assert_success(
-            self.api.remove_songs_from_playlist(sid, self.playlists['test playlist']))
+            self.api.remove_songs_from_playlist(sid, p_id))
 
         #Verify.
-        tracks = self.api.get_playlist_songs(self.playlists['test playlist'])
+        tracks = self.api.get_playlist_songs(p_id)
 
         self.assertTrue(len(tracks) == 0)
 
     def pl_3_change_name(self):
         """Change the playlist's name."""
-        self.assert_success(
-            self.api.change_playlist_name(self.playlists['test playlist'], 'modified playlist'))
+        p_id = self.playlists['test playlist'][-1]
 
-        self.playlists = self.api.get_playlists()['user']
+        self.assert_success(
+            self.api.change_playlist_name(p_id, 'modified playlist'))
+
+        self.playlists = self.api.get_playlists(always_id_lists=True)['user']
             
     def pl_4_delete(self):
         """Delete the playlist."""
         self.assert_success(
-            self.api.delete_playlist(self.playlists['modified playlist']))
+            self.api.delete_playlist(self.playlists['modified playlist'][-1]))
 
-        self.playlists = self.api.get_playlists()['user']
+        self.playlists = self.api.get_playlists(always_id_lists=True)['user']
 
 
     # def test_playlists(self):
@@ -112,15 +117,16 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
             self.api.create_playlist('playlist to change'))
 
         #Need to reload playlists so it appears.
-        self.playlists = self.api.get_playlists()['user']
+        self.playlists = self.api.get_playlists(always_id_lists=True)['user']
 
-        p_id = self.playlists['playlist to change']
+        p_id = self.playlists['playlist to change'][-1]
+
         self.assert_success(
             self.api.add_songs_to_playlist(p_id, [s["id"] for s in random.sample(self.library, 10)]))
                 
     def cpl_2_change(self):
         """Change the playlist with random deletions, additions and reordering."""
-        p_id = self.playlists['playlist to change']
+        p_id = self.playlists['playlist to change'][-1]
         tracks = self.api.get_playlist_songs(p_id)
 
         #Apply random modifications.
@@ -158,9 +164,9 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
     def cpl_3_delete(self):
         """Delete the playlist."""
         self.assert_success(
-            self.api.delete_playlist(self.playlists['playlist to change']))
+            self.api.delete_playlist(self.playlists['playlist to change'][-1]))
 
-        self.playlists = self.api.get_playlists()['user']
+        self.playlists = self.api.get_playlists(always_id_lists=True)['user']
         
     def test_change_playlist(self):
         self.run_steps("cpl")

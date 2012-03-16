@@ -21,7 +21,39 @@
 
 import operator
 import re
-from collections import namedtuple
+import collections
+
+
+def get_id_pairs(track_list):
+    """Create a list of (sid, eid) tuples from a list of tracks. Tracks without an eid will have an eid of None."""
+
+    return [(t["id"], t.get("playlistEntryId")) for t in track_list]
+    
+def find_playlist_changes(orig_tracks, modified_tracks):
+    """Finds the changes between two playlists.
+    
+    Returns a tuple of (deletions, additions, staying). Deletions and additions are both Counters of (sid, eid) tuples; staying is a set of (sid, eid) tuples.
+    
+    :param old: the original playlist.
+    :param modified: the modified playlist."""
+
+    s_pairs = get_id_pairs(orig_tracks)
+
+    #Three cases for desired pairs:
+    # 1: (sid, eid from this playlist): either no action or add (if someone adds a dupe from the same playlist)
+    # 2: (sid, eid not from this playlist): add
+    # 3: (sid, None): add
+    d_pairs = get_id_pairs(modified_tracks)
+
+    #Counters are multisets.
+    s_count = collections.Counter(s_pairs)
+    d_count = collections.Counter(d_pairs)
+
+    to_del = s_count - d_count
+    to_add = d_count - s_count
+    to_keep = set(s_count & d_count) #guaranteed to be counts of 1
+
+    return (to_del, to_add, to_keep)
 
 def filter_song_md(song, md_list=['id'], no_singletons=True):
     """Returns a list of desired metadata from a song.
@@ -244,7 +276,7 @@ class SongMatcher:
 
 
     #A named tuple to hold the frozen args when querying recursively.
-    QueryState = namedtuple('QueryState', 'orig t_breaker mods auto')
+    QueryState = collections.namedtuple('QueryState', 'orig t_breaker mods auto')
 
     def query_library(self, query, tie_breaker=no_tiebreak, modifiers=[], auto=False):
         """Queries the library for songs.

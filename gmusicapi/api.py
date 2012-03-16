@@ -258,7 +258,7 @@ class Api(UsesLog):
         
         #Auto playlist ids are hardcoded in the wc javascript.
         #If Google releases Music internationally, this will probably be broken.
-        #TODO: add a test to keep watch of this.
+        #TODO: how to test for this? if loaded, will the calls just fail?
         return {"Thumbs up": "auto-playlist-thumbs-up", 
                 "Last added": "auto-playlist-recent",
                 "Free and purchased": "auto-playlist-promo"}
@@ -271,7 +271,7 @@ class Api(UsesLog):
         :markup: (optional) markup of the page."""
         
         #Instant mixes and playlists are built in to the markup server-side.
-        #Generally, we don't use open_https_url directly; this is an exception.
+        #Generally, open_https_url isn't used directly; this is an exception.
 
         #There's a lot of html; rather than parse, it's easier to just cut
         # out the playlists ul, then use a regex.
@@ -327,11 +327,11 @@ class Api(UsesLog):
     def get_stream_url(self, song_id):
         """Returns a url that points to a streamable version of this song. 
 
+        :param song_id: a single song id.
+
         *This is only intended for streaming*. The streamed audio does not contain metadata. Use :func:`get_song_download_info` to download complete files with metadata.
 
-        Reading the file does not require authentication.
-        
-        :param song_id: a single song id.
+        Reading the file does not require authentication.        
         """
 
         #This call is strange. The body is empty, and the songid is passed in the querystring.
@@ -339,8 +339,24 @@ class Api(UsesLog):
         
         return res['url']
         
+    def copy_playlist(self, orig_id, copy_name):
+        """Copies the contents of a playlist to a new playlist. Returns the id of the new playlist.
+
+        :param orig_id: id of the playlist to be copied.
+        :param copy_name: the name of the new copied playlist.
+
+        Useful for making backups of playlists before modifications.
+        """
+        
+        orig_tracks = self.get_playlist_songs(orig_id)
+        
+        backup_id = self.create_playlist(copy_name)["id"]
+
+        #Copy in all the songs.
+        self.add_songs_to_playlist(backup_id, [t["id"] for t in orig_tracks])
+
     def change_playlist(self, playlist_id, desired_playlist, safe=True):
-        """Changes the order and contents of an existing playlist. Returns True on success, False if the playlist could be in an inconsistent state.
+        """Changes the order and contents of an existing playlist. Returns True on success, False if the playlist could be in an inconsistent state due to a problem.
         
         :param playlist_id: the id of the playlist being modified.
         :param desired_playlist: the desired contents and order as a list of song dictionaries, like is returned from :func:`get_playlist_songs`.
@@ -352,7 +368,6 @@ class Api(UsesLog):
 
         There will always be a warning logged if a problem occurs, even if `safe` is False.
         """
-        #TODO refactoring
         
         #We'll be modifying the entries in the playlist, and need to copy it.
         #Copying ensures two things:
@@ -363,43 +378,21 @@ class Api(UsesLog):
         server_tracks = self.get_playlist_songs(playlist_id)
 
         ##Make the backup.
-        #TODO pull this out; might even be useful to others
         if safe:
+            #The backup is stored on the server as a new playlist with "_gmusicapi_backup" appended to the backed up name.
+            #We can't just store the backup here, since when rolling back we'd be relying on this function - which just failed.
             names_to_ids = self.get_playlists(always_id_lists=True)['user']
-
             playlist_name = (ni_pair[0] 
                              for ni_pair in names_to_ids.iteritems()
                              if playlist_id in ni_pair[1]).next()
 
-            #The backup is stored on the server as a new playlist with "_gmusicapi_backup" appended to the backed up name.
-            #We can't just store the backup here, since when rolling back we'd be relying on this function - which just failed.
-            backup_id = self.create_playlist(playlist_name + "_gmusicapi_backup")["id"]
-            
-            #Copy in all the songs.
-            self.add_songs_to_playlist(backup_id, [t["id"] for t in server_tracks])
+            backup_id = self.copy_playlist(playlist_id, playlist_name + "_gmusicapi_backup")
 
         ##Try to change.
         try:
-            ##Determine which tracks to add and delete using multisets.
+            #Counter, Counter, and set of id pairs to delete, add, and keep.
+            to_del, to_add, to_keep = tools.find_playlist_changes(server_tracks, desired_playlist)
 
-            #Not all tracks will have a playlistEntryId, so use .get
-            get_pairs = lambda tracks: [(t["id"], t.get("playlistEntryId")) for t in tracks]
-            s_pairs = get_pairs(server_tracks)
-
-            #Three cases for desired pairs:
-            # 1: (sid, eid from this playlist): either no action or add (if someone adds a dupe from the same playlist)
-            # 2: (sid, eid not from this playlist): add
-            # 3: (sid, None): add
-            d_pairs = get_pairs(desired_playlist)
-            
-            #Counters are multisets.
-            s_count = collections.Counter(s_pairs)
-            d_count = collections.Counter(d_pairs)
-            
-            to_del = s_count - d_count
-            to_add = d_count - s_count
-            to_keep = set(s_count & d_count) #guaranteed to be counts of 1
-            
             ##Delete unwanted entries.
             to_del_eids = [pair[1] for pair in to_del.elements()]
             if to_del_eids and not utils.call_succeeded(self._remove_entries_from_playlist(playlist_id, to_del_eids)):
@@ -429,18 +422,11 @@ class Api(UsesLog):
                         eid = match.get("playlistEntryId") 
                         pair = (sid, eid)
 
-                        self.log.debug("match: %s", pair)
-
-                        #Ensure we don't overwrite eids we want to keep.
                         if pair in to_keep:
-                            to_keep.remove(pair)
-                            self.log.debug("keeping")
+                            to_keep.remove(pair) #only keep one of the to_keep eids.
                         else:
-                            self.log.debug("overwrite pool: %s", new_sid_to_eids[sid])
-
                             match["playlistEntryId"] = new_sid_to_eids[sid].pop()
                             if len(new_sid_to_eids[sid]) == 0:
-                                self.log.debug("pool exhausted")
                                 del new_sid_to_eids[sid]
                             
 
@@ -449,36 +435,34 @@ class Api(UsesLog):
 
             #The web client has no way to dictate the order without block insertion,
             # but the api actually supports setting the order to a given list.
-            #For whatever reason, though, you need to set it backwards; might be
+            #For whatever reason, though, it needs to be set backwards; might be
             # able to get around this by messing with afterEntry and beforeEntry parameters.
-            sids, eids = zip(*[(s["id"], s["playlistEntryId"])
-                          for s in desired_playlist[::-1]])
+            sids, eids = zip(*tools.get_id_pairs(desired_playlist[::-1]))
 
             if sids and not utils.call_succeeded(self._wc_call("changeplaylistorder", playlist_id, sids, eids)):
                 raise PlaylistModificationError
 
             ##Clean up the backup.
-            #Nothing to do if this fails, so assume it succeeds.
+            #Nothing to do if this fails (retry?), so assume it succeeds.
             if safe: self.delete_playlist(backup_id)
-
             return True
 
         except PlaylistModificationError:
-            if not safe:
-                self.log.warning("a subcall of change_playlist failed; the playlist is in an inconsistent state")
-                return False
-            else:
+            self.log.warning("a subcall of change_playlist failed - playlist %s is in an inconsistent state", playlist_id)
+            reverted = False
+
+            if safe:
                 self.log.warning("attempting to revert changes from playlist '%s_gmusicapi_backup'", playlist_name)
+
                 if all(map(utils.call_succeeded,
                            [self.delete_playlist(playlist_id),
                             self.change_playlist_name(backup_id, playlist_name)])):
+                    reverted = True
                     
-                    self.log.warning("reverted changes safely; playlist id of '%s' is now '%s'", playlist_name, backup_id)
-                    return True
-                else:
-                    self.log.warning("failed to revert changes!")
-                    return False
-
+            if reverted:
+                self.log.warning("reverted changes safely; playlist id of '%s' is now '%s'", playlist_name, backup_id)
+            
+            return reverted
                 
 
     def _find_deletions(self, orig, after_dels):
