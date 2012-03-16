@@ -40,6 +40,7 @@ from session import WC_Session, MM_Session
 from protocol import WC_Protocol, MM_Protocol
 from utils import utils
 from utils.apilogging import UsesLog
+from gmtools import tools
 
 
 class PlaylistModificationError(exceptions.Exception):
@@ -328,10 +329,10 @@ class Api(UsesLog):
         """Changes the order and contents of an existing playlist. Returns the contents of the modified playlist.
         
         :param playlist_id: the id of the playlist being modified.
-        :param desired_playlist: the desired contents and order as a list of song dictionaries, like is returned from :func:`get_playlist_songs`. Song dictionaries without an `"entryId"` key are assumed to be new additions to the playlist.        
+        :param desired_playlist: the desired contents and order as a list of song dictionaries, like is returned from :func:`get_playlist_songs`.
         :param safe: if True, ensure playlists will not be lost if a problem occurs. This may slow down updates.
 
-        The server only provides 3 basic mutations: addition, deletion, and reordering. This function will perform all three.
+        The server only provides 3 basic mutations: addition, deletion, and reordering. This function will perform all three, given the desired playlist. 
 
         However, this might involve multiple calls to the server, and if a call fails, the playlist will be left in an inconsistent state. The `safe` option makes a backup of the playlist before doing anything, so it can be rolled back if a problem occurs. This is enabled by default. Note that this might slow down updates of very large playlists.
 
@@ -366,53 +367,39 @@ class Api(UsesLog):
                 server_tracks = self.get_playlist_songs(playlist_id)
 
             #Add new songs and update desired list with new entryIds.
-            add_song_ids = [t["id"] for t in desired_playlist if not "playlistEntryId" in t]
-            num_added = len(add_song_ids)
+            added_songs = [t for t in desired_playlist if not "playlistEntryId" in t]
+            num_added = len(added_songs)
             if  num_added > 0:
-                if not utils.call_succeeded(self.add_songs_to_playlist(playlist_id, add_song_ids)):
-                    raise PlaylistModificationError
-
-                server_tracks = self.get_playlist_songs(playlist_id)
-
-                #Update eids with the assigned ones from the server.
-                server_added_tracks = server_tracks[-1 * num_added:]
-
-                #Map song id -> [<entryid>, <entryid>]..
-                sid_to_eids = {}
-                add_song_ids = set(add_song_ids)
-
-                for sid in add_song_ids:
-                    sid_to_eids[sid] = [t["playlistEntryId"] 
-                                        for t in server_added_tracks 
-                                        if t["id"] == sid]
-                    
-                    
-                for desired_t in desired_playlist:
-                    if "playlistEntryId" not in desired_t:
-                        desired_t["playlistEntryId"] = sid_to_eids[desired_t["id"]].pop()
-
-
-            #Now, the user updated list and server have the same entryIds.
-            #Reorder tracks:
-            reorder_transactions = self._build_reorder_transactions(server_tracks, desired_playlist)
-
-            from prompt import prompt; exec prompt in locals(), globals()
-
-            for from_i, insert_i in reorder_transactions:
-                moving = server_tracks[from_i]
-                after_entry_id = server_tracks[insert_i-1]["playlistEntryId"] if insert_i > 0 else ""
-                before_entry_id = server_tracks[insert_i]["playlistEntryId"] if insert_i < len(server_tracks) else ""
-
-                res = self._wc_call("changeplaylistorder", playlist_id, 
-                                    [moving["id"]], [moving["playlistEntryId"]],
-                                    after_entry_id, before_entry_id)
+                res = self.add_songs_to_playlist(playlist_id, [s["id"] for s in added_songs])
 
                 if not utils.call_succeeded(res):
                     raise PlaylistModificationError
 
                 server_tracks = self.get_playlist_songs(playlist_id)
 
-            return server_tracks
+                #Update eids with the assigned ones from the server.
+                for i in range(len(added_songs)):
+                    added_songs[i]["playlistEntryId"] = res["songIds"][i]["playlistEntryId"]
+
+
+            #Now, the right tracks are in the playlist.
+            #Set the order of the tracks:
+
+            #The web client has no way to dictate the order without block insertion,
+            # but the api actually supports setting the order to a given list.
+            #For whatever reason, though, you need to set it backwards; might be
+            # able to get around this by messing with afterEntry and beforeEntry parameters.
+            sids, eids = zip(*[(s["id"], s["playlistEntryId"])
+                          for s in desired_playlist[::-1]])
+
+            if not utils.call_succeeded(self._wc_call("changeplaylistorder", playlist_id, sids, eids)):
+                raise PlaylistModificationError
+
+            #Clean up the backup.
+            #Nothing to do if this fails, so assume it succeeds.
+            if safe: self.delete_playlist(backup_id)
+
+            return self.get_playlist_songs(playlist_id)
 
         except PlaylistModificationError:
             if not safe:
@@ -420,10 +407,17 @@ class Api(UsesLog):
                 return None
             else:
                 self.warning("attempting to revert changes from playlist '%s_gmusicapi_backup'", playlist_name)
-                self.delete_playlist(playlist_id)
-                self.change_playlist_name(backup_id, playlist_name)
-                self.warning("reverted changes safely.")
-                return self.get_playlist_songs(backup_id)
+                if all(map(utils.call_succeeded,
+                           [self.delete_playlist(playlist_id),
+                            self.change_playlist_name(backup_id, playlist_name)])):
+                    
+                    self.warning("reverted changes safely; playlist id of '%s' is now '%s'", playlist_name, backup_id)
+                    return self.get_playlist_songs(backup_id)
+                else:
+                    self.warning("failed to revert changes!")
+                    return None
+
+                
 
     def _find_deletions(self, orig, after_dels):
         """Given the original playlist and the playlist with deletions, return a list of playlistEntryIds that were deleted."""
