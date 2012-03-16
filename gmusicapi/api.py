@@ -346,7 +346,7 @@ class Api(UsesLog):
         :param desired_playlist: the desired contents and order as a list of song dictionaries, like is returned from :func:`get_playlist_songs`.
         :param safe: if True, ensure playlists will not be lost if a problem occurs. This may slow down updates.
 
-        The server only provides 3 basic mutations: addition, deletion, and reordering. This function will perform all three, given a list representation of the desired playlist.
+        The server only provides 3 basic (atomic) playlist mutations: addition, deletion, and reordering. This function will automagically use these to apply a list representation of the desired changes.
 
         However, this might involve multiple calls to the server, and if a call fails, the playlist will be left in an inconsistent state. The `safe` option makes a backup of the playlist before doing anything, so it can be rolled back if a problem occurs. This is enabled by default. Note that this might slow down updates of very large playlists.
 
@@ -365,11 +365,11 @@ class Api(UsesLog):
         ##Make the backup.
         #TODO pull this out; might even be useful to others
         if safe:
-            names_to_ids = self.get_playlists()['user']
+            names_to_ids = self.get_playlists(always_id_lists=True)['user']
 
             playlist_name = (ni_pair[0] 
                              for ni_pair in names_to_ids.iteritems()
-                             if ni_pair[1] == playlist_id).next()
+                             if playlist_id in ni_pair[1]).next()
 
             #The backup is stored on the server as a new playlist with "_gmusicapi_backup" appended to the backed up name.
             #We can't just store the backup here, since when rolling back we'd be relying on this function - which just failed.
