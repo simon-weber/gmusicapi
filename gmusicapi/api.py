@@ -31,6 +31,7 @@ import string
 import time
 import urllib
 import exceptions
+import collections
 
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
@@ -326,21 +327,24 @@ class Api(UsesLog):
         return res['url']
         
     def change_playlist(self, playlist_id, desired_playlist, safe=True):
-        """Changes the order and contents of an existing playlist. Returns the contents of the modified playlist.
+        """Changes the order and contents of an existing playlist. Returns True on success, False if the playlist could be in an inconsistent state.
         
         :param playlist_id: the id of the playlist being modified.
         :param desired_playlist: the desired contents and order as a list of song dictionaries, like is returned from :func:`get_playlist_songs`.
         :param safe: if True, ensure playlists will not be lost if a problem occurs. This may slow down updates.
 
-        The server only provides 3 basic mutations: addition, deletion, and reordering. This function will perform all three, given the desired playlist. 
+        The server only provides 3 basic mutations: addition, deletion, and reordering. This function will perform all three, given a list representation of the desired playlist.
 
         However, this might involve multiple calls to the server, and if a call fails, the playlist will be left in an inconsistent state. The `safe` option makes a backup of the playlist before doing anything, so it can be rolled back if a problem occurs. This is enabled by default. Note that this might slow down updates of very large playlists.
 
         There will always be a warning if a problem occurs, even if `safe` is False.
         """
-
+        #TODO refactoring
+        
         server_tracks = self.get_playlist_songs(playlist_id)
 
+        ##Make the backup.
+        #TODO pull this out; might even be useful to others
         if safe:
             names_to_ids = self.get_playlists()['user']
 
@@ -355,35 +359,49 @@ class Api(UsesLog):
             #Copy in all the songs.
             self.add_songs_to_playlist(backup_id, [t["id"] for t in server_tracks])
 
-            
-        #Change the playlist in 3 steps:
+        ##Try to change.
         try:
-            #Delete songs that are no longer present:
-            del_entry_ids = set(self._find_deletions(server_tracks, desired_playlist))        
-            if len(del_entry_ids) > 0:
-                if not utils.call_succeeded(self._remove_entries_from_playlist(playlist_id, del_entry_ids)):
-                    raise PlaylistModificationError
+            ##Determine which tracks to add and delete using multisets.
 
-                server_tracks = self.get_playlist_songs(playlist_id)
+            #Not all tracks will have a playlistEntryId, so use .get
+            get_pairs = lambda tracks: [(t["id"], t.get("playlistEntryId")) for t in tracks]
+            s_pairs = get_pairs(server_tracks)
 
-            #Add new songs and update desired list with new entryIds.
-            added_songs = [t for t in desired_playlist if not "playlistEntryId" in t]
-            num_added = len(added_songs)
-            if  num_added > 0:
-                res = self.add_songs_to_playlist(playlist_id, [s["id"] for s in added_songs])
+            #Three cases for desired pairs:
+            # 1: (sid, eid from this playlist): either no action or add (if someone adds a dupe from the same playlist)
+            # 2: (sid, eid not from this playlist): add
+            # 3: (sid, None): add
+            d_pairs = get_pairs(desired_playlist)
+            
+            #Counters are multisets.
+            s_count = collections.Counter(s_pairs)
+            d_count = collections.Counter(d_pairs)
+            
+            to_del = s_count - d_count
+            to_add = d_count - s_count
+            
+            ##Delete unwanted entries.
+            to_del_eids = [pair[1] for pair in to_del.elements()]
+            if not utils.call_succeeded(self._remove_entries_from_playlist(playlist_id, to_del_eids)):
+                raise PlaylistModificationError
 
-                if not utils.call_succeeded(res):
-                    raise PlaylistModificationError
+            ##Add new entries.
+            to_add_sids = [pair[0] for pair in to_add.elements()]
+            res = self.add_songs_to_playlist(playlist_id, to_add_sids)
+            if not utils.call_succeeded(res):
+                raise PlaylistModificationError
 
-                server_tracks = self.get_playlist_songs(playlist_id)
+            #Update desired tracks with added tracks server-given eids.
+            new_pairs = [(s["songId"], s["playlistEntryId"]) for s in res["songIds"]]
+            new_eids = set([pair[1] for pair in new_pairs])
 
-                #Update eids with the assigned ones from the server.
-                for i in range(len(added_songs)):
-                    added_songs[i]["playlistEntryId"] = res["songIds"][i]["playlistEntryId"]
+            for new_sid, new_eid in new_pairs:
+                match = next((s for s in desired_playlist
+                              if s["id"] == new_sid and not s.get("playlistEntryId") in new_eids))
+                match["playlistEntryId"] = new_eid #modify the actual entry in the desired track
 
-
-            #Now, the right tracks are in the playlist.
-            #Set the order of the tracks:
+            ##Now, the right eids are in the playlist.
+            ##Set the order of the tracks:
 
             #The web client has no way to dictate the order without block insertion,
             # but the api actually supports setting the order to a given list.
@@ -395,16 +413,16 @@ class Api(UsesLog):
             if not utils.call_succeeded(self._wc_call("changeplaylistorder", playlist_id, sids, eids)):
                 raise PlaylistModificationError
 
-            #Clean up the backup.
+            ##Clean up the backup.
             #Nothing to do if this fails, so assume it succeeds.
             if safe: self.delete_playlist(backup_id)
 
-            return self.get_playlist_songs(playlist_id)
+            return True
 
         except PlaylistModificationError:
             if not safe:
                 self.warning("a subcall of change_playlist failed; the playlist is in an inconsistent state")
-                return None
+                return False
             else:
                 self.warning("attempting to revert changes from playlist '%s_gmusicapi_backup'", playlist_name)
                 if all(map(utils.call_succeeded,
@@ -412,10 +430,10 @@ class Api(UsesLog):
                             self.change_playlist_name(backup_id, playlist_name)])):
                     
                     self.warning("reverted changes safely; playlist id of '%s' is now '%s'", playlist_name, backup_id)
-                    return self.get_playlist_songs(backup_id)
+                    return True
                 else:
                     self.warning("failed to revert changes!")
-                    return None
+                    return False
 
                 
 
