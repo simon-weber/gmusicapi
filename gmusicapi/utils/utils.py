@@ -82,13 +82,19 @@ def unescape_html(s):
               lambda m: unichr(name2codepoint[m.group(1)]), s)
 
 
-
-schema_for = {int: {"type": "number"},
-              str: {"type": "string", "blank":True}, #allow any string field to be blank
-              bool: {"type": "boolean"}}
-
 #Used to mark a field as unimplemented.
 #From: http://stackoverflow.com/questions/1151212/equivalent-of-notimplementederror-for-fields-in-python
 @property
 def NotImplementedField(self):
     raise NotImplementedError
+
+def call_succeeded(response):
+    """Returns True if the call succeeded, False otherwise."""
+    
+    #Failed responses always have a success=False key.
+    #Some successful responses do not have a success=True key, however.
+
+    if 'success' in response.keys():
+        return response['success']
+    else:
+        return True
