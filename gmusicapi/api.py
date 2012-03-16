@@ -463,50 +463,7 @@ class Api(UsesLog):
                 self.log.warning("reverted changes safely; playlist id of '%s' is now '%s'", playlist_name, backup_id)
             
             return reverted
-                
-
-    def _find_deletions(self, orig, after_dels):
-        """Given the original playlist and the playlist with deletions, return a list of playlistEntryIds that were deleted."""
-        orig_eids = set((t["playlistEntryId"] for t in orig if "playlistEntryId" in t))
-        eids_after_dels = set((t["playlistEntryId"] for t in after_dels if "playlistEntryId" in t))
-
-        return list(orig_eids - eids_after_dels)
-
-    def _build_reorder_transactions(self, orig, after_reorder):
-        """Given the original playlist and reordered playlist, return a list of (from position, insert_position) transactions that will create the reordered playlist from the original.
-
-        It is assumed that the sets of entryIds in each playlist is the same"""
-        
-        orig_eids = [t["playlistEntryId"] for t in orig]
-        eids_after_reorder = [t["playlistEntryId"] for t in after_reorder]
-
-        return self._build_reorder_transactions_rec(orig_eids, eids_after_reorder, trans=[])
-
-    def _build_reorder_transactions_rec(self, o_eids, re_eids, trans):
-        #Find the first out of order index.
-        for i in xrange(len(o_eids)):
-            if o_eids[i] != re_eids[i]:
-                from_i = i
-                break
-        else:
-            #They're equal.
-            return trans
-
-        moving_eid = o_eids[from_i]
-
-        #Find where it belongs.
-        to_i = re_eids.index(moving_eid, from_i)        
-
-        #Move it and record the transaction.
-        del o_eids[from_i]
-        o_eids.insert(to_i, moving_eid)
-
-        trans.append((from_i, to_i))
-
-        return self._build_reorder_transactions_rec(o_eids, re_eids, trans)
-
     
-
     @utils.accept_singleton(basestring, 2)
     def add_songs_to_playlist(self, playlist_id, song_ids):
         """Adds songs to a playlist.
