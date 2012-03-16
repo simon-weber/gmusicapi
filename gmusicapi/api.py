@@ -374,18 +374,33 @@ class Api(UsesLog):
 
                 server_tracks = self.get_playlist_songs(playlist_id)
 
-                #Assuming added tracks are appended to the playlist in order.
-                added_tracks = server_tracks[-1 * num_added:]
-                for desired, server in zip(desired_playlist[-1 * num_added:], added_tracks):
-                    desired["playlistEntryId"] = server["playlistEntryId"]
+                #Update eids with the assigned ones from the server.
+                server_added_tracks = server_tracks[-1 * num_added:]
+
+                #Map song id -> [<entryid>, <entryid>]..
+                sid_to_eids = {}
+                add_song_ids = set(add_song_ids)
+
+                for sid in add_song_ids:
+                    sid_to_eids[sid] = [t["playlistEntryId"] 
+                                        for t in server_added_tracks 
+                                        if t["id"] == sid]
+                    
+                    
+                for desired_t in desired_playlist:
+                    if "playlistEntryId" not in desired_t:
+                        desired_t["playlistEntryId"] = sid_to_eids[desired_t["id"]].pop()
 
 
             #Now, the user updated list and server have the same entryIds.
             #Reorder tracks:
             reorder_transactions = self._build_reorder_transactions(server_tracks, desired_playlist)
-            for from_i, insert_i in reoder_transactions:
+
+            from prompt import prompt; exec prompt in locals(), globals()
+
+            for from_i, insert_i in reorder_transactions:
                 moving = server_tracks[from_i]
-                after_entry_id = server_tracks[insert_i - 1]["playlistEntryId"] if insert_i != 0 else ""
+                after_entry_id = server_tracks[insert_i-1]["playlistEntryId"] if insert_i > 0 else ""
                 before_entry_id = server_tracks[insert_i]["playlistEntryId"] if insert_i < len(server_tracks) else ""
 
                 res = self._wc_call("changeplaylistorder", playlist_id, 
@@ -399,7 +414,7 @@ class Api(UsesLog):
 
             return server_tracks
 
-        except PlaylistModifcationError:
+        except PlaylistModificationError:
             if not safe:
                 self.warning("a subcall of change_playlist failed; the playlist is in an inconsistent state")
                 return None
@@ -410,14 +425,14 @@ class Api(UsesLog):
                 self.warning("reverted changes safely.")
                 return self.get_playlist_songs(backup_id)
 
-    def _find_deletions(orig, after_dels):
+    def _find_deletions(self, orig, after_dels):
         """Given the original playlist and the playlist with deletions, return a list of playlistEntryIds that were deleted."""
         orig_eids = set((t["playlistEntryId"] for t in orig if "playlistEntryId" in t))
         eids_after_dels = set((t["playlistEntryId"] for t in after_dels if "playlistEntryId" in t))
 
         return list(orig_eids - eids_after_dels)
 
-    def _build_reorder_transactions(orig, after_reorder):
+    def _build_reorder_transactions(self, orig, after_reorder):
         """Given the original playlist and reordered playlist, return a list of (from position, insert_position) transactions that will create the reordered playlist from the original.
 
         It is assumed that the sets of entryIds in each playlist is the same"""
@@ -427,7 +442,7 @@ class Api(UsesLog):
 
         return self._build_reorder_transactions_rec(orig_eids, eids_after_reorder, trans=[])
 
-    def _build_reorder_transactions_rec(o_eids, re_eids, trans):
+    def _build_reorder_transactions_rec(self, o_eids, re_eids, trans):
         #Find the first out of order index.
         for i in xrange(len(o_eids)):
             if o_eids[i] != re_eids[i]:
@@ -444,11 +459,13 @@ class Api(UsesLog):
 
         #Move it and record the transaction.
         del o_eids[from_i]
-        o_eids.insert(moving_eid, to_i)
+        o_eids.insert(to_i, moving_eid)
 
         trans.append((from_i, to_i))
 
         return self._build_reorder_transactions_rec(o_eids, re_eids, trans)
+
+    
 
     @utils.accept_singleton(basestring, 2)
     def add_songs_to_playlist(self, playlist_id, song_ids):
@@ -460,8 +477,7 @@ class Api(UsesLog):
 
         return self._wc_call("addtoplaylist", playlist_id, song_ids)
 
-    
-    @utils.accept_singleton(basestring)
+    @utils.accept_singleton(basestring, 2)
     def _remove_entries_from_playlist(self, playlist_id, entry_ids_to_remove):
         """Removes entries from a playlist.
 
@@ -473,9 +489,9 @@ class Api(UsesLog):
         playlist_tracks = self.get_playlist_songs(playlist_id)
         remove_eid_set = set(entry_ids_to_remove)
         
-        e_s_id_pairs = ((t["id"], t["playlistEntryId"]) 
+        e_s_id_pairs = [(t["id"], t["playlistEntryId"]) 
                         for t in playlist_tracks
-                        if t["playlistEntryId"] in remove_eid_set) 
+                        if t["playlistEntryId"] in remove_eid_set]
 
         num_not_found = len(entry_ids_to_remove) - len(e_s_id_pairs)
         if num_not_found > 0:

@@ -123,7 +123,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         p_id = self.playlists['playlist to change']
         tracks = self.api.get_playlist_songs(p_id)
 
-        delete, add, reorder = [random.choice([True, False]) for i in xrange(3)]
+        delete, add, reorder = [random.choice([True]) for i in xrange(3)]
         if delete:
             self.log.debug("deleting tracks")
             track_is = range(len(tracks))
@@ -139,10 +139,12 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         self.api.change_playlist(p_id, tracks)
         
-        server_tracks = self.assert_success(
-            self.api.get_playlist_songs(p_id))
+        server_tracks = self.api.get_playlist_songs(p_id)
 
         self.assertTrue(len(tracks) == len(server_tracks))
+
+        from prompt import prompt; exec prompt
+        
 
         self.assertTrue(
             all((local_t["id"] == server_t["id"]
