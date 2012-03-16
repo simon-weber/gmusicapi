@@ -219,7 +219,7 @@ class Api(UsesLog):
 
         return self._wc_call("loadplaylist", playlist_id)["playlist"]
 
-    def get_playlists(self, auto=True, instant=True, user=True):
+    def get_playlists(self, auto=True, instant=True, user=True, always_id_lists=False):
         """Returns a dictionary mapping playlist types to dictionaries of ``{"<playlist name>": "<playlist id>"}`` pairs.
 
         Available playlist types are:
@@ -228,11 +228,14 @@ class Api(UsesLog):
         * "`instant`" - instant mixes
         * "`user`" - user-defined playlists
 
-        Playlist names can be unicode strings.
-
         :param auto: make an "`auto`" entry in the result.
         :param instant: make an "`instant`" entry in the result.
         :param user: make a "`user`" entry in the result.
+        :param always_id_lists: when False, map name -> id when there is a single playlist for that name. When True, always map to a list (which may only have a single id in it).
+
+        Google Music allows for multiple playlists of the same name. Since this is uncommon, `always_id_lists` is False by default: names will map directly to ids when unique. However, this can create ambiguity if the api user doesn't have advance knowledge of the playlists. In this case, setting `always_id_lists` to True is recommended.
+
+        Note that playlist names can be unicode strings.
         """
 
         playlists = {}
@@ -244,9 +247,9 @@ class Api(UsesLog):
         if auto:
             playlists['auto'] = self._get_auto_playlists()
         if instant:
-            playlists['instant'] = self._get_instant_mixes(markup)
+            playlists['instant'] = self._get_instant_mixes(always_id_lists, markup)
         if user:
-            playlists['user'] = self._get_user_playlists(markup)
+            playlists['user'] = self._get_user_playlists(always_id_lists, markup)
 
         return playlists
         
@@ -254,13 +257,14 @@ class Api(UsesLog):
         """For auto playlists, returns a dictionary which maps autoplaylist name to id."""
         
         #Auto playlist ids are hardcoded in the wc javascript.
-        #If Google releases Music internationally, this will be broken.
+        #If Google releases Music internationally, this will probably be broken.
+        #TODO: add a test to keep watch of this.
         return {"Thumbs up": "auto-playlist-thumbs-up", 
                 "Last added": "auto-playlist-recent",
                 "Free and purchased": "auto-playlist-promo"}
 
     
-    def _get_playlists_in(self, ul_id, markup=None):
+    def _get_playlists_in(self, ul_id, always_id_lists, markup):
         """Returns a dictionary mapping playlist name to id for the given ul id in the markup.
 
         :param ul_id: the id of the unordered list that defines the playlists.
@@ -287,17 +291,25 @@ class Api(UsesLog):
         playlists = {}
         
         for p_id, p_name in id_name:
-            playlists[utils.unescape_html(p_name)] = p_id
+            readable_name = utils.unescape_html(p_name)
+            if not readable_name in playlists:
+                playlists[readable_name] = []
+            playlists[readable_name].append(p_id)
 
+        #Break down singleton lists if desired.
+        if not always_id_lists:
+            for name, id_list in playlists.iteritems():
+                if len(id_list) == 1: playlists[name]=id_list[0]
+        
         return playlists
         
-    def _get_instant_mixes(self, markup=None):
+    def _get_instant_mixes(self, always_id_lists, markup=None):
         """For instant mixes, returns a dictionary which maps instant mix name to id."""
-        return self._get_playlists_in("magic-playlists", markup)
+        return self._get_playlists_in("magic-playlists", always_id_lists, markup)
 
-    def _get_user_playlists(self, markup=None):
+    def _get_user_playlists(self, always_id_lists, markup=None):
         """For user-created playlists, returns a dictionary which maps playlist name to id."""
-        return self._get_playlists_in("playlists", markup)
+        return self._get_playlists_in("playlists", always_id_lists, markup)
 
     def get_song_download_info(self, song_id):
         """Returns a tuple ``("<download url>", <download count>)``.
