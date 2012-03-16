@@ -32,6 +32,7 @@ import time
 import urllib
 import exceptions
 import collections
+import copy
 
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
@@ -337,10 +338,16 @@ class Api(UsesLog):
 
         However, this might involve multiple calls to the server, and if a call fails, the playlist will be left in an inconsistent state. The `safe` option makes a backup of the playlist before doing anything, so it can be rolled back if a problem occurs. This is enabled by default. Note that this might slow down updates of very large playlists.
 
-        There will always be a warning if a problem occurs, even if `safe` is False.
+        There will always be a warning logged if a problem occurs, even if `safe` is False.
         """
         #TODO refactoring
         
+        #We'll be modifying the entries in the playlist, and need to copy it.
+        #Copying ensures two things:
+        # 1. the user won't see our changes
+        # 2. changing a key for one entry won't change it for another - which would be the case
+        #     if the user appended the same song twice, for example.
+        desired_playlist = [copy.deepcopy(t) for t in desired_playlist]
         server_tracks = self.get_playlist_songs(playlist_id)
 
         ##Make the backup.
@@ -379,26 +386,51 @@ class Api(UsesLog):
             
             to_del = s_count - d_count
             to_add = d_count - s_count
+            to_keep = set(s_count & d_count) #guaranteed to be counts of 1
             
             ##Delete unwanted entries.
             to_del_eids = [pair[1] for pair in to_del.elements()]
-            if not utils.call_succeeded(self._remove_entries_from_playlist(playlist_id, to_del_eids)):
+            if to_del_eids and not utils.call_succeeded(self._remove_entries_from_playlist(playlist_id, to_del_eids)):
                 raise PlaylistModificationError
 
             ##Add new entries.
             to_add_sids = [pair[0] for pair in to_add.elements()]
-            res = self.add_songs_to_playlist(playlist_id, to_add_sids)
-            if not utils.call_succeeded(res):
-                raise PlaylistModificationError
+            if to_add_sids:
+                res = self.add_songs_to_playlist(playlist_id, to_add_sids)
+                if not utils.call_succeeded(res):
+                    raise PlaylistModificationError
 
-            #Update desired tracks with added tracks server-given eids.
-            new_pairs = [(s["songId"], s["playlistEntryId"]) for s in res["songIds"]]
-            new_eids = set([pair[1] for pair in new_pairs])
+                ##Update desired tracks with added tracks server-given eids.
+                #Map new sid -> [eids]
+                new_sid_to_eids = {}
+                for sid, eid in ((s["songId"], s["playlistEntryId"]) for s in res["songIds"]):
+                    if not sid in new_sid_to_eids:
+                        new_sid_to_eids[sid] = []
+                    new_sid_to_eids[sid].append(eid)
 
-            for new_sid, new_eid in new_pairs:
-                match = next((s for s in desired_playlist
-                              if s["id"] == new_sid and not s.get("playlistEntryId") in new_eids))
-                match["playlistEntryId"] = new_eid #modify the actual entry in the desired track
+                    
+                for d_t in desired_playlist:
+                    if d_t["id"] in new_sid_to_eids:
+                        #Found a matching sid.
+                        match = d_t
+                        sid = match["id"]
+                        eid = match.get("playlistEntryId") 
+                        pair = (sid, eid)
+
+                        self.log.debug("match: %s", pair)
+
+                        #Ensure we don't overwrite eids we want to keep.
+                        if pair in to_keep:
+                            to_keep.remove(pair)
+                            self.log.debug("keeping")
+                        else:
+                            self.log.debug("overwrite pool: %s", new_sid_to_eids[sid])
+
+                            match["playlistEntryId"] = new_sid_to_eids[sid].pop()
+                            if len(new_sid_to_eids[sid]) == 0:
+                                self.log.debug("pool exhausted")
+                                del new_sid_to_eids[sid]
+                            
 
             ##Now, the right eids are in the playlist.
             ##Set the order of the tracks:
@@ -410,7 +442,7 @@ class Api(UsesLog):
             sids, eids = zip(*[(s["id"], s["playlistEntryId"])
                           for s in desired_playlist[::-1]])
 
-            if not utils.call_succeeded(self._wc_call("changeplaylistorder", playlist_id, sids, eids)):
+            if sids and not utils.call_succeeded(self._wc_call("changeplaylistorder", playlist_id, sids, eids)):
                 raise PlaylistModificationError
 
             ##Clean up the backup.
@@ -421,18 +453,18 @@ class Api(UsesLog):
 
         except PlaylistModificationError:
             if not safe:
-                self.warning("a subcall of change_playlist failed; the playlist is in an inconsistent state")
+                self.log.warning("a subcall of change_playlist failed; the playlist is in an inconsistent state")
                 return False
             else:
-                self.warning("attempting to revert changes from playlist '%s_gmusicapi_backup'", playlist_name)
+                self.log.warning("attempting to revert changes from playlist '%s_gmusicapi_backup'", playlist_name)
                 if all(map(utils.call_succeeded,
                            [self.delete_playlist(playlist_id),
                             self.change_playlist_name(backup_id, playlist_name)])):
                     
-                    self.warning("reverted changes safely; playlist id of '%s' is now '%s'", playlist_name, backup_id)
+                    self.log.warning("reverted changes safely; playlist id of '%s' is now '%s'", playlist_name, backup_id)
                     return True
                 else:
-                    self.warning("failed to revert changes!")
+                    self.log.warning("failed to revert changes!")
                     return False
 
                 
@@ -541,7 +573,7 @@ class Api(UsesLog):
         protocol = getattr(self.wc_protocol, service_name)
 
         #Always log the request.
-        self.log.debug("wc_call %s(%s)", service_name, args)
+        self.log.debug("wc_call %s %s", service_name, args)
         
         body, res_schema = protocol.build_transaction(*args)
         

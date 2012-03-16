@@ -123,16 +123,24 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         p_id = self.playlists['playlist to change']
         tracks = self.api.get_playlist_songs(p_id)
 
-        delete, add, reorder = [random.choice([True]) for i in xrange(3)]
+        #Apply random modifications.
+        delete, add_dupe, add_blank, reorder = [random.choice([True]) for i in xrange(4)]
+
         if delete:
             self.log.debug("deleting tracks")
             track_is = range(len(tracks))
             #Select a random number of indices to delete.
             del_is = set(random.sample(track_is, random.choice(track_is)))
             tracks = [track for i, track in enumerate(tracks) if not i in del_is]
-        if add:
-            self.log.debug("adding tracks")
-            tracks.extend(random.sample(self.library, 10))
+
+        if add_dupe:
+            self.log.debug("adding dupe tracks from same playlist")
+            tracks.extend(random.sample(tracks, random.randrange(len(tracks))))
+            
+        if add_blank:
+            self.log.debug("adding random tracks with no eid")
+            tracks.extend(random.sample(self.library, random.randrange(len(tracks))))
+
         if reorder:
             self.log.debug("shuffling tracks")
             random.shuffle(tracks)
@@ -142,9 +150,6 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         server_tracks = self.api.get_playlist_songs(p_id)
 
         self.assertTrue(len(tracks) == len(server_tracks))
-
-        from prompt import prompt; exec prompt
-        
 
         self.assertTrue(
             all((local_t["id"] == server_t["id"]

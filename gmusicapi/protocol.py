@@ -409,7 +409,7 @@ class WC_Protocol:
 
             res = {"type": "object",
                      "properties":{
-                       "afterEntryId": {"type":"string"},
+                       "afterEntryId": {"type":"string", "blank":True},
                        "playlistId": {"type":"string"},
                        "movedSongIds":{
                            "type":"array",
