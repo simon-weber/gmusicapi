@@ -71,7 +71,7 @@ class WC_Session(UsesLog):
 
         return self.open_https_url(url_builder, extra_url_args, encoded_data)
 
-    def open_https_url(self, url_builder, extra_url_args=None, encoded_data = None):
+    def open_https_url(self, url_builder, extra_url_args=None, encoded_data = None, user_agent=None):
         """Opens an https url using the current session and returns the response.
         Code adapted from: http://code.google.com/p/gdatacopier/source/browse/tags/gdatacopier-1.0.2/gdatacopier.py
         :param url_builder: the url, or a function to receieve a dictionary of querystring arg/val pairs and return the url.
@@ -97,7 +97,10 @@ class WC_Session(UsesLog):
         
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self._cookie_jar))
 
-        opener.addheaders = [('User-agent', self._user_agent)]
+        if not user_agent:
+            user_agent = self._user_agent
+
+        opener.addheaders = [('User-agent', user_agent)]
         
         if encoded_data:
             response = opener.open(url, encoded_data)
@@ -118,6 +121,33 @@ class WC_Session(UsesLog):
                 return cookie
 
         return None
+
+    def sid_login(self, sid, lsid):
+        """Attempts to bump an existing session to a full web client session.
+        Returns True on success, False on failure.
+
+        :param sid:
+        
+        This method is used by Music Manager when "go to Google Music" is clicked.
+        """
+
+        if self.logged_in:
+            raise AlreadyLoggedIn
+
+        body = "SID={}&LSID={}&service=gaia".format(urllib.quote_plus(sid), urllib.quote_plus(lsid))
+
+        #Get authtoken.
+        res = self.open_https_url("https://www.google.com/accounts/IssueAuthToken", encoded_data=body, user_agent="Music Manager (1, 0, 24, 7712 - Windows)")
+        authtoken = res.read()[:-1]
+
+        #Use authtoken to get session cookies.
+        res = self.open_https_url("https://accounts.google.com/TokenAuth?auth={}%0A&service=sj&continue=http%3A%2F%2Fmusic.google.com%2Fmusic%2Flisten%3Fhl%3Den&source=jumper".format(authtoken))
+        
+        #Hit listen to get xt.
+        res = self.open_https_url("https://play.google.com/music/listen?hl=en&u=0")
+        
+        self.logged_in = True if (self.get_cookie("SID") and self.get_cookie("xt")) else False
+        return self.logged_in
 
     def login(self, email, password):
         """Attempts to login with the given credentials.
@@ -183,6 +213,8 @@ class MM_Session:
 
     def __init__(self):
         self.sid = None
+        self.lsid = None
+        self.auth = None
 
         self.android = httplib.HTTPSConnection("android.clients.google.com")
         self.jumper = httplib.HTTPConnection('uploadsj.clients.google.com')
@@ -201,18 +233,14 @@ class MM_Session:
         r = urllib.urlopen("https://google.com/accounts/ClientLogin", 
                             urllib.urlencode(payload)).read()
 
-        first = r.split("\n")[0]
-
-        #Bad auth will return Error=BadAuthentication\n
-
-        if first.split("=")[0] == "SID":
-            self.sid = first
-            #self.uauthresp.ParseFromString(self.protopost("upauth", self.uauth))
-            #self.clientstateresp.ParseFromString(self.protopost("clientstate", self.clientstate))
-            return True
-        else:
+        return_pairs = dict([e.split("=") for e in r.split("\n") if len(e) > 0])
+        if "Error" in return_pairs:
             return False
 
+        for key, val in return_pairs.iteritems():
+            setattr(self, str.lower(key), key+"="+val)
+
+        return self.sid != None
 
     def logout(self):
         self.sid = None
