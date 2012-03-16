@@ -151,6 +151,5 @@ class BaseTest(unittest.TestCase):
         for name, step in self.collect_steps(prefix):
             try:
                 step()
-            except Exception as e:
-                #self.fail("{} failed ({}: {})".format(step, type(e), e))
-                raise
+            except AssertionError as e:
+                self.fail("{} failed ({}: {})".format(step, type(e), e))
