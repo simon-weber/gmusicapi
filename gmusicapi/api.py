@@ -518,6 +518,27 @@ class Api(UsesLog):
         return self._wc_call("addtoplaylist", playlist_id, song_ids)
 
     @utils.accept_singleton(basestring, 2)
+    def remove_songs_from_playlist(self, playlist_id, sid_to_match):
+        """Removes all copies of the given song id from a playlist.
+
+        :param playlist_id: id of the playlist to remove songs from.
+        :param id_to_match: song id - matching playlist entries will be removed.
+
+        Note that this can have unexpected behavior when there is more than one copy of the song id in a playlist.
+        For example, if the playlist begins as ``[song1, song2, song3]``, and ``song1`` is added, removing song1 will remove both copies in the list, leaving ``[song2, song3]``.
+
+        For more control, get the playlist tracks with :func:`get_playlist_songs`, modify the list of tracks, then use :func:`change_playlist` to push changes to the server.
+        """
+
+        playlist_tracks = self.get_playlist_songs(playlist_id)
+        
+        matching_eids = [t["playlistEntryId"]
+                         for t in playlist_tracks
+                         if t["id"] == sid_to_match]
+
+        return self._remove_entries_from_playlist(playlist_id, matching_eids)
+    
+    @utils.accept_singleton(basestring, 2)
     def _remove_entries_from_playlist(self, playlist_id, entry_ids_to_remove):
         """Removes entries from a playlist.
 
