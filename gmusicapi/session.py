@@ -126,7 +126,8 @@ class WC_Session(UsesLog):
         """Attempts to bump an existing session to a full web client session.
         Returns True on success, False on failure.
 
-        :param sid:
+        :param sid: an authenticated sid.
+        :param lsid: an authenticated lsid.
         
         This method is used by Music Manager when "go to Google Music" is clicked.
         """
@@ -136,9 +137,9 @@ class WC_Session(UsesLog):
 
         body = "SID={}&LSID={}&service=gaia".format(urllib.quote_plus(sid), urllib.quote_plus(lsid))
 
-        #Get authtoken.
+        #Get authtoken. Request is refused unless MM is user agent.
         res = self.open_https_url("https://www.google.com/accounts/IssueAuthToken", encoded_data=body, user_agent="Music Manager (1, 0, 24, 7712 - Windows)")
-        authtoken = res.read()[:-1]
+        authtoken = res.read()[:-1] #remove \n
 
         #Use authtoken to get session cookies.
         res = self.open_https_url("https://accounts.google.com/TokenAuth?auth={}%0A&service=sj&continue=http%3A%2F%2Fmusic.google.com%2Fmusic%2Flisten%3Fhl%3Den&source=jumper".format(authtoken))
