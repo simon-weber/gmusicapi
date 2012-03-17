@@ -221,7 +221,7 @@ class Api(UsesLog):
         return library
 
     def get_playlist_songs(self, playlist_id):
-        """Returns a list of `song dictionaries`__, which include `entryId` keys for the given playlist.
+        """Returns a list of `song dictionaries`__, which include `playlistEntryId` keys for the given playlist.
 
         :param playlist_id: id of the playlist to load.
 

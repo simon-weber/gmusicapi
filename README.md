@@ -8,15 +8,20 @@ For those looking to use the api, documentation is hosted at Read the Docs: [doc
 
 For those looking to port or contribute, check out the code overview on the wiki: [wiki](https://github.com/simon-weber/Unofficial-Google-Music-API/wiki/Codebase-Overview).
 
-For bugs reports, feature requests, and contributions, [open an issue](https://github.com/simon-weber/Unofficial-Google-Music-API/issues/new).
+For bugs reports, feature requests, and contributions, go ahead and [open an issue](https://github.com/simon-weber/Unofficial-Google-Music-API/issues/new).
 
 ##Features
 
-Implemented in version 2012.03.16:
+**New in version 2012.03.16:**
+* Simple and robust playlist manipulation
+* Faster authentication
+* Support for non-unique playlist names
+See the changelog for details.
 
+**Feature Overview:**
 * Getting library information:
     * all song metadata
-    * all user playlist (auto, instant mix, and user-defined) titles and ids
+    * all user playlist titles and ids
     * songs from a specific playlist
 
 * Song streaming and downloading
@@ -26,8 +31,7 @@ Implemented in version 2012.03.16:
 * Playlist manipulation:
     * creation
     * name modification
-    * song addition and removal
-    * deletion
+    * song deletion, addition, and reordering
 
 * Song manipulation:
     * metadata modification (be sure to read protocol_info)
@@ -35,10 +39,9 @@ Implemented in version 2012.03.16:
 
 * Searching for songs, artists, and albums.
 
-What's on the way:
-
-* integration with the Android service api
-* better packaging
+**What's on the way:**
+* integration with the Android service api, thanks to [Darryl Pogue](https://github.com/dpogue/Unofficial-Google-Music-API)
+* more user-friendly abstractions
 
 ##Usage
 
@@ -70,19 +73,21 @@ You probably want to use easy_install to get validictory.
 
 ##Porting
 
-I've seen a lot of excitement about possible ports, especially for mobile and web use. If you want to, go for it! 
+I've seen a lot of excitement about possible ports, especially for mobile and web use. If you want to, go for it!
 
-You'll probably want to ignore anything related to Music Manager, since that's just for uploading. Information on uploading is [here](https://github.com/simon-weber/google-music-protocol). The [code overview on the wiki](https://github.com/simon-weber/Unofficial-Google-Music-API/wiki/Codebase-Overview) will probably also be useful.
+The current implementation uses the same interface that a web browser does, and a code overview can be found [on the wiki](https://github.com/simon-weber/Unofficial-Google-Music-API/wiki/Codebase-Overview). Darryl Pogue is working on a more durable implementation by emulating Google's Android app. His work is [here](https://github.com/dpogue/Unofficial-Google-Music-API), and may easier to port.
+
+Either way, you'll probably want to ignore anything related to Music Manager; that's just for uploading. If uploading interests you, more information is [here](https://github.com/simon-weber/google-music-protocol).
 
 Keep in mind that ports are likely to be considered derivative works under the GPL, and, again, be sure to respect Google.
 
-Lastly, get in touch if you're working on a port. I might be able to help out.
+Lastly, get in touch if you're working on a port. Even if I can't contribute, it's likely I know people who can help.
 
 ##Notes
 
-This is a work in progress, so debug logging is enabled by default.
-All logging is done to gmusicapi.log in your working directory, and warnings and above are printed to the console.
-Nothing authentication-related gets logged aside from "logged in" and "logged out" messages.
+Debug logging is enabled by default.
+All logging is done to gmusicapi.log in your working directory, with warnings and above printed to the console.
+Nothing related to authenticated gets logged aside from "logged in" and "logged out" messages.
 
 
 - - -
