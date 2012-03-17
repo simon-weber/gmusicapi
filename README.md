@@ -12,7 +12,7 @@ For bugs reports, feature requests, and contributions, [open an issue](https://g
 
 ##Features
 
-Implemented in version 2012.03.04:
+Implemented in version 2012.03.16:
 
 * Getting library information:
     * all song metadata
