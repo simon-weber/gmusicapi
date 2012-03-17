@@ -46,7 +46,7 @@ class UnsupportedFiletype(exceptions.Exception):
 class WC_Call:
     """An abstract class to hold the protocol for a web client call."""
     
-    _base_url = 'https://music.google.com/music/'
+    _base_url = 'https://play.google.com/music/'
     
     #Added to the url after _base_url. Most calls are made to /music/services/<call name>
     #Expected to end with a forward slash.
@@ -387,6 +387,38 @@ class WC_Protocol:
 
             return (req, res)
 
+    class changeplaylistorder(WC_Call):
+        """Reorders songs currently in a playlist."""
+        
+        @staticmethod
+        def build_transaction(playlist_id, song_ids_moving, entry_ids_moving, 
+                              after_entry_id="", before_entry_id=""):
+            """
+            :param playlist_id: id of the playlist getting reordered
+            :param song_ids_moving: a list of consecutive song ids to move, corresponds with entry_ids_moving
+            :param entry_ids_moving: a list of consecutive entry ids to move, corresponds with song_ids_moving
+            :param after_entry_id: the entry id to place these songs after. Empty string for first position.
+            :param before_entry_id: the entry id to place these songs before. Empty string for last position.
+            """
+
+            req = {"playlistId": playlist_id,
+                   "movedSongIds": song_ids_moving,
+                   "movedEntryIds": entry_ids_moving,
+                   "afterEntryId": after_entry_id,
+                   "beforeEntryId": before_entry_id}
+
+            res = {"type": "object",
+                     "properties":{
+                       "afterEntryId": {"type":"string", "blank":True},
+                       "playlistId": {"type":"string"},
+                       "movedSongIds":{
+                           "type":"array",
+                           "items": {"type":"string"}
+                           }
+                       }
+                   }
+ 
+            return (req, res)
     
     class deleteplaylist(WC_Call):
         """Deletes a playlist."""
@@ -581,8 +613,20 @@ class WC_Protocol:
                            "type":"object",
                            "properties":{
                                "artists": WC_Protocol.song_array,
-                               "albums": WC_Protocol.song_array,
-                               "songs": WC_Protocol.song_array
+                               "songs": WC_Protocol.song_array,
+                               #albums are different; they don't return songs, but albums.
+                               "albums":{
+                                   "type":"array",
+                                   "items":{
+                                       "type":"object",
+                                       "properties":{
+                                           "artistName":{"type":"string", "blank":True},
+                                           "imageUrl":{"type":"string", "required":False},
+                                           "albumArtist":{"type":"string", "blank":True},
+                                           "albumName":{"type":"string"},
+                                           }
+                                       }
+                                   }       
                                }
                            }
                        }

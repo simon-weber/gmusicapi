@@ -1,3 +1,10 @@
+2012.03.16:
+	add change_playlist for playlist modifications
+	get_playlists supports multiple playlists of the same name by returning lists of playlist ids. By default, it will return a single string (the id) for unique playlist names; see the always_id_lists parameter.
+	api.login now attempts to bump Music Manager authentication first, bypassing browser emulation. This allows for much faster authentication.
+	urls updated for the change to Google Play Music
+	remove_songs_from_playlist now takes (playlist_id, song_ids), for consistency with other playlist mutations
+	
 2012.03.04:
 	change name to gmusicapi to avoid ambiguity
 	change delete_song and remove_song_from_playlist to delete_songs and remove_songs_from_playlist, for consistency with other functions
