@@ -76,14 +76,18 @@ class Api(UsesLog):
         :param email: eg "`test@gmail.com`"
         :param password: plaintext password. It will not be stored and is sent over ssl."""
 
-        self.mm_session.login(email, password)
-        
-        #Try to bump mm auth first - it's faster than browser emulation.
+        self.mm_session.login(email, password)        
+        if not self.mm_session.sid:
+            self.log.info("failed to log in.")
+            return False
+
+        #MM now logged in.
+        #Try to bump mm auth first - it's faster than browser emulation.        
         sid = self.mm_session.sid.split('=')[-1]
         lsid = self.mm_session.lsid.split('=')[-1]
 
         if not self.wc_session.sid_login(sid, lsid): 
-            self.log.info("failed to bump mm auth. trying browser method")
+            self.log.info("failed to bump mm auth; trying browser emulation.")
             self.wc_session.login(email, password)
 
 
@@ -92,7 +96,7 @@ class Api(UsesLog):
             self._mm_pb_call("upload_auth") #what if this fails? can it?
             self.log.info("logged in")
         else:
-            self.log.info("failed to log in")
+            self.log.info("failed to log wc in")
 
         return self.is_authenticated()
 

@@ -613,8 +613,20 @@ class WC_Protocol:
                            "type":"object",
                            "properties":{
                                "artists": WC_Protocol.song_array,
-                               "albums": WC_Protocol.song_array,
-                               "songs": WC_Protocol.song_array
+                               "songs": WC_Protocol.song_array,
+                               #albums are different; they don't return songs, but albums.
+                               "albums":{
+                                   "type":"array",
+                                   "items":{
+                                       "type":"object",
+                                       "properties":{
+                                           "artistName":{"type":"string", "blank":True},
+                                           "imageUrl":{"type":"string", "required":False},
+                                           "albumArtist":{"type":"string", "blank":True},
+                                           "albumName":{"type":"string"},
+                                           }
+                                       }
+                                   }       
                                }
                            }
                        }
