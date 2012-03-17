@@ -13,12 +13,14 @@ For bugs reports, feature requests, and contributions, go ahead and [open an iss
 ##Features
 
 **New in version 2012.03.16:**
+
 * Simple and robust playlist manipulation
 * Faster authentication
 * Support for non-unique playlist names
 See the changelog for details.
 
 **Feature Overview:**
+
 * Getting library information:
     * all song metadata
     * all user playlist titles and ids
@@ -40,6 +42,7 @@ See the changelog for details.
 * Searching for songs, artists, and albums.
 
 **What's on the way:**
+
 * integration with the Android service api, thanks to [Darryl Pogue](https://github.com/dpogue/Unofficial-Google-Music-API)
 * more user-friendly abstractions
 
