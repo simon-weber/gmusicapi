@@ -500,14 +500,19 @@ class WC_Protocol:
 
     class loadplaylist(WC_Call):
         """Loads tracks from a playlist.
-        Tracks include an entryId.
+        Tracks include playlistEntryIds.
         """
 
         gets_logged = False
 
         @staticmethod
         def build_transaction(playlist_id):
-            req = {"id": playlist_id}
+
+            #Special call with empty body loads all playlists.
+            if playlist_id == "all":
+                req = {}
+            else:
+                req = {"id": playlist_id}
 
             res = {"type": "object",
                    "properties":{

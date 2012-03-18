@@ -230,6 +230,35 @@ class Api(UsesLog):
 
         return self._wc_call("loadplaylist", playlist_id)["playlist"]
 
+    def new_get_playlists(self, auto=True, instant=True, user=True, always_id_lists=False):
+        playlists = {}
+
+        res = self._wc_call("loadplaylist", "all")
+
+        if auto:
+            playlists['auto'] = self._get_auto_playlists()
+        if instant:
+            playlists['instant'] = self._playlist_list_to_dict(res['magicPlaylists'])
+        if user:
+            playlists['user'] = self._playlist_list_to_dict(res['playlists'])
+
+        #Break down singleton lists if desired.
+        if not always_id_lists:
+            for p_dict in playlists.itervalues():
+                for name, id_list in p_dict.iteritems():
+                    if len(id_list) == 1: p_dict[name]=id_list[0]
+        
+        return playlists
+        
+    def _playlist_list_to_dict(self, pl_list):
+        d = {}
+
+        for name, pid in ((p["title"], p["playlistId"]) for p in pl_list):
+            if not name in d: d[name] = []
+            d[name].append(pid)
+
+        return d
+
     def get_playlists(self, auto=True, instant=True, user=True, always_id_lists=False):
         """Returns a dictionary mapping playlist types to dictionaries of ``{"<playlist name>": "<playlist id>"}`` pairs.
 
