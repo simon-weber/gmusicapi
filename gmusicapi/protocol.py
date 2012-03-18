@@ -508,7 +508,7 @@ class WC_Protocol:
         @staticmethod
         def build_transaction(playlist_id):
 
-            #Special call with empty body loads all playlists.
+            #Special call with empty body loads all instant/user playlists (but not auto).
             if playlist_id == "all":
                 req = {}
             else:
