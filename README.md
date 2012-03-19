@@ -6,7 +6,7 @@ The project is not supported nor endorsed by Google. I'll be interning for Googl
 
 For those looking to use the api, documentation is hosted at Read the Docs: [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest).
 
-For those looking to port or contribute, check out the code overview on the wiki: [wiki](https://github.com/simon-weber/Unofficial-Google-Music-API/wiki/Codebase-Overview).
+For those looking to port or contribute, check out the code overview on the wiki: [wiki](https://github.com/simon-weber/Unofficial-Google-Music-API/wiki/Codebase-Overview). There's also a section on porting below.
 
 For bugs reports, feature requests, and contributions, go ahead and [open an issue](https://github.com/simon-weber/Unofficial-Google-Music-API/issues/new).
 
@@ -76,7 +76,11 @@ You probably want to use easy_install to get validictory.
 
 ##Porting
 
-I've seen a lot of excitement about possible ports, especially for mobile and web use. If you want to, go for it!
+I've seen a lot of excitement about possible ports, especially for mobile and web use. If you want to, go for it! 
+
+I'm currently aware of only one port. It's in C# (for use with Windows Phone), and being developed [here](https://github.com/Byteopia/GoogleMusicAPI.NET).
+
+###Porting Information for Developers
 
 The current implementation uses the same interface that a web browser does, and a code overview can be found [on the wiki](https://github.com/simon-weber/Unofficial-Google-Music-API/wiki/Codebase-Overview). Darryl Pogue is working on a more durable implementation by emulating Google's Android app. His work is [here](https://github.com/dpogue/Unofficial-Google-Music-API), and may easier to port.
 
