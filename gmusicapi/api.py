@@ -38,7 +38,7 @@ from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 import validictory
 
-from session import WC_Session, MM_Session
+from session import PlaySession
 from protocol import WC_Protocol, MM_Protocol
 from utils import utils
 from utils.apilogging import UsesLog
@@ -50,10 +50,9 @@ class PlaylistModificationError(exceptions.Exception):
 
 class Api(UsesLog):
     def __init__(self):
-        self.wc_session = WC_Session()
-        self.wc_protocol = WC_Protocol()
+        self.session = PlaySession()
 
-        self.mm_session = MM_Session()
+        self.wc_protocol = WC_Protocol()
         self.mm_protocol = MM_Protocol()
 
         self.init_logger()
@@ -64,8 +63,8 @@ class Api(UsesLog):
 
     def is_authenticated(self):
         """Returns whether the api is logged in."""
+        return self.session.logged_in
 
-        return self.wc_session.logged_in and not (self.mm_session.sid == None)
 
     def login(self, email, password):
         """Authenticates the api with the given credentials.
@@ -76,20 +75,7 @@ class Api(UsesLog):
         :param email: eg "`test@gmail.com`"
         :param password: plaintext password. It will not be stored and is sent over ssl."""
 
-        self.mm_session.login(email, password)        
-        if not self.mm_session.sid:
-            self.log.info("failed to log in.")
-            return False
-
-        #MM now logged in.
-        #Try to bump mm auth first - it's faster than browser emulation.        
-        sid = self.mm_session.sid.split('=')[-1]
-        lsid = self.mm_session.lsid.split('=')[-1]
-
-        if not self.wc_session.sid_login(sid, lsid): 
-            self.log.info("failed to bump mm auth; trying browser emulation.")
-            self.wc_session.login(email, password)
-
+        self.session.login(email, password)
 
         if self.is_authenticated():
             #Need some extra init for upload authentication.
@@ -104,9 +90,7 @@ class Api(UsesLog):
         """Logs out of the api.
         Returns True on success, False on failure."""
 
-        self.wc_session.logout()
-        self.mm_session.logout()
-
+        self.session.logout()
         self.log.info("logged out")
 
         return True
@@ -252,7 +236,7 @@ class Api(UsesLog):
         playlists = {}
         
         #Only hit the page once for all playlists.
-        res = self.wc_session.open_authed_https_url("https://music.google.com/music/listen?u=0")
+        res = self.session.open_web_url("https://music.google.com/music/listen?u=0")
         markup = res.read()
 
         if auto:
@@ -288,7 +272,7 @@ class Api(UsesLog):
         # out the playlists ul, then use a regex.
 
         if not markup:
-            res = self.wc_session.open_authed_https_url("https://music.google.com/music/listen?u=0")
+            res = self.session.open_web_url("https://music.google.com/music/listen?u=0")
             markup = res.read()
 
         ul_start = r'<ul id="{0}" class="playlistContainer">'.format(ul_id)
@@ -573,12 +557,10 @@ class Api(UsesLog):
         if 'query_args' in kw:
             extra_query_args = kw['query_args']
 
-        if protocol.requires_login:
-            res = self.wc_session.open_authed_https_url(protocol.build_url, extra_query_args, body)
-        else:
-            res = self.wc_session.open_https_url(protocol.build_url, extra_query_args, body)
+        res = self.session.open_web_url(protocol.build_url, extra_query_args, body)
         
-        res = json.loads(res.read())
+        read = res.read()
+        res = json.loads(read)
 
         #Calls are not required to have a schema.
         if res_schema:
@@ -656,7 +638,7 @@ class Api(UsesLog):
                 
                 #Pull this out with the below call when it makes sense to.
                 res = json.loads(
-                    self.mm_session.jumper_post(
+                    self.session.post_jumper(
                         "/uploadsj/rupio", 
                         post_data).read())
 
@@ -706,7 +688,7 @@ class Api(UsesLog):
                 self.log.info("uploading file. sid: %s", server_id)
 
                 res = json.loads(
-                    self.mm_session.jumper_post( 
+                    self.session.post_jumper( 
                         up['putInfo']['url'], 
                         open(filename), 
                         {'Content-Type': up['content_type']}).read())
@@ -742,7 +724,7 @@ class Api(UsesLog):
 
         url = self.mm_protocol.pb_services[service_name]
 
-        res.ParseFromString(self.mm_session.protopost(url, req))
+        res.ParseFromString(self.session.post_protobuf(url, req))
 
         self.log.debug("mm_pb_call response: [%s]", str(res))
 
