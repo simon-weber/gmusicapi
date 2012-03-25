@@ -86,10 +86,10 @@ class ClientLogin:
         return ret
 
     def _make_request(self, url, data, headers):
-        data = urlencode(data)
-        if data == '':
+        if not data:
             data = None
         else:
+            data = urlencode(data)
             data = data.encode('utf8')
 
         req = Request(url, data, headers)
@@ -186,7 +186,7 @@ class ClientLogin:
                 )
 
 
-# Test case, fetch tokens for the Contacts Data API and print them
+# Test case, fetch tokens for the Skyjam (Google Music) API and print them
 if __name__ == '__main__':
     try:
         cl_input = raw_input
@@ -197,7 +197,7 @@ if __name__ == '__main__':
     user = cl_input()
     passwd = getpass()
 
-    client = ClientLogin(user, passwd, 'cp')
+    client = ClientLogin(user, passwd, 'sj')
     print('Your auth token is: %s' % client.get_auth_token())
     print('Your SID token is:  %s' % client.get_sid_token())
     print('Your LSID token is: %s' % client.get_lsid_token())
