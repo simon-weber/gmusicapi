@@ -246,6 +246,11 @@ class Metadata_Expectations:
     class playlistEntryId(_Metadata_Expectation):
         mutable = False
         optional = True #only seen when songs are in the context of a playlist.
+    class subjectToCuration(_Metadata_Expectation):
+        mutable = False
+        val_type = "boolean"
+    class metajamId(_Metadata_Expectation):
+        mutable = False
         
     
     #Dependent metadata:
