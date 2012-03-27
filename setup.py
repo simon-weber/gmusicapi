@@ -11,7 +11,11 @@ setup(
     scripts=['example.py'],
     license='COPYING',
     description='An unofficial api for Google Play Music.',
-    long_description=open('README.md').read(),
+    long_description="""\
+gmusicapi is an unofficial api for Google Play Music. Please see the `project page <https://github.com/simon-weber/Unofficial-Google-Music-API>`_ for details.
+
+This api is not supported nor endorsed by Google, and could break at any time.
+""",
     install_requires=[
         "validictory >= 0.8.1",
         "decorator >= 3.3.2",
