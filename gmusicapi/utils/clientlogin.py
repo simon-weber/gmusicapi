@@ -184,20 +184,3 @@ class ClientLogin:
                     and self.sid_token  is not None
                     and self.lsid_token is not None
                 )
-
-
-# Test case, fetch tokens for the Skyjam (Google Music) API and print them
-if __name__ == '__main__':
-    try:
-        cl_input = raw_input
-    except NameError:
-        cl_input = input
-
-    print('Please enter your Google username:')
-    user = cl_input()
-    passwd = getpass()
-
-    client = ClientLogin(user, passwd, 'sj')
-    print('Your auth token is: %s' % client.get_auth_token())
-    print('Your SID token is:  %s' % client.get_sid_token())
-    print('Your LSID token is: %s' % client.get_lsid_token())
