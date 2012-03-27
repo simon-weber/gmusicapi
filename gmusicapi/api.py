@@ -29,20 +29,34 @@ import json
 import re
 import string
 import time
-import urllib
 import exceptions
 import collections
 import copy
+try:
+    # These are for python3 support
+    from urllib.request import HTTPCookieProcessor, Request, build_opener
+    from urllib.error import HTTPError
+    from urllib.parse import urlencode, quote_plus
+    from http.client import HTTPConnection, HTTPSConnection
+    unistr = str
+except ImportError:
+    # Fallback to python2
+    from urllib2 import HTTPCookieProcessor, Request, build_opener
+    from urllib2 import HTTPError
+    from urllib import urlencode, quote_plus
+    from httplib import HTTPConnection, HTTPSConnection
+    unistr = unicode
 
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 import validictory
 
-from session import WC_Session, MM_Session
 from protocol import WC_Protocol, MM_Protocol
 from utils import utils
 from utils.apilogging import UsesLog
 from gmtools import tools
+from utils.clientlogin import ClientLogin
+from utils.tokenauth import TokenAuth
 
 
 class PlaylistModificationError(exceptions.Exception):
@@ -50,10 +64,9 @@ class PlaylistModificationError(exceptions.Exception):
 
 class Api(UsesLog):
     def __init__(self):
-        self.wc_session = WC_Session()
-        self.wc_protocol = WC_Protocol()
+        self.session = PlaySession()
 
-        self.mm_session = MM_Session()
+        self.wc_protocol = WC_Protocol()
         self.mm_protocol = MM_Protocol()
 
         self.init_logger()
@@ -64,8 +77,8 @@ class Api(UsesLog):
 
     def is_authenticated(self):
         """Returns whether the api is logged in."""
+        return self.session.logged_in
 
-        return self.wc_session.logged_in and not (self.mm_session.sid == None)
 
     def login(self, email, password):
         """Authenticates the api with the given credentials.
@@ -76,20 +89,7 @@ class Api(UsesLog):
         :param email: eg "`test@gmail.com`"
         :param password: plaintext password. It will not be stored and is sent over ssl."""
 
-        self.mm_session.login(email, password)        
-        if not self.mm_session.sid:
-            self.log.info("failed to log in.")
-            return False
-
-        #MM now logged in.
-        #Try to bump mm auth first - it's faster than browser emulation.        
-        sid = self.mm_session.sid.split('=')[-1]
-        lsid = self.mm_session.lsid.split('=')[-1]
-
-        if not self.wc_session.sid_login(sid, lsid): 
-            self.log.info("failed to bump mm auth; trying browser emulation.")
-            self.wc_session.login(email, password)
-
+        self.session.login(email, password)
 
         if self.is_authenticated():
             #Need some extra init for upload authentication.
@@ -104,9 +104,7 @@ class Api(UsesLog):
         """Logs out of the api.
         Returns True on success, False on failure."""
 
-        self.wc_session.logout()
-        self.mm_session.logout()
-
+        self.session.logout()
         self.log.info("logged out")
 
         return True
@@ -252,7 +250,7 @@ class Api(UsesLog):
         playlists = {}
         
         #Only hit the page once for all playlists.
-        res = self.wc_session.open_authed_https_url("https://music.google.com/music/listen?u=0")
+        res = self.session.open_web_url("https://music.google.com/music/listen?u=0")
         markup = res.read()
 
         if auto:
@@ -288,7 +286,7 @@ class Api(UsesLog):
         # out the playlists ul, then use a regex.
 
         if not markup:
-            res = self.wc_session.open_authed_https_url("https://music.google.com/music/listen?u=0")
+            res = self.session.open_web_url("https://music.google.com/music/listen?u=0")
             markup = res.read()
 
         ul_start = r'<ul id="{0}" class="playlistContainer">'.format(ul_id)
@@ -567,18 +565,16 @@ class Api(UsesLog):
         #Encode the body. It might be None (empty).
         #This should probably be done in protocol, and an encoded body grabbed here.
         if body != None: #body can be {}, which is different from None. {} is falsey.
-            body = "json=" + urllib.quote_plus(json.dumps(body))
+            body = "json=" + quote_plus(json.dumps(body))
 
         extra_query_args = None
         if 'query_args' in kw:
             extra_query_args = kw['query_args']
 
-        if protocol.requires_login:
-            res = self.wc_session.open_authed_https_url(protocol.build_url, extra_query_args, body)
-        else:
-            res = self.wc_session.open_https_url(protocol.build_url, extra_query_args, body)
+        res = self.session.open_web_url(protocol.build_url, extra_query_args, body)
         
-        res = json.loads(res.read())
+        read = res.read()
+        res = json.loads(read)
 
         #Calls are not required to have a schema.
         if res_schema:
@@ -656,7 +652,7 @@ class Api(UsesLog):
                 
                 #Pull this out with the below call when it makes sense to.
                 res = json.loads(
-                    self.mm_session.jumper_post(
+                    self.session.post_jumper(
                         "/uploadsj/rupio", 
                         post_data).read())
 
@@ -706,7 +702,7 @@ class Api(UsesLog):
                 self.log.info("uploading file. sid: %s", server_id)
 
                 res = json.loads(
-                    self.mm_session.jumper_post( 
+                    self.session.post_jumper( 
                         up['putInfo']['url'], 
                         open(filename), 
                         {'Content-Type': up['content_type']}).read())
@@ -742,8 +738,194 @@ class Api(UsesLog):
 
         url = self.mm_protocol.pb_services[service_name]
 
-        res.ParseFromString(self.mm_session.protopost(url, req))
+        res.ParseFromString(self.session.post_protobuf(url, req))
 
         self.log.debug("mm_pb_call response: [%s]", str(res))
 
         return res
+
+#---
+#The session layer:
+#---
+
+class AlreadyLoggedIn(Exception):
+    pass
+
+class NotLoggedIn(Exception):
+    pass
+
+class PlaySession(object):
+    """
+    A Google Play Music session.
+
+    It allows for authentication and the making of authenticated
+    requests through the MusicManager API (protocol buffers), Web client requests,
+    and the Skyjam client API.
+    """
+
+    # The URL for authenticating against Google Play Music
+    PLAY_URL = 'https://play.google.com/music/listen?u=0&hl=en'
+
+    # Common User Agent used for web requests
+    _user_agent = "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.8.1.6) Gecko/20061201 Firefox/2.0.0.6 (Ubuntu-feisty)"
+
+    def __init__(self):
+        """
+        Initializes a default unauthenticated session.
+        """
+        self.client = None
+        self.cookies = None
+        self.logged_in = False
+
+        # Wish there were better names for these
+        self.android = HTTPSConnection('android.clients.google.com')
+        self.jumper  = HTTPConnection('uploadsj.clients.google.com')
+
+
+    def _get_cookies(self):
+        """
+        Gets cookies needed for web and media streaming access.
+        Returns True if the necessary cookies are found, False otherwise.
+        """
+        if self.logged_in:
+            raise AlreadyLoggedIn
+
+        handler = build_opener(HTTPCookieProcessor(self.cookies))
+        req = Request(self.PLAY_URL, None, {}) #header)
+        resp_obj = handler.open(req)
+
+        return  (
+                    self.get_cookie('sjsaid') is not None and
+                    self.get_cookie('xt') is not None
+                )
+
+
+    def get_cookie(self, name):
+        """
+        Finds the value of a cookie by name, returning None on failure.
+
+        :param name: The name of the cookie to find.
+        """
+        for cookie in self.cookies:
+            if cookie.name == name:
+                return cookie.value
+
+        return None
+
+
+    def login(self, email, password):
+        """
+        Attempts to create an authenticated session using the email and
+        password provided.
+        Return True if the login was successful, False otherwise.
+        Raises AlreadyLoggedIn if the session is already authenticated.
+
+        :param email: The email address of the account to log in.
+        :param password: The password of the account to log in.
+        """
+        if self.logged_in:
+            raise AlreadyLoggedIn
+
+        self.client = ClientLogin(email, password, 'sj')
+        tokenauth = TokenAuth('sj', self.PLAY_URL, 'jumper')
+
+        if self.client.get_auth_token() is None:
+            return False
+
+        tokenauth.authenticate(self.client)
+        self.cookies = tokenauth.get_cookies()
+
+        self.logged_in = self._get_cookies()
+
+        return self.logged_in
+
+
+    def logout(self):
+        """
+        Resets the session to an unauthenticated default state.
+        """
+        self.__init__()
+
+
+    def open_web_url(self, url_builder, extra_args=None, data=None, ua=None):
+        """
+        Opens an https url using the current session and returns the response.
+        Code adapted from:
+        http://code.google.com/p/gdatacopier/source/browse/tags/gdatacopier-1.0.2/gdatacopier.py
+
+        :param url_builder: the url, or a function to receieve a dictionary of querystring arg/val pairs and return the url.
+        :param extra_args: (optional) key/val querystring pairs.
+        :param data: (optional) encoded POST data.
+        :param ua: (optional) The User Age to use for the request.
+        """
+        # I couldn't find a case where we don't need to be logged in
+        if not self.logged_in:
+            raise NotLoggedIn
+
+        if isinstance(url_builder, basestring):
+            url = url_builder
+        else:
+            url = url_builder({'xt':self.get_cookie("xt")})
+
+        #Add in optional pairs to the querystring.
+        if extra_args:
+            #Assumes that a qs has already been started (ie we don't need to put a ? first)
+            assert (url.find('?') >= 0)
+
+            extra_url_args = ""
+            for name, val in extra_args.iteritems():
+                extra_url_args += "&{0}={1}".format(name, val)
+
+            url += extra_url_args
+
+        opener = build_opener(HTTPCookieProcessor(self.cookies))
+
+        if not ua:
+            ua = self._user_agent
+
+        opener.addheaders = [('User-agent', ua)]
+
+        if data:
+            response = opener.open(url, data)
+        else:
+            response = opener.open(url)
+
+        return response
+
+
+    def post_protobuf(self, path, protobuf):
+        """
+        Returns the response from encoding and posting the given data.
+
+        :param path: the name of the service url
+        :param proto: data to be encoded with protobuff
+        """
+        if not self.logged_in:
+            raise NotLoggedIn
+
+        urlpath = '/upsj/' + path
+        self.android.request('POST', urlpath, protobuf.SerializeToString(), {
+            'Cookie':       'SID=%s' % self.client.get_sid_token(),
+            'Content-Type': 'application/x-google-protobuf'
+        })
+
+        resp = self.android.getresponse()
+
+        return resp.read()
+
+
+    def post_jumper(self, url, encoded_data, headers=None):
+        """
+        Returns the response of a post to the MusicManager jumper service.
+        """
+        if not self.logged_in:
+            raise NotLoggedIn
+
+        if not headers:
+            headers = {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Cookie':       'SID=%s' % self.client.get_sid_token()
+            }
+
+        self.jumper.request('POST', url, encoded_data, headers)
+        return self.jumper.getresponse()
