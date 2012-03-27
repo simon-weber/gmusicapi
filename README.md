@@ -12,11 +12,9 @@ For bugs reports, feature requests, and contributions, go ahead and [open an iss
 
 ##Features
 
-**New in version 2012.03.16:**
-
-* Simple and robust playlist manipulation
-* Faster authentication
-* Support for non-unique playlist names  
+**New in version 2012.03.27:**
+    * various bugfixes and internal enhancements  
+   
 See the changelog for details.
 
 **Feature Overview:**

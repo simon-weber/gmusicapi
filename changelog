@@ -1,3 +1,10 @@
+2012.03.27:
+	package for pip/pypi
+	add AUTHORS file
+	remove session.py; the sessions are now just api.PlaySession (Darryl Pogue)
+	protocol.Metadata_Expectations.get_expectation will return UnknownExpectation when queried for unknown keys; this should prevent future problems
+	add immutable 'subjectToCuration' and 'metajamId' fields - use unknown
+	
 2012.03.16:
 	add change_playlist for playlist modifications
 	get_playlists supports multiple playlists of the same name by returning lists of playlist ids. By default, it will return a single string (the id) for unique playlist names; see the always_id_lists parameter.
