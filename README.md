@@ -46,7 +46,7 @@ See the changelog for details.
 ##Usage
 
 gmusicapi.api.Api is the user-facing interface.
-To get started, install the dependencies and see example.py. For more information, see the [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest) and testing code.
+To get started, install the dependencies and see example.py. For more information, see the [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest) and testing code. In addition, Michal Odnous has built [an example](https://github.com/odiroot/Unofficial-Google-Music-API/blob/mo-sandbox/example_play.py) that will play songs from your library.
 
 ##Dependencies
 
@@ -60,16 +60,11 @@ Currently, the following third party modules are used:
 
 * [protobuf](http://code.google.com/p/protobuf)
 
-* [mechanize](http://wwwsearch.sourceforge.net/mechanize/)
-
 * [validictory](http://pypi.python.org/pypi/validictory) 0.8.1+
 
-The first four are in Ubuntu's repos:
+You can install these with pip. Alternatively, the first three are in Ubuntu's repos:
     
-    python-decorator python-mutagen python-protobuf python-mechanize
-
-You probably want to use easy_install to get validictory.
-
+    python-decorator python-mutagen python-protobuf
 
 ##Porting
 
