@@ -2,7 +2,7 @@ from distutils.core import setup
 from setuptools import find_packages
 
 setup(
-    name='Unofficial-Google-Music-API',
+    name='gmusicapi',
     version='2012.03.27',
     author='Simon Weber',
     author_email='simon@simonmweber.com',
