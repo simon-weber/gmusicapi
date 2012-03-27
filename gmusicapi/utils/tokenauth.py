@@ -112,30 +112,3 @@ class TokenAuth:
 
     def get_cookies(self):
         return self.cookiejar
-
-
-# Test case, fetch tokens for the Skyjam (Google Music) API and print them
-if __name__ == '__main__':
-    from clientlogin import ClientLogin
-    from getpass import getpass
-    try:
-        cl_input = raw_input
-    except NameError:
-        cl_input = input
-
-    print('Please enter your Google username:')
-    user = cl_input()
-    passwd = getpass()
-
-    client = ClientLogin(user, passwd, 'sj')
-    print('Your auth token is: %s' % client.get_auth_token())
-    print('Your SID token is:  %s' % client.get_sid_token())
-    print('Your LSID token is: %s' % client.get_lsid_token())
-
-    auth = TokenAuth('sj', 'http://play.google.com/music/listen?hl=en', 'jumper')
-    auth.authenticate(client)
-
-    cookiejar = auth.get_cookies()
-    print('Your cookies are:')
-    for c in cookiejar:
-        print('%s = %s' % (c.name, c.value))

@@ -138,6 +138,11 @@ class _Metadata_Expectation():
 
         return schema
     
+class UnknownExpectation(_Metadata_Expectation):
+    """A flexible expectation intended to be given when we know nothing about a key."""
+    val_type = "any"
+    mutable = False
+    
 
 class Metadata_Expectations:
     """Holds expectations about metadata."""
@@ -146,22 +151,26 @@ class Metadata_Expectations:
     #Clashes are prefixed with a gm_ (eg gm_type).
 
     @classmethod
-    def get_expectation(cls, key):
+    def get_expectation(cls, key, warn_on_unknown=True):
         """Get the Expectation associated with the given key name.
-        Return None if there is no Expectation for that name."""
+        If no Expectation exists for that name, an immutable Expectation of any type is returned."""
 
-        expt = None
+        mangle = False
+        if not hasattr(cls,key):
+            mangle = True
+
+        expt_name = "gm_" + key if mangle else key
 
         try:
-            expt = getattr(cls, key)
-        except AttributeError:
-            expt = getattr(cls, "gm_"+key)
-        
-        try:
-            if issubclass(expt, _Metadata_Expectation):
-                return expt
-        except TypeError:
-            return None
+            expt = getattr(cls,expt_name)
+            if not issubclass(expt, _Metadata_Expectation):
+                raise TypeError
+            return expt
+        except (AttributeError, TypeError):
+            if warn_on_unknown: LogController.get_logger("get_expectation").warning("unknown metadata type '%s'", key)
+
+            return UnknownExpectation
+
 
     @classmethod
     def get_all_expectations(cls):
@@ -170,8 +179,8 @@ class Metadata_Expectations:
         expts = {}
 
         for name in dir(cls):
-            member = cls.get_expectation(name)
-            if member: expts[member.name]=member
+            member = cls.get_expectation(name, warn_on_unknown=False)
+            if member is not UnknownExpectation: expts[member.name]=member
         
         return expts
 
@@ -246,6 +255,11 @@ class Metadata_Expectations:
     class playlistEntryId(_Metadata_Expectation):
         mutable = False
         optional = True #only seen when songs are in the context of a playlist.
+    class subjectToCuration(_Metadata_Expectation):
+        mutable = False
+        val_type = "boolean"
+    class metajamId(_Metadata_Expectation):
+        mutable = False
         
     
     #Dependent metadata:

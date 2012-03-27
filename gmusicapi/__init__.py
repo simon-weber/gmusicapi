@@ -16,3 +16,8 @@
 
 #You should have received a copy of the GNU General Public License
 #along with gmusicapi.  If not, see <http://www.gnu.org/licenses/>.
+
+
+from .api import Api
+
+__all__ = ['Api']
