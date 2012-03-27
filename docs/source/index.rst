@@ -31,9 +31,9 @@ Song uploading, downloading, and streaming
 Playlist manipulation
 ---------------------
 .. autoclass:: Api
-    :members: change_playlist, change_playlist_name, create_playlist, delete_playlist 
+    :members: change_playlist, change_playlist_name, create_playlist, delete_playlist, add_songs_to_playlist
 
-    .. automethod:: add_songs_to_playlist(playlist_id, song_ids)
+    .. .. automethod:: add_songs_to_playlist(playlist_id, song_ids)
     .. automethod:: remove_songs_from_playlist(playlist_id, sids_to_match)
 
 Song manipulation
