@@ -22,6 +22,14 @@ This api is not supported nor endorsed by Google, and could break at any time.
         "mutagen >= 1.2.0",
         "protobuf >= 2.4.0"
     ],
+    classifiers = [
+        "Programming Language :: Python",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: GNU General Public License (GPL)",
+        "Operating System :: OS Independent",
+        "Topic :: Multimedia :: Sound/Audio",
+        "Topic :: Software Development :: Libraries :: Python Modules"
+        ],
     include_package_data=True,
     zip_safe=False,
 )
