@@ -12,8 +12,7 @@ For bugs reports, feature requests, and contributions, go ahead and [open an iss
 
 ##Features
 
-**New in version 2012.03.27:**
-    * various bugfixes and internal enhancements  
+**New in version 2012.03.27:** various bugfixes and internal enhancements  
    
 See the changelog for details.
 
