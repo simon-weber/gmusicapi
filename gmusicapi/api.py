@@ -33,6 +33,14 @@ import exceptions
 import collections
 import copy
 import contextlib
+#used for _wc_call to get its calling parent.
+#according to http://stackoverflow.com/questions/1095543/get-name-of-calling-functions-module-in-python,
+# this 
+#  "will interact strangely with import hooks, 
+#  won't work on ironpython, 
+#  and may behave in surprising ways on jython"
+import inspect 
+
 try:
     # These are for python3 support
     from urllib.request import HTTPCookieProcessor, Request, build_opener
@@ -61,7 +69,15 @@ from utils.tokenauth import TokenAuth
 
 
 class CallFailure(exceptions.Exception):
-    pass
+    """Exception raised when the Google Music server responds that a call failed.
+    
+    Attributes:
+        name -- name of Api function that had the failing call
+        res  -- the body of the failed response
+    """
+    def __init__(self, name, res):
+        self.name = name
+        self.res = res
 
 class Api(UsesLog):
     def __init__(self, suppress_failure=False):
@@ -385,7 +401,7 @@ class Api(UsesLog):
         
         orig_tracks = self.get_playlist_songs(orig_id)
         
-        backup_id = self.create_playlist(copy_name)["id"]
+        backup_id = self.create_playlist(copy_name)
 
         #Copy in all the songs.
         self.add_songs_to_playlist(backup_id, [t["id"] for t in orig_tracks])
@@ -412,10 +428,9 @@ class Api(UsesLog):
         desired_playlist = [copy.deepcopy(t) for t in desired_playlist]
         server_tracks = self.get_playlist_songs(playlist_id)
 
-        ##Make the backup.
-        if safe:
+        if safe: #make the backup.
             #The backup is stored on the server as a new playlist with "_gmusicapi_backup" appended to the backed up name.
-            #We can't just store the backup here, since when rolling back we'd be relying on this function - which just failed.
+            #We can't just store the backup here, since when rolling back we'd be relying on this function - and it just failed.
             names_to_ids = self.get_playlists(always_id_lists=True)['user']
             playlist_name = (ni_pair[0] 
                              for ni_pair in names_to_ids.iteritems()
@@ -423,6 +438,9 @@ class Api(UsesLog):
 
             backup_id = self.copy_playlist(playlist_id, playlist_name + "_gmusicapi_backup")
 
+        #Ensure CallFailures do not get suppressed in our subcalls.
+        #Did not unsuppress the above copy_playlist call, since we should fail 
+        # out if we can't ensure the backup was made.
         with self._unsuppress_failures():
             try:
                 #Counter, Counter, and set of id pairs to delete, add, and keep.
@@ -435,12 +453,12 @@ class Api(UsesLog):
                 ##Add new entries.
                 to_add_sids = [pair[0] for pair in to_add.elements()]
                 if to_add_sids:
-                    self.add_songs_to_playlist(playlist_id, to_add_sids)
+                    new_pairs = self.add_songs_to_playlist(playlist_id, to_add_sids)
 
                     ##Update desired tracks with added tracks server-given eids.
                     #Map new sid -> [eids]
                     new_sid_to_eids = {}
-                    for sid, eid in ((s["songId"], s["playlistEntryId"]) for s in res["songIds"]):
+                    for sid, eid in new_pairs:
                         if not sid in new_sid_to_eids:
                             new_sid_to_eids[sid] = []
                         new_sid_to_eids[sid].append(eid)
@@ -497,13 +515,15 @@ class Api(UsesLog):
     
     @utils.accept_singleton(basestring, 2)
     def add_songs_to_playlist(self, playlist_id, song_ids):
-        """Adds songs to a playlist. Returns the modified playlist id.
+        """Adds songs to a playlist. Returns a list of (song id, playlistEntryId) tuples that were added.
 
         :param playlist_id: id of the playlist to add to.
         :param song_ids: a list of song ids, or a single song id.
         """
 
-        return self._wc_call("addtoplaylist", playlist_id, song_ids)['playlistId']
+        return [(s['songId'], s['playlistEntryId'])
+                for s in 
+                self._wc_call("addtoplaylist", playlist_id, song_ids)['songIds']]
 
     @utils.accept_singleton(basestring, 2)
     def remove_songs_from_playlist(self, playlist_id, sids_to_match):

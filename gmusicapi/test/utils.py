@@ -25,7 +25,7 @@ import random
 import inspect
 from getpass import getpass
 
-from ..api import Api
+from ..api import Api, CallFailure
 from ..protocol import WC_Protocol, Metadata_Expectations
 from ..utils.apilogging import LogController
 from ..utils import utils
@@ -128,13 +128,6 @@ class BaseTest(unittest.TestCase):
     #   Utility functions:
     #---
 
-    def assert_success(self, response):
-        """Asserts the success of a call's response.
-        Returns the calls response."""
-
-        self.assertTrue(utils.call_succeeded(response))
-        return response
-
     def collect_steps(self, prefix):
         """Yields the steps of a monolithic test in name-sorted order."""
 
@@ -151,5 +144,11 @@ class BaseTest(unittest.TestCase):
         for name, step in self.collect_steps(prefix):
             try:
                 step()
+
+            #Only catch exceptions raised from _our_ test code.
+            #Other kinds of exceptions may be raised inside the code
+            # being tested; those should be re-raised so we can trace them.
+            except CallFailure as f:
+                raise self.fail("test {} step {} call to {} failure: {}".format(prefix, step, f.name, f.res))
             except AssertionError as e:
-                self.fail("{} failed ({}: {})".format(step, type(e), e))
+                raise #it's actually easiest to just reraise this, so we can track down what went wrong

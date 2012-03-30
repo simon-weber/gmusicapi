@@ -75,6 +75,7 @@ class WC_Call:
         """Return a tuple of (filled request, response schemas)."""
         raise NotImplementedError
 
+
 class _DefinesNameMetaclass(type):
     """A metaclass to create a 'name' attribute for _Metadata that respects
     any necessary name mangling."""
