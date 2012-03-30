@@ -79,6 +79,9 @@ class CallFailure(exceptions.Exception):
         self.name = name
         self.res = res
 
+    def __str__(self):
+        return "api call {} failed; server returned {}".format(self.name, self.res)
+
 class Api(UsesLog):
     def __init__(self, suppress_failure=False):
         """Initializes an Api.
@@ -642,7 +645,8 @@ class Api(UsesLog):
             self.log.debug("full response: %s", res)
             
             if not self.suppress_failure:
-                raise CallFailure(res) #normally caused by bad arguments to the server
+                calling_func_name = inspect.stack()[1][3]
+                raise CallFailure(calling_func_name, res) #normally caused by bad arguments to the server
 
         #Calls are not required to have a schema, and
         # schemas are only for successful calls.
