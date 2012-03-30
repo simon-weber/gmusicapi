@@ -123,7 +123,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         tracks = self.api.get_playlist_songs(p_id)
 
         #Apply random modifications.
-        delete, add_dupe, add_blank, reorder = [random.choice([True]) for i in xrange(4)]
+        delete, add_dupe, add_blank, reorder = [random.choice([True, False]) for i in xrange(4)]
 
         if delete:
             self.log.debug("deleting tracks")
