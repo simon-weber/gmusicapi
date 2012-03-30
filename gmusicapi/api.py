@@ -530,7 +530,7 @@ class Api(UsesLog):
 
     @utils.accept_singleton(basestring, 2)
     def remove_songs_from_playlist(self, playlist_id, sids_to_match):
-        """Removes all copies of the given song ids from a playlist. Returns the removed ids.
+        """Removes all copies of the given song ids from a playlist. Returns a list of removed (sid, eid) pairs.
 
         :param playlist_id: id of the playlist to remove songs from.
         :param sids_to_match: a list of songids to match, or a single song id.
@@ -544,12 +544,18 @@ class Api(UsesLog):
         matching_eids = [t["playlistEntryId"]
                          for t in playlist_tracks
                          if t["id"] in sid_set]
+
         if matching_eids:
-            return self._remove_entries_from_playlist(playlist_id, matching_eids)
+            #Call returns "sid_eid" strings.
+            sid_eids = self._remove_entries_from_playlist(playlist_id, 
+                                                          matching_eids)
+            return [s.split("_") for s in sid_eids]
+        else:
+            return []
     
     @utils.accept_singleton(basestring, 2)
     def _remove_entries_from_playlist(self, playlist_id, entry_ids_to_remove):
-        """Removes entries from a playlist. Returns the deleted ids.
+        """Removes entries from a playlist. Returns a list of removed "sid_eid" strings.
 
         :param playlist_id: the playlist to be modified.
         :param entry_ids: a list of entry ids, or a single entry id.
