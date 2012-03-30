@@ -61,9 +61,19 @@ from utils.tokenauth import TokenAuth
 
 class PlaylistModificationError(exceptions.Exception):
     pass
+class CallFailure(exceptions.Exception):
+    pass
+
 
 class Api(UsesLog):
-    def __init__(self):
+    def __init__(self, suppress_failure=False):
+        """Initializes an Api.
+
+        :param suppress_failure: when True, never raise CallFailure when a call fails.
+        """
+
+        self.suppress_failure = suppress_failure
+
         self.session = PlaySession()
 
         self.wc_protocol = WC_Protocol()
@@ -84,10 +94,11 @@ class Api(UsesLog):
         """Authenticates the api with the given credentials.
         Returns True on success, False on failure.
 
-        Two factor authentication is currently unsupported.
-
         :param email: eg "`test@gmail.com`"
-        :param password: plaintext password. It will not be stored and is sent over ssl."""
+        :param password: plaintext password. It will not be stored and is sent over ssl.
+
+        Users of two-factor authentication will need to set an application-specific password
+        to log in."""
 
         self.session.login(email, password)
 
@@ -563,8 +574,7 @@ class Api(UsesLog):
         
 
         #Encode the body. It might be None (empty).
-        #This should probably be done in protocol, and an encoded body grabbed here.
-        if body != None: #body can be {}, which is different from None. {} is falsey.
+        if body is not None: #body can be {}, which is different from None. {} is falsey.
             body = "json=" + quote_plus(json.dumps(body))
 
         extra_query_args = None
@@ -576,8 +586,23 @@ class Api(UsesLog):
         read = res.read()
         res = json.loads(read)
 
-        #Calls are not required to have a schema.
-        if res_schema:
+        if protocol.gets_logged:
+            self.log.debug("wc_call response %s", res)
+        else:
+            self.log.debug("wc_call response <suppressed>")
+
+        #Check if the server reported success.
+        success = utils.call_succeeded(res)
+        if not success:
+            self.log.error("call to %s failed", service_name)
+            self.log.debug("full response: %s", res)
+            
+            if not self.suppress_failure:
+                raise CallFailure(res) #normally caused by bad arguments to the server
+
+        #Calls are not required to have a schema, and
+        # schemas are only for successful calls.
+        if success and res_schema:
             try:
                 validictory.validate(res, res_schema)
             except ValueError as details:
@@ -586,17 +611,6 @@ class Api(UsesLog):
                 self.log.debug("failed schema: %s", res_schema)
                 self.log.warning("error was: %s", details)
                     
-        if protocol.gets_logged:
-            self.log.debug("wc_call response %s", res)
-        else:
-            self.log.debug("wc_call response <suppressed>")
-
-        #Check if the server reported success.
-        #It's likely a failure will not pass validation, as well.
-        if not utils.call_succeeded(res):
-            self.log.warning("call to %s failed", service_name)
-            self.log.debug("full response: %s", res)
-
         return res
 
 
