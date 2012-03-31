@@ -1,4 +1,6 @@
 next:
+	add UnitTestedApi for use in testing - it makes sure Api is returning what it should
+	all classes are now new-style
 	add an exception CallFailure. Api functions raise it if the server says their request failed
 	add suppress_failure (default False) option to Api.__init__()
 	change_playlist now returns the changed playlistId (pid)
