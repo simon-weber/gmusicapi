@@ -25,7 +25,7 @@ log_filename = "gmusicapi.log"
 #Logging code adapted from: 
 # http://docs.python.org/howto/logging-cookbook.html#logging-cookbook
 
-class LogController():
+class LogController(object):
     """Creates the root logger, and distributes loggers."""
 
     #Set up the logger for the entire application:
@@ -75,7 +75,7 @@ class LogController():
 
         return logging.getLogger(name_to_give)
 
-class UsesLog():
+class UsesLog(object):
     """A mixin to provide the ability to get a unique logger."""
     
     #Sometimes we want a logger for the class, other times for the instance.

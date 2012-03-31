@@ -33,7 +33,7 @@ except ImportError:
     from cookielib import LWPCookieJar
     unistr = unicode
 
-class TokenAuth:
+class TokenAuth(object):
     """
     A Google ClientLogin to web session converter.
     """

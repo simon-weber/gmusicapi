@@ -32,7 +32,7 @@ except ImportError:
     from urllib import urlencode
     unistr = unicode
 
-class ClientLogin:
+class ClientLogin(object):
     """
     A Google ClientLogin session management class.
 

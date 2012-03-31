@@ -18,6 +18,6 @@
 #along with gmusicapi.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from .api import Api
+from .api import Api, CallFailure
 
-__all__ = ['Api']
+__all__ = ['Api', 'CallFailure']

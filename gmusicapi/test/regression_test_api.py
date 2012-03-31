@@ -17,7 +17,8 @@
 #You should have received a copy of the GNU General Public License
 #along with gmusicapi.  If not, see <http://www.gnu.org/licenses/>.
 
-"""A test harness for regressions."""
+"""A test harness to ensure old bugs to do resurface.
+Tests are intended not to modify the library, but no guarantees are made."""
 
 import unittest
 import random
@@ -36,9 +37,6 @@ has_tags_filename = "test.mp3"
 #Lots of things to be pulled out of the other api call test class here.
 
 class TestRegressions(test_utils.BaseTest, UsesLog):
-    """Runs regression tests.
-    Tests are intended not to modify the library, but no guarantees are made.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -75,11 +73,9 @@ class TestRegressions(test_utils.BaseTest, UsesLog):
 
     def notags_3_delete(self):
         """Delete the uploaded files."""
-        self.assert_success(
-            self.api.delete_songs(self.notags_uploaded_id))
+        self.api.delete_songs(self.notags_uploaded_id)
 
-        self.assert_success(
-            self.api.delete_songs(self.hastags_uploaded_id))
+        self.api.delete_songs(self.hastags_uploaded_id)
 
         del self.notags_uploaded_id
         del self.hastags_uploaded_id
