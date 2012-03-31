@@ -25,8 +25,8 @@ def init():
     """Makes an instance of the api and attempts to login with it.
     Returns the authenticated api.
     """
-
-    api = Api()
+    
+    api = Api() 
     
     logged_in = False
     attempts = 0
@@ -41,60 +41,65 @@ def init():
     return api
 
 def main():
-    """Demonstrates some api features.
-    Logs in, gets library, searches for a song, selects the first result, 
-    then creates a new playlist and adds that song to it.
-    Finally, it renames and deletes the playlist.
-    """
+    """Demonstrates some api features."""
 
+    #Make a new instance of the api and prompt the user to log in.
     api = init()
 
+    if not api.is_authenticated():
+        print "Sorry, those credentials weren't accepted."
+        return
+
+    print "Successfully logged in."
+    print
+
+    #Get all of the users songs.
+    #library is a big list of dictionaries, each of which contains a single song.
     print "Loading library...",
     library = api.get_all_songs()
-    print "done"
+    print "done."
 
     print len(library), "tracks detected."
     print
-    
-    query = raw_input("Search Query: ")
-    search_results = api.search(query)
-        
-    #Note that this only looks at hits on songs.
-    #Songs matched on artist/album hits are discarded by selecting ['songs'].
-    songs = search_results['results']['songs']
-    if len(songs) == 0:
-        print "No songs from that search."
-        return
 
-    song = songs[0]
-    print "Selected", song['title'],"by",song['artist']
-    song_id = song['id']
+    #Show some info about a song. There is no guaranteed order;
+    # this is essentially a random song.
+    first_song = library[0]
+    print "The first song I see is '{}' by '{}'.".format(
+        first_song["name"],
+        first_song["artist"])
 
 
-    playlist_name = raw_input("New playlist name: ")
-    res = api.create_playlist(playlist_name)
+    #We're going to create a new playlist and add a song to it.
+    #Songs are uniquely identified by 'song ids', so let's get the id:
+    song_id = first_song["id"]
 
-    if not res['success']:
-        print "Failed to make the playlist."
-        return
+    print "I'm going to make a new playlist and add that song to it."
+    print "Don't worry, I'll delete it when we're finished."
+    print
+    playlist_name = raw_input("Enter a name for the playlist: ")
 
-    print "Made new playlist named",res['title']
+    #Like songs, playlists have unique ids.
+    #Note that Google Music allows more than one playlist of the
+    # exact same name, so you'll always have to work with ids.
+    playlist_id = api.create_playlist(playlist_name)
+    print "Made the playlist."
+    print
+
+    #Now lets add the song to the playlist, using their ids:
+    api.add_songs_to_playlist(playlist_id, song_id)
+    print "Added the song to the playlist."
+    print
+
+    #We're all done! The user can now go and see that the playlist is there.
+    raw_input("You can now check on Google Music that the playlist exists. \n When done, press enter to delete the playlist:")
+    api.delete_playlist(playlist_id)
+    print "Deleted the playlist."
 
 
-    playlist_id = res['id']
-    res = api.add_songs_to_playlist(playlist_id, song_id)
-    print "Added to playlist."
-
-    res = api.change_playlist_name(playlist_id, "api playlist")
-    print "Changed playlist name to 'api playlist'."
-
-    raw_input("Press enter to delete the playlist.")
-    res = api.delete_playlist(playlist_id)
-    print "Deleted playlist."
-
-    print "Done!"
-    
+    #It's good practice to logout when finished.
     api.logout()
+    print "All done!"
 
 if __name__ == '__main__':
     main()
