@@ -61,7 +61,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         self.api.create_playlist('test playlist')
 
         #Need to reload playlists so it appears.
-        self.playlists = self.api.get_playlists(always_id_lists=True)['user']
+        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
 
 
     def pl_2_add_song(self):
@@ -95,13 +95,13 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         self.api.change_playlist_name(p_id, 'modified playlist')
 
-        self.playlists = self.api.get_playlists(always_id_lists=True)['user']
+        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
             
     def pl_4_delete(self):
         """Delete the playlist."""
         self.api.delete_playlist(self.playlists['modified playlist'][-1])
 
-        self.playlists = self.api.get_playlists(always_id_lists=True)['user']
+        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
 
 
     def test_playlists(self):
@@ -112,7 +112,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         self.api.create_playlist('playlist to change')
 
         #Need to reload playlists so it appears.
-        self.playlists = self.api.get_playlists(always_id_lists=True)['user']
+        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
 
         p_id = self.playlists['playlist to change'][-1]
 
@@ -159,7 +159,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         """Delete the playlist."""
         self.api.delete_playlist(self.playlists['playlist to change'][-1])
 
-        self.playlists = self.api.get_playlists(always_id_lists=True)['user']
+        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
         
     def test_change_playlist(self):
         self.run_steps("cpl")

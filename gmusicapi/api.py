@@ -273,7 +273,7 @@ class Api(UsesLog):
 
         return self._wc_call("loadplaylist", playlist_id)["playlist"]
 
-    def get_playlists(self, auto=True, instant=True, user=True, always_id_lists=False):
+    def get_all_playlist_ids(self, auto=True, instant=True, user=True, always_id_lists=False):
         """Returns a dictionary mapping playlist types to dictionaries of ``{"<playlist name>": "<playlist id>"}`` pairs.
 
         Available playlist types are:
@@ -434,7 +434,7 @@ class Api(UsesLog):
         if safe: #make the backup.
             #The backup is stored on the server as a new playlist with "_gmusicapi_backup" appended to the backed up name.
             #We can't just store the backup here, since when rolling back we'd be relying on this function - and it just failed.
-            names_to_ids = self.get_playlists(always_id_lists=True)['user']
+            names_to_ids = self.get_all_playlist_ids(always_id_lists=True)['user']
             playlist_name = (ni_pair[0] 
                              for ni_pair in names_to_ids.iteritems()
                              if playlist_id in ni_pair[1]).next()
