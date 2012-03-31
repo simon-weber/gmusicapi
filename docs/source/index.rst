@@ -24,24 +24,17 @@ Getting songs and playlists
 Song uploading, downloading, and streaming
 ------------------------------------------
 .. autoclass:: Api
-    :members: get_song_download_info, get_stream_url
-
-    .. automethod:: upload(filenames)
+    :members: get_song_download_info, get_stream_url, upload
 
 Playlist manipulation
 ---------------------
 .. autoclass:: Api
-    :members: change_playlist, change_playlist_name, create_playlist, delete_playlist 
-
-    .. automethod:: add_songs_to_playlist(playlist_id, song_ids)
-    .. automethod:: remove_songs_from_playlist(playlist_id, sids_to_match)
+    :members: change_playlist, change_playlist_name, create_playlist, delete_playlist, add_songs_to_playlist, remove_songs_from_playlist
 
 Song manipulation
 -----------------
 .. autoclass:: Api
-
-    .. automethod:: change_song_metadata(songs)
-    .. automethod:: delete_songs(song_ids)
+    :members: change_song_metadata, delete_songs
 
 
 Searching
@@ -55,7 +48,7 @@ GM Metadata Format
 
 Google Music sends song metadata in dictionaries.
 
-These dictionaries have up to 27 or 28 keys. Here is an example::
+These dictionaries have up to 30 keys. Here is an example::
 
     {'comment': ''
      'rating': 0
@@ -84,6 +77,8 @@ These dictionaries have up to 27 or 28 keys. Here is an example::
      'totalDiscs': 2
      'durationMillis': 562000
      'artistNorm': 'the cat empire',
+     'subjectToCuration': False,
+     'metajamId': '',
      (optional entry; exists if there is album art)
      'albumArtUrl': '//lh6.googleusercontent.com/<long identifier>'
      }

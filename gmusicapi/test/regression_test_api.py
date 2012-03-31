@@ -17,7 +17,8 @@
 #You should have received a copy of the GNU General Public License
 #along with gmusicapi.  If not, see <http://www.gnu.org/licenses/>.
 
-"""A test harness for regressions."""
+"""A test harness to ensure old bugs to do resurface.
+Tests are intended not to modify the library, but no guarantees are made."""
 
 import unittest
 import random
@@ -26,7 +27,8 @@ import string
 
 from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
-
+from ..protocol import Metadata_Expectations
+from ..protocol import UnknownExpectation
 
 #Expected to be in this directory.
 no_tags_filename = "no_tags.mp3"
@@ -35,9 +37,6 @@ has_tags_filename = "test.mp3"
 #Lots of things to be pulled out of the other api call test class here.
 
 class TestRegressions(test_utils.BaseTest, UsesLog):
-    """Runs regression tests.
-    Tests are intended not to modify the library, but no guarantees are made.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -74,17 +73,23 @@ class TestRegressions(test_utils.BaseTest, UsesLog):
 
     def notags_3_delete(self):
         """Delete the uploaded files."""
-        self.assert_success(
-            self.api.delete_songs(self.notags_uploaded_id))
+        self.api.delete_songs(self.notags_uploaded_id)
 
-        self.assert_success(
-            self.api.delete_songs(self.hastags_uploaded_id))
+        self.api.delete_songs(self.hastags_uploaded_id)
 
         del self.notags_uploaded_id
         del self.hastags_uploaded_id
 
     def test_notags_upload(self):
         self.run_steps("notags")
+
+    def test_invalid_md_key(self):
+        expt = Metadata_Expectations.get_expectation("foo", warn_on_unknown=False)
+        self.assertTrue(expt is UnknownExpectation)
+
+        #Don't want any unknowns when getting all.
+        for expt in Metadata_Expectations.get_all_expectations():
+            self.assertTrue(expt is not UnknownExpectation)
 
 
 if __name__ == '__main__':

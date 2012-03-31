@@ -4,19 +4,19 @@ The project is not supported nor endorsed by Google. I'll be interning for Googl
 
 **Respect Google in your use of the API**. Use common sense (protocol compliance, reasonable load, etc) and don't ruin the fun for everyone else.
 
-For those looking to use the api, documentation is hosted at Read the Docs: [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest).
+For those looking to use the api, see the usage section below. Documentation is hosted at Read the Docs: [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest).
 
-For those looking to port or contribute, check out the code overview on the wiki: [wiki](https://github.com/simon-weber/Unofficial-Google-Music-API/wiki/Codebase-Overview).
+For those looking to port or contribute, see the porting section below. There's also a code overview on the wiki: [wiki](https://github.com/simon-weber/Unofficial-Google-Music-API/wiki/Codebase-Overview).
 
 For bugs reports, feature requests, and contributions, go ahead and [open an issue](https://github.com/simon-weber/Unofficial-Google-Music-API/issues/new).
 
 ##Features
 
-**New in version 2012.03.16:**
+**New in version 2012.03.27:** 
 
-* Simple and robust playlist manipulation
-* Faster authentication
-* Support for non-unique playlist names  
+* proper pip packaging
+* various bugfixes and internal enhancements  
+   
 See the changelog for details.
 
 **Feature Overview:**
@@ -48,35 +48,25 @@ See the changelog for details.
 
 ##Usage
 
-gmusicapi.api.Api is the user-facing interface.
-To get started, install the dependencies and see example.py. For more information, see the [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest) and testing code.
-
-##Dependencies
-
 The API has been tested on Python 2.7.2 on Linux.
 
-Currently, the following third party modules are used:
+###Installation
 
-* [decorator](http://pypi.python.org/pypi/decorator)
+You can use `pip install gmusicapi` to get the most recent version and dependencies. If you don't have pip, see their [installation docs](http://www.pip-installer.org/en/latest/index.html).
 
-* [mutagen](http://code.google.com/p/mutagen)
+###Getting Started
 
-* [protobuf](http://code.google.com/p/protobuf)
+gmusicapi.api.Api is the user-facing interface. The provided example.py should be enough to get you started. For more information, see the [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest) and testing code. 
 
-* [mechanize](http://wwwsearch.sourceforge.net/mechanize/)
-
-* [validictory](http://pypi.python.org/pypi/validictory) 0.8.1+
-
-The first four are in Ubuntu's repos:
-    
-    python-decorator python-mutagen python-protobuf python-mechanize
-
-You probably want to use easy_install to get validictory.
-
+In addition, Michal Odnous has built [an example](https://github.com/odiroot/Unofficial-Google-Music-API/blob/mo-sandbox/example_play.py) that will play songs from your library.
 
 ##Porting
 
-I've seen a lot of excitement about possible ports, especially for mobile and web use. If you want to, go for it!
+I've seen a lot of excitement about possible ports, especially for mobile and web use. If you want to, go for it! 
+
+I'm currently aware of only one port. It's in C# (for use with Windows Phone), and being developed [here](https://github.com/Byteopia/GoogleMusicAPI.NET).
+
+###Porting Information for Developers
 
 The current implementation uses the same interface that a web browser does, and a code overview can be found [on the wiki](https://github.com/simon-weber/Unofficial-Google-Music-API/wiki/Codebase-Overview). Darryl Pogue is working on a more durable implementation by emulating Google's Android app. His work is [here](https://github.com/dpogue/Unofficial-Google-Music-API), and may easier to port.
 

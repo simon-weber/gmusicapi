@@ -1,0 +1,4 @@
+Simon Weber	anything not specified by other authors
+Darryl Pogue	PlaySession simplifications in api.py, .gitignore, tokenauth.py and clientlogin.py
+mystilleef	change to relative imports in api.py and protocol.py
+Ryan Hsu 	slimmed down to_camel_case function in utils/utils.py

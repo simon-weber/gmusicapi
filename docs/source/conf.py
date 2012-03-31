@@ -13,38 +13,6 @@
 
 import sys, os
 
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../../'))
-
-
-#Mock out modules, so documentation can be built.
-#From http://readthedocs.org/docs/read-the-docs/en/latest/faq.html
-class Mock(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __call__(self, *args, **kwargs):
-        return Mock()
-
-    @classmethod
-    def __getattr__(self, name):
-        if name in ('__file__', '__path__'):
-            return '/dev/null'
-        elif name[0] == name[0].upper():
-            return type(name, (), {})
-        else:
-            return Mock()
-
-MOCK_MODULES = ['mutagen', 'mutagen.easyid3', 'mutagen.mp3', 
-                'mechanize', 'validictory', 'gmusicapi.metadata_pb2']
-
-for mod_name in MOCK_MODULES:
-    sys.modules[mod_name] = Mock()
-
-
 # -- General configuration -----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -75,7 +43,7 @@ copyright = u'2012, Simon Weber'
 # built documents.
 #
 # The short X.Y version.
-version = '2012.03.16'
+version = '2012.03.27'
 # The full version, including alpha/beta/rc tags.
 release = version
 

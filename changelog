@@ -1,3 +1,24 @@
+next:
+	get_playlists is now get_all_playlist_ids
+	add an exception CallFailure. Api functions raise it if the server says their request failed
+	add suppress_failure (default False) option to Api.__init__()
+	change_playlist now returns the changed playlistId (pid)
+	change_song_metadata now returns a list of changed songIds (sids)
+	create_playlist now returns the new pid
+	delete_playlist now returns the deleted pid
+	delete_songs now returns a list of deleted sids
+	change_playlist now returns the pid of the playlist - which may differ from the one passed in
+	add_songs_to_playlist now returns a list of (sid, new playlistEntryId aka eid) tuples of added songs
+	remove_songs_from_playlist now returns a list of removed (sid, eid) pairs
+	search dictionary is now flattened, without the "results" key. see documentation for example
+	
+2012.03.27:
+	package for pip/pypi
+	add AUTHORS file
+	remove session.py; the sessions are now just api.PlaySession (Darryl Pogue)
+	protocol.Metadata_Expectations.get_expectation will return UnknownExpectation when queried for unknown keys; this should prevent future problems
+	add immutable 'subjectToCuration' and 'metajamId' fields - use unknown
+	
 2012.03.16:
 	add change_playlist for playlist modifications
 	get_playlists supports multiple playlists of the same name by returning lists of playlist ids. By default, it will return a single string (the id) for unique playlist names; see the always_id_lists parameter.
