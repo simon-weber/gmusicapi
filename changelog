@@ -1,5 +1,5 @@
 next:
-	get_playlists is now get_all_playlist_ids
+	get_playlists is now get_all_playlist_ids, and is faster
 	add an exception CallFailure. Api functions raise it if the server says their request failed
 	add suppress_failure (default False) option to Api.__init__()
 	change_playlist now returns the changed playlistId (pid)

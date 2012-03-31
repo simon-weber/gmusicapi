@@ -331,7 +331,8 @@ class WC_Protocol(object):
                      "playlist":song_array,
                      "playlistId":{"type":"string"},
                      "unavailableTrackCount":{"type":"integer"},
-                     "title":{"type":"string", "required":False} #not seen when loading a single playlist
+                     "title":{"type":"string", "required":False}, #not seen when loading a single playlist
+                     "continuationToken":{"type":"string", "required":False}
                      },
                  "additionalProperties":False
                  }
