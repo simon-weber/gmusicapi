@@ -17,7 +17,11 @@
 #You should have received a copy of the GNU General Public License
 #along with gmusicapi.  If not, see <http://www.gnu.org/licenses/>.
 
-"""A test harness for api features."""
+"""A test harness for checking that api calls mutate the server
+in the expected fashion. Unit testing is also performed.
+
+A successful test run should not appear to mutate the library
+when it is finished, but no guarantees are made."""
 
 
 import unittest
@@ -35,9 +39,6 @@ from ..test import utils as test_utils
 test_filename = "test.mp3"
 
 class TestWCApiCalls(test_utils.BaseTest, UsesLog):
-    """Runs integration tests for api calls.
-    Tests are intended not to modify the library, but no guarantees are made.
-    """
 
     @classmethod
     def setUpClass(cls):

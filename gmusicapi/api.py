@@ -404,10 +404,10 @@ class Api(UsesLog):
         
         orig_tracks = self.get_playlist_songs(orig_id)
         
-        backup_id = self.create_playlist(copy_name)
+        new_id = self.create_playlist(copy_name)
+        self.add_songs_to_playlist(new_id, [t["id"] for t in orig_tracks])
 
-        #Copy in all the songs.
-        self.add_songs_to_playlist(backup_id, [t["id"] for t in orig_tracks])
+        return new_id
 
     def change_playlist(self, playlist_id, desired_playlist, safe=True):
         """Changes the order and contents of an existing playlist. Returns the id of the playlist when finished - which may not be the argument, in the case of a failure and recovery.
@@ -774,6 +774,8 @@ class Api(UsesLog):
                         up['putInfo']['url'], 
                         open(filename), 
                         {'Content-Type': up['content_type']}).read())
+                
+                self.log.debug("post_jumper res: %s", res)
 
             
                 if res['sessionStatus']['state'] == 'FINALIZED':

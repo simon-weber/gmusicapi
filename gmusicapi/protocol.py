@@ -43,7 +43,7 @@ supported_filetypes = ("mp3")
 class UnsupportedFiletype(exceptions.Exception):
     pass
 
-class WC_Call:
+class WC_Call(object):
     """An abstract class to hold the protocol for a web client call."""
     
     _base_url = 'https://play.google.com/music/'
@@ -84,7 +84,7 @@ class _DefinesNameMetaclass(type):
         dct['name'] = name.split('gm_')[-1]
         return super(_DefinesNameMetaclass, cls).__new__(cls, name, bases, dct)
 
-class _Metadata_Expectation():
+class _Metadata_Expectation(object):
     """An abstract class to hold expectations for a particular metadata entry.
 
     Its default values are correct for most entries."""
@@ -145,7 +145,7 @@ class UnknownExpectation(_Metadata_Expectation):
     mutable = False
     
 
-class Metadata_Expectations:
+class Metadata_Expectations(object):
     """Holds expectations about metadata."""
 
     #Class names are GM response keys.
@@ -307,7 +307,7 @@ class Metadata_Expectations:
         val_type = "integer"
 
     
-class WC_Protocol:
+class WC_Protocol(object):
     """Holds the protocol for all suppported web client interactions."""
 
     #Shared response schemas.
@@ -651,7 +651,7 @@ class WC_Protocol:
             return (req, res)
 
 
-class MM_Protocol():
+class MM_Protocol(object):
 
     def __init__(self):
 

@@ -24,6 +24,7 @@ import unittest
 import random
 import inspect
 from getpass import getpass
+import re
 
 from ..api import Api, CallFailure
 from ..protocol import WC_Protocol, Metadata_Expectations
@@ -33,12 +34,19 @@ from ..utils import utils
 md_expts = Metadata_Expectations.get_all_expectations()
 log = LogController.get_logger("utils")
 
+#A regex for the gm id format, eg:
+#c293dd5a-9aa9-33c4-8b09-0c865b56ce46
+hex_set = "[0-9a-f]"
+gm_id_regex = re.compile(("{h}{{8}}-" +
+                         ("{h}{{4}}-" * 3) +
+                         "{h}{{12}}").format(h=hex_set))
+
 def init():
-    """Makes an instance of the api and attempts to login with it.
+    """Makes an instance of the unit-tested api and attempts to login with it.
     Returns the authenticated api.
     """
 
-    api = Api()
+    api = UnitTestedApi()
     
     logged_in = False
     attempts = 0
@@ -92,6 +100,78 @@ def md_entry_same(entry_name, s1, s2):
     return (s1_val == s2_val, "(" + entry_name + ") " + repr(s1_val) + ", " + repr(s2_val))
 
 
+def is_gm_id(s):
+    """Returns True if the given string is in Google Music id form."""
+    return re.match(gm_id_regex, s) is not None
+
+def is_song(d):
+    """Returns True is the given dict is a GM song dict."""
+    #Not really precise, but should be good enough.
+    return is_gm_id(d["id"])
+
+def is_song_list(lst):
+    return all(map(is_song, lst))
+
+def is_id_list(lst):
+    """Returns True if the given list is made up of all strings in GM id form."""
+    return all(map(is_gm_id, lst))
+
+def is_id_pair_list(lst):
+    """Returns True if the given list is made up of all (id, id) pairs."""
+    a,b = zip(*lst)
+    return is_id_list(a+b)
+
+class enforced(object):
+    """A callable that enforces the return of a function with a predicate."""
+    def __init__(self, pred):
+        self.pred = pred
+    
+    def __call__(self, f):
+        def wrapped_f(*args, **kwargs):
+            res = f(*args, **kwargs)
+            if not self.pred(res): raise AssertionError #bad return format
+            return res
+        return wrapped_f
+
+#Return information for most api member functions.
+returns_id = ("change_playlist_name",
+              "create_playlist",
+              "delete_playlist",
+              "copy_playlist",
+              "change_playlist")
+
+returns_id_list = ("change_song_metadata",
+                   "delete_songs")
+
+returns_songs = ("get_all_songs",
+                 "get_playlist_songs")
+
+returns_id_pairs = ("add_songs_to_playlist",
+                    "remove_songs_from_playlist")
+fname_to_pred = {}
+
+for fnames, pred in ((returns_id, is_gm_id),
+                     (returns_id_list, is_id_list),
+                     (returns_songs, is_song_list),
+                     (returns_id_pairs, is_id_pair_list)):
+    for fname in fnames:
+        fname_to_pred[fname] = pred
+
+class UnitTestedApi(Api):
+    """An Api, with most functions wrapped to assert a proper return."""
+
+
+
+                         
+    def __getattribute__(self, name):
+        orig = object.__getattribute__(self, name)
+        #Enforce any name in the lists above with the right pred.
+        if name in fname_to_pred:
+            return enforced(fname_to_pred[name])(orig)
+        else:
+            return orig
+    
+
 class BaseTest(unittest.TestCase):
     """Abstract class providing some useful features for testing the api."""
 
@@ -121,7 +201,7 @@ class BaseTest(unittest.TestCase):
     def setUp(self):
         """Get a random song id."""
 
-        #This will fail is we have no songs.
+        #This will fail if we have no songs.
         self.r_song_id = random.choice(self.library)['id']
 
     #---
