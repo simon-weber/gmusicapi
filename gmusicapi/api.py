@@ -293,19 +293,32 @@ class Api(UsesLog):
         """
 
         playlists = {}
-        
-        #Only hit the page once for all playlists.
-        res = self.session.open_web_url("https://music.google.com/music/listen?u=0")
-        markup = res.read()
+
+        res = self._wc_call("loadplaylist", "all")
 
         if auto:
             playlists['auto'] = self._get_auto_playlists()
         if instant:
-            playlists['instant'] = self._get_instant_mixes(always_id_lists, markup)
+            playlists['instant'] = self._playlist_list_to_dict(res['magicPlaylists'])
         if user:
-            playlists['user'] = self._get_user_playlists(always_id_lists, markup)
+            playlists['user'] = self._playlist_list_to_dict(res['playlists'])
 
+        #Break down singleton lists if desired.
+        if not always_id_lists:
+            for p_dict in playlists.itervalues():
+                for name, id_list in p_dict.iteritems():
+                    if len(id_list) == 1: p_dict[name]=id_list[0]
+        
         return playlists
+        
+    def _playlist_list_to_dict(self, pl_list):
+        d = {}
+
+        for name, pid in ((p["title"], p["playlistId"]) for p in pl_list):
+            if not name in d: d[name] = []
+            d[name].append(pid)
+
+        return d
         
     def _get_auto_playlists(self):
         """For auto playlists, returns a dictionary which maps autoplaylist name to id."""
@@ -316,54 +329,6 @@ class Api(UsesLog):
         return {"Thumbs up": "auto-playlist-thumbs-up", 
                 "Last added": "auto-playlist-recent",
                 "Free and purchased": "auto-playlist-promo"}
-
-    
-    def _get_playlists_in(self, ul_id, always_id_lists, markup):
-        """Returns a dictionary mapping playlist name to id for the given ul id in the markup.
-
-        :param ul_id: the id of the unordered list that defines the playlists.
-        :markup: (optional) markup of the page."""
-        
-        #Instant mixes and playlists are built in to the markup server-side.
-        #Generally, open_https_url isn't used directly; this is an exception.
-
-        #There's a lot of html; rather than parse, it's easier to just cut
-        # out the playlists ul, then use a regex.
-
-        if not markup:
-            res = self.session.open_web_url("https://music.google.com/music/listen?u=0")
-            markup = res.read()
-
-        ul_start = r'<ul id="{0}" class="playlistContainer">'.format(ul_id)
-
-        #Cut out the unordered list containing the playlists.
-        markup = markup[markup.index(ul_start):]
-        markup = markup[:markup.index(r'</ul>') + 5]
-
-        id_name = re.findall(r'<li id="(.*?)" class="nav-item-container".*?title="(.*?)">', markup)
-        
-        playlists = {}
-        
-        for p_id, p_name in id_name:
-            readable_name = utils.unescape_html(p_name)
-            if not readable_name in playlists:
-                playlists[readable_name] = []
-            playlists[readable_name].append(p_id)
-
-        #Break down singleton lists if desired.
-        if not always_id_lists:
-            for name, id_list in playlists.iteritems():
-                if len(id_list) == 1: playlists[name]=id_list[0]
-        
-        return playlists
-        
-    def _get_instant_mixes(self, always_id_lists, markup=None):
-        """For instant mixes, returns a dictionary which maps instant mix name to id."""
-        return self._get_playlists_in("magic-playlists", always_id_lists, markup)
-
-    def _get_user_playlists(self, always_id_lists, markup=None):
-        """For user-created playlists, returns a dictionary which maps playlist name to id."""
-        return self._get_playlists_in("playlists", always_id_lists, markup)
 
     def get_song_download_info(self, song_id):
         """Returns a tuple ``("<download url>", <download count>)``.
