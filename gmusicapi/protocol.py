@@ -325,6 +325,20 @@ class WC_Protocol(object):
     song_array = {"type":"array",
                   "items": song_schema}        
 
+    pl_schema = {"type":"object",
+                 "properties":{
+                     "continuation":{"type":"boolean"},
+                     "playlist":song_array,
+                     "playlistId":{"type":"string"},
+                     "unavailableTrackCount":{"type":"integer"},
+                     "title":{"type":"string", "required":False} #not seen when loading a single playlist
+                     },
+                 "additionalProperties":False
+                 }
+
+    pl_array = {"type":"array",
+                "items":pl_schema}
+
     #All api calls are named as they appear in the request.
 
     class addplaylist(WC_Call):
@@ -340,13 +354,12 @@ class WC_Protocol(object):
 
             #{"id":"<new playlist id>","title":"<name>","success":true}
             res = {"type": "object",
-                      "properties":{
-                        "id": {"type":"string"},
-                        "title": {"type": "string"},
-                        "success": {"type": "boolean"}
-                        }
-                   }
-                     
+                   "properties":{
+                       "id": {"type":"string"},
+                       "title": {"type": "string"},
+                       "success": {"type": "boolean"},
+                        },
+                   "additionalProperties":False}
 
             return (req, res)
 
@@ -377,8 +390,10 @@ class WC_Protocol(object):
                                     }
                                 }
                             }
-                        }
+                        },
+                   "additionalProperties":False
                    }
+                   
                     
             return (req, res)
 
@@ -423,14 +438,15 @@ class WC_Protocol(object):
                    "beforeEntryId": before_entry_id}
 
             res = {"type": "object",
-                     "properties":{
+                   "properties":{
                        "afterEntryId": {"type":"string", "blank":True},
                        "playlistId": {"type":"string"},
                        "movedSongIds":{
                            "type":"array",
                            "items": {"type":"string"}
                            }
-                       }
+                       },
+                   "additionalProperties":False
                    }
  
             return (req, res)
@@ -448,9 +464,11 @@ class WC_Protocol(object):
 
             #{"deleteId": "<id>"}
             res = {"type": "object",
-                     "properties":{
+                   "properties":{
                        "deleteId": {"type":"string"}
-                       }}
+                       },
+                   "additionalProperties":False
+                   }
                      
             return (req, res)
         
@@ -470,13 +488,14 @@ class WC_Protocol(object):
             #{"listId":"<playlistId>","deleteIds":["<id1>"]}
             #playlistId might be "all" - meaning deletion from the library
             res = {"type": "object",
-                     "properties":{
+                   "properties":{
                        "listId": {"type":"string"},
                        "deleteIds":
                            {"type": "array",
                             "items": {"type": "string"}
                             }
-                       }
+                       },
+                   "additionalProperties":False
                    }
             return (req, res)
 
@@ -526,17 +545,17 @@ class WC_Protocol(object):
             #Special call with empty body loads all instant/user playlists (but not auto).
             if playlist_id == "all":
                 req = {}
+                res = {"type":"object",
+                       "properties":{
+                           "magicPlaylists": WC_Protocol.pl_array,
+                           "playlists": WC_Protocol.pl_array,
+                           },
+                       "additionalProperties":False
+                       }
+                        
             else:
                 req = {"id": playlist_id}
-
-            res = {"type": "object",
-                   "properties":{
-                       "continuation":{"type":"boolean"},
-                       "playlist":WC_Protocol.song_array,
-                       "playlistId":{"type":"string"},
-                       "unavailableTrackCount": {"type": "integer"}
-                       }
-                   }
+                res = WC_Protocol.pl_schema
                            
             return (req, res)
         
@@ -565,7 +584,8 @@ class WC_Protocol(object):
                    "properties":{
                        "success": {"type":"boolean"},
                        "songs":WC_Protocol.song_array
-                       }
+                       },
+                   "additionalProperties":False
                    }
             return (req, res)
 
@@ -590,7 +610,8 @@ class WC_Protocol(object):
                                }
                            },
                        "url":{"type":"string"}
-                       }
+                       },
+                   "additionalProperties":False
                    }
             return (req, res)
 
@@ -613,7 +634,8 @@ class WC_Protocol(object):
             res = {"type":"object",
                    "properties":{
                        "url":{"type":"string"}
-                       }
+                       },
+                   "additionalProperties":False
                    }
             res = None
             return (req, res)
@@ -649,7 +671,8 @@ class WC_Protocol(object):
                                    }       
                                }
                            }
-                       }
+                       },
+                   "additionalProperties":False
                    }
                                   
                     
