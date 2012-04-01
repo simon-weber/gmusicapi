@@ -32,7 +32,7 @@ except ImportError:
     from urllib import urlencode
     unistr = unicode
 
-class ClientLogin:
+class ClientLogin(object):
     """
     A Google ClientLogin session management class.
 
@@ -119,11 +119,13 @@ class ClientLogin:
         }
         err, resp = self._make_request(self.AUTH_URL, data, headers)
         if err is not None:
-            raise "HTTP Error %d" % err
+            #raise Exception("HTTP Error %d" % err)
+            return
 
         ret = self._process_response(resp)
         if 'Error' in ret:
-            raise ret['Error']
+            #raise Exception(ret['Error'])
+            return
 
         if 'Auth' in ret:
             self.auth_token = ret['Auth']

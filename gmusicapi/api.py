@@ -32,6 +32,18 @@ import time
 import exceptions
 import collections
 import copy
+import contextlib
+import tempfile
+import subprocess
+import os
+#used for _wc_call to get its calling parent.
+#according to http://stackoverflow.com/questions/1095543/get-name-of-calling-functions-module-in-python,
+# this 
+#  "will interact strangely with import hooks, 
+#  won't work on ironpython, 
+#  and may behave in surprising ways on jython"
+import inspect 
+
 try:
     # These are for python3 support
     from urllib.request import HTTPCookieProcessor, Request, build_opener
@@ -58,18 +70,50 @@ from gmtools import tools
 from utils.clientlogin import ClientLogin
 from utils.tokenauth import TokenAuth
 
+supported_upload_filetypes = ("mp3", "m4a", "ogg", "flac", "wma") 
 
-class PlaylistModificationError(exceptions.Exception):
-    pass
+class CallFailure(exceptions.Exception):
+    """Exception raised when the Google Music server responds that a call failed.
+    
+    Attributes:
+        name -- name of Api function that had the failing call
+        res  -- the body of the failed response
+    """
+    def __init__(self, name, res):
+        self.name = name
+        self.res = res
+
+    def __str__(self):
+        return "api call {} failed; server returned {}".format(self.name, self.res)
 
 class Api(UsesLog):
-    def __init__(self):
+    def __init__(self, suppress_failure=False):
+        """Initializes an Api.
+
+        :param suppress_failure: when True, never raise CallFailure when a call fails.
+        """
+
+        self.suppress_failure = suppress_failure
+
         self.session = PlaySession()
 
         self.wc_protocol = WC_Protocol()
         self.mm_protocol = MM_Protocol()
 
         self.init_logger()
+    
+    @contextlib.contextmanager
+    def _unsuppress_failures(self):
+        """An internal context manager to temporarily disable failure suppression.
+
+        This should wrap any Api code which tries to catch CallFailure."""
+
+        orig = self.suppress_failure
+        self.suppress_failure = False
+        try:
+            yield
+        finally:
+            self.suppress_failure = orig
 
     #---
     #   Authentication:
@@ -84,10 +128,11 @@ class Api(UsesLog):
         """Authenticates the api with the given credentials.
         Returns True on success, False on failure.
 
-        Two factor authentication is currently unsupported.
-
         :param email: eg "`test@gmail.com`"
-        :param password: plaintext password. It will not be stored and is sent over ssl."""
+        :param password: plaintext password. It will not be stored and is sent over ssl.
+
+        Users of two-factor authentication will need to set an application-specific password
+        to log in."""
 
         self.session.login(email, password)
 
@@ -115,17 +160,20 @@ class Api(UsesLog):
     #---
 
     def change_playlist_name(self, playlist_id, new_name):
-        """Changes the name of a playlist.
+        """Changes the name of a playlist. Returns the changed id.
 
         :param playlist_id: id of the playlist to rename.
         :param new_title: desired title.
         """
 
-        return self._wc_call("modifyplaylist", playlist_id, new_name)
+        self._wc_call("modifyplaylist", playlist_id, new_name)
+
+        return playlist_id #the call actually doesn't return anything.
 
     @utils.accept_singleton(dict)
+    @utils.empty_arg_shortcircuit()
     def change_song_metadata(self, songs):
-        """Changes the metadata for songs given in `GM Metadata Format`_.
+        """Changes the metadata for songs given in `GM Metadata Format`_. Returns a list of the song ids changed.
 
         :param songs: a list of song dictionaries, or a single song dictionary.
 
@@ -172,32 +220,35 @@ class Api(UsesLog):
         * lastPlayed: likely some kind of last-accessed timestamp
         """
 
-        return self._wc_call("modifyentries", songs)
+        res = self._wc_call("modifyentries", songs)
+        
+        return [s['id'] for s in res['songs']]
         
     def create_playlist(self, name):
-        """Creates a new playlist.
+        """Creates a new playlist. Returns the new playlist id.
 
         :param title: the title of the playlist to create.
         """
 
-        return self._wc_call("addplaylist", name)
+        return self._wc_call("addplaylist", name)['id']
 
     def delete_playlist(self, playlist_id):
-        """Deletes a playlist.
+        """Deletes a playlist. Returns the deleted id.
 
         :param playlist_id: id of the playlist to delete.
         """
 
-        return self._wc_call("deleteplaylist", playlist_id)
+        return self._wc_call("deleteplaylist", playlist_id)['deleteId']
 
     @utils.accept_singleton(basestring)
+    @utils.empty_arg_shortcircuit()
     def delete_songs(self, song_ids):
-        """Deletes songs from the entire library.
+        """Deletes songs from the entire library. Returns a list of deleted song ids.
 
         :param song_ids: a list of song ids, or a single song id.
         """
 
-        return self._wc_call("deletesong", song_ids)
+        return self._wc_call("deletesong", song_ids)['deleteIds']
 
     def get_all_songs(self):
         """Returns a list of `song dictionaries`__.
@@ -228,7 +279,7 @@ class Api(UsesLog):
 
         return self._wc_call("loadplaylist", playlist_id)["playlist"]
 
-    def get_playlists(self, auto=True, instant=True, user=True, always_id_lists=False):
+    def get_all_playlist_ids(self, auto=True, instant=True, user=True, always_id_lists=False):
         """Returns a dictionary mapping playlist types to dictionaries of ``{"<playlist name>": "<playlist id>"}`` pairs.
 
         Available playlist types are:
@@ -248,19 +299,32 @@ class Api(UsesLog):
         """
 
         playlists = {}
-        
-        #Only hit the page once for all playlists.
-        res = self.session.open_web_url("https://music.google.com/music/listen?u=0")
-        markup = res.read()
+
+        res = self._wc_call("loadplaylist", "all")
 
         if auto:
             playlists['auto'] = self._get_auto_playlists()
         if instant:
-            playlists['instant'] = self._get_instant_mixes(always_id_lists, markup)
+            playlists['instant'] = self._playlist_list_to_dict(res['magicPlaylists'])
         if user:
-            playlists['user'] = self._get_user_playlists(always_id_lists, markup)
+            playlists['user'] = self._playlist_list_to_dict(res['playlists'])
 
+        #Break down singleton lists if desired.
+        if not always_id_lists:
+            for p_dict in playlists.itervalues():
+                for name, id_list in p_dict.iteritems():
+                    if len(id_list) == 1: p_dict[name]=id_list[0]
+        
         return playlists
+        
+    def _playlist_list_to_dict(self, pl_list):
+        d = {}
+
+        for name, pid in ((p["title"], p["playlistId"]) for p in pl_list):
+            if not name in d: d[name] = []
+            d[name].append(pid)
+
+        return d
         
     def _get_auto_playlists(self):
         """For auto playlists, returns a dictionary which maps autoplaylist name to id."""
@@ -271,54 +335,6 @@ class Api(UsesLog):
         return {"Thumbs up": "auto-playlist-thumbs-up", 
                 "Last added": "auto-playlist-recent",
                 "Free and purchased": "auto-playlist-promo"}
-
-    
-    def _get_playlists_in(self, ul_id, always_id_lists, markup):
-        """Returns a dictionary mapping playlist name to id for the given ul id in the markup.
-
-        :param ul_id: the id of the unordered list that defines the playlists.
-        :markup: (optional) markup of the page."""
-        
-        #Instant mixes and playlists are built in to the markup server-side.
-        #Generally, open_https_url isn't used directly; this is an exception.
-
-        #There's a lot of html; rather than parse, it's easier to just cut
-        # out the playlists ul, then use a regex.
-
-        if not markup:
-            res = self.session.open_web_url("https://music.google.com/music/listen?u=0")
-            markup = res.read()
-
-        ul_start = r'<ul id="{0}" class="playlistContainer">'.format(ul_id)
-
-        #Cut out the unordered list containing the playlists.
-        markup = markup[markup.index(ul_start):]
-        markup = markup[:markup.index(r'</ul>') + 5]
-
-        id_name = re.findall(r'<li id="(.*?)" class="nav-item-container".*?title="(.*?)">', markup)
-        
-        playlists = {}
-        
-        for p_id, p_name in id_name:
-            readable_name = utils.unescape_html(p_name)
-            if not readable_name in playlists:
-                playlists[readable_name] = []
-            playlists[readable_name].append(p_id)
-
-        #Break down singleton lists if desired.
-        if not always_id_lists:
-            for name, id_list in playlists.iteritems():
-                if len(id_list) == 1: playlists[name]=id_list[0]
-        
-        return playlists
-        
-    def _get_instant_mixes(self, always_id_lists, markup=None):
-        """For instant mixes, returns a dictionary which maps instant mix name to id."""
-        return self._get_playlists_in("magic-playlists", always_id_lists, markup)
-
-    def _get_user_playlists(self, always_id_lists, markup=None):
-        """For user-created playlists, returns a dictionary which maps playlist name to id."""
-        return self._get_playlists_in("playlists", always_id_lists, markup)
 
     def get_song_download_info(self, song_id):
         """Returns a tuple ``("<download url>", <download count>)``.
@@ -359,13 +375,13 @@ class Api(UsesLog):
         
         orig_tracks = self.get_playlist_songs(orig_id)
         
-        backup_id = self.create_playlist(copy_name)["id"]
+        new_id = self.create_playlist(copy_name)
+        self.add_songs_to_playlist(new_id, [t["id"] for t in orig_tracks])
 
-        #Copy in all the songs.
-        self.add_songs_to_playlist(backup_id, [t["id"] for t in orig_tracks])
+        return new_id
 
     def change_playlist(self, playlist_id, desired_playlist, safe=True):
-        """Changes the order and contents of an existing playlist. Returns True on success, False if the playlist could be in an inconsistent state due to a problem.
+        """Changes the order and contents of an existing playlist. Returns the id of the playlist when finished - which may not be the argument, in the case of a failure and recovery.
         
         :param playlist_id: the id of the playlist being modified.
         :param desired_playlist: the desired contents and order as a list of song dictionaries, like is returned from :func:`get_playlist_songs`.
@@ -386,114 +402,113 @@ class Api(UsesLog):
         desired_playlist = [copy.deepcopy(t) for t in desired_playlist]
         server_tracks = self.get_playlist_songs(playlist_id)
 
-        ##Make the backup.
-        if safe:
+        if safe: #make the backup.
             #The backup is stored on the server as a new playlist with "_gmusicapi_backup" appended to the backed up name.
-            #We can't just store the backup here, since when rolling back we'd be relying on this function - which just failed.
-            names_to_ids = self.get_playlists(always_id_lists=True)['user']
+            #We can't just store the backup here, since when rolling back we'd be relying on this function - and it just failed.
+            names_to_ids = self.get_all_playlist_ids(always_id_lists=True)['user']
             playlist_name = (ni_pair[0] 
                              for ni_pair in names_to_ids.iteritems()
                              if playlist_id in ni_pair[1]).next()
 
             backup_id = self.copy_playlist(playlist_id, playlist_name + "_gmusicapi_backup")
 
-        ##Try to change.
-        try:
-            #Counter, Counter, and set of id pairs to delete, add, and keep.
-            to_del, to_add, to_keep = tools.find_playlist_changes(server_tracks, desired_playlist)
+        #Ensure CallFailures do not get suppressed in our subcalls.
+        #Did not unsuppress the above copy_playlist call, since we should fail 
+        # out if we can't ensure the backup was made.
+        with self._unsuppress_failures():
+            try:
+                #Counter, Counter, and set of id pairs to delete, add, and keep.
+                to_del, to_add, to_keep = tools.find_playlist_changes(server_tracks, desired_playlist)
 
-            ##Delete unwanted entries.
-            to_del_eids = [pair[1] for pair in to_del.elements()]
-            if to_del_eids and not utils.call_succeeded(self._remove_entries_from_playlist(playlist_id, to_del_eids)):
-                raise PlaylistModificationError
+                ##Delete unwanted entries.
+                to_del_eids = [pair[1] for pair in to_del.elements()]
+                if to_del_eids: self._remove_entries_from_playlist(playlist_id, to_del_eids)
 
-            ##Add new entries.
-            to_add_sids = [pair[0] for pair in to_add.elements()]
-            if to_add_sids:
-                res = self.add_songs_to_playlist(playlist_id, to_add_sids)
-                if not utils.call_succeeded(res):
-                    raise PlaylistModificationError
+                ##Add new entries.
+                to_add_sids = [pair[0] for pair in to_add.elements()]
+                if to_add_sids:
+                    new_pairs = self.add_songs_to_playlist(playlist_id, to_add_sids)
 
-                ##Update desired tracks with added tracks server-given eids.
-                #Map new sid -> [eids]
-                new_sid_to_eids = {}
-                for sid, eid in ((s["songId"], s["playlistEntryId"]) for s in res["songIds"]):
-                    if not sid in new_sid_to_eids:
-                        new_sid_to_eids[sid] = []
-                    new_sid_to_eids[sid].append(eid)
+                    ##Update desired tracks with added tracks server-given eids.
+                    #Map new sid -> [eids]
+                    new_sid_to_eids = {}
+                    for sid, eid in new_pairs:
+                        if not sid in new_sid_to_eids:
+                            new_sid_to_eids[sid] = []
+                        new_sid_to_eids[sid].append(eid)
 
-                    
-                for d_t in desired_playlist:
-                    if d_t["id"] in new_sid_to_eids:
-                        #Found a matching sid.
-                        match = d_t
-                        sid = match["id"]
-                        eid = match.get("playlistEntryId") 
-                        pair = (sid, eid)
 
-                        if pair in to_keep:
-                            to_keep.remove(pair) #only keep one of the to_keep eids.
-                        else:
-                            match["playlistEntryId"] = new_sid_to_eids[sid].pop()
-                            if len(new_sid_to_eids[sid]) == 0:
-                                del new_sid_to_eids[sid]
-                            
+                    for d_t in desired_playlist:
+                        if d_t["id"] in new_sid_to_eids:
+                            #Found a matching sid.
+                            match = d_t
+                            sid = match["id"]
+                            eid = match.get("playlistEntryId") 
+                            pair = (sid, eid)
 
-            ##Now, the right eids are in the playlist.
-            ##Set the order of the tracks:
+                            if pair in to_keep:
+                                to_keep.remove(pair) #only keep one of the to_keep eids.
+                            else:
+                                match["playlistEntryId"] = new_sid_to_eids[sid].pop()
+                                if len(new_sid_to_eids[sid]) == 0:
+                                    del new_sid_to_eids[sid]
 
-            #The web client has no way to dictate the order without block insertion,
-            # but the api actually supports setting the order to a given list.
-            #For whatever reason, though, it needs to be set backwards; might be
-            # able to get around this by messing with afterEntry and beforeEntry parameters.
-            sids, eids = zip(*tools.get_id_pairs(desired_playlist[::-1]))
 
-            if sids and not utils.call_succeeded(self._wc_call("changeplaylistorder", playlist_id, sids, eids)):
-                raise PlaylistModificationError
+                ##Now, the right eids are in the playlist.
+                ##Set the order of the tracks:
 
-            ##Clean up the backup.
-            #Nothing to do if this fails (retry?), so assume it succeeds.
-            if safe: self.delete_playlist(backup_id)
-            return True
+                #The web client has no way to dictate the order without block insertion,
+                # but the api actually supports setting the order to a given list.
+                #For whatever reason, though, it needs to be set backwards; might be
+                # able to get around this by messing with afterEntry and beforeEntry parameters.
+                sids, eids = zip(*tools.get_id_pairs(desired_playlist[::-1]))
 
-        except PlaylistModificationError:
-            self.log.warning("a subcall of change_playlist failed - playlist %s is in an inconsistent state", playlist_id)
-            reverted = False
+                if sids: self._wc_call("changeplaylistorder", playlist_id, sids, eids)
 
-            if safe:
-                self.log.warning("attempting to revert changes from playlist '%s_gmusicapi_backup'", playlist_name)
+                ##Clean up the backup.
+                if safe: self.delete_playlist(backup_id)
 
-                if all(map(utils.call_succeeded,
-                           [self.delete_playlist(playlist_id),
-                            self.change_playlist_name(backup_id, playlist_name)])):
-                    reverted = True
-                    
-            if reverted:
-                self.log.warning("reverted changes safely; playlist id of '%s' is now '%s'", playlist_name, backup_id)
-            
-            return reverted
+            except CallFailure:
+                self.log.warning("a subcall of change_playlist failed - playlist %s is in an inconsistent state", playlist_id)
+
+                if not safe: raise #there's nothing we can do
+                else: #try to revert to the backup
+                    self.log.warning("attempting to revert changes from playlist '%s_gmusicapi_backup'", playlist_name)
+
+                    try:
+                        self.delete_playlist(playlist_id)
+                        self.change_playlist_name(backup_id, playlist_name)
+                    except CallFailure:
+                        self.log.error("failed to revert changes.")
+                        raise
+                    else:
+                        self.log.warning("reverted changes safely; playlist id of '%s' is now '%s'", playlist_name, backup_id)
+                        playlist_id = backup_id
+            finally:
+                return playlist_id
     
     @utils.accept_singleton(basestring, 2)
+    @utils.empty_arg_shortcircuit(position=2)
     def add_songs_to_playlist(self, playlist_id, song_ids):
-        """Adds songs to a playlist.
+        """Adds songs to a playlist. Returns a list of (song id, playlistEntryId) tuples that were added.
 
         :param playlist_id: id of the playlist to add to.
         :param song_ids: a list of song ids, or a single song id.
         """
 
-        return self._wc_call("addtoplaylist", playlist_id, song_ids)
+        return [(s['songId'], s['playlistEntryId'])
+                for s in 
+                self._wc_call("addtoplaylist", playlist_id, song_ids)['songIds']]
 
     @utils.accept_singleton(basestring, 2)
+    @utils.empty_arg_shortcircuit(position=2)
     def remove_songs_from_playlist(self, playlist_id, sids_to_match):
-        """Removes all copies of the given song id from a playlist.
+        """Removes all copies of the given song ids from a playlist. Returns a list of removed (sid, eid) pairs.
 
         :param playlist_id: id of the playlist to remove songs from.
         :param sids_to_match: a list of songids to match, or a single song id.
 
-        Note that this can have unexpected behavior when there is more than one copy of the song id in a playlist.
-        For example, if the playlist begins as ``[song1, song2, song3]``, and ``song1`` is added, removing song1 will remove both copies in the list, leaving ``[song2, song3]``.
-
-        For more control, get the playlist tracks with :func:`get_playlist_songs`, modify the list of tracks, then use :func:`change_playlist` to push changes to the server.
+        This does *not always* the inverse of a call to :func:`add_songs_to_playlist`, since multiple copies of the same song are removed. For more control in this case, get the playlist tracks with :func:`get_playlist_songs`, modify the list of tracks, then use :func:`change_playlist` to push changes to the server.
         """
 
         playlist_tracks = self.get_playlist_songs(playlist_id)
@@ -502,12 +517,19 @@ class Api(UsesLog):
         matching_eids = [t["playlistEntryId"]
                          for t in playlist_tracks
                          if t["id"] in sid_set]
+
         if matching_eids:
-            return self._remove_entries_from_playlist(playlist_id, matching_eids)
+            #Call returns "sid_eid" strings.
+            sid_eids = self._remove_entries_from_playlist(playlist_id, 
+                                                          matching_eids)
+            return [s.split("_") for s in sid_eids]
+        else:
+            return []
     
     @utils.accept_singleton(basestring, 2)
+    @utils.empty_arg_shortcircuit(position=2)
     def _remove_entries_from_playlist(self, playlist_id, entry_ids_to_remove):
-        """Removes entries from a playlist.
+        """Removes entries from a playlist. Returns a list of removed "sid_eid" strings.
 
         :param playlist_id: the playlist to be modified.
         :param entry_ids: a list of entry ids, or a single entry id.
@@ -528,22 +550,38 @@ class Api(UsesLog):
         #Unzip the pairs.
         sids, eids = zip(*e_s_id_pairs)
 
-        return self._wc_call("deletesong", sids, eids, playlist_id)
+        return self._wc_call("deletesong", sids, eids, playlist_id)['deleteIds']
     
         
     def search(self, query):
-        """Searches for songs, artists and albums.
-        GM ignores punctuation.
+        """Searches for songs and albums.
 
         :param query: the search query.
 
-        Example response, where <hits> are matching `song dictionaries`__:
-        ``{"results":{"artists":[<hits>],"albums":[<hits>],"songs":[<hits>]}}``
+        Search results are organized based on how they were found. Hits on an album title return information on that album. Here is an example album result:
+        ``{'artistName': 'The Cat Empire',
+         'imageUrl': '<url>',
+         'albumArtist': 'The Cat Empire', 
+         'albumName': 'Cities: The Cat Empire Project'}``
+        
+        Hits on song or artist name return the matching `song dictionary`__.
+
+        The responses are returned in a dictionary, arranged by hit type:
+        ``{'album_hits':[<album dictionary>, ...],
+           'artist_hits':[<song dictionary>, ...],
+           'song_hits':[<song dictionary>, ...]
+           }``
+
+        The search ignores punctuation.
 
         __ `GM Metadata Format`_
         """
 
-        return self._wc_call("search", query)
+        res = self._wc_call("search", query)['results']
+
+        return {"album_hits":res["albums"],
+                "artist_hits":res["artists"],
+                "song_hits":res["songs"]}
 
 
     def _wc_call(self, service_name, *args, **kw):
@@ -563,8 +601,7 @@ class Api(UsesLog):
         
 
         #Encode the body. It might be None (empty).
-        #This should probably be done in protocol, and an encoded body grabbed here.
-        if body != None: #body can be {}, which is different from None. {} is falsey.
+        if body is not None: #body can be {}, which is different from None. {} is falsey.
             body = "json=" + quote_plus(json.dumps(body))
 
         extra_query_args = None
@@ -576,8 +613,24 @@ class Api(UsesLog):
         read = res.read()
         res = json.loads(read)
 
-        #Calls are not required to have a schema.
-        if res_schema:
+        if protocol.gets_logged:
+            self.log.debug("wc_call response %s", res)
+        else:
+            self.log.debug("wc_call response <suppressed>")
+
+        #Check if the server reported success.
+        success = utils.call_succeeded(res)
+        if not success:
+            self.log.error("call to %s failed", service_name)
+            self.log.debug("full response: %s", res)
+            
+            if not self.suppress_failure:
+                calling_func_name = inspect.stack()[1][3]
+                raise CallFailure(calling_func_name, res) #normally caused by bad arguments to the server
+
+        #Calls are not required to have a schema, and
+        # schemas are only for successful calls.
+        if success and res_schema:
             try:
                 validictory.validate(res, res_schema)
             except ValueError as details:
@@ -586,17 +639,6 @@ class Api(UsesLog):
                 self.log.debug("failed schema: %s", res_schema)
                 self.log.warning("error was: %s", details)
                     
-        if protocol.gets_logged:
-            self.log.debug("wc_call response %s", res)
-        else:
-            self.log.debug("wc_call response <suppressed>")
-
-        #Check if the server reported success.
-        #It's likely a failure will not pass validation, as well.
-        if not utils.call_succeeded(res):
-            self.log.warning("call to %s failed", service_name)
-            self.log.debug("full response: %s", res)
-
         return res
 
 
@@ -617,16 +659,113 @@ class Api(UsesLog):
     #     #protocol incorrect here...
     #     return (quota.maximumTracks, quota.totalTracks, quota.availableTracks)
 
-    @utils.accept_singleton(basestring)
-    def upload(self, filenames):
-        """Uploads the MP3s stored in the given filenames. Returns a dictionary with ``{"<filename>": "<new song id>"}`` pairs for each successful upload.
+    
 
-        Returns an empty dictionary if all uploads fail.
+    @utils.accept_singleton(basestring)
+    @utils.empty_arg_shortcircuit(ret={})
+    def upload(self, filenames):
+        """Uploads the given filenames. Returns a dictionary with ``{"<filename>": "<new song id>"}`` pairs for each successful upload.
+
+        Returns an empty dictionary if all uploads fail. CallFailure will never be raised.
 
         :param filenames: a list of filenames, or a single filename.
 
+        All Google-supported filetypes are supported. Non-mp3 files will be transcoded to a 320kbs abr mp3 before being uploaded, just as Google's Music Manager does. The original filename will be returned, not the name of transcoded file.
+
         Unlike Google's Music Manager, this function will currently allow the same song to be uploaded more than once if its tags are changed. This is subject to change in the future.
         """
+        if not filenames:
+            return {}
+
+        results = {}
+
+        with self._temp_mp3_conversion(filenames) as (upload_files, orig_fnames):
+
+            fname_to_id = self._upload_mp3s(map(lambda f: f.name, upload_files))
+
+            for fname, sid in fname_to_id.items():
+                results[orig_fnames[fname]] = sid
+
+        return results
+        
+
+    @contextlib.contextmanager
+    def _temp_mp3_conversion(self, filenames):
+        """An internal context manager that converts files to temp mp3 files if needed.
+        Returns (list of file objects, {'temp filename':'orig fname'})
+
+        Only supported non-mp3s are converted and given a temp file."""
+        
+        temp_file_handles = []
+        all_file_handles = []
+
+        temp_to_orig = {}
+
+        try:
+            for orig_fn in filenames:
+                extension = orig_fn.split(".")[-1]
+
+                if extension == "mp3":
+                    all_file_handles.append(file(orig_fn))
+                    temp_to_orig[orig_fn] = orig_fn
+
+                elif extension in supported_upload_filetypes:
+                    t_handle = tempfile.NamedTemporaryFile(prefix="gmusicapi", suffix=".mp3", delete=False)
+                    temp_file_handles.append(t_handle)
+
+                    try:
+                        self.log.info("converting %s to %s", orig_fn, t_handle.name)
+                        err_output = None
+
+                        #pipe:1 -> send output to stdout
+                        p = subprocess.Popen(["ffmpeg", "-i", orig_fn, "-f", "mp3", "-ab", "320k", "pipe:1"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        
+                        audio_data, err_output = p.communicate()
+                        
+                        #Check for success and write out our temp file.
+                        if p.returncode is not 0:
+                            raise OSError
+                        else:
+                            t_handle.write(audio_data)
+                            
+
+                    except OSError as e:
+                        if err_output is not None:
+                            self.log.error("FFmpeg could not convert the file to mp3. output was: %s", err_output)
+                        else:
+                            self.log.exception("is FFmpeg installed? Failed to convert '%s' to mp3 while uploading. This file will not be uploaded. Error was:", orig_fn)
+
+                        continue
+
+                    finally:
+                        #Close the file so mutagen can write out its tags.
+                        t_handle.close()
+                        
+
+                    #Copy tags over. It's easier to do this here than mess with
+                    # passing overriding metadata into _upload() later on
+                    if not utils.copy_md_tags(orig_fn, t_handle.name):
+                        self.log.warn("failed to copy metadata to converted temp mp3 for '%s'. This file will still be uploaded, but Google Music may not receive (some of) its metadata.", orig_fn)
+
+                    all_file_handles.append(t_handle)
+                    temp_to_orig[t_handle.name] = orig_fn
+
+                else:
+                    self.log.error("'%s' is not of a supported filetype, and cannot be uploaded. Supported filetypes: %s", orig_fn, supported_upload_filetypes)
+
+
+            yield all_file_handles, temp_to_orig
+
+        finally:
+            #Ensure all temp files get deleted.
+            for t in temp_file_handles:
+                try:
+                    os.remove(t.name)
+                except OSError:
+                    self.log.exception("failed to delete temporary file '%s'", t.name)
+
+    def _upload_mp3s(self, filenames):
+        """Uploads a list of files. All files are assumed to be mp3s."""
 
         #filename -> GM song id
         fn_sid_map = {}
@@ -701,11 +840,14 @@ class Api(UsesLog):
                 up = res['sessionStatus']['externalFieldTransfers'][0]
                 self.log.info("uploading file. sid: %s", server_id)
 
-                res = json.loads(
-                    self.session.post_jumper( 
-                        up['putInfo']['url'], 
-                        open(filename), 
-                        {'Content-Type': up['content_type']}).read())
+                with open(filename, mode="rb") as audio_data:
+                    res = json.loads(
+                        self.session.post_jumper( 
+                            up['putInfo']['url'], 
+                            audio_data, 
+                            {'Content-Type': up['content_type']}).read())
+                
+                self.log.debug("post_jumper res: %s", res)
 
             
                 if res['sessionStatus']['state'] == 'FINALIZED':
@@ -718,8 +860,6 @@ class Api(UsesLog):
             else:
                 self.log.warning("could not upload file %s (sid %s)", filename, server_id)
 
-
-        
         return fn_sid_map
 
 

@@ -38,12 +38,7 @@ from utils import utils
 from utils.apilogging import LogController #TODO this is a hack
 
 
-supported_filetypes = ("mp3")
-
-class UnsupportedFiletype(exceptions.Exception):
-    pass
-
-class WC_Call:
+class WC_Call(object):
     """An abstract class to hold the protocol for a web client call."""
     
     _base_url = 'https://play.google.com/music/'
@@ -75,6 +70,7 @@ class WC_Call:
         """Return a tuple of (filled request, response schemas)."""
         raise NotImplementedError
 
+
 class _DefinesNameMetaclass(type):
     """A metaclass to create a 'name' attribute for _Metadata that respects
     any necessary name mangling."""
@@ -83,7 +79,7 @@ class _DefinesNameMetaclass(type):
         dct['name'] = name.split('gm_')[-1]
         return super(_DefinesNameMetaclass, cls).__new__(cls, name, bases, dct)
 
-class _Metadata_Expectation():
+class _Metadata_Expectation(object):
     """An abstract class to hold expectations for a particular metadata entry.
 
     Its default values are correct for most entries."""
@@ -144,7 +140,7 @@ class UnknownExpectation(_Metadata_Expectation):
     mutable = False
     
 
-class Metadata_Expectations:
+class Metadata_Expectations(object):
     """Holds expectations about metadata."""
 
     #Class names are GM response keys.
@@ -306,7 +302,7 @@ class Metadata_Expectations:
         val_type = "integer"
 
     
-class WC_Protocol:
+class WC_Protocol(object):
     """Holds the protocol for all suppported web client interactions."""
 
     #Shared response schemas.
@@ -324,6 +320,21 @@ class WC_Protocol:
     song_array = {"type":"array",
                   "items": song_schema}        
 
+    pl_schema = {"type":"object",
+                 "properties":{
+                     "continuation":{"type":"boolean"},
+                     "playlist":song_array,
+                     "playlistId":{"type":"string"},
+                     "unavailableTrackCount":{"type":"integer"},
+                     "title":{"type":"string", "required":False}, #not seen when loading a single playlist
+                     "continuationToken":{"type":"string", "required":False}
+                     },
+                 "additionalProperties":False
+                 }
+
+    pl_array = {"type":"array",
+                "items":pl_schema}
+
     #All api calls are named as they appear in the request.
 
     class addplaylist(WC_Call):
@@ -339,13 +350,12 @@ class WC_Protocol:
 
             #{"id":"<new playlist id>","title":"<name>","success":true}
             res = {"type": "object",
-                      "properties":{
-                        "id": {"type":"string"},
-                        "title": {"type": "string"},
-                        "success": {"type": "boolean"}
-                        }
-                   }
-                     
+                   "properties":{
+                       "id": {"type":"string"},
+                       "title": {"type": "string"},
+                       "success": {"type": "boolean"},
+                        },
+                   "additionalProperties":False}
 
             return (req, res)
 
@@ -376,8 +386,10 @@ class WC_Protocol:
                                     }
                                 }
                             }
-                        }
+                        },
+                   "additionalProperties":False
                    }
+                   
                     
             return (req, res)
 
@@ -422,14 +434,15 @@ class WC_Protocol:
                    "beforeEntryId": before_entry_id}
 
             res = {"type": "object",
-                     "properties":{
+                   "properties":{
                        "afterEntryId": {"type":"string", "blank":True},
                        "playlistId": {"type":"string"},
                        "movedSongIds":{
                            "type":"array",
                            "items": {"type":"string"}
                            }
-                       }
+                       },
+                   "additionalProperties":False
                    }
  
             return (req, res)
@@ -447,9 +460,11 @@ class WC_Protocol:
 
             #{"deleteId": "<id>"}
             res = {"type": "object",
-                     "properties":{
+                   "properties":{
                        "deleteId": {"type":"string"}
-                       }}
+                       },
+                   "additionalProperties":False
+                   }
                      
             return (req, res)
         
@@ -469,13 +484,14 @@ class WC_Protocol:
             #{"listId":"<playlistId>","deleteIds":["<id1>"]}
             #playlistId might be "all" - meaning deletion from the library
             res = {"type": "object",
-                     "properties":{
+                   "properties":{
                        "listId": {"type":"string"},
                        "deleteIds":
                            {"type": "array",
                             "items": {"type": "string"}
                             }
-                       }
+                       },
+                   "additionalProperties":False
                    }
             return (req, res)
 
@@ -514,23 +530,28 @@ class WC_Protocol:
 
     class loadplaylist(WC_Call):
         """Loads tracks from a playlist.
-        Tracks include an entryId.
+        Tracks include playlistEntryIds.
         """
 
         gets_logged = False
 
         @staticmethod
         def build_transaction(playlist_id):
-            req = {"id": playlist_id}
 
-            res = {"type": "object",
-                   "properties":{
-                       "continuation":{"type":"boolean"},
-                       "playlist":WC_Protocol.song_array,
-                       "playlistId":{"type":"string"},
-                       "unavailableTrackCount": {"type": "integer"}
+            #Special call with empty body loads all instant/user playlists (but not auto).
+            if playlist_id == "all":
+                req = {}
+                res = {"type":"object",
+                       "properties":{
+                           "magicPlaylists": WC_Protocol.pl_array,
+                           "playlists": WC_Protocol.pl_array,
+                           },
+                       "additionalProperties":False
                        }
-                   }
+                        
+            else:
+                req = {"id": playlist_id}
+                res = WC_Protocol.pl_schema
                            
             return (req, res)
         
@@ -559,7 +580,8 @@ class WC_Protocol:
                    "properties":{
                        "success": {"type":"boolean"},
                        "songs":WC_Protocol.song_array
-                       }
+                       },
+                   "additionalProperties":False
                    }
             return (req, res)
 
@@ -584,7 +606,8 @@ class WC_Protocol:
                                }
                            },
                        "url":{"type":"string"}
-                       }
+                       },
+                   "additionalProperties":False
                    }
             return (req, res)
 
@@ -607,7 +630,8 @@ class WC_Protocol:
             res = {"type":"object",
                    "properties":{
                        "url":{"type":"string"}
-                       }
+                       },
+                   "additionalProperties":False
                    }
             res = None
             return (req, res)
@@ -643,14 +667,15 @@ class WC_Protocol:
                                    }       
                                }
                            }
-                       }
+                       },
+                   "additionalProperties":False
                    }
                                   
                     
             return (req, res)
 
 
-class MM_Protocol():
+class MM_Protocol(object):
 
     def __init__(self):
 
@@ -705,7 +730,7 @@ class MM_Protocol():
 
 
     def make_metadata_request(self, filenames):
-        """Returns (Metadata protobuff, dictionary mapping ClientId to filename) for the given filenames."""
+        """Returns (Metadata protobuff, dictionary mapping ClientId to filename) for the given mp3s."""
 
         filemap = {} #this maps a generated ClientID with a filename
 
@@ -713,10 +738,8 @@ class MM_Protocol():
 
         for filename in filenames:
 
-            #Only mp3 supported right now.
-            if not filename.split(".")[-1] in supported_filetypes:
-                raise UnsupportedFiletype("only these filetypes are supported for uploading: " + str(supported_filetypes))
-
+            if not filename.split(".")[-1] == "mp3":
+                self.log.error("Cannot upload '%s' because it is not an mp3.")
 
             track = metadata.tracks.add()
 
@@ -736,10 +759,7 @@ class MM_Protocol():
 
             #This will reupload files if their tags change.
             
-            #It looks like we can turn on/off rematching of tracks (in session request);
-            # might be better to comply and then give the option.
-            
-            with open(filename) as f:
+            with open(filename, mode="rb") as f:
                 file_contents = f.read()
             
             h = hashlib.md5(file_contents).digest()

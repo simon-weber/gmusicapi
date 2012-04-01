@@ -24,30 +24,77 @@ import re
 import copy
 from htmlentitydefs import name2codepoint
 
-#Mock version of decorator.
-#Used when docs are built, we need docstrings to be copied, but
-# remotes won't have the module installed.
-def mock_decorator(f):
-    def decorate(_func):
-        def inner(*args, **kwargs):
-            return f(_func, *args, **kwargs)
+import mutagen
+from decorator import decorator
 
-        inner.__doc__ = _func.__doc__
-        inner.__repr__ = _func.__repr__
+from apilogging import LogController
+log = LogController.get_logger("utils")
 
-        return inner
+def copy_md_tags(from_fname, to_fname):
+    """Copy all metadata from *from_fname* to *to_fname* and write.
+    
+    Return True on success, False if not all keys were copied/saved."""
+    
+    from_tags = mutagen.File(from_fname, easy=True)
+    to_tags = mutagen.File(to_fname, easy=True)
+    
+    if from_tags is None or to_tags is None:
+        log.debug("couldn't find an appropriate handler for tag files: '%s' '%s'", from_fname, to_fname)
+        return False
 
-    return decorate
 
-try:
-    from decorator import decorator
-except ImportError:
-    decorator =  mock_decorator
+    success = True
 
+    for k,v in from_tags.iteritems():
+        try:
+            #Some tags don't store values in strings, but in special container types.
+            #Those should be converted to strings so we can safely save them.
+            #Also, the value might be a list of tags or a single tag.
+
+            if not isinstance(v, basestring):
+                safe = [str(e) for e in v]
+            else:
+                safe = str(e)
+            
+            to_tags[k] = safe
+        except mutagen.easyid3.EasyID3KeyError as e:
+            #Raised because we're copying in an unsupported in easy-mode key.
+            log.debug("skipping non easy key", exc_info=True) 
+        except:
+            #lots of things can go wrong, just skip the key
+            log.warning("problem when copying keys from '%s' to '%s'", from_fname, to_fname, exc_info=True)
+            success = False
+        
+    try:
+        to_tags.save()
+    except:
+        log.warning("could not save tag file %s", to_fname, exc_info=True)
+        success = False
+
+    return success
+    
 def to_camel_case(s):
     """Given a sring in underscore form, returns a copy of it in camel case.
     eg, camel_case('test_string') => 'TestString'. """
     return ''.join(map(lambda x: x.title(), s.split('_')))
+
+def empty_arg_shortcircuit(ret=[], position=1):
+    """Decorate a function to shortcircuit and return something immediately if 
+    the length of a positional arg is 0.
+
+    :param ret: what to return when shortcircuiting
+    :param position: (optional) the position of the expected list - defaults to 1.
+    """
+
+    @decorator
+    def wrapper(function, *args, **kw):
+        if len(args[position]) == 0:
+            return ret
+        else:
+            return function(*args, **kw)
+
+    return wrapper
+
 
 def accept_singleton(expected_type, position=1):
     """Allows a function expecting a list to accept a single item as well.

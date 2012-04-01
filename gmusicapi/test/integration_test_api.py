@@ -17,7 +17,11 @@
 #You should have received a copy of the GNU General Public License
 #along with gmusicapi.  If not, see <http://www.gnu.org/licenses/>.
 
-"""A test harness for api features."""
+"""A test harness for checking that api calls mutate the server
+in the expected fashion. Unit testing is also performed.
+
+A successful test run should not appear to mutate the library
+when it is finished, but no guarantees are made."""
 
 
 import unittest
@@ -32,12 +36,9 @@ from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
 
 #Expected to be in this directory.
-test_filename = "test.mp3"
+test_filenames = ("test.mp3", "test.flac", "test.m4a", "test.ogg", "test.wma")
 
 class TestWCApiCalls(test_utils.BaseTest, UsesLog):
-    """Runs integration tests for api calls.
-    Tests are intended not to modify the library, but no guarantees are made.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -45,9 +46,12 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         cls.init_class_logger()
 
-        #Get the full path of the test file.
+        #Get the full path of the test files.
+        #Can't use abspath since this is relative to where _this_ file is,
+        # not necessarily the calling curdir.
         path = os.path.realpath(__file__)
-        cls.test_filename = path[:string.rfind(path, r'/')] + r'/' + test_filename
+        real_path = lambda lp: path[:string.rfind(path, os.sep)] + os.sep + lp
+        cls.test_filenames = map(real_path, test_filenames)
 
     #---
     #   Monolithic tests: 
@@ -57,19 +61,17 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         
     def pl_1_create(self):
         """Create a playlist."""
-        self.assert_success(
-            self.api.create_playlist('test playlist'))
+        self.api.create_playlist('test playlist')
 
         #Need to reload playlists so it appears.
-        self.playlists = self.api.get_playlists(always_id_lists=True)['user']
+        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
 
 
     def pl_2_add_song(self):
         """Add a random song to the playlist."""
         p_id = self.playlists['test playlist'][-1]
 
-        self.assert_success(
-            self.api.add_songs_to_playlist(p_id, self.r_song_id))
+        self.api.add_songs_to_playlist(p_id, self.r_song_id)
 
         #Verify the playlist has it.
         tracks = self.api.get_playlist_songs(p_id)
@@ -83,8 +85,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         sid = self.api.get_playlist_songs(p_id)[0]["id"]
         
-        self.assert_success(
-            self.api.remove_songs_from_playlist(p_id, sid))
+        self.api.remove_songs_from_playlist(p_id, sid)
 
         #Verify.
         tracks = self.api.get_playlist_songs(p_id)
@@ -95,17 +96,15 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         """Change the playlist's name."""
         p_id = self.playlists['test playlist'][-1]
 
-        self.assert_success(
-            self.api.change_playlist_name(p_id, 'modified playlist'))
+        self.api.change_playlist_name(p_id, 'modified playlist')
 
-        self.playlists = self.api.get_playlists(always_id_lists=True)['user']
+        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
             
     def pl_4_delete(self):
         """Delete the playlist."""
-        self.assert_success(
-            self.api.delete_playlist(self.playlists['modified playlist'][-1]))
+        self.api.delete_playlist(self.playlists['modified playlist'][-1])
 
-        self.playlists = self.api.get_playlists(always_id_lists=True)['user']
+        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
 
 
     def test_playlists(self):
@@ -113,16 +112,14 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         
     def cpl_1_create(self):
         """Create and populate a random playlist."""
-        self.assert_success(
-            self.api.create_playlist('playlist to change'))
+        self.api.create_playlist('playlist to change')
 
         #Need to reload playlists so it appears.
-        self.playlists = self.api.get_playlists(always_id_lists=True)['user']
+        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
 
         p_id = self.playlists['playlist to change'][-1]
 
-        self.assert_success(
-            self.api.add_songs_to_playlist(p_id, [s["id"] for s in random.sample(self.library, 10)]))
+        self.api.add_songs_to_playlist(p_id, [s["id"] for s in random.sample(self.library, 10)])
                 
     def cpl_2_change(self):
         """Change the playlist with random deletions, additions and reordering."""
@@ -130,9 +127,9 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         tracks = self.api.get_playlist_songs(p_id)
 
         #Apply random modifications.
-        delete, add_dupe, add_blank, reorder = [random.choice([True]) for i in xrange(4)]
+        delete, add_dupe, add_blank, reorder = [random.choice([True, False]) for i in xrange(4)]
 
-        if delete:
+        if tracks and delete:
             self.log.debug("deleting tracks")
             track_is = range(len(tracks))
             #Select a random number of indices to delete.
@@ -163,29 +160,31 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
     def cpl_3_delete(self):
         """Delete the playlist."""
-        self.assert_success(
-            self.api.delete_playlist(self.playlists['playlist to change'][-1]))
+        self.api.delete_playlist(self.playlists['playlist to change'][-1])
 
-        self.playlists = self.api.get_playlists(always_id_lists=True)['user']
+        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
         
     def test_change_playlist(self):
         self.run_steps("cpl")
 
 
     def updel_1_upload(self):
-        """Upload the test file."""
-        result = self.api.upload(self.test_filename)
-        self.assertTrue(self.test_filename in result)
+        """Upload some test files."""
 
-        #A bit messy; need to pass the id on to the next step.
-        self.uploaded_id = result[self.test_filename]
+        some_files = random.sample(self.test_filenames, 
+                                   random.randrange(len(self.test_filenames)))
+
+        result = self.api.upload(some_files)
+        self.assertTrue(len(some_files) == len(result))
+
+        #A bit messy; need to pass the ids on to the next step.
+        self.uploaded_ids = result.values()
 
     def updel_2_delete(self):
-        """Delete the uploaded test file."""
-        self.assert_success(
-            self.api.delete_songs(self.uploaded_id))
+        """Delete the uploaded test files."""
+        self.api.delete_songs(self.uploaded_ids)
 
-        del self.uploaded_id
+        del self.uploaded_ids
 
     def test_up_deletion(self):
         self.run_steps("updel_")
@@ -226,8 +225,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         #Make the call to change the metadata.
         #This should succeed, even though we _shouldn't_ be able to change some entries.
         #The call only fails if you give the wrong datatype.
-        self.assert_success(
-            self.api.change_song_metadata(new_md))
+        self.api.change_song_metadata(new_md)
 
 
         #Recreate the dependent md to what they should be (based on how orig_md was changed)
@@ -251,6 +249,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         attempts = 0
         success = False
 
+        #TODO: this is cludgey, and should be pulled out with the below retry logic.
         while not success and attempts < max_attempts:
             time.sleep(sleep_for)
             self.library = self.api.get_all_songs()
@@ -283,8 +282,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
             
         #Revert the metadata.
-        self.assert_success(
-            self.api.change_song_metadata(orig_md))
+        self.api.change_song_metadata(orig_md)
 
         #Verify everything is as it was.
 
@@ -315,8 +313,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         
 
     def test_search(self):
-        self.assert_success(
-            self.api.search('e'))
+        self.api.search('e')
 
     def test_get_stream_url(self):
         #This should return a valid url.
