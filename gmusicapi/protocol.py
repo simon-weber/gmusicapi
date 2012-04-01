@@ -38,11 +38,6 @@ from utils import utils
 from utils.apilogging import LogController #TODO this is a hack
 
 
-supported_filetypes = ("mp3")
-
-class UnsupportedFiletype(exceptions.Exception):
-    pass
-
 class WC_Call(object):
     """An abstract class to hold the protocol for a web client call."""
     
@@ -735,7 +730,7 @@ class MM_Protocol(object):
 
 
     def make_metadata_request(self, filenames):
-        """Returns (Metadata protobuff, dictionary mapping ClientId to filename) for the given filenames."""
+        """Returns (Metadata protobuff, dictionary mapping ClientId to filename) for the given mp3s."""
 
         filemap = {} #this maps a generated ClientID with a filename
 
@@ -743,10 +738,8 @@ class MM_Protocol(object):
 
         for filename in filenames:
 
-            #Only mp3 supported right now.
-            if not filename.split(".")[-1] in supported_filetypes:
-                raise UnsupportedFiletype("only these filetypes are supported for uploading: " + str(supported_filetypes))
-
+            if not filename.split(".")[-1] == "mp3":
+                self.log.error("Cannot upload '%s' because it is not an mp3.")
 
             track = metadata.tracks.add()
 
@@ -765,9 +758,6 @@ class MM_Protocol(object):
             # so this shouldn't cause problems.
 
             #This will reupload files if their tags change.
-            
-            #It looks like we can turn on/off rematching of tracks (in session request);
-            # might be better to comply and then give the option.
             
             with open(filename) as f:
                 file_contents = f.read()

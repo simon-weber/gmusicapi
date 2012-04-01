@@ -36,7 +36,7 @@ from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
 
 #Expected to be in this directory.
-test_filename = "test.mp3"
+test_filenames = ("test.mp3", "test.flac", "test.m4a", "test.ogg", "test.wma")
 
 class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
@@ -46,9 +46,12 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         cls.init_class_logger()
 
-        #Get the full path of the test file.
+        #Get the full path of the test files.
+        #Can't use abspath since this is relative to where _this_ file is,
+        # not necessarily the calling curdir.
         path = os.path.realpath(__file__)
-        cls.test_filename = path[:string.rfind(path, r'/')] + r'/' + test_filename
+        real_path = lambda lp: path[:string.rfind(path, r'/')] + r'/' + lp
+        cls.test_filenames = map(real_path, test_filenames)
 
     #---
     #   Monolithic tests: 
@@ -166,18 +169,22 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
 
     def updel_1_upload(self):
-        """Upload the test file."""
-        result = self.api.upload(self.test_filename)
-        self.assertTrue(self.test_filename in result)
+        """Upload some test files."""
 
-        #A bit messy; need to pass the id on to the next step.
-        self.uploaded_id = result[self.test_filename]
+        some_files = random.sample(self.test_filenames, 
+                                   random.randrange(len(self.test_filenames)))
+
+        result = self.api.upload(some_files)
+        self.assertTrue(len(some_files) == len(result))
+
+        #A bit messy; need to pass the ids on to the next step.
+        self.uploaded_ids = result.values()
 
     def updel_2_delete(self):
-        """Delete the uploaded test file."""
-        self.api.delete_songs(self.uploaded_id)
+        """Delete the uploaded test files."""
+        self.api.delete_songs(self.uploaded_ids)
 
-        del self.uploaded_id
+        del self.uploaded_ids
 
     def test_up_deletion(self):
         self.run_steps("updel_")
