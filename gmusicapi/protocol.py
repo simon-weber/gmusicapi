@@ -759,7 +759,7 @@ class MM_Protocol(object):
 
             #This will reupload files if their tags change.
             
-            with open(filename) as f:
+            with open(filename, mode="rb") as f:
                 file_contents = f.read()
             
             h = hashlib.md5(file_contents).digest()
