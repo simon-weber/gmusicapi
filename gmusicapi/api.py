@@ -33,6 +33,8 @@ import exceptions
 import collections
 import copy
 import contextlib
+import tempfile
+import subprocess
 #used for _wc_call to get its calling parent.
 #according to http://stackoverflow.com/questions/1095543/get-name-of-calling-functions-module-in-python,
 # this 
@@ -67,6 +69,7 @@ from gmtools import tools
 from utils.clientlogin import ClientLogin
 from utils.tokenauth import TokenAuth
 
+supported_upload_filetypes = ("mp3", "m4a", "ogg", "flac", "wma") 
 
 class CallFailure(exceptions.Exception):
     """Exception raised when the Google Music server responds that a call failed.
@@ -650,16 +653,87 @@ class Api(UsesLog):
     #     #protocol incorrect here...
     #     return (quota.maximumTracks, quota.totalTracks, quota.availableTracks)
 
+    
+
     @utils.accept_singleton(basestring)
     def upload(self, filenames):
-        """Uploads the MP3s stored in the given filenames. Returns a dictionary with ``{"<filename>": "<new song id>"}`` pairs for each successful upload.
+        """Uploads the given filenames. Returns a dictionary with ``{"<filename>": "<new song id>"}`` pairs for each successful upload.
 
         Returns an empty dictionary if all uploads fail. CallFailure will never be raised.
 
         :param filenames: a list of filenames, or a single filename.
 
+        All Google-supported filetypes are supported. Non-mp3 files will be transcoded to a 320kbs abr mp3 before being uploaded, just as Google's Music Manager does. The original filename will be returned, not the name of transcoded file.
+
         Unlike Google's Music Manager, this function will currently allow the same song to be uploaded more than once if its tags are changed. This is subject to change in the future.
         """
+        results = {}
+
+        with self._temp_mp3_conversion(filenames) as (upload_files, orig_fnames):
+
+            fname_to_id = self._upload_mp3s(map(lambda f: f.name, upload_files))
+
+            for fname, sid in fname_to_id.items():
+                results[orig_fnames[fname]] = sid
+
+        return results
+        
+
+    @contextlib.contextmanager
+    def _temp_mp3_conversion(self, filenames):
+        """An internal context manager that converts files to temp mp3 files if needed.
+        Returns (list of file objects, {'temp filename':'orig fname'})
+
+        Only supported non-mp3s are converted and given a temp file."""
+        
+        temp_file_handles = []
+        all_file_handles = []
+
+        temp_to_orig = {}
+
+        try:
+            for orig_fn in filenames:
+                extension = orig_fn.split(".")[-1]
+
+                if extension == "mp3":
+                    all_file_handles.append(file(orig_fn))
+                    temp_to_orig[orig_fn] = orig_fn
+
+                elif extension in supported_upload_filetypes:
+                    #Create the temp file.
+                    t_handle = tempfile.NamedTemporaryFile(prefix="gmusicapi", suffix=".mp3")
+                    temp_file_handles.append(t_handle)
+
+                    try:
+                        # -y = overwrite the temp file, since it's already there.
+                        subprocess.check_output(["ffmpeg", "-y", "-i", orig_fn, "-ab", "320k", t_handle.name])
+                    except CalledProcessError as err:
+                        self.log.error("failed to convert '%s' to mp3 while uploading. This file will not be uploaded.", orig_fn)
+                        self.log.error("FFmpeg output was: \n%s", err.output)
+                        continue
+
+                    #Copy tags over. It's easier to do this here than mess with
+                    # passing overriding metadata into _upload() later on
+                    if not utils.copy_md_tags(orig_fn, t_handle.name):
+                        self.log.warn("failed to copy metadata to converted temp mp3 for '%s'. This file will still be uploaded, but Google Music may not receive its metadata.", orig_fn)
+
+                    all_file_handles.append(t_handle)
+                    temp_to_orig[t_handle.name] = orig_fn
+
+                else:
+                    self.log.error("'%s' is not of a supported filetype, and cannot be uploaded. Supported filetypes: %s", orig_fn, supported_upload_filetypes)
+
+
+            yield all_file_handles, temp_to_orig
+
+        finally:
+            #Ensure all temp files get closed (deleted).
+            for t in temp_file_handles:
+                t.close()
+
+
+    def _upload_mp3s(self, filenames):
+        """Uploads a list of files. All files are assumed to be mp3s."""
 
         #filename -> GM song id
         fn_sid_map = {}

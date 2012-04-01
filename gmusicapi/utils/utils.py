@@ -24,26 +24,31 @@ import re
 import copy
 from htmlentitydefs import name2codepoint
 
-#Mock version of decorator.
-#Used when docs are built, we need docstrings to be copied, but
-# remotes won't have the module installed.
-def mock_decorator(f):
-    def decorate(_func):
-        def inner(*args, **kwargs):
-            return f(_func, *args, **kwargs)
+import mutagen
+from decorator import decorator
 
-        inner.__doc__ = _func.__doc__
-        inner.__repr__ = _func.__repr__
+def copy_md_tags(from_fname, to_fname):
+    """Copy all metadata from *from_fname* to *to_fname* and write.
+    
+    Return True on success, False on failure."""
+    
+    from_tags = mutagen.File(from_fname, easy=True)
+    to_tags = mutagen.File(to_fname, easy=True)
+    
+    if from_tags is None or to_tags is None:
+        return False #couldn't find an appropriate handler
 
-        return inner
-
-    return decorate
-
-try:
-    from decorator import decorator
-except ImportError:
-    decorator =  mock_decorator
-
+    for k,v in from_tags.iteritems():
+        try:
+            to_tags[k] = v
+        except:
+            #lots of things can go wrong, just skip the key
+            pass
+        
+    #Looking at the mutagen source, it looks like saaving "never" fails.
+    to_tags.save()
+    return True
+    
 def to_camel_case(s):
     """Given a sring in underscore form, returns a copy of it in camel case.
     eg, camel_case('test_string') => 'TestString'. """
