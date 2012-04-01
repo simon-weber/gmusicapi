@@ -35,6 +35,7 @@ import copy
 import contextlib
 import tempfile
 import subprocess
+import os
 #used for _wc_call to get its calling parent.
 #according to http://stackoverflow.com/questions/1095543/get-name-of-calling-functions-module-in-python,
 # this 
@@ -705,9 +706,12 @@ class Api(UsesLog):
                     temp_file_handles.append(t_handle)
 
                     try:
-                        # -y = overwrite the temp file, since it's already there.
-                        subprocess.check_output(["ffmpeg", "-y", "-i", orig_fn, "-ab", "320k", t_handle.name])
-                    except CalledProcessError as err:
+                        self.log.info("converting %s to %s", orig_fn, t_handle.name)
+                        with open(os.devnull) as discard:
+                            # -y = overwrite the temp file, since it's already there.
+                            subprocess.check_output(["ffmpeg", "-y", "-i", orig_fn, "-ab", "320k", t_handle.name], stderr=discard)
+
+                    except subprocess.CalledProcessError as err:
                         self.log.error("failed to convert '%s' to mp3 while uploading. This file will not be uploaded.", orig_fn)
                         self.log.error("FFmpeg output was: \n%s", err.output)
                         continue
