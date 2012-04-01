@@ -710,30 +710,39 @@ class Api(UsesLog):
                     temp_to_orig[orig_fn] = orig_fn
 
                 elif extension in supported_upload_filetypes:
-                    #Create the temp file.
-                    t_handle = tempfile.NamedTemporaryFile(prefix="gmusicapi", suffix=".mp3")
-                    t_handle.close() #this is a giant hack
+                    t_handle = tempfile.NamedTemporaryFile(prefix="gmusicapi", suffix=".mp3", delete=False)
                     temp_file_handles.append(t_handle)
 
                     try:
                         self.log.info("converting %s to %s", orig_fn, t_handle.name)
-                        #with open(os.devnull) as discard:
-                            # -y = overwrite the temp file, since it's already there.
-                        subprocess.check_output(["ffmpeg", "-y", "-i", orig_fn, "-ab", "320k", t_handle.name], stderr=subprocess.STDOUT)
+                        
+                        #pipe:1 -> send output to stdout
+                        p = subprocess.Popen(["ffmpeg", "-i", orig_fn, "-f", "mp3", "-ab", "320k", "pipe:1"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        
+                        audio_data, err_output = p.communicate()
+                        
+                        #Check for success and write out our temp file.
+                        if p.returncode is not 0:
+                            raise OSError
+                        else:
+                            t_handle.write(audio_data)
+                            #Close the file so mutagen can write out its tags.
+                            t_handle.close()
 
-                    except subprocess.CalledProcessError as err:
-                        self.log.error("failed to convert '%s' to mp3 while uploading. This file will not be uploaded.", orig_fn)
-                        self.log.error("FFmpeg output was: \n%s", err.output)
+                    except OSError as e:
+                        if err_out is not None:
+                            self.log.error("FFmpeg could not convert the file to mp3. output was: %s", err_output)
+                        else:
+                            self.log.exception("is FFmpeg installed? Failed to convert '%s' to mp3 while uploading. This file will not be uploaded. Error was:", orig_fn)
+
                         continue
 
-                    except WindowsError as err:
-                        self.log.exception("failed to convert '%s' to mp3 while uploading. This file will not be uploaded.", orig_fn)
                         
 
                     #Copy tags over. It's easier to do this here than mess with
                     # passing overriding metadata into _upload() later on
                     if not utils.copy_md_tags(orig_fn, t_handle.name):
-                        self.log.warn("failed to copy metadata to converted temp mp3 for '%s'. This file will still be uploaded, but Google Music may not receive its metadata.", orig_fn)
+                        self.log.warn("failed to copy metadata to converted temp mp3 for '%s'. This file will still be uploaded, but Google Music may not receive (some of) its metadata.", orig_fn)
 
                     all_file_handles.append(t_handle)
                     temp_to_orig[t_handle.name] = orig_fn
@@ -745,10 +754,12 @@ class Api(UsesLog):
             yield all_file_handles, temp_to_orig
 
         finally:
-            #Ensure all temp files get closed (deleted).
+            #Ensure all temp files get deleted.
             for t in temp_file_handles:
-                t.close()
-
+                try:
+                    os.remove(t.name)
+                except OSError:
+                    self.log.exception("failed to delete temporary file '%s'", t.name)
 
     def _upload_mp3s(self, filenames):
         """Uploads a list of files. All files are assumed to be mp3s."""
