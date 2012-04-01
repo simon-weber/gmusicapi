@@ -129,7 +129,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         #Apply random modifications.
         delete, add_dupe, add_blank, reorder = [random.choice([True, False]) for i in xrange(4)]
 
-        if delete:
+        if tracks and delete:
             self.log.debug("deleting tracks")
             track_is = range(len(tracks))
             #Select a random number of indices to delete.

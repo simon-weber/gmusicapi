@@ -27,27 +27,51 @@ from htmlentitydefs import name2codepoint
 import mutagen
 from decorator import decorator
 
+from apilogging import LogController
+log = LogController.get_logger("utils")
+
 def copy_md_tags(from_fname, to_fname):
     """Copy all metadata from *from_fname* to *to_fname* and write.
     
-    Return True on success, False on failure."""
+    Return True on success, False if not all keys were copied/saved."""
     
     from_tags = mutagen.File(from_fname, easy=True)
     to_tags = mutagen.File(to_fname, easy=True)
     
     if from_tags is None or to_tags is None:
-        return False #couldn't find an appropriate handler
+        log.debug("couldn't find an appropriate handler for tag files: '%s' '%s'", from_fname, to_fname)
+        return False
+
+
+    success = True
 
     for k,v in from_tags.iteritems():
         try:
-            to_tags[k] = v
+            #Some tags don't store values in strings, but in special container types.
+            #Those should be converted to strings so we can safely save them.
+            #Also, the value might be a list of tags or a single tag.
+
+            if not isinstance(v, basestring):
+                safe = [str(e) for e in v]
+            else:
+                safe = str(e)
+            
+            to_tags[k] = safe
+        except mutagen.easyid3.EasyID3KeyError as e:
+            #Raised because we're copying in an unsupported in easy-mode key.
+            log.debug("skipping non easy key", exc_info=True) 
         except:
             #lots of things can go wrong, just skip the key
-            pass
+            log.warning("problem when copying keys from '%s' to '%s'", from_fname, to_fname, exc_info=True)
+            success = False
         
-    #Looking at the mutagen source, it looks like saaving "never" fails.
-    to_tags.save()
-    return True
+    try:
+        to_tags.save()
+    except:
+        log.warning("could not save tag file %s", to_fname, exc_info=True)
+        success = False
+
+    return success
     
 def to_camel_case(s):
     """Given a sring in underscore form, returns a copy of it in camel case.
