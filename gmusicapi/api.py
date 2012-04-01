@@ -715,7 +715,8 @@ class Api(UsesLog):
 
                     try:
                         self.log.info("converting %s to %s", orig_fn, t_handle.name)
-                        
+                        err_output = None
+
                         #pipe:1 -> send output to stdout
                         p = subprocess.Popen(["ffmpeg", "-i", orig_fn, "-f", "mp3", "-ab", "320k", "pipe:1"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                         
@@ -726,17 +727,19 @@ class Api(UsesLog):
                             raise OSError
                         else:
                             t_handle.write(audio_data)
-                            #Close the file so mutagen can write out its tags.
-                            t_handle.close()
+                            
 
                     except OSError as e:
-                        if err_out is not None:
+                        if err_output is not None:
                             self.log.error("FFmpeg could not convert the file to mp3. output was: %s", err_output)
                         else:
                             self.log.exception("is FFmpeg installed? Failed to convert '%s' to mp3 while uploading. This file will not be uploaded. Error was:", orig_fn)
 
                         continue
 
+                    finally:
+                        #Close the file so mutagen can write out its tags.
+                        t_handle.close()
                         
 
                     #Copy tags over. It's easier to do this here than mess with

@@ -58,6 +58,8 @@ You can use `pip install gmusicapi` to get the most recent version and dependenc
 
 To upload filetypes other than mp3, you're going to need FFmpeg installed and in your system path. For Ubuntu users: `sudo apt-get install ffmpeg ubuntu-restricted-extras`. Windows users, get [the most recent static binaries](http://ffmpeg.zeranoe.com/builds/) and then [edit your path](http://www.computerhope.com/issues/ch000549.htm) to include the directory that contains ffmpeg.exe.
 
+To check that everything is set up correctly, you can run the test suite: `python -m gmusicapi.test.integration_test_api`. If something goes wrong during testing, there is the chance that you'll end up with an extra playlist or test song in your library. It should never destructively modify your library.
+
 ###Getting Started
 
 gmusicapi.api.Api is the user-facing interface. The provided example.py should be enough to get you started. For more information, see the [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest) and testing code. 
