@@ -826,11 +826,12 @@ class Api(UsesLog):
                 up = res['sessionStatus']['externalFieldTransfers'][0]
                 self.log.info("uploading file. sid: %s", server_id)
 
-                res = json.loads(
-                    self.session.post_jumper( 
-                        up['putInfo']['url'], 
-                        open(filename), 
-                        {'Content-Type': up['content_type']}).read())
+                with open(filename, mode="rb") as audio_data:
+                    res = json.loads(
+                        self.session.post_jumper( 
+                            up['putInfo']['url'], 
+                            audio_data, 
+                            {'Content-Type': up['content_type']}).read())
                 
                 self.log.debug("post_jumper res: %s", res)
 
@@ -1052,6 +1053,5 @@ class PlaySession(object):
                 'Cookie':       'SID=%s' % self.client.get_sid_token()
             }
 
-
-        self.jumper.request('POST', url, encoded_data, headers) #windows hangs here, and never makes the request
+        self.jumper.request('POST', url, encoded_data, headers)
         return self.jumper.getresponse()
