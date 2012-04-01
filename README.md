@@ -12,10 +12,10 @@ For bugs reports, feature requests, and contributions, go ahead and [open an iss
 
 ##Features
 
-**New in version 2012.03.27:** 
+**New in version <next>:** 
 
-* proper pip packaging
-* various bugfixes and internal enhancements  
+* 
+* 
    
 See the changelog for details.
 
@@ -28,7 +28,7 @@ See the changelog for details.
 
 * Song streaming and downloading
 
-* Song uploading (only mp3s supported, currently)
+* Song uploading of all Google-supported file formats (mp3, unprotected m4a, ogg, flac, wma)
 
 * Playlist manipulation:
     * creation
@@ -53,6 +53,8 @@ The API has been tested on Python 2.7.2 on Linux.
 ###Installation
 
 You can use `pip install gmusicapi` to get the most recent version and dependencies. If you don't have pip, see their [installation docs](http://www.pip-installer.org/en/latest/index.html).
+
+To upload filetypes other than mp3, you're going to need FFmpeg installed and in your system path. For Ubuntu users: `sudo apt-get install ffmpeg ubuntu-restricted-extras`. Windows users, get [the most recent static binaries](http://ffmpeg.zeranoe.com/builds/) and then [edit your path](http://www.computerhope.com/issues/ch000549.htm) to include the directory that contains ffmpeg.exe.
 
 ###Getting Started
 
