@@ -19,7 +19,7 @@ Authentication
 Getting songs and playlists
 -----------------------------------
 .. autoclass:: Api
-    :members: get_all_songs, get_playlists, get_playlist_songs
+    :members: get_all_songs, get_all_playlist_ids, get_playlist_songs
 
 Song uploading, downloading, and streaming
 ------------------------------------------
@@ -29,7 +29,7 @@ Song uploading, downloading, and streaming
 Playlist manipulation
 ---------------------
 .. autoclass:: Api
-    :members: change_playlist, change_playlist_name, create_playlist, delete_playlist, add_songs_to_playlist, remove_songs_from_playlist
+    :members: change_playlist, change_playlist_name, copy_playlist, create_playlist, delete_playlist, add_songs_to_playlist, remove_songs_from_playlist
 
 Song manipulation
 -----------------

@@ -558,19 +558,21 @@ class Api(UsesLog):
 
         :param query: the search query.
 
-        Search results are organized based on how they were found. Hits on an album title return information on that album. Here is an example album result:
-        ``{'artistName': 'The Cat Empire',
-         'imageUrl': '<url>',
-         'albumArtist': 'The Cat Empire', 
-         'albumName': 'Cities: The Cat Empire Project'}``
+
+        Search results are organized based on how they were found. Hits on an album title return information on that album. Here is an example album result::
+
+            {'artistName': 'The Cat Empire',
+             'imageUrl': '<url>',
+             'albumArtist': 'The Cat Empire', 
+             'albumName': 'Cities: The Cat Empire Project'}
         
         Hits on song or artist name return the matching `song dictionary`__.
 
-        The responses are returned in a dictionary, arranged by hit type:
-        ``{'album_hits':[<album dictionary>, ...],
-           'artist_hits':[<song dictionary>, ...],
-           'song_hits':[<song dictionary>, ...]
-           }``
+        The responses are returned in a dictionary, arranged by hit type::
+
+              {'album_hits':[<album dictionary>, ...],
+               'artist_hits':[<song dictionary>, ...],
+               'song_hits':[<song dictionary>, ...]}
 
         The search ignores punctuation.
 
