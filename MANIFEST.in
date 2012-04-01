@@ -1,4 +1,5 @@
 include changelog COPYING example.py README.md
-recursive-include gmusicapi *.py *.mp3
+recursive-include gmusicapi *.py
 include docs/Makefile
 recursive-include docs/source *.py *.rst
+include gmusicapi/test/test.*
