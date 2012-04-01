@@ -50,7 +50,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         #Can't use abspath since this is relative to where _this_ file is,
         # not necessarily the calling curdir.
         path = os.path.realpath(__file__)
-        real_path = lambda lp: path[:string.rfind(path, r'/')] + r'/' + lp
+        real_path = lambda lp: path[:string.rfind(path, os.sep)] + os.sep + lp
         cls.test_filenames = map(real_path, test_filenames)
 
     #---

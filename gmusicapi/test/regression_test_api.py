@@ -46,8 +46,8 @@ class TestRegressions(test_utils.BaseTest, UsesLog):
 
         #Get the full path of the test file.
         path = os.path.realpath(__file__)
-        cls.no_tags_filename = path[:string.rfind(path, r'/')] + r'/' + no_tags_filename
-        cls.has_tags_filename = path[:string.rfind(path, r'/')] + r'/' + has_tags_filename
+        cls.no_tags_filename = path[:string.rfind(path, os.sep)] + os.sep + no_tags_filename
+        cls.has_tags_filename = path[:string.rfind(path, os.sep)] + os.sep + has_tags_filename
 
 
     #---

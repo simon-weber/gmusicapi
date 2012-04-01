@@ -171,6 +171,7 @@ class Api(UsesLog):
         return playlist_id #the call actually doesn't return anything.
 
     @utils.accept_singleton(dict)
+    @utils.empty_arg_shortcircuit()
     def change_song_metadata(self, songs):
         """Changes the metadata for songs given in `GM Metadata Format`_. Returns a list of the song ids changed.
 
@@ -240,6 +241,7 @@ class Api(UsesLog):
         return self._wc_call("deleteplaylist", playlist_id)['deleteId']
 
     @utils.accept_singleton(basestring)
+    @utils.empty_arg_shortcircuit()
     def delete_songs(self, song_ids):
         """Deletes songs from the entire library. Returns a list of deleted song ids.
 
@@ -486,6 +488,7 @@ class Api(UsesLog):
                 return playlist_id
     
     @utils.accept_singleton(basestring, 2)
+    @utils.empty_arg_shortcircuit(position=2)
     def add_songs_to_playlist(self, playlist_id, song_ids):
         """Adds songs to a playlist. Returns a list of (song id, playlistEntryId) tuples that were added.
 
@@ -498,6 +501,7 @@ class Api(UsesLog):
                 self._wc_call("addtoplaylist", playlist_id, song_ids)['songIds']]
 
     @utils.accept_singleton(basestring, 2)
+    @utils.empty_arg_shortcircuit(position=2)
     def remove_songs_from_playlist(self, playlist_id, sids_to_match):
         """Removes all copies of the given song ids from a playlist. Returns a list of removed (sid, eid) pairs.
 
@@ -523,6 +527,7 @@ class Api(UsesLog):
             return []
     
     @utils.accept_singleton(basestring, 2)
+    @utils.empty_arg_shortcircuit(position=2)
     def _remove_entries_from_playlist(self, playlist_id, entry_ids_to_remove):
         """Removes entries from a playlist. Returns a list of removed "sid_eid" strings.
 
@@ -657,6 +662,7 @@ class Api(UsesLog):
     
 
     @utils.accept_singleton(basestring)
+    @utils.empty_arg_shortcircuit(ret={})
     def upload(self, filenames):
         """Uploads the given filenames. Returns a dictionary with ``{"<filename>": "<new song id>"}`` pairs for each successful upload.
 
@@ -668,6 +674,9 @@ class Api(UsesLog):
 
         Unlike Google's Music Manager, this function will currently allow the same song to be uploaded more than once if its tags are changed. This is subject to change in the future.
         """
+        if not filenames:
+            return {}
+
         results = {}
 
         with self._temp_mp3_conversion(filenames) as (upload_files, orig_fnames):
@@ -703,18 +712,23 @@ class Api(UsesLog):
                 elif extension in supported_upload_filetypes:
                     #Create the temp file.
                     t_handle = tempfile.NamedTemporaryFile(prefix="gmusicapi", suffix=".mp3")
+                    t_handle.close() #this is a giant hack
                     temp_file_handles.append(t_handle)
 
                     try:
                         self.log.info("converting %s to %s", orig_fn, t_handle.name)
-                        with open(os.devnull) as discard:
+                        #with open(os.devnull) as discard:
                             # -y = overwrite the temp file, since it's already there.
-                            subprocess.check_output(["ffmpeg", "-y", "-i", orig_fn, "-ab", "320k", t_handle.name], stderr=discard)
+                        subprocess.check_output(["ffmpeg", "-y", "-i", orig_fn, "-ab", "320k", t_handle.name], stderr=subprocess.STDOUT)
 
                     except subprocess.CalledProcessError as err:
                         self.log.error("failed to convert '%s' to mp3 while uploading. This file will not be uploaded.", orig_fn)
                         self.log.error("FFmpeg output was: \n%s", err.output)
                         continue
+
+                    except WindowsError as err:
+                        self.log.exception("failed to convert '%s' to mp3 while uploading. This file will not be uploaded.", orig_fn)
+                        
 
                     #Copy tags over. It's easier to do this here than mess with
                     # passing overriding metadata into _upload() later on
@@ -1038,5 +1052,6 @@ class PlaySession(object):
                 'Cookie':       'SID=%s' % self.client.get_sid_token()
             }
 
-        self.jumper.request('POST', url, encoded_data, headers)
+
+        self.jumper.request('POST', url, encoded_data, headers) #windows hangs here, and never makes the request
         return self.jumper.getresponse()

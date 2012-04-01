@@ -54,6 +54,24 @@ def to_camel_case(s):
     eg, camel_case('test_string') => 'TestString'. """
     return ''.join(map(lambda x: x.title(), s.split('_')))
 
+def empty_arg_shortcircuit(ret=[], position=1):
+    """Decorate a function to shortcircuit and return something immediately if 
+    the length of a positional arg is 0.
+
+    :param ret: what to return when shortcircuiting
+    :param position: (optional) the position of the expected list - defaults to 1.
+    """
+
+    @decorator
+    def wrapper(function, *args, **kw):
+        if len(args[position]) == 0:
+            return ret
+        else:
+            return function(*args, **kw)
+
+    return wrapper
+
+
 def accept_singleton(expected_type, position=1):
     """Allows a function expecting a list to accept a single item as well.
     The item will be wrapped in a list.
