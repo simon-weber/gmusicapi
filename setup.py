@@ -3,7 +3,7 @@ from setuptools import find_packages
 
 setup(
     name='gmusicapi',
-    version='2012.04.01_a',
+    version='2012.04.01',
     author='Simon Weber',
     author_email='simon@simonmweber.com',
     url='http://pypi.python.org/pypi/gmusicapi/',
