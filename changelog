@@ -1,4 +1,5 @@
-next:
+2012.04.01:
+	improve code in example.py
 	support uploading of all Google-supported formats: m4a, ogg, flac, wma, mp3. Non-mp3 are transcoded to 320kbs abr mp3 using ffmpeg
 	introduce dependency on ffmpeg. for non-mp3 uploading, it needs to be in path and have the needed transcoders available
 	get_playlists is now get_all_playlist_ids, and is faster

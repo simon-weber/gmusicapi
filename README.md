@@ -12,12 +12,14 @@ For bugs reports, feature requests, and contributions, go ahead and [open an iss
 
 ##Features
 
-**New in version <next>:** 
+**New in version 2012.04.01:** 
 
-* 
-* 
+* full Windows support and a Windows installer
+* upload support for all Google-support file formats
+* faster retrieval of playlists
+* better example code
    
-See the changelog for details.
+There were also numerous breaking changes needed to improve the Api interface. See the changelog and documentation for details.
 
 **Feature Overview:**
 
@@ -48,7 +50,7 @@ See the changelog for details.
 
 ##Usage
 
-The API has been tested on Python 2.7.2 on Linux.
+The API has been tested on Python 2.7.2 on Linux and Windows.
 
 ###Installation
 
@@ -66,7 +68,7 @@ In addition, Michal Odnous has built [an example](https://github.com/odiroot/Uno
 
 I've seen a lot of excitement about possible ports, especially for mobile and web use. If you want to, go for it! 
 
-I'm currently aware of only one port. It's in C# (for use with Windows Phone), and being developed [here](https://github.com/Byteopia/GoogleMusicAPI.NET).
+I'm currently aware of two ports. One is in C# (for use with Windows Phone), and being developed [here](https://github.com/Byteopia/GoogleMusicAPI.NET). The other is in Java, and is not yet publicly available.
 
 ###Porting Information for Developers
 
