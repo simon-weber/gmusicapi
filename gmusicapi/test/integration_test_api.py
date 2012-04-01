@@ -169,11 +169,15 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
 
     def updel_1_upload(self):
-        """Upload the test files."""
-        result = self.api.upload(self.test_filenames)
-        self.assertTrue(len(self.test_filenames) == len(result))
+        """Upload some test files."""
 
-        #A bit messy; need to pass the id on to the next step.
+        some_files = random.sample(self.test_filenames, 
+                                   random.randrange(len(self.test_filenames)))
+
+        result = self.api.upload(some_files)
+        self.assertTrue(len(some_files) == len(result))
+
+        #A bit messy; need to pass the ids on to the next step.
         self.uploaded_ids = result.values()
 
     def updel_2_delete(self):
