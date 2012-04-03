@@ -1,4 +1,4 @@
-#gmusicapi: an unofficial Python API for Google Music
+#gmusicapi: an unofficial Python API for Google Play Music
 
 The project is not supported nor endorsed by Google. I'll be interning for Google this summer, so to avoid conflicts of interest I'll stop contributing sometime in May. Get in touch if you're interested in taking over maintenance.
 
@@ -12,7 +12,7 @@ For bugs reports, feature requests, and contributions, go ahead and [open an iss
 
 ##Features
 
-**New in version 2012.04.01:** 
+**New in version 2012.04.03:** 
 
 * full Windows support and a Windows installer
 * upload support for all Google-support file formats
@@ -68,21 +68,25 @@ gmusicapi.api.Api is the user-facing interface. The provided example.py should b
 
 In addition, Michal Odnous has built [an example](https://github.com/odiroot/Unofficial-Google-Music-API/blob/mo-sandbox/example_play.py) that will play songs from your library.
 
-##Porting
+##Ports
 
-I've seen a lot of excitement about possible ports, especially for mobile and web use. If you want to, go for it! 
+Here are the ports I'm currently aware of:
 
-I'm currently aware of two ports. One is in C# (for use with Windows Phone), and being developed [here](https://github.com/Byteopia/GoogleMusicAPI.NET). The other is in Java, and is not yet publicly available.
+* C#: [Taylor Finnell](https://github.com/Byteopia/GoogleMusicAPI.NET)
+* Java: [jkiddo](https://github.com/jkiddo/gmusic.api)
+
 
 ###Porting Information for Developers
+
+Get in touch if you're working on a port. Even if I can't contribute, I might know people who'd like to.
 
 The current implementation uses the same interface that a web browser does, and a code overview can be found [on the wiki](https://github.com/simon-weber/Unofficial-Google-Music-API/wiki/Codebase-Overview). Darryl Pogue is working on a more durable implementation by emulating Google's Android app. His work is [here](https://github.com/dpogue/Unofficial-Google-Music-API), and may easier to port.
 
 Either way, you'll probably want to ignore anything related to Music Manager; that's just for uploading. If uploading interests you, more information is [here](https://github.com/simon-weber/google-music-protocol).
 
-Keep in mind that ports are likely to be considered derivative works under the GPL, and, again, be sure to respect Google.
+Lastly, keep the license in mind, and, again, be sure to respect Google.
 
-Lastly, get in touch if you're working on a port. Even if I can't contribute, it's likely I know people who can help.
+
 
 ##Notes
 
@@ -95,4 +99,4 @@ Nothing related to authenticated gets logged aside from "logged in" and "logged 
   
 
 Copyright 2012 [Simon Weber](https://plus.google.com/103350848301234480355).  
-Licensed under the [GPLv3](http://www.gnu.org/licenses/gpl.txt).
+Licensed under the 3-clause BSD. See COPYING.
