@@ -1,4 +1,5 @@
 Simon Weber	anything not specified by other authors
-Darryl Pogue	PlaySession simplifications in api.py, .gitignore, tokenauth.py and clientlogin.py
+Kevin Kwok	metadata_pb2.py; upload_mp3s code in api.py derived from his work
+Darryl Pogue	PlaySession simplifications in api.py; .gitignore; tokenauth.py; clientlogin.py
 mystilleef	change to relative imports in api.py and protocol.py
 Ryan Hsu 	slimmed down to_camel_case function in utils/utils.py
