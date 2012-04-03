@@ -1,3 +1,7 @@
+2012.04.03:
+	change to the 3-clause BSD license
+	add Kevin Kwok to AUTHORS
+	
 2012.04.01:
 	improve code in example.py
 	support uploading of all Google-supported formats: m4a, ogg, flac, wma, mp3. Non-mp3 are transcoded to 320kbs abr mp3 using ffmpeg
