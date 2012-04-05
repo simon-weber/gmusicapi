@@ -73,7 +73,7 @@ In addition, Michal Odnous has built [an example](https://github.com/odiroot/Uno
 Here are the ports I'm currently aware of:
 
 * C#: [Taylor Finnell](https://github.com/Byteopia/GoogleMusicAPI.NET)
-* Java: [jkiddo](https://github.com/jkiddo/gmusic.api)
+* Java: [Jens Villadsen](https://github.com/jkiddo/gmusic.api)
 
 
 ###Porting Information for Developers
