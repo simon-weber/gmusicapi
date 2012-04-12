@@ -98,5 +98,5 @@ Nothing related to authenticated gets logged aside from "logged in" and "logged 
 - - -
   
 
-Copyright 2012 [Simon Weber](https://plus.google.com/103350848301234480355).  
+Copyright 2012 [Simon Weber](http://www.simonmweber.com).  
 Licensed under the 3-clause BSD. See COPYING.
