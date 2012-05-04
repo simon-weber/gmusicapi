@@ -264,7 +264,7 @@ class Metadata_Expectations(object):
     class subjectToCuration(_Metadata_Expectation):
         mutable = False
         val_type = "boolean"
-    class metajamId(_Metadata_Expectation):
+    class matchedId(_Metadata_Expectation):
         mutable = False
         
     
