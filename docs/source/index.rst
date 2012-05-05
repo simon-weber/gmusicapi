@@ -78,7 +78,7 @@ These dictionaries have up to 30 keys. Here is an example::
      'durationMillis': 562000
      'artistNorm': 'the cat empire',
      'subjectToCuration': False,
-     'metajamId': '',
+     'matchedId': '',
      (optional entry; exists if there is album art)
      'albumArtUrl': '//lh6.googleusercontent.com/<long identifier>'
      }

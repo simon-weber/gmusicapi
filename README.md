@@ -73,14 +73,14 @@ In addition, Michal Odnous has built [an example](https://github.com/odiroot/Uno
 Here are the ports I'm currently aware of:
 
 * C#: [Taylor Finnell](https://github.com/Byteopia/GoogleMusicAPI.NET)
-* Java: [jkiddo](https://github.com/jkiddo/gmusic.api)
+* Java: [Jens Villadsen](https://github.com/jkiddo/gmusic.api)
 
 
 ###Porting Information for Developers
 
 Get in touch if you're working on a port. Even if I can't contribute, I might know people who'd like to.
 
-The current implementation uses the same interface that a web browser does, and a code overview can be found [on the wiki](https://github.com/simon-weber/Unofficial-Google-Music-API/wiki/Codebase-Overview). Darryl Pogue is working on a more durable implementation by emulating Google's Android app. His work is [here](https://github.com/dpogue/Unofficial-Google-Music-API), and may easier to port.
+The current implementation uses the same interface that a web browser does, and a code overview can be found [on the wiki](https://github.com/simon-weber/Unofficial-Google-Music-API/wiki/Codebase-Overview). Darryl Pogue is working on a more durable implementation by emulating Google's Android app. His work is [here](https://github.com/dpogue/Unofficial-Google-Music-API), and may easier to port. More information this alternative protocol is [here](https://github.com/dpogue/Unofficial-Google-Music-API/wiki/Skyjam-API).
 
 Either way, you'll probably want to ignore anything related to Music Manager; that's just for uploading. If uploading interests you, more information is [here](https://github.com/simon-weber/google-music-protocol).
 
@@ -98,5 +98,5 @@ Nothing related to authenticated gets logged aside from "logged in" and "logged 
 - - -
   
 
-Copyright 2012 [Simon Weber](https://plus.google.com/103350848301234480355).  
+Copyright 2012 [Simon Weber](http://www.simonmweber.com).  
 Licensed under the 3-clause BSD. See COPYING.

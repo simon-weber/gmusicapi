@@ -194,7 +194,9 @@ class Metadata_Expectations(object):
         #0 = no thumb
         #1 = down thumb
         #5 = up thumb
-        allowed_values = (0, 1, 5) 
+        #all values 0-5 are allowed (and stars will be displayed if you enable
+        #it in Gear -> Music labs) 4 stars also means thumbs up
+        allowed_values = range(6)
 
     #strings (the default value for val_type
     class composer(_Metadata_Expectation):
@@ -262,7 +264,7 @@ class Metadata_Expectations(object):
     class subjectToCuration(_Metadata_Expectation):
         mutable = False
         val_type = "boolean"
-    class metajamId(_Metadata_Expectation):
+    class matchedId(_Metadata_Expectation):
         mutable = False
         
     
