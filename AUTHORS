@@ -1,4 +1,5 @@
 Simon Weber	anything not specified by other authors
+David Dooling compatibility updates in protocol.py
 Kevin Kwok	metadata_pb2.py; upload_mp3s code in api.py derived from his work
 Darryl Pogue	PlaySession simplifications in api.py; .gitignore; tokenauth.py; clientlogin.py
 mystilleef	change to relative imports in api.py and protocol.py

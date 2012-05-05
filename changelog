@@ -1,3 +1,8 @@
+2012.05.04:
+	update allowed rating values to 1-5 (David Dooling)
+	update metajamId to matchedId (David Dooling)
+	fix broken expectation about disc/track numbering metadata
+
 2012.04.03:
 	change to the 3-clause BSD license
 	add Kevin Kwok to AUTHORS
