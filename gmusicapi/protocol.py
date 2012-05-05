@@ -803,13 +803,13 @@ class MM_Protocol(object):
             if "tracknumber" in audio: 
                 tracknumber = audio["tracknumber"][0].split("/")
                 track.track = int(tracknumber[0])
-                if len(tracknumber) == 2:
+                if len(tracknumber) == 2 and tracknumber[1]:
                     track.totalTracks = int(tracknumber[1])
 
             if "discnumber" in audio:
                 discnumber = audio["discnumber"][0].split("/")
                 track.disc = int(discnumber[0])
-                if len(discnumber) == 2:
+                if len(discnumber) == 2 and discnumber[1]:
                     track.totalDiscs = int(discnumber[1])
 
         return (metadata, filemap)
