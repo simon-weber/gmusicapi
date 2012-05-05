@@ -12,12 +12,9 @@ For bugs reports, feature requests, and contributions, go ahead and [open an iss
 
 ##Features
 
-**New in version 2012.04.03:** 
+**New in version 2012.05.04** 
 
-* full Windows support and a Windows installer
-* upload support for all Google-support file formats
-* faster retrieval of playlists
-* better example code
+* various fixes and compatibility updates
    
 There were also numerous breaking changes needed to improve the Api interface. See the changelog and documentation for details.
 

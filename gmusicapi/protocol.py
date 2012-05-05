@@ -194,7 +194,9 @@ class Metadata_Expectations(object):
         #0 = no thumb
         #1 = down thumb
         #5 = up thumb
-        allowed_values = (0, 1, 5) 
+        #all values 0-5 are allowed (and stars will be displayed if you enable
+        #it in Gear -> Music labs) 4 stars also means thumbs up
+        allowed_values = range(6)
 
     #strings (the default value for val_type
     class composer(_Metadata_Expectation):
@@ -262,7 +264,7 @@ class Metadata_Expectations(object):
     class subjectToCuration(_Metadata_Expectation):
         mutable = False
         val_type = "boolean"
-    class metajamId(_Metadata_Expectation):
+    class matchedId(_Metadata_Expectation):
         mutable = False
         
     
@@ -803,13 +805,13 @@ class MM_Protocol(object):
             if "tracknumber" in audio: 
                 tracknumber = audio["tracknumber"][0].split("/")
                 track.track = int(tracknumber[0])
-                if len(tracknumber) == 2:
+                if len(tracknumber) == 2 and tracknumber[1]:
                     track.totalTracks = int(tracknumber[1])
 
             if "discnumber" in audio:
                 discnumber = audio["discnumber"][0].split("/")
                 track.disc = int(discnumber[0])
-                if len(discnumber) == 2:
+                if len(discnumber) == 2 and discnumber[1]:
                     track.totalDiscs = int(discnumber[1])
 
         return (metadata, filemap)
