@@ -1,8 +1,10 @@
 #gmusicapi: an unofficial Python API for Google Play Music
 
-The project is not supported nor endorsed by Google. I'll be interning for Google this summer, so to avoid conflicts of interest I'll stop contributing sometime in May. Get in touch if you're interested in taking over maintenance.
+The project is not supported nor endorsed by Google. 
 
 **Respect Google in your use of the API**. Use common sense (protocol compliance, reasonable load, etc) and don't ruin the fun for everyone else.
+
+As of June, I'm interning at Google. Due to their legal policies, I'm not allowed to contribute to the project. Sorry, everyone! [Odiroot's port](https://github.com/odiroot/Unofficial-Google-Music-API) seems to be actively maintained.
 
 For those looking to use the api, see the installation and usage sections below. Documentation is hosted at Read the Docs: [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest).
 
