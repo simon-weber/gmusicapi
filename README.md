@@ -65,7 +65,7 @@ To check that everything is set up correctly, you can run the test suite: `pytho
 
 gmusicapi.api.Api is the user-facing interface. The provided example.py should be enough to get you started. For more information, see the [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest) and testing code. 
 
-In addition, Michal Odnous has built [an example](https://github.com/odiroot/Unofficial-Google-Music-API/blob/mo-sandbox/example_play.py) that will play songs from your library.
+In addition, Michal Odnous has built [an example](https://github.com/odiroot/Unofficial-Google-Music-API/blob/master/example_play.py) that will play songs from your library.
 
 ##Ports
 
