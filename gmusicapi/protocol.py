@@ -267,10 +267,10 @@ class Metadata_Expectations(object):
     class matchedId(_Metadata_Expectation):
         mutable = False
     
-    #Whether there is a matching track in the store?
+    #Seems to be a matching track in the store.
     class storeId(_Metadata_Expectation):
-            mutable = False
-            optional = True
+        mutable = False
+        optional = True
         
     
     #Dependent metadata:
@@ -792,7 +792,13 @@ class MM_Protocol(object):
             track.duration = int(audio.info.length * 1000)
 
             #GM requires at least a title.
-            track.title = audio["title"][0] if "title" in audio else filename.split(r'/')[-1]
+            if "title" in audio:
+                track.title = audio["title"][0] 
+            else:
+                #attempt to handle unicode filenames.
+                enc = utils.guess_str_encoding(filename)[0]
+                track.title = filename.decode(enc).split(r'/')[-1]
+
 
             if "album" in audio: track.album = audio["album"][0]
             if "artist" in audio: track.artist = audio["artist"][0]

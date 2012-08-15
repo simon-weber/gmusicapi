@@ -34,9 +34,20 @@ from htmlentitydefs import name2codepoint
 
 import mutagen
 from decorator import decorator
+import chardet
 
 from apilogging import LogController
 log = LogController.get_logger("utils")
+
+def guess_str_encoding(s):
+    """Return a tuple (guessed encoding, confidence)."""
+
+    res = chardet.detect(s)
+    return (res['encoding'], res['confidence'])
+    
+def guess_file_encoding(filename):
+    with open(filename) as f: 
+        return guess_str_encoding(f.read())
 
 def copy_md_tags(from_fname, to_fname):
     """Copy all metadata from *from_fname* to *to_fname* and write.
