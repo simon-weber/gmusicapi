@@ -12,3 +12,8 @@ Thumbs.db
 docs/build
 __pycache__
 gmusicapi.log
+
+bin
+lib
+include
+share

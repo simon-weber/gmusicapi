@@ -266,6 +266,11 @@ class Metadata_Expectations(object):
         val_type = "boolean"
     class matchedId(_Metadata_Expectation):
         mutable = False
+    
+    #Whether there is a matching track in the store?
+    class storeId(_Metadata_Expectation):
+            mutable = False
+            optional = True
         
     
     #Dependent metadata:
