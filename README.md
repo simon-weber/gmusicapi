@@ -4,8 +4,6 @@ The project is not supported nor endorsed by Google.
 
 **Respect Google in your use of the API**. Use common sense (protocol compliance, reasonable load, etc) and don't ruin the fun for everyone else.
 
-As of June, I'm interning at Google. Due to their legal policies, I'm not allowed to contribute to the project. Sorry, everyone! [Odiroot's port](https://github.com/odiroot/Unofficial-Google-Music-API) seems to be actively maintained.
-
 For those looking to use the api, see the installation and usage sections below. Documentation is hosted at Read the Docs: [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest).
 
 For those looking to port or contribute, see the porting section below. There's also a code overview on the wiki: [wiki](https://github.com/simon-weber/Unofficial-Google-Music-API/wiki/Codebase-Overview).
@@ -73,7 +71,7 @@ Here are the ports I'm currently aware of:
 
 * C#: [Taylor Finnell](https://github.com/Byteopia/GoogleMusicAPI.NET)
 * Java: [Jens Villadsen](https://github.com/jkiddo/gmusic.api)
-
+* PHP: [raydanhk](http://code.google.com/p/unofficial-google-music-api-php/)
 
 ###Porting Information for Developers
 
