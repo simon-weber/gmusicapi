@@ -315,6 +315,7 @@ class Metadata_Expectations(object):
         mutable = False
         volatile = True
         val_type = "integer"
+        optional = True #only appears if song has been played
 
     
 class WC_Protocol(object):
