@@ -1,6 +1,6 @@
 #gmusicapi: an unofficial Python API for Google Play Music
 
-The project is not supported nor endorsed by Google. 
+This project allows control of [Google Music](http://music.google.com) from Python. It is not supported nor endorsed by Google.
 
 **Respect Google in your use of the API**. Use common sense (protocol compliance, reasonable load, etc) and don't ruin the fun for everyone else.
 
@@ -42,8 +42,8 @@ There were also numerous breaking changes needed to improve the Api interface. S
 
 **What's on the way:**
 
-* integration with the Android service api, thanks to [Darryl Pogue](https://github.com/dpogue/Unofficial-Google-Music-API)
-* more user-friendly abstractions
+* compatibility updates
+* album art manipulation
 
 ##Usage
 
