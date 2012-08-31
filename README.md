@@ -12,11 +12,9 @@ For bugs reports, feature requests, and contributions, go ahead and [open an iss
 
 ##Features
 
-**New in version 2012.05.04** 
+**New in version 2012.08.31** 
 
 * various fixes and compatibility updates
-   
-There were also numerous breaking changes needed to improve the Api interface. See the changelog and documentation for details.
 
 **Feature Overview:**
 
