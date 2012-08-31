@@ -28,7 +28,7 @@ from setuptools import find_packages
 
 setup(
     name='gmusicapi',
-    version='2012.05.04',
+    version='2012.08.31',
     author='Simon Weber',
     author_email='simon@simonmweber.com',
     url='http://pypi.python.org/pypi/gmusicapi/',
@@ -45,7 +45,8 @@ This api is not supported nor endorsed by Google, and could break at any time.
         "validictory >= 0.8.3",
         "decorator >= 3.3.2",
         "mutagen >= 1.2.0",
-        "protobuf >= 2.4.0"
+        "protobuf >= 2.4.0",
+        "chardet",
     ],
     classifiers = [
         "Programming Language :: Python",

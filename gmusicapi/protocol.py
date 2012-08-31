@@ -266,6 +266,11 @@ class Metadata_Expectations(object):
         val_type = "boolean"
     class matchedId(_Metadata_Expectation):
         mutable = False
+    
+    #Seems to be a matching track in the store.
+    class storeId(_Metadata_Expectation):
+        mutable = False
+        optional = True
         
     
     #Dependent metadata:
@@ -310,6 +315,7 @@ class Metadata_Expectations(object):
         mutable = False
         volatile = True
         val_type = "integer"
+        optional = True #only appears if song has been played
 
     
 class WC_Protocol(object):
@@ -553,7 +559,6 @@ class WC_Protocol(object):
                 req = {}
                 res = {"type":"object",
                        "properties":{
-                           "magicPlaylists": WC_Protocol.pl_array,
                            "playlists": WC_Protocol.pl_array,
                            },
                        "additionalProperties":False
@@ -787,7 +792,13 @@ class MM_Protocol(object):
             track.duration = int(audio.info.length * 1000)
 
             #GM requires at least a title.
-            track.title = audio["title"][0] if "title" in audio else filename.split(r'/')[-1]
+            if "title" in audio:
+                track.title = audio["title"][0] 
+            else:
+                #attempt to handle unicode filenames.
+                enc = utils.guess_str_encoding(filename)[0]
+                track.title = filename.decode(enc).split(r'/')[-1]
+
 
             if "album" in audio: track.album = audio["album"][0]
             if "artist" in audio: track.artist = audio["artist"][0]

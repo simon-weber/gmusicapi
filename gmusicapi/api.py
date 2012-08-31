@@ -287,17 +287,15 @@ class Api(UsesLog):
 
         return self._wc_call("loadplaylist", playlist_id)["playlist"]
 
-    def get_all_playlist_ids(self, auto=True, instant=True, user=True, always_id_lists=False):
+    def get_all_playlist_ids(self, auto=True, user=True, always_id_lists=False):
         """Returns a dictionary mapping playlist types to dictionaries of ``{"<playlist name>": "<playlist id>"}`` pairs.
 
         Available playlist types are:
 
         * "`auto`" - auto playlists
-        * "`instant`" - instant mixes
-        * "`user`" - user-defined playlists
+        * "`user`" - user-defined playlists (including instant mixes)
 
         :param auto: make an "`auto`" entry in the result.
-        :param instant: make an "`instant`" entry in the result.
         :param user: make a "`user`" entry in the result.
         :param always_id_lists: when False, map name -> id when there is a single playlist for that name. When True, always map to a list (which may only have a single id in it).
 
@@ -312,8 +310,6 @@ class Api(UsesLog):
 
         if auto:
             playlists['auto'] = self._get_auto_playlists()
-        if instant:
-            playlists['instant'] = self._playlist_list_to_dict(res['magicPlaylists'])
         if user:
             playlists['user'] = self._playlist_list_to_dict(res['playlists'])
 
@@ -339,7 +335,7 @@ class Api(UsesLog):
         
         #Auto playlist ids are hardcoded in the wc javascript.
         #If Google releases Music internationally, this will probably be broken.
-        #TODO: how to test for this? if loaded, will the calls just fail?
+        #When testing, an incorrect name here will be caught.
         return {"Thumbs up": "auto-playlist-thumbs-up", 
                 "Last added": "auto-playlist-recent",
                 "Free and purchased": "auto-playlist-promo"}
