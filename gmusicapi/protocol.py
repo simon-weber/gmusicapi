@@ -559,7 +559,6 @@ class WC_Protocol(object):
                 req = {}
                 res = {"type":"object",
                        "properties":{
-                           "magicPlaylists": WC_Protocol.pl_array,
                            "playlists": WC_Protocol.pl_array,
                            },
                        "additionalProperties":False
