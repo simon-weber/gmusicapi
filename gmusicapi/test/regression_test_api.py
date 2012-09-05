@@ -39,7 +39,7 @@ from ..protocol import Metadata_Expectations
 from ..protocol import UnknownExpectation
 
 #Expected to be in this directory.
-has_tags_filename = 'test.mp3'
+has_tags_filename = 'upper.MP3'
 #Also tests unicode compatibility.
 no_tags_filename = '한글.mp3'
 

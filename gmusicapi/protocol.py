@@ -753,7 +753,7 @@ class MM_Protocol(object):
 
         for filename in filenames:
 
-            if not filename.split(".")[-1] == "mp3":
+            if not filename.split(".")[-1].lower() == "mp3":
                 self.log.error("Cannot upload '%s' because it is not an mp3.")
 
             track = metadata.tracks.add()

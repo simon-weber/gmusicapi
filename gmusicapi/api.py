@@ -709,7 +709,7 @@ class Api(UsesLog):
 
         try:
             for orig_fn in filenames:
-                extension = orig_fn.split(".")[-1].lower
+                extension = orig_fn.split(".")[-1].lower()
 
                 if extension == "mp3":
                     all_file_handles.append(file(orig_fn))
