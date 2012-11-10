@@ -28,7 +28,7 @@ from setuptools import find_packages
 
 setup(
     name='gmusicapi',
-    version='2012.08.31',
+    version='2012.11.09',
     author='Simon Weber',
     author_email='simon@simonmweber.com',
     url='http://pypi.python.org/pypi/gmusicapi/',
