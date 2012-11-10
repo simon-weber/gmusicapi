@@ -12,9 +12,9 @@ For bugs reports, feature requests, and contributions, go ahead and [open an iss
 
 ##Features
 
-**New in version 2012.08.31** 
+**New in version 2012.11.09** 
 
-* various fixes and compatibility updates
+* minor bugfixes
 
 **Feature Overview:**
 
@@ -38,9 +38,10 @@ For bugs reports, feature requests, and contributions, go ahead and [open an iss
 
 * Searching for songs, artists, and albums.
 
-**What's on the way:**
+**Possible future features:**
 
 * album art manipulation
+* two-factor authentication support
 
 ##Usage
 
