@@ -1,5 +1,5 @@
 2012.11.09:
-	bugfix: support for uploading uppercase filenames (?)
+	bugfix: support for uploading uppercase filenames (Tom Graham)
 	bugfix: fix typo in multidownload validation, and add test
 
 2012.08.31:
