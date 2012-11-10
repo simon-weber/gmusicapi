@@ -188,6 +188,19 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         #A bit messy; need to pass the ids on to the next step.
         self.uploaded_ids = result.values()
 
+    def updel_1a_get_dl_info(self):
+        """Check how many times the newly uploaded songs have been
+        downloaded."""
+        #gross - upload servers need time to sync
+        time.sleep(5)
+
+        info_tuples = [self.api.get_song_download_info(sid) for sid in
+                       self.uploaded_ids]
+
+        for info_tuple in info_tuples:
+            self.assertTrue(info_tuple[1] == 0)
+
+
     def updel_2_delete(self):
         """Delete the uploaded test files."""
         self.api.delete_songs(self.uploaded_ids)

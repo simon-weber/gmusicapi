@@ -612,7 +612,7 @@ class WC_Protocol(object):
             res = {"type":"object",
                    "properties":{
                        "downloadCounts":{
-                           "type":"array",
+                           "type":"object",
                            "items":{
                                "type":"object",
                                "properties":{
