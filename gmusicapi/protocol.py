@@ -56,7 +56,7 @@ class WC_Call(object):
     _suburl = 'services/'
 
     #Should the response to this call be logged?
-    #The request is always logged, currently.
+    #Lengthy calls (eg get all songs) are generally not logged.
     gets_logged = True
 
     #Do we need to be logged in before making the call?
@@ -80,11 +80,10 @@ class WC_Call(object):
 
 
 class _DefinesNameMetaclass(type):
-    """A metaclass to create a 'name' attribute for _Metadata that respects
-    any necessary name mangling."""
+    """A metaclass to create a 'name' attribute for _Metadata. This is the class name."""
 
     def __new__(cls, name, bases, dct):
-        dct['name'] = name.split('gm_')[-1]
+        dct['name'] = name
         return super(_DefinesNameMetaclass, cls).__new__(cls, name, bases, dct)
 
 class _Metadata_Expectation(object):
@@ -151,22 +150,13 @@ class UnknownExpectation(_Metadata_Expectation):
 class Metadata_Expectations(object):
     """Holds expectations about metadata."""
 
-    #Class names are GM response keys.
-    #Clashes are prefixed with a gm_ (eg gm_type).
-
     @classmethod
     def get_expectation(cls, key, warn_on_unknown=True):
         """Get the Expectation associated with the given key name.
         If no Expectation exists for that name, an immutable Expectation of any type is returned."""
 
-        mangle = False
-        if not hasattr(cls,key):
-            mangle = True
-
-        expt_name = "gm_" + key if mangle else key
-
         try:
-            expt = getattr(cls,expt_name)
+            expt = getattr(cls,key)
             if not issubclass(expt, _Metadata_Expectation):
                 raise TypeError
             return expt
@@ -198,7 +188,7 @@ class Metadata_Expectations(object):
         #it in Gear -> Music labs) 4 stars also means thumbs up
         allowed_values = range(6)
 
-    #strings (the default value for val_type
+    #strings (the default value for val_type)
     class composer(_Metadata_Expectation):
         pass
     class album(_Metadata_Expectation):
@@ -250,7 +240,7 @@ class Metadata_Expectations(object):
     class albumArtUrl(_Metadata_Expectation):
         mutable = False
         optional = True #only seen when there is album art.
-    class gm_type(_Metadata_Expectation):
+    class type(_Metadata_Expectation):
         mutable = False
         val_type = "integer"
     class beatsPerMinute(_Metadata_Expectation):
@@ -264,7 +254,7 @@ class Metadata_Expectations(object):
     class subjectToCuration(_Metadata_Expectation):
         mutable = False
         val_type = "boolean"
-    class matchedId(_Metadata_Expectation):
+    class matchedId(_Metadata_Expectation): #related to scan-and-match?
         mutable = False
     
     #Seems to be a matching track in the store.
