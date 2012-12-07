@@ -257,10 +257,15 @@ class Metadata_Expectations(object):
     class matchedId(_Metadata_Expectation): #related to scan-and-match?
         mutable = False
     
-    #Seems to be a matching track in the store.
     class storeId(_Metadata_Expectation):
+        #Seems to be a matching track in the store.
         mutable = False
         optional = True
+
+    class reuploading(_Metadata_Expectation):
+        mutable = False
+        optional = True  # only seen in the UK - related to scan and match?
+        val_type = "boolean"
         
     
     #Dependent metadata:
