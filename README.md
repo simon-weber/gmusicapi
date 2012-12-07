@@ -97,3 +97,5 @@ Nothing related to authenticated gets logged aside from "logged in" and "logged 
 
 Copyright 2012 [Simon Weber](http://www.simonmweber.com).  
 Licensed under the 3-clause BSD. See COPYING.
+
+[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/de1b6b4af419bb1dcd1dcd962110b600 "githalytics.com")](http://githalytics.com/simon-weber/Unofficial-Google-Music-API)
