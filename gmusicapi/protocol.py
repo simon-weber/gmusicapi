@@ -37,6 +37,10 @@ from uuid import getnode as getmac
 from socket import gethostname
 import base64
 import hashlib
+try:
+    from urllib.parse import urlencode, quote_plus
+except ImportError:
+    from urllib import urlencode, quote_plus
 
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
@@ -65,12 +69,13 @@ class WC_Call(object):
     #Most calls will send u=0 and the xt cookie in the querystring.
     @classmethod
     def build_url(cls, query_string=None):
-        """Return the url to make the call at."""
+        """Return a url and encoded qstring."""
 
         #Most calls send u=0 and xt=<cookie value>
-        qstring = '?u=0&xt={0}'.format(query_string['xt'])
+        qstring = urlencode({'u': 0,
+                             'xt': query_string['xt']})
 
-        return cls._base_url + cls._suburl + cls.__name__ + qstring
+        return cls._base_url + cls._suburl + cls.__name__ + '?' + qstring
 
     #Calls all have different request and response formats.
     @staticmethod
@@ -381,8 +386,12 @@ class WC_Protocol(object):
             :param song_ids: a list of song ids
             """
 
-            req = {"playlistId": playlist_id, "songIds": song_ids} 
-                                      
+            #TODO I highly doubt type always equals 1.
+            #Probably, this is the 'type' in the metadata, but why would the
+            # server need it? It stores that value.
+            song_refs = [{'id': sid, 'type': 1} for sid in song_ids]
+            req = {"playlistId": playlist_id, "songRefs": song_refs}
+
             #{"playlistId":"<same as above>","songIds":[{"playlistEntryId":"<new id>","songId":"<same as above>"}]}
             res = {"type": "object",
                       "properties":{
@@ -631,8 +640,13 @@ class WC_Protocol(object):
         def build_url(cls, query_string):
             #xt is not sent for play.
             #Instead, the songid is sent in the querystring, along with pt=e, for unknown reasons.
-            qstring = '?u=0&pt=e'
-            return cls._base_url + cls._suburl + cls.__name__ + qstring
+            args = query_string
+            args['u'] = 0
+            args['pt'] = 'e'
+
+            qstring = urlencode(args)
+
+            return cls._base_url + cls._suburl + cls.__name__ + '?' + qstring
 
         @staticmethod
         def build_transaction():

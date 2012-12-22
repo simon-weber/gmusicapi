@@ -1002,27 +1002,21 @@ class PlaySession(object):
         :param url_builder: the url, or a function to receieve a dictionary of querystring arg/val pairs and return the url.
         :param extra_args: (optional) key/val querystring pairs.
         :param data: (optional) encoded POST data.
-        :param ua: (optional) The User Age to use for the request.
+        :param ua: (optional) The User Agent to use for the request.
         """
         # I couldn't find a case where we don't need to be logged in
         if not self.logged_in:
             raise NotLoggedIn
 
+        args = {'xt': self.get_cookie("xt")}
+
+        if extra_args:
+            args = dict(args.items() + extra_args.items())
+
         if isinstance(url_builder, basestring):
             url = url_builder
         else:
-            url = url_builder({'xt':self.get_cookie("xt")})
-
-        #Add in optional pairs to the querystring.
-        if extra_args:
-            #Assumes that a qs has already been started (ie we don't need to put a ? first)
-            assert (url.find('?') >= 0)
-
-            extra_url_args = ""
-            for name, val in extra_args.iteritems():
-                extra_url_args += "&{0}={1}".format(name, val)
-
-            url += extra_url_args
+            url = url_builder(args)
 
         opener = build_opener(HTTPCookieProcessor(self.cookies))
 
