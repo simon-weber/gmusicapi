@@ -755,14 +755,16 @@ class MM_Protocol(object):
     def make_metadata_request(self, filenames):
         """Returns (Metadata protobuff, dictionary mapping ClientId to filename) for the given mp3s."""
 
-        filemap = {} #this maps a generated ClientID with a filename
+        filemap = {} #map clientid -> filename
 
         metadata = self.make_pb("metadata_request")
 
         for filename in filenames:
 
             if not filename.split(".")[-1].lower() == "mp3":
-                self.log.error("Cannot upload '%s' because it is not an mp3.")
+                LogController.get_logger("make_metadata_request").error(
+                        "cannot upload '%s' because it is not an mp3.", filename)
+                continue
 
             track = metadata.tracks.add()
 
