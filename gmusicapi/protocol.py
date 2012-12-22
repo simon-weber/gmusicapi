@@ -28,29 +28,26 @@
 """The protocol layer is a one-to-one mapping of calls to Google Music."""
 
 
-import string
 import os
-import random
-from collections import namedtuple
-import exceptions
 from uuid import getnode as getmac
 from socket import gethostname
 import base64
 import hashlib
 try:
-    from urllib.parse import urlencode, quote_plus
+    from urllib.parse import urlencode
 except ImportError:
-    from urllib import urlencode, quote_plus
+    from urllib import urlencode
 
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 
-import metadata_pb2
-from utils import utils
-from utils.apilogging import LogController #TODO this is a hack
+from gmusicapi import metadata_pb2
+from gmusicapi.utils import utils
+#TODO this is a hack
+from gmusicapi.utils.apilogging import LogController
 
 
-class WC_Call(object):
+class WcCall(object):
     """An abstract class to hold the protocol for a web client call."""
     
     _base_url = 'https://play.google.com/music/'
@@ -80,16 +77,17 @@ class WC_Call(object):
     #Calls all have different request and response formats.
     @staticmethod
     def build_transaction():
-        """Return a tuple of (filled request, response schemas)."""
+        """Return a tuple of (filled request, response schemas).
+        Implementing classes change the arguments - there's no generic form."""
         raise NotImplementedError
 
 
 class _DefinesNameMetaclass(type):
-    """A metaclass to create a 'name' attribute for _Metadata. This is the class name."""
+    """Creates a 'name' attribute that stores the class name."""
 
-    def __new__(cls, name, bases, dct):
+    def __new__(mcs, name, bases, dct):
         dct['name'] = name
-        return super(_DefinesNameMetaclass, cls).__new__(cls, name, bases, dct)
+        return super(_DefinesNameMetaclass, mcs).__new__(mcs, name, bases, dct)
 
 class _Metadata_Expectation(object):
     """An abstract class to hold expectations for a particular metadata entry.
@@ -125,10 +123,10 @@ class _Metadata_Expectation(object):
     #The name of the Metadata class our value depends on, or None.
     depends_on = None 
 
-    #A function that takes the dependent key's value
-    # and returns our own. Only implemented for dependent keys.
     @staticmethod
     def dependent_transformation(value):
+        """Given the dependent key's value, return ours.
+        Only implemented for dependent keys."""
         raise NotImplementedError
 
     #Is this entry optional?
@@ -161,12 +159,13 @@ class Metadata_Expectations(object):
         If no Expectation exists for that name, an immutable Expectation of any type is returned."""
 
         try:
-            expt = getattr(cls,key)
+            expt = getattr(cls, key)
             if not issubclass(expt, _Metadata_Expectation):
                 raise TypeError
             return expt
         except (AttributeError, TypeError):
-            if warn_on_unknown: LogController.get_logger("get_expectation").warning("unknown metadata type '%s'", key)
+            if warn_on_unknown:
+                LogController.get_logger("get_expectation").warning("unknown metadata type '%s'", key)
 
             return UnknownExpectation
 
@@ -286,28 +285,28 @@ class Metadata_Expectations(object):
 
         @staticmethod
         def dependent_transformation(other_value):
-            return string.lower(other_value)
+            return other_value.lower()
 
     class albumArtistNorm(_Metadata_Expectation):
         depends_on = "albumArtist"
 
         @staticmethod
         def dependent_transformation(other_value):
-            return string.lower(other_value)
+            return other_value.lower()
 
     class albumNorm(_Metadata_Expectation):
         depends_on = "album"
 
         @staticmethod
         def dependent_transformation(other_value):
-            return string.lower(other_value)    
+            return other_value.lower()
 
     class artistNorm(_Metadata_Expectation):
         depends_on = "artist"
 
         @staticmethod
         def dependent_transformation(other_value):
-            return string.lower(other_value)
+            return other_value.lower()
 
     
     #Metadata we have no control over:
@@ -353,7 +352,7 @@ class WC_Protocol(object):
 
     #All api calls are named as they appear in the request.
 
-    class addplaylist(WC_Call):
+    class addplaylist(WcCall):
         """Creates a new playlist."""
 
         @staticmethod
@@ -376,7 +375,7 @@ class WC_Protocol(object):
             return (req, res)
 
 
-    class addtoplaylist(WC_Call):
+    class addtoplaylist(WcCall):
         """Adds songs to a playlist."""
 
         @staticmethod
@@ -414,7 +413,7 @@ class WC_Protocol(object):
             return (req, res)
 
 
-    class modifyplaylist(WC_Call):
+    class modifyplaylist(WcCall):
         """Changes the name of a playlist."""
 
         @staticmethod
@@ -433,7 +432,7 @@ class WC_Protocol(object):
 
             return (req, res)
 
-    class changeplaylistorder(WC_Call):
+    class changeplaylistorder(WcCall):
         """Reorders songs currently in a playlist."""
         
         @staticmethod
@@ -467,7 +466,7 @@ class WC_Protocol(object):
  
             return (req, res)
     
-    class deleteplaylist(WC_Call):
+    class deleteplaylist(WcCall):
         """Deletes a playlist."""
 
         @staticmethod
@@ -489,7 +488,7 @@ class WC_Protocol(object):
             return (req, res)
         
 
-    class deletesong(WC_Call):
+    class deletesong(WcCall):
         """Delete a song from the library or a playlist."""
 
         @staticmethod
@@ -515,7 +514,7 @@ class WC_Protocol(object):
                    }
             return (req, res)
 
-    class loadalltracks(WC_Call):
+    class loadalltracks(WcCall):
         """Loads tracks from the library.
         Since libraries can have many tracks, GM gives them back in chunks.
         Chunks will send a continuation token to get the next chunk.
@@ -548,7 +547,7 @@ class WC_Protocol(object):
 
             return (req, res)
 
-    class loadplaylist(WC_Call):
+    class loadplaylist(WcCall):
         """Loads tracks from a playlist.
         Tracks include playlistEntryIds.
         """
@@ -575,7 +574,7 @@ class WC_Protocol(object):
             return (req, res)
         
     
-    class modifyentries(WC_Call):
+    class modifyentries(WcCall):
         """Edit the metadata of songs."""
 
         @classmethod
@@ -604,7 +603,7 @@ class WC_Protocol(object):
                    }
             return (req, res)
 
-    class multidownload(WC_Call):
+    class multidownload(WcCall):
         """Get download links and counts for songs."""
 
         @staticmethod
@@ -630,7 +629,7 @@ class WC_Protocol(object):
                    }
             return (req, res)
 
-    class play(WC_Call):
+    class play(WcCall):
         """Get a url that holds a file to stream."""
 
         #play is strange, it doesn't use music/services/play, just music/play
@@ -661,7 +660,7 @@ class WC_Protocol(object):
             return (req, res)
         
 
-    class search(WC_Call):
+    class search(WcCall):
         """Search for songs, artists and albums.
         GM ignores punctuation."""
     
@@ -809,6 +808,7 @@ class MM_Protocol(object):
                 track.title = filename.decode(enc).split(r'/')[-1]
 
 
+            #TODO refactor
             if "album" in audio: track.album = audio["album"][0]
             if "artist" in audio: track.artist = audio["artist"][0]
             if "composer" in audio: track.composer = audio["composer"][0]
