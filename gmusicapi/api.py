@@ -668,7 +668,7 @@ class Api(UsesLog):
     
 
     @utils.accept_singleton(basestring)
-    @utils.empty_arg_shortcircuit(ret={})
+    @utils.empty_arg_shortcircuit(return_code='{}')
     def upload(self, filenames):
         """Uploads the given filenames. Returns a dictionary with ``{"<filename>": "<new song id>"}`` pairs for each successful upload.
 

@@ -39,7 +39,7 @@ import copy
 import time
 import random
 
-from ..protocol import WC_Protocol, Metadata_Expectations
+from ..protocol import WC_Protocol, MetadataExpectations
 from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
 
@@ -232,7 +232,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         #Generate noticably changed metadata for ones we can change.
         #Changing immutable ones voids the request (although we get back success:True and our expected values).
         new_md = copy.deepcopy(orig_md)
-        expts = Metadata_Expectations.get_all_expectations()
+        expts = MetadataExpectations.get_all_expectations()
 
         for name, expt in expts.items():
             if name in orig_md and expt.mutable:

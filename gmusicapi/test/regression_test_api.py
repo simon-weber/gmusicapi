@@ -35,7 +35,7 @@ import string
 
 from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
-from ..protocol import Metadata_Expectations
+from ..protocol import MetadataExpectations
 from ..protocol import UnknownExpectation
 
 #Expected to be in this directory.
@@ -93,11 +93,11 @@ class TestRegressions(test_utils.BaseTest, UsesLog):
         self.run_steps("notags")
 
     def test_invalid_md_key(self):
-        expt = Metadata_Expectations.get_expectation("foo", warn_on_unknown=False)
+        expt = MetadataExpectations.get_expectation("foo", warn_on_unknown=False)
         self.assertTrue(expt is UnknownExpectation)
 
         #Don't want any unknowns when getting all.
-        for expt in Metadata_Expectations.get_all_expectations():
+        for expt in MetadataExpectations.get_all_expectations():
             self.assertTrue(expt is not UnknownExpectation)
 
 

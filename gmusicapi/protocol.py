@@ -89,7 +89,7 @@ class _DefinesNameMetaclass(type):
         dct['name'] = name
         return super(_DefinesNameMetaclass, mcs).__new__(mcs, name, bases, dct)
 
-class _Metadata_Expectation(object):
+class _MetadataExpectation(object):
     """An abstract class to hold expectations for a particular metadata entry.
 
     Its default values are correct for most entries."""
@@ -144,13 +144,13 @@ class _Metadata_Expectation(object):
 
         return schema
     
-class UnknownExpectation(_Metadata_Expectation):
+class UnknownExpectation(_MetadataExpectation):
     """A flexible expectation intended to be given when we know nothing about a key."""
     val_type = "any"
     mutable = False
     
 
-class Metadata_Expectations(object):
+class MetadataExpectations(object):
     """Holds expectations about metadata."""
 
     @classmethod
@@ -160,7 +160,7 @@ class Metadata_Expectations(object):
 
         try:
             expt = getattr(cls, key)
-            if not issubclass(expt, _Metadata_Expectation):
+            if not issubclass(expt, _MetadataExpectation):
                 raise TypeError
             return expt
         except (AttributeError, TypeError):
@@ -183,7 +183,7 @@ class Metadata_Expectations(object):
         return expts
 
     #Mutable metadata:
-    class rating(_Metadata_Expectation):
+    class rating(_MetadataExpectation):
         val_type = "integer"
         #0 = no thumb
         #1 = down thumb
@@ -193,115 +193,115 @@ class Metadata_Expectations(object):
         allowed_values = range(6)
 
     #strings (the default value for val_type)
-    class composer(_Metadata_Expectation):
+    class composer(_MetadataExpectation):
         pass
-    class album(_Metadata_Expectation):
+    class album(_MetadataExpectation):
         pass
-    class albumArtist(_Metadata_Expectation):
+    class albumArtist(_MetadataExpectation):
         pass
-    class genre(_Metadata_Expectation):
+    class genre(_MetadataExpectation):
         pass
-    class name(_Metadata_Expectation):
+    class name(_MetadataExpectation):
         pass
-    class artist(_Metadata_Expectation):
+    class artist(_MetadataExpectation):
         pass
 
     #integers
-    class disc(_Metadata_Expectation):
+    class disc(_MetadataExpectation):
         optional = True
         val_type = "integer"
-    class year(_Metadata_Expectation):
+    class year(_MetadataExpectation):
         optional = True
         val_type = "integer"
-    class track(_Metadata_Expectation):
+    class track(_MetadataExpectation):
         optional = True
         val_type = "integer"
-    class totalTracks(_Metadata_Expectation):
+    class totalTracks(_MetadataExpectation):
         optional = True
         val_type = "integer"
-    class playCount(_Metadata_Expectation):
+    class playCount(_MetadataExpectation):
         val_type = "integer"
-    class totalDiscs(_Metadata_Expectation):
+    class totalDiscs(_MetadataExpectation):
         optional = True
         val_type = "integer"
 
 
 
     #Immutable metadata:
-    class durationMillis(_Metadata_Expectation):
+    class durationMillis(_MetadataExpectation):
         mutable = False #you can change this, but probably don't want to.
         val_type = "integer"
-    class comment(_Metadata_Expectation):
+    class comment(_MetadataExpectation):
         mutable = False
-    class id(_Metadata_Expectation):
+    class id(_MetadataExpectation):
         mutable = False
-    class deleted(_Metadata_Expectation):
+    class deleted(_MetadataExpectation):
         mutable = False
         val_type = "boolean"
-    class creationDate(_Metadata_Expectation):
+    class creationDate(_MetadataExpectation):
         mutable = False
         val_type = "integer"
-    class albumArtUrl(_Metadata_Expectation):
+    class albumArtUrl(_MetadataExpectation):
         mutable = False
         optional = True #only seen when there is album art.
-    class type(_Metadata_Expectation):
+    class type(_MetadataExpectation):
         mutable = False
         val_type = "integer"
-    class beatsPerMinute(_Metadata_Expectation):
+    class beatsPerMinute(_MetadataExpectation):
         mutable = False
         val_type = "integer"
-    class url(_Metadata_Expectation):
+    class url(_MetadataExpectation):
         mutable = False
-    class playlistEntryId(_Metadata_Expectation):
+    class playlistEntryId(_MetadataExpectation):
         mutable = False
         optional = True #only seen when songs are in the context of a playlist.
-    class subjectToCuration(_Metadata_Expectation):
+    class subjectToCuration(_MetadataExpectation):
         mutable = False
         val_type = "boolean"
-    class matchedId(_Metadata_Expectation): #related to scan-and-match?
+    class matchedId(_MetadataExpectation): #related to scan-and-match?
         mutable = False
     
-    class storeId(_Metadata_Expectation):
+    class storeId(_MetadataExpectation):
         #Seems to be a matching track in the store.
         mutable = False
         optional = True
 
-    class reuploading(_Metadata_Expectation):
+    class reuploading(_MetadataExpectation):
         mutable = False
         optional = True  # only seen in the UK - related to scan and match?
         val_type = "boolean"
         
     
     #Dependent metadata:
-    class title(_Metadata_Expectation):
+    class title(_MetadataExpectation):
         depends_on = "name"
         
         @staticmethod
         def dependent_transformation(other_value):
             return other_value #nothing changes
 
-    class titleNorm(_Metadata_Expectation):
+    class titleNorm(_MetadataExpectation):
         depends_on = "name"
 
         @staticmethod
         def dependent_transformation(other_value):
             return other_value.lower()
 
-    class albumArtistNorm(_Metadata_Expectation):
+    class albumArtistNorm(_MetadataExpectation):
         depends_on = "albumArtist"
 
         @staticmethod
         def dependent_transformation(other_value):
             return other_value.lower()
 
-    class albumNorm(_Metadata_Expectation):
+    class albumNorm(_MetadataExpectation):
         depends_on = "album"
 
         @staticmethod
         def dependent_transformation(other_value):
             return other_value.lower()
 
-    class artistNorm(_Metadata_Expectation):
+    class artistNorm(_MetadataExpectation):
         depends_on = "artist"
 
         @staticmethod
@@ -310,7 +310,7 @@ class Metadata_Expectations(object):
 
     
     #Metadata we have no control over:
-    class lastPlayed(_Metadata_Expectation):
+    class lastPlayed(_MetadataExpectation):
         mutable = False
         volatile = True
         val_type = "integer"
@@ -329,7 +329,7 @@ class WC_Protocol(object):
                    #don't allow metadata not in expectations
                    "additionalProperties":False} 
 
-    for name, expt in Metadata_Expectations.get_all_expectations().items():
+    for name, expt in MetadataExpectations.get_all_expectations().items():
         song_schema["properties"][name] = expt.get_schema()
 
     song_array = {"type":"array",
@@ -587,7 +587,7 @@ class WC_Protocol(object):
 
             for song in songs:
                 for key in song:
-                    allowed_values = Metadata_Expectations.get_expectation(key).allowed_values
+                    allowed_values = MetadataExpectations.get_expectation(key).allowed_values
                     if allowed_values and song[key] not in allowed_values:
                         LogController.get_logger("modifyentries").warning("setting key {0} to unallowed value {1} for id {2}. Check metadata expectations in protocol.py".format(key, song[key], song["id"]))
                         
