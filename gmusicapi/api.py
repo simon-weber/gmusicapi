@@ -34,11 +34,8 @@ This api is not supported nor endorsed by Google, and could break at any time.
 """
 
 import json
-import re
-import string
 import time
 import exceptions
-import collections
 import copy
 import contextlib
 import tempfile
@@ -71,12 +68,12 @@ from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 import validictory
 
-from protocol import WC_Protocol, MM_Protocol
-from utils import utils
-from utils.apilogging import UsesLog
-from gmtools import tools
-from utils.clientlogin import ClientLogin
-from utils.tokenauth import TokenAuth
+from gmusicapi.protocol import WC_Protocol, MM_Protocol
+from gmusicapi.utils import utils
+from gmusicapi.utils.apilogging import UsesLog
+from gmusicapi.gmtools import tools
+from gmusicapi.utils.clientlogin import ClientLogin
+from gmusicapi.utils.tokenauth import TokenAuth
 
 supported_upload_filetypes = ("mp3", "m4a", "ogg", "flac", "wma") 
 
@@ -84,15 +81,17 @@ class CallFailure(exceptions.Exception):
     """Exception raised when the Google Music server responds that a call failed.
     
     Attributes:
-        name -- name of Api function that had the failing call
+        callname -- name of Api function that had the failing call
         res  -- the body of the failed response
     """
-    def __init__(self, name, res):
-        self.name = name
+    def __init__(self, message, callname, res):
+        Exception.__init__(self, message)
+
+        self.callname = callname
         self.res = res
 
     def __str__(self):
-        return "api call {} failed; server returned {}".format(self.name, self.res)
+        return "api call {} failed; server returned {}".format(self.callname, self.res)
 
 class Api(UsesLog):
     def __init__(self, suppress_failure=False):
@@ -632,7 +631,7 @@ class Api(UsesLog):
             
             if not self.suppress_failure:
                 calling_func_name = inspect.stack()[1][3]
-                raise CallFailure(calling_func_name, res) #normally caused by bad arguments to the server
+                raise CallFailure('', calling_func_name, res) #normally caused by bad arguments to the server
 
         #Calls are not required to have a schema, and
         # schemas are only for successful calls.
