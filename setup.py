@@ -42,11 +42,15 @@ gmusicapi is an unofficial api for Google Play Music. Please see the `project pa
 This api is not supported nor endorsed by Google, and could break at any time.
 """,
     install_requires=[
-        "validictory >= 0.8.3",
-        "decorator >= 3.3.2",
-        "mutagen >= 1.2.0",
-        "protobuf >= 2.4.0",
-        "chardet",
+        'validictory >= 0.8.3',
+        'decorator == 3.3.2',
+        'mutagen == 1.20',
+        'protobuf == 2.4.1',
+        'chardet == 2.1.1',
+        #for testing album art:
+        'hachoir-core == 1.3.3',
+        'hachoir-parser == 1.3.4',
+        'hachoir-metadata == 1.3.3',
     ],
     classifiers = [
         "Programming Language :: Python",
