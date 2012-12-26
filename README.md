@@ -13,6 +13,7 @@ For bugs reports, feature requests, and contributions, go ahead and [open an iss
 Also, check out these nifty projects that use gmusicapi:
 *  Malcolm Still's [command line Google Music client](https://github.com/mstill/thunner) ([screenshot](http://i.imgur.com/Mwl0k.png))
 *  Dave Dooling's [sync scripts for Banshee](https://github.com/ddgenome/banshee-helper-scripts)
+*  Mendhak's [Rhythmbox metadata sync plugin](https://github.com/mendhak/rhythmbox-gmusic-sync)
 
 
 ##Features
