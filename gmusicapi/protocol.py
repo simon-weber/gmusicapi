@@ -273,7 +273,7 @@ class MetadataExpectations(object):
         val_type = "boolean"
 
     #introduced in issue 62:
-    class albumMatchedIf(_MetadataExpectation):
+    class albumMatchedId(_MetadataExpectation):
         mutable = False
         optional = True  # scan and match for entire albums?
 
@@ -281,6 +281,10 @@ class MetadataExpectations(object):
         mutable = False
         optional = True  # scan and match results pending?
         val_type = "boolean"
+
+    class url(_MetadataExpectation):
+        mutable = False
+        optional = True
 
 
     #Dependent metadata:
