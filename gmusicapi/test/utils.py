@@ -237,6 +237,6 @@ class BaseTest(unittest.TestCase):
             #Other kinds of exceptions may be raised inside the code
             # being tested; those should be re-raised so we can trace them.
             except CallFailure as f:
-                raise self.fail("test {} step {} call to {} failure: {}".format(prefix, step, f.name, f.res))
+                raise self.fail("test {} step {} call to {} failure: {}".format(prefix, step, f.callname, f.res))
             except AssertionError as e:
                 raise #it's actually easiest to just reraise this, so we can track down what went wrong
