@@ -280,6 +280,7 @@ class MetadataExpectations(object):
     class pending(_MetadataExpectation):
         mutable = False
         optional = True  # scan and match results pending?
+        val_type = "boolean"
 
 
     #Dependent metadata:
