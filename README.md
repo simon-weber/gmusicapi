@@ -14,6 +14,7 @@ Also, check out these nifty projects that use gmusicapi:
 *  Malcolm Still's [command line Google Music client](https://github.com/mstill/thunner) ([screenshot](http://i.imgur.com/Mwl0k.png))
 *  David Dooling's [sync scripts for Banshee](https://github.com/ddgenome/banshee-helper-scripts)
 *  Mendhak's [Rhythmbox metadata sync plugin](https://github.com/mendhak/rhythmbox-gmusic-sync)
+*  Ryan McGuire's [GMusicFS](https://github.com/EnigmaCurry/GMusicFS) - a FUSE filesystem linked to your music
 
 
 ##Features
