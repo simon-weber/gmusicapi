@@ -12,9 +12,9 @@ import requests
 
 Transaction = namedtuple(
     'Transaction',
-    ['request',  # requests.PreparedRequest
-     'verify_res_schema',  # f(parsed_res) -> bool. checks response schema
-     'verify_res_success',  # like verify schema, but checks for soft failure
+    ['request',  # requests.Request
+     'verify_res_schema',  # f(parsed_res) -> throws ValidationException
+     'verify_res_success',  # f(parsed_res) -> bool. checks for soft failure
     ],
 )
 
@@ -79,12 +79,11 @@ class Call(object):
         config['method'] = cls.method
 
         req = requests.Request(**config)
-        req.prepare()
 
         return req
 
-    @classmethod
-    def parse_json(cls, text):
+    @staticmethod
+    def parse_json(text):
         try:
             return json.loads(text)
         except ValueError as e:

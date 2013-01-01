@@ -66,6 +66,7 @@ except ImportError:
 
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
+import requests
 import validictory
 
 from gmusicapi.protocol import WC_Protocol, MM_Protocol
@@ -231,16 +232,17 @@ class Api(UsesLog):
         """
 
         res = self._wc_call("modifyentries", songs)
-        
+
         return [s['id'] for s in res['songs']]
-        
+
     def create_playlist(self, name):
         """Creates a new playlist. Returns the new playlist id.
 
         :param title: the title of the playlist to create.
         """
 
-        return self._wc_call("addplaylist", name)['id']
+        return self._make_wc_call(webclient.AddPlaylist, name)['id']
+        #return self._wc_call("addplaylist", name)['id']
 
     def delete_playlist(self, playlist_id):
         """Deletes a playlist. Returns the deleted id.
@@ -591,9 +593,38 @@ class Api(UsesLog):
                 "artist_hits":res["artists"],
                 "song_hits":res["songs"]}
 
-    def _make_wc_call(self, call):
-        """Returns the response of a web client call."""
-        pass
+    def _make_wc_call(self, protocol, *args, **kwargs):
+        """Returns the response of a web client call. Additional kw/args passed
+        to protocol.build_transaction."""
+
+        call_name = protocol.__name__
+
+        self.log.debug("n wc_call %s(%s %s)", call_name, args, kwargs)
+
+        transaction = protocol.build_transaction(*args, **kwargs)
+
+        response = self.session.send_wc_request(transaction.request,
+                                                send_xt=protocol.send_xt)
+
+        text = response.read()
+
+        #TODO check return code
+
+        try:
+            res = protocol.parse_response(text)
+        except ParseException:
+            self.log.warning("couldn't parse %s response: %s", call_name, text)
+
+        if not transaction.verify_res_success(res):
+            if not self.suppress_failure:
+                raise CallFailure('', call_name, res)
+
+        try:
+            transaction.verify_res_schema(res)
+        except ValidationException:
+            self.log.warning("unexpected response from %s: %r", call_name, res)
+
+        return res
 
     def _wc_call(self, service_name, *args, **kw):
         """Returns the response of a web client call.
@@ -994,6 +1025,24 @@ class PlaySession(object):
         """
         self.__init__()
 
+    def send_wc_request(self, request, send_xt=True):
+        """Send a request using the web client session."""
+        if not self.logged_in:
+            raise NotLoggedIn
+
+        #These should probably be stored in session.
+        if send_xt:
+            request.params['u'] = 0
+            request.params['xt'] = self.get_cookie('xt')
+
+        request.headers['User-agent'] = self._user_agent
+        request.cookies = self.cookies
+
+        prep_request = request.prepare()
+        #there are weird differences between requests and urllib here,
+        # which cause 404s and xsrf revalidation. eventually, this should just
+        # be sending over a requests Session, but this works for now.
+        return self.open_web_url(prep_request.url, data=prep_request.body)
 
     def open_web_url(self, url_builder, extra_args=None, data=None, useragent=None):
         """

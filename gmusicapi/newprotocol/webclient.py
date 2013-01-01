@@ -2,6 +2,7 @@
 
 import json
 import sys
+from urllib import quote_plus
 
 import validictory
 
@@ -19,16 +20,17 @@ class WcCall(Call):
 
     #Most webclient calls require an xt token in the params.
     #This signals to the session to include it.
-    requires_xt = True
+    send_xt = True
 
     @classmethod
     def build_transaction(cls, *args, **kwargs):
         #template out the transaction; most of it is shared.
         return Transaction(
-            cls._request_factory(
-                url=cls._base_url + cls._suburl + cls.__name__.lower(),
-                data=json.dumps('json=' + cls._build_json(*args, **kwargs))
-            ),
+            cls._request_factory({
+                'url': cls._base_url + cls._suburl + cls.__name__.lower(),
+                'data': 'json=' + quote_plus(
+                    json.dumps(cls._build_json(*args,**kwargs)))
+            }),
             cls.verify_res_schema,
             cls.verify_res_success
         )
@@ -52,6 +54,10 @@ class WcCall(Call):
             return res['success']
         else:
             return True
+
+    @classmethod
+    def parse_response(cls, text):
+        return cls.parse_json(text)
 
 
 class AddPlaylist(WcCall):
