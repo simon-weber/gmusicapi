@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 """Definitions shared by multiple clients."""
 
 from collections import namedtuple
@@ -9,7 +12,7 @@ import requests
 
 Transaction = namedtuple(
     'Transaction',
-    ['request',  # contains all http info to make the call
+    ['request',  # requests.PreparedRequest
      'verify_res_schema',  # f(parsed_res) -> bool. checks response schema
      'verify_res_success',  # like verify schema, but checks for soft failure
     ],
@@ -21,6 +24,11 @@ class ParseException(Exception):
     pass
 
 
+class ValidationException(Exception):
+    """Thrown by Transaction.verify_res_schema on errors."""
+    pass
+
+
 class Call(object):
     """Abstract class for an api call.
     These classes are never instantiated."""
@@ -28,7 +36,7 @@ class Call(object):
     #should the call be logged?
     gets_logged = True
 
-    #static request options can be defined in a call:
+    #static request config options can be defined in a call:
     #  method – HTTP method to use.
     #  url – URL to send.
     #  headers – dictionary of headers to send.
@@ -52,12 +60,23 @@ class Call(object):
         raise NotImplementedError
 
     @classmethod
-    def _build_request(cls, **kwargs):
-        """Return a PreparedRequest by combining given dynamic config with the
-        static config."""
+    def _request_factory(cls, dynamic_config):
+        """Return a PreparedRequest by combining method with dynamic config."""
 
-        config = {key: kwargs.get(key, getattr(cls)) for key in
-                  ('method', 'url', 'headers', 'files', 'data', 'params')}
+        #valid dynamic config:
+        #  url – URL to send.
+        #  headers – dictionary of headers to send.
+        #  files – dictionary of {filename: fileobject} to multipart upload.
+        #  data – the body to attach the request.
+        #          If a dictionary is provided, form-encoding will take place.
+        #  params – dictionary of URL parameters to append to the URL.
+        #These probably won't be used:
+        #  cookies – dictionary or CookieJar of cookies
+        #  auth – Auth handler or (user, pass) tuple.
+        #  hooks – dictionary of callback hooks, for internal usage.
+
+        config = dynamic_config
+        config['method'] = cls.method
 
         req = requests.Request(**config)
         req.prepare()

@@ -75,6 +75,9 @@ from gmusicapi.gmtools import tools
 from gmusicapi.utils.clientlogin import ClientLogin
 from gmusicapi.utils.tokenauth import TokenAuth
 
+from gmusicapi.newprotocol import webclient
+from gmusicapi.newprotocol.shared import ParseException, ValidationException
+
 supported_upload_filetypes = ("mp3", "m4a", "ogg", "flac", "wma") 
 
 class CallFailure(exceptions.Exception):
@@ -588,6 +591,9 @@ class Api(UsesLog):
                 "artist_hits":res["artists"],
                 "song_hits":res["songs"]}
 
+    def _make_wc_call(self, call):
+        """Returns the response of a web client call."""
+        pass
 
     def _wc_call(self, service_name, *args, **kw):
         """Returns the response of a web client call.
