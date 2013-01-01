@@ -1,6 +1,8 @@
 """Definitions shared by multiple clients."""
 
 from collections import namedtuple
+import json
+import sys
 
 import requests
 
@@ -12,6 +14,11 @@ Transaction = namedtuple(
      'verify_res_success',  # like verify schema, but checks for soft failure
     ],
 )
+
+
+class ParseException(Exception):
+    """Thrown by parse_response on errors."""
+    pass
 
 
 class Call(object):
@@ -56,3 +63,11 @@ class Call(object):
         req.prepare()
 
         return req
+
+    @classmethod
+    def parse_json(cls, text):
+        try:
+            return json.loads(text)
+        except ValueError as e:
+            trace = sys.exc_info()[2]
+            raise ParseException(e.message), None, trace
