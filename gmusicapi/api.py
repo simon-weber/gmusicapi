@@ -139,7 +139,8 @@ class Api(UsesLog):
         Users of two-factor authentication will need to set an application-specific password
         to log in.
 
-        Uploads from this instance will send uploader_id and uploader_name."""
+        Uploads from this instance will send uploader_id and uploader_name.
+        """
 
         self.session.login(email, password)
         if not self.is_authenticated():
@@ -157,8 +158,8 @@ class Api(UsesLog):
             if uploader_name is None:
                 uploader_name = gethostname()
 
-            #self._mm_pb_call("upload_auth")
             try:
+                #self._mm_pb_call("upload_auth")
                 self._make_call(musicmanager.AuthenticateUploader,
                                 uploader_id,
                                 uploader_name)
@@ -173,10 +174,13 @@ class Api(UsesLog):
         return True
 
     def logout(self):
-        """Logs out of the api.
-        Returns True on success, False on failure."""
-
+        """Forgets local authentication without affecting the server.
+        Always returns True.
+        """
         self.session.logout()
+        self.uploader_id = None
+        self.uploader_name = None
+
         self.log.info("logged out")
 
         return True
