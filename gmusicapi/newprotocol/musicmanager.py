@@ -3,6 +3,7 @@
 
 """Calls made by the Music Manager (related to uploading)."""
 
+from gmusicapi.api import CallFailure
 from gmusicapi.newprotocol import upload_pb2
 from gmusicapi.newprotocol.shared import Call, Transaction
 from gmusicapi.utils import utils
@@ -47,11 +48,11 @@ class MmCall(Call):
         """Parsing also verifies the schema for protobufs."""
         pass
 
-    @staticmethod
-    def verify_res_success(res):
+    @classmethod
+    def verify_res_success(cls, res):
         #TODO not sure how to do this yet.
         #auth is a factor, but both protocols share that, I think
-        return True
+        pass
 
     @classmethod
     def _build_protobuf(cls, *args, **kwargs):
@@ -76,11 +77,14 @@ class AuthenticateUploader(MmCall):
     _suburl = 'upauth'
     req_msg_type = upload_pb2.UpAuthRequest
 
-    @staticmethod
-    def verify_res_success(res):
-        if res.HasField('auth_status'):
-            return res.auth_status == upload_pb2.UploadResponse.OK
-        return True
+    @classmethod
+    def verify_res_success(cls, res):
+        if res.HasField('auth_status') and res.auth_status != upload_pb2.UploadResponse.OK:
+            raise CallFailure(
+                    "Two accounts have already been registered on this machine."
+                    " Only 2 are allowed; deauthorize accounts to continue."
+                    "See http://goo.gl/3VIsR for more information.",
+                    cls.__name__)
 
     @classmethod
     def _build_protobuf(cls, uploader_id, uploader_friendly_name):

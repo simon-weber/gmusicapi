@@ -6,7 +6,9 @@ from urllib import quote_plus
 
 import validictory
 
+from gmusicapi.api import CallFailure
 from gmusicapi.newprotocol.shared import Call, Transaction, ValidationException
+from gmusicapi.utils import utils
 
 
 class WcCall(Call):
@@ -17,6 +19,9 @@ class WcCall(Call):
     #Added to the url after _base_url.
     #Expected to end with a forward slash.
     _suburl = 'services/'
+
+    #validictory schema for the response
+    res_schema = utils.NotImplementedField
 
     @classmethod
     def build_transaction(cls, *args, **kwargs):
@@ -40,20 +45,29 @@ class WcCall(Call):
             trace = sys.exc_info()[2]
             raise ValidationException(e.message), None, trace
 
-    @staticmethod
-    def verify_res_success(res):
+    @classmethod
+    def verify_res_success(cls, res):
         #Failed responses always have a success=False key.
         #Some successful responses do not have a success=True key, however.
         #TODO remove utils.call_succeeded
 
-        if 'success' in res.keys():
-            return res['success']
-        else:
-            return True
+        if 'success' in res.keys() and not res['success']:
+            raise CallFailure(
+                    "the server reported failure. This is usually"
+                    "caused by bad arguments, but can also happen if requests"
+                    "are made too quickly (eg creating a playlist then"
+                    "modifying it before the server has created it)",
+                    cls.__name__)
+
 
     @classmethod
     def parse_response(cls, text):
         return cls.parse_json(text)
+
+    @staticmethod
+    def _build_json(title):
+        """Return a Python representation of the call's json."""
+        raise NotImplementedError
 
 
 class AddPlaylist(WcCall):

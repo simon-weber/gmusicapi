@@ -88,17 +88,15 @@ class CallFailure(exceptions.Exception):
     """Exception raised when the Google Music server responds that a call failed.
     
     Attributes:
-        callname -- name of Api function that had the failing call
-        res  -- the body of the failed response
+        callname -- name of the newprotocol.Call that failed
     """
-    def __init__(self, message, callname, res):
+    def __init__(self, message, callname):
         Exception.__init__(self, message)
 
         self.callname = callname
-        self.res = res
 
     def __str__(self):
-        return "api call {} failed; server returned {}".format(self.callname, self.res)
+        return "%s: %s" % (self.callname, Exception.__str__(self)
 
 
 class Api(UsesLog):
@@ -640,9 +638,11 @@ class Api(UsesLog):
         except ParseException:
             self.log.warning("couldn't parse %s response: %s", call_name, text)
 
-        if not transaction.verify_res_success(res):
+        try:
+            transaction.verify_res_success(res)
+        except CallFailure:
             if not self.suppress_failure:
-                raise CallFailure('', call_name, res)
+                raise
 
         try:
             transaction.verify_res_schema(res)

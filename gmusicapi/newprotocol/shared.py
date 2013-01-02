@@ -14,7 +14,7 @@ Transaction = namedtuple(
     'Transaction',
     ['request',  # requests.Request
      'verify_res_schema',  # f(parsed_res) -> throws ValidationException
-     'verify_res_success',  # f(parsed_res) -> bool. checks for soft failure
+     'verify_res_success',  # f(parsed_res) -> throws CallFailure
     ],
 )
 
