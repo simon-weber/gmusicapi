@@ -41,13 +41,16 @@ import contextlib
 import tempfile
 import subprocess
 import os
+from uuid import getnode as getmac
+from socket import gethostname
+import base64
 #used for _wc_call to get its calling parent.
 #according to http://stackoverflow.com/questions/1095543/get-name-of-calling-functions-module-in-python,
 # this 
 #  "will interact strangely with import hooks, 
 #  won't work on ironpython, 
 #  and may behave in surprising ways on jython"
-import inspect 
+import inspect
 
 try:
     # These are for python3 support
@@ -76,7 +79,7 @@ from gmusicapi.gmtools import tools
 from gmusicapi.utils.clientlogin import ClientLogin
 from gmusicapi.utils.tokenauth import TokenAuth
 
-from gmusicapi.newprotocol import webclient
+from gmusicapi.newprotocol import webclient, musicmanager
 from gmusicapi.newprotocol.shared import ParseException, ValidationException
 
 supported_upload_filetypes = ("mp3", "m4a", "ogg", "flac", "wma") 
@@ -97,11 +100,12 @@ class CallFailure(exceptions.Exception):
     def __str__(self):
         return "api call {} failed; server returned {}".format(self.callname, self.res)
 
+
 class Api(UsesLog):
     def __init__(self, suppress_failure=False):
         """Initializes an Api.
 
-        :param suppress_failure: when True, never raise CallFailure when a call fails.
+        :param suppress_failure: when True, CallFailure will never be raised.
         """
 
         self.suppress_failure = suppress_failure
@@ -112,7 +116,7 @@ class Api(UsesLog):
         self.mm_protocol = MM_Protocol()
 
         self.init_logger()
-    
+
     @contextlib.contextmanager
     def _unsuppress_failures(self):
         """An internal context manager to temporarily disable failure suppression.
@@ -134,22 +138,37 @@ class Api(UsesLog):
         """Returns whether the api is logged in."""
         return self.session.logged_in
 
-
-    def login(self, email, password):
+    def login(self, email, password, uploader_id=None, uploader_name=None):
         """Authenticates the api with the given credentials.
         Returns True on success, False on failure.
 
         :param email: eg `test@gmail.com` or just `test`.
         :param password: plaintext password. It will not be stored and is sent over ssl.
+        :param uploader_id: unique id; default is mac address.
+        :param uploader_name: human-readable non-unique id; default is hostname
 
         Users of two-factor authentication will need to set an application-specific password
-        to log in."""
+        to log in.
+
+        uploader_id and _name are stored for future use."""
 
         self.session.login(email, password)
 
+        if uploader_id is None:
+            mac = hex(getmac())[2:-1]
+            mac = ':'.join([mac[x:x + 2] for x in range(0, 10, 2)])
+            uploader_id = mac
+        self.uploader_id = uploader_id
+
+        if uploader_name is None:
+            uploader_name = gethostname()
+        self.uploader_name = uploader_name
+
         if self.is_authenticated():
-            #Need some extra init for upload authentication.
-            self._mm_pb_call("upload_auth") #what if this fails? can it?
+            #self._mm_pb_call("upload_auth") #what if this fails? can it?
+            self._make_call(musicmanager.AuthenticateUploader,
+                            self.uploader_id,
+                            self.uploader_name)
             self.log.info("logged in")
         else:
             self.log.info("failed to log wc in")
@@ -241,7 +260,7 @@ class Api(UsesLog):
         :param title: the title of the playlist to create.
         """
 
-        return self._make_wc_call(webclient.AddPlaylist, name)['id']
+        return self._make_call(webclient.AddPlaylist, name)['id']
         #return self._wc_call("addplaylist", name)['id']
 
     def delete_playlist(self, playlist_id):
@@ -593,25 +612,31 @@ class Api(UsesLog):
                 "artist_hits":res["artists"],
                 "song_hits":res["songs"]}
 
-    def _make_wc_call(self, protocol, *args, **kwargs):
-        """Returns the response of a web client call. Additional kw/args passed
-        to protocol.build_transaction."""
+    def _make_call(self, protocol, *args, **kwargs):
+        """Returns the response of a web client/music manager call.
+        Additional kw/args passed to protocol.build_transaction."""
 
         call_name = protocol.__name__
 
-        self.log.debug("n wc_call %s(%s %s)", call_name, args, kwargs)
+        self.log.debug("n call %s(%s %s)", call_name, args, kwargs)
 
         transaction = protocol.build_transaction(*args, **kwargs)
 
-        response = self.session.send_wc_request(transaction.request,
-                                                send_xt=protocol.send_xt)
-
-        text = response.read()
+        #TODO refactor this once session things are figured out
+        if protocol.__bases__[0].__name__ == 'WcCall':
+            response = self.session.send_wc_request(transaction.request,
+                                                    send_xt=protocol.send_xt)
+            text = response.read()
+        else:
+            response = self.session.send_mm_request(transaction.request)
+            text = response.read()
 
         #TODO check return code
 
         try:
             res = protocol.parse_response(text)
+            #TODO log response
+            print res
         except ParseException:
             self.log.warning("couldn't parse %s response: %s", call_name, text)
 
@@ -1025,6 +1050,8 @@ class PlaySession(object):
         """
         self.__init__()
 
+    #These two functions will be the exposed part of the new Session.
+    #Hopefully, requests.Session can be used behind the scenens.
     def send_wc_request(self, request, send_xt=True):
         """Send a request using the web client session."""
         if not self.logged_in:
@@ -1042,9 +1069,22 @@ class PlaySession(object):
         #there are weird differences between requests and urllib here,
         # which cause 404s and xsrf revalidation. eventually, this should just
         # be sending over a requests Session, but this works for now.
-        return self.open_web_url(prep_request.url, data=prep_request.body)
+        return self.open_web_url(prep_request.url, data=prep_request.body,
+                                 send_xt=send_xt)
 
-    def open_web_url(self, url_builder, extra_args=None, data=None, useragent=None):
+    def send_mm_request(self, request):
+        """Send a request using the music manager session."""
+        if not self.logged_in:
+            raise NotLoggedIn
+
+        request.cookies = {'SID': self.client.get_sid_token()}
+        prep_request = request.prepare()
+
+        return self.open_web_url(prep_request.url, data=prep_request.body,
+                                 send_xt=False)
+
+    def open_web_url(self, url_builder, extra_args=None, data=None,
+                     useragent=None, send_xt=True):
         """
         Opens an https url using the current session and returns the response.
         Code adapted from:
@@ -1059,7 +1099,9 @@ class PlaySession(object):
         if not self.logged_in:
             raise NotLoggedIn
 
-        args = {'xt': self.get_cookie("xt")}
+        args = {}
+        if send_xt:
+            args['xt'] = self.get_cookie("xt")
 
         if extra_args:
             args = dict(args.items() + extra_args.items())

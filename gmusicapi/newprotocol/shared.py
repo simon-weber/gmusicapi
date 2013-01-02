@@ -36,6 +36,9 @@ class Call(object):
     #should the call be logged?
     gets_logged = True
 
+    #most calls send a xsrf token in the url params
+    send_xt = True
+
     #static request config options can be defined in a call:
     #  method – HTTP method to use.
     #  url – URL to send.

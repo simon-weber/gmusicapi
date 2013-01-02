@@ -18,10 +18,6 @@ class WcCall(Call):
     #Expected to end with a forward slash.
     _suburl = 'services/'
 
-    #Most webclient calls require an xt token in the params.
-    #This signals to the session to include it.
-    send_xt = True
-
     @classmethod
     def build_transaction(cls, *args, **kwargs):
         #template out the transaction; most of it is shared.
@@ -29,7 +25,7 @@ class WcCall(Call):
             cls._request_factory({
                 'url': cls._base_url + cls._suburl + cls.__name__.lower(),
                 'data': 'json=' + quote_plus(
-                    json.dumps(cls._build_json(*args,**kwargs)))
+                    json.dumps(cls._build_json(*args, **kwargs)))
             }),
             cls.verify_res_schema,
             cls.verify_res_success
