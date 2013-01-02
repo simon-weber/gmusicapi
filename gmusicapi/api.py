@@ -729,12 +729,12 @@ class Api(UsesLog):
 
     @utils.accept_singleton(basestring)
     @utils.empty_arg_shortcircuit(return_code='{}')
-    def _upload_new(self, filenames):
-        """Uploads the given filenames. Returns a dictionary with ``{"<filename>": "<new song id>"}`` pairs for each successful upload.
+    def _upload_new(self, filepaths, scan_and_match=True):
+        """Uploads the given filepaths. Returns a dictionary with ``{"<filepath>": "<new song id>"}`` pairs for each successful upload.
 
         Returns an empty dictionary if all uploads fail. CallFailure will never be raised.
 
-        :param filenames: a list of filenames, or a single filename.
+        :param filepaths: a list of filepaths, or a single filepath.
 
         All Google-supported filetypes are supported; see http://goo.gl/iEwLI for more information.
 
@@ -747,17 +747,26 @@ class Api(UsesLog):
 
         results = {}
 
-        #TODO
-        #allow metadata faking
+        md_protocol = musicmanager.UploadMetadata  # to save typing
 
-        #TODO
         #get file information
-        #send metadata
-        #send samples for matching
-        #get sessions for non-matched
-        #upload those with sessions
+        for filepath in filepaths:
+            with open(filepath, 'rb') as f:
+                contents = f.read()
 
+            track_pb = md_protocol.fill_track_info(filepath, contents)
+            #TODO allow metadata faking
+            self._make_call(md_protocol, track_pb, self.uploader_id)
 
+            if scan_and_match:
+                pass
+                #send samples for matching
+                #add matched to results
+
+            #get sessions for non-matched
+            #upload those with sessions
+
+        #TODO need a way to distinguish how uploading happened (match vs uploaded)
         return results
 
     @utils.accept_singleton(basestring)

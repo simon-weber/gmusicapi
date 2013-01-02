@@ -88,7 +88,7 @@ class AuthenticateUploader(MmCall):
         if res.HasField('auth_status') and res.auth_status != upload_pb2.UploadResponse.OK:
             raise CallFailure(
                 "Two accounts have been registered on this machine."
-                " Only 2 are allowed; deauthorize accounts to continue."
+                " Only 2 are allowed; deauthorize this machine to continue."
                 " See http://goo.gl/O6xe7 for more information.",
                 cls.__name__)
 
@@ -134,14 +134,20 @@ class UploadMetadata(MmCall):
 
     #these collections define how locker_pb2.Track fields align to mutagen's.
     shared_fields = ('album', 'artist', 'composer', 'genre')
-    mutagen_to_track = {
+    field_map = {  # mutagen: Track
+        #albumartist is 'performer' according to:
+        # http://goo.gl/5i18X
         'performer': 'album_artist',
         'bpm': 'beats_per_minute',
     }
+    count_fields = {  # mutagen: (part, total)
+        'discnumber': ('disc_number', 'total_disc_count'),
+        'tracknumber': ('track_number', 'total_track_count'),
+    }
 
     @classmethod
-    def fill_track_info(cls, filepath):
-        """Given a filepath to a track, return a filled locker_pb2.Track.
+    def fill_track_info(cls, filepath, file_contents):
+        """Given the path and contents of a track, return a filled locker_pb2.Track.
         On problems, return None."""
         track = locker_pb2.Track()
 
@@ -151,8 +157,19 @@ class UploadMetadata(MmCall):
             #TODO warn
             return None
 
-        track.original_bit_rate = audio.info.bitrate / 1000
+        track.client_id = cls.get_track_clientid(file_contents)
+
+        track.original_bit_rate = int(audio.info.bitrate / 1000)
         track.duration_millis = int(audio.info.length * 1000)
+
+        track.estimated_size = os.path.getsize(filepath)
+        track.last_modified_timestamp = os.path.getmtime(filepath)
+
+        #These are zeroed in my examples.
+        track.play_count = 0
+        track.client_date_added = 0
+        track.recent_timestamp = 0
+        track.rating = locker_pb2.Track.NOT_RATED  # star rating
 
         #Title is required.
         #If it's not in the metadata, the filename will be used.
@@ -165,48 +182,40 @@ class UploadMetadata(MmCall):
             filename = os.path.split(filepath)[1]
             track.title = filename.decode(enc)
 
+        if "date" in audio:
+            #assumption; should check examples
+            track.year = int(audio["date"][0].split("-")[0])
+
+        #Mass-populate the rest of the simple fields.
         #Merge shared and unshared fields into {mutagen: Track}.
         fields = dict(
             {shared: shared for shared in cls.shared_fields}.items() +
-            cls.mutagen_to_track.items()
+            cls.field_map.items()
         )
 
-        #for mutagen_f, track_f in fields
+        for mutagen_f, track_f in fields.items():
+            if mutagen_f in audio:
+                setattr(track, track_f, audio[mutagen_f][0])
 
+        for mutagen_f, (track_f, track_total_f) in cls.count_fields.items():
+            if mutagen_f in audio:
+                numstrs = audio[mutagen_f][0].split("/")
+                setattr(track, track_f, int(numstrs[0]))
 
+                if len(numstrs) == 2 and numstrs[1]:
+                    setattr(track, track_total_f, int(numstrs[1]))
 
-        #    #albumartist is 'performer' according to this guy: 
-        #    # https://github.com/plexinc-plugins/Scanners.bundle/commit/95cc0b9eeb7fa8fa77c36ffcf0ec51644a927700
-
-        #    if "performer" in audio: track.albumArtist = audio["performer"][0]
-        #    if "genre" in audio: track.genre = audio["genre"][0]
-        #    if "date" in audio: track.year = int(audio["date"][0].split("-")[0]) #this looks like an assumption
-        #    if "bpm" in audio: track.beatsPerMinute = int(audio["bpm"][0])
-
-        #    #think these are assumptions:
-        #    if "tracknumber" in audio: 
-        #        tracknumber = audio["tracknumber"][0].split("/")
-        #        track.track = int(tracknumber[0])
-        #        if len(tracknumber) == 2 and tracknumber[1]:
-        #            track.totalTracks = int(tracknumber[1])
-
-        #    if "discnumber" in audio:
-        #        discnumber = audio["discnumber"][0].split("/")
-        #        track.disc = int(discnumber[0])
-        #        if len(discnumber) == 2 and discnumber[1]:
-        #            track.totalDiscs = int(discnumber[1])
-
-        return (metadata, filemap)
+        return track
 
     @classmethod
     def _build_protobuf(cls, track, uploader_id):
-        """Track is a dictionary with a subset of locker_pb2.Track fields.
+        """Track is a filled locker_pb2.Track.
         This call supports multiple tracks, but I don't."""
         req_msg = cls.req_msg_type()
 
-        msg_track = req_msg.track.add()
-        for k, v in track.iteritems():
-            setattr(msg_track, k, v)
+        #Python protobuf generated code is a bit wonky;
+        # this is just like append.
+        req_msg.track.extend([track])
 
         req_msg.uploader_id = uploader_id
 
