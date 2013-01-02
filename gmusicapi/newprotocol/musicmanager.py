@@ -76,6 +76,10 @@ class MmCall(Call):
 
         return res_msg
 
+    @classmethod
+    def filter_response(cls, msg):
+        return Call.filter_proto(msg)
+
 
 class AuthenticateUploader(MmCall):
     """Sent to auth, reauth, or register our upload client."""

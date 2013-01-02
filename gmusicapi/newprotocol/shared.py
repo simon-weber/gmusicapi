@@ -7,6 +7,7 @@ from collections import namedtuple
 import json
 import sys
 
+from google.protobuf.descriptor import FieldDescriptor
 import requests
 
 from gmusicapi.exceptions import ParseException
@@ -15,9 +16,10 @@ from gmusicapi.utils import utils
 
 Transaction = namedtuple(
     'Transaction',
-    ['request',  # requests.Request
-     'verify_res_schema',  # f(parsed_res) -> throws ValidationException
-     'verify_res_success',  # f(parsed_res) -> throws CallFailure
+    [
+        'request',  # requests.Request
+        'verify_res_schema',  # f(parsed_res) -> throws ValidationException
+        'verify_res_success',  # f(parsed_res) -> throws CallFailure
     ],
 )
 
@@ -59,6 +61,11 @@ class Call(object):
         raise NotImplementedError
 
     @classmethod
+    def filter_response(cls, msg):
+        """Return a version of a parsed response appropriate for logging."""
+        return msg  # default to identity
+
+    @classmethod
     def _request_factory(cls, dynamic_config):
         """Return a PreparedRequest by combining static and dynamic config.
         Dynamic config takes precendence."""
@@ -95,3 +102,43 @@ class Call(object):
         except ValueError as e:
             trace = sys.exc_info()[2]
             raise ParseException(e.message), None, trace
+
+    @staticmethod
+    def filter_proto(msg, make_copy=True):
+        """Filter all byte fields in the message and submessages."""
+        filtered = msg
+        if make_copy:
+            filtered = msg.__class__()
+            filtered.CopyFrom(msg)
+
+        fields = filtered.ListFields()
+
+        #eg of filtering a specific field
+        #if any(fd.name == 'field_name' for fd, val in fields):
+        #    filtered.field_name = '<name>'
+
+        #Filter all byte fields.
+        for field_name in (fd.name for fd, val in fields
+                           if fd.type == FieldDescriptor.TYPE_BYTES):
+            setattr(filtered, field_name, '<bytes>')
+
+        #Filter submessages.
+        for field in (val for fd, val in fields
+                      if fd.type == FieldDescriptor.TYPE_MESSAGE):
+
+            #protobuf repeated api is bad for reflection
+            is_repeated = hasattr(field, '__len__')
+
+            if not is_repeated:
+                Call.filter_proto(field, make_copy=False)
+
+            else:
+                for i in range(len(field)):
+                    #repeatedComposite does not allow setting
+                    old_fields = [f for f in field]
+                    del field[:]
+
+                    field.extend([Call.filter_proto(f, make_copy=False)
+                                  for f in old_fields])
+
+        return filtered

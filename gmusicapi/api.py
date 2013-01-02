@@ -633,7 +633,7 @@ class Api(UsesLog):
         try:
             res = protocol.parse_response(text)
             #TODO log response
-            print res
+            print protocol.filter_response(res)
         except ParseException:
             self.log.warning("couldn't parse %s response: %s", call_name, text)
 
