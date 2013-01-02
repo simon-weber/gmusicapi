@@ -151,25 +151,31 @@ class UploadMetadata(MmCall):
         On problems, return None."""
         track = locker_pb2.Track()
 
-        audio = mutagen.File(filepath)
-
-        if audio is None:
-            #TODO warn
-            return None
-
         track.client_id = cls.get_track_clientid(file_contents)
 
-        track.original_bit_rate = int(audio.info.bitrate / 1000)
-        track.duration_millis = int(audio.info.length * 1000)
+        extension = filepath.split('.')[-1].upper()
+        if not hasattr(locker_pb2.Track, extension):
+            #TODO warn - unsupported filetype
+            return None
+        track.original_content_type = getattr(locker_pb2.Track, extension)
 
         track.estimated_size = os.path.getsize(filepath)
-        track.last_modified_timestamp = os.path.getmtime(filepath)
+        track.last_modified_timestamp = int(os.path.getmtime(filepath))
 
         #These are zeroed in my examples.
         track.play_count = 0
         track.client_date_added = 0
         track.recent_timestamp = 0
         track.rating = locker_pb2.Track.NOT_RATED  # star rating
+
+        #Populate information from mutagen.
+        audio = mutagen.File(filepath)
+        if audio is None:
+            #TODO warn - could not open to read metadata
+            return None
+
+        track.original_bit_rate = int(audio.info.bitrate / 1000)
+        track.duration_millis = int(audio.info.length * 1000)
 
         #Title is required.
         #If it's not in the metadata, the filename will be used.

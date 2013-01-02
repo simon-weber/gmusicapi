@@ -725,12 +725,12 @@ class Api(UsesLog):
     #     #protocol incorrect here...
     #     return (quota.maximumTracks, quota.totalTracks, quota.availableTracks)
 
-    
-
     @utils.accept_singleton(basestring)
     @utils.empty_arg_shortcircuit(return_code='{}')
-    def _upload_new(self, filepaths, scan_and_match=True):
-        """Uploads the given filepaths. Returns a dictionary with ``{"<filepath>": "<new song id>"}`` pairs for each successful upload.
+    def _upload_new(self, filepaths):
+        """Uploads the given filepaths.
+        Returns a dictionary ``{"<filepath>": "<new song id>"}`` with keys for
+        each successful upload.
 
         Returns an empty dictionary if all uploads fail. CallFailure will never be raised.
 
@@ -738,7 +738,8 @@ class Api(UsesLog):
 
         All Google-supported filetypes are supported; see http://goo.gl/iEwLI for more information.
 
-        Unlike Google's Music Manager, this function will currently allow the same song to be uploaded more than once if its tags are changed. This is subject to change in the future.
+        Unlike Google's Music Manager, this function will currently allow the same song to
+        be uploaded more than once if its tags are changed. This is subject to change in the future.
         """
         if self.uploader_id is None or self.uploader_name is None:
             raise NotLoggedIn("Not authenticated as an upload device;"
@@ -758,10 +759,13 @@ class Api(UsesLog):
             #TODO allow metadata faking
             self._make_call(md_protocol, track_pb, self.uploader_id)
 
-            if scan_and_match:
-                pass
-                #send samples for matching
-                #add matched to results
+            #Need to think this over; currently, there wouldn't be a way to reupload since
+            # a regular music manager would be the reupload request.
+            #Could do it interactively, but that breaks unattended uploads.
+            #if scan_and_match:
+            #    pass
+            #    #send samples for matching
+            #    #add matched to results
 
             #get sessions for non-matched
             #upload those with sessions
