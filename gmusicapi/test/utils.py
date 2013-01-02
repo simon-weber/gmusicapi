@@ -35,7 +35,7 @@ from getpass import getpass
 import re
 
 from gmusicapi.api import Api
-from gmusicapi.exceptions import CallFailure
+from gmusicapi.exceptions import CallFailure, NotLoggedIn
 from gmusicapi.protocol import MetadataExpectations
 from gmusicapi.utils.apilogging import LogController
 
@@ -190,7 +190,7 @@ class BaseTest(unittest.TestCase):
         cls.api = init()
     
         if not cls.api.is_authenticated():
-            raise session.NotLoggedIn
+            raise NotLoggedIn
         
         #These are assumed to succeed, but errors here will prevent further testing.
         cls.library = cls.api.get_all_songs()

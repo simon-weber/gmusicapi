@@ -24,3 +24,11 @@ class ParseException(Exception):
 class ValidationException(Exception):
     """Thrown by Transaction.verify_res_schema on errors."""
     pass
+
+
+class AlreadyLoggedIn(Exception):
+    pass
+
+
+class NotLoggedIn(Exception):
+    pass

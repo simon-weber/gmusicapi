@@ -67,9 +67,6 @@ except ImportError:
     from httplib import HTTPConnection, HTTPSConnection
     unistr = unicode
 
-from mutagen.easyid3 import EasyID3
-from mutagen.mp3 import MP3
-import requests
 import validictory
 
 from gmusicapi.protocol import WC_Protocol, MM_Protocol
@@ -80,7 +77,8 @@ from gmusicapi.utils.clientlogin import ClientLogin
 from gmusicapi.utils.tokenauth import TokenAuth
 
 from gmusicapi.exceptions import (
-    CallFailure, ParseException, ValidationException
+    CallFailure, ParseException, ValidationException,
+    AlreadyLoggedIn, NotLoggedIn
 )
 from gmusicapi.newprotocol import webclient, musicmanager
 
@@ -100,6 +98,9 @@ class Api(UsesLog):
 
         self.wc_protocol = WC_Protocol()
         self.mm_protocol = MM_Protocol()
+
+        self.uploader_id = None
+        self.uploader_name = None
 
         self.init_logger()
 
@@ -124,42 +125,52 @@ class Api(UsesLog):
         """Returns whether the api is logged in."""
         return self.session.logged_in
 
-    def login(self, email, password, uploader_id=None, uploader_name=None):
+    def login(self, email, password, perform_upload_auth=True,
+              uploader_id=None, uploader_name=None):
         """Authenticates the api with the given credentials.
         Returns True on success, False on failure.
 
         :param email: eg `test@gmail.com` or just `test`.
         :param password: plaintext password. It will not be stored and is sent over ssl.
+        :param perform_upload_auth: if True, register/authenticate as an upload device
         :param uploader_id: unique id; default is mac address.
         :param uploader_name: human-readable non-unique id; default is hostname
 
         Users of two-factor authentication will need to set an application-specific password
         to log in.
 
-        uploader_id and _name are stored for future use."""
+        Uploads from this instance will send uploader_id and uploader_name."""
 
         self.session.login(email, password)
+        if not self.is_authenticated():
+            self.log.info("failed to authenticate")
+            return False
 
-        if uploader_id is None:
-            mac = hex(getmac())[2:-1]
-            mac = ':'.join([mac[x:x + 2] for x in range(0, 10, 2)])
-            uploader_id = mac
-        self.uploader_id = uploader_id
+        self.log.info("authenticated")
 
-        if uploader_name is None:
-            uploader_name = gethostname()
-        self.uploader_name = uploader_name
+        if perform_upload_auth:
+            if uploader_id is None:
+                mac = hex(getmac())[2:-1]
+                mac = ':'.join([mac[x:x + 2] for x in range(0, 10, 2)])
+                uploader_id = mac
 
-        if self.is_authenticated():
-            #self._mm_pb_call("upload_auth") #what if this fails? can it?
-            self._make_call(musicmanager.AuthenticateUploader,
-                            self.uploader_id,
-                            self.uploader_name)
-            self.log.info("logged in")
-        else:
-            self.log.info("failed to log wc in")
+            if uploader_name is None:
+                uploader_name = gethostname()
 
-        return self.is_authenticated()
+            #self._mm_pb_call("upload_auth")
+            try:
+                self._make_call(musicmanager.AuthenticateUploader,
+                                uploader_id,
+                                uploader_name)
+                self.log.info("successful upload auth")
+                self.uploader_id = uploader_id
+                self.uploader_name = uploader_name
+
+            except CallFailure:
+                self.log.exception("could not authenticate for uploading")
+                return False
+
+        return True
 
     def logout(self):
         """Logs out of the api.
@@ -170,11 +181,9 @@ class Api(UsesLog):
 
         return True
 
-
     #---
     #   Api features supported by the web client interface:
     #---
-
     def change_playlist_name(self, playlist_id, new_name):
         """Changes the name of a playlist. Returns the changed id.
 
@@ -184,7 +193,7 @@ class Api(UsesLog):
 
         self._wc_call("modifyplaylist", playlist_id, new_name)
 
-        return playlist_id #the call actually doesn't return anything.
+        return playlist_id  # the call actually doesn't return anything.
 
     @utils.accept_singleton(dict)
     @utils.empty_arg_shortcircuit()
@@ -729,6 +738,11 @@ class Api(UsesLog):
 
         Unlike Google's Music Manager, this function will currently allow the same song to be uploaded more than once if its tags are changed. This is subject to change in the future.
         """
+        if self.uploader_id is None or self.uploader_name is None:
+            raise NotLoggedIn("Not authenticated as an upload device;"
+                              " run Api.login(...perform_upload_auth=True...)"
+                              " first.")
+
         results = {}
 
         with self._temp_mp3_conversion(filenames) as (upload_files, orig_fnames):
@@ -939,12 +953,6 @@ class Api(UsesLog):
 #---
 #The session layer:
 #---
-
-class AlreadyLoggedIn(Exception):
-    pass
-
-class NotLoggedIn(Exception):
-    pass
 
 class PlaySession(object):
     """
