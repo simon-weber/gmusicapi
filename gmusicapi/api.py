@@ -35,7 +35,6 @@ This api is not supported nor endorsed by Google, and could break at any time.
 
 import json
 import time
-import exceptions
 import copy
 import contextlib
 import tempfile
@@ -43,12 +42,11 @@ import subprocess
 import os
 from uuid import getnode as getmac
 from socket import gethostname
-import base64
 #used for _wc_call to get its calling parent.
 #according to http://stackoverflow.com/questions/1095543/get-name-of-calling-functions-module-in-python,
-# this 
-#  "will interact strangely with import hooks, 
-#  won't work on ironpython, 
+# this
+#  "will interact strangely with import hooks,
+#  won't work on ironpython,
 #  and may behave in surprising ways on jython"
 import inspect
 
@@ -728,6 +726,39 @@ class Api(UsesLog):
     #     return (quota.maximumTracks, quota.totalTracks, quota.availableTracks)
 
     
+
+    @utils.accept_singleton(basestring)
+    @utils.empty_arg_shortcircuit(return_code='{}')
+    def _upload_new(self, filenames):
+        """Uploads the given filenames. Returns a dictionary with ``{"<filename>": "<new song id>"}`` pairs for each successful upload.
+
+        Returns an empty dictionary if all uploads fail. CallFailure will never be raised.
+
+        :param filenames: a list of filenames, or a single filename.
+
+        All Google-supported filetypes are supported; see http://goo.gl/iEwLI for more information.
+
+        Unlike Google's Music Manager, this function will currently allow the same song to be uploaded more than once if its tags are changed. This is subject to change in the future.
+        """
+        if self.uploader_id is None or self.uploader_name is None:
+            raise NotLoggedIn("Not authenticated as an upload device;"
+                              " run Api.login(...perform_upload_auth=True...)"
+                              " first.")
+
+        results = {}
+
+        #TODO
+        #allow metadata faking
+
+        #TODO
+        #get file information
+        #send metadata
+        #send samples for matching
+        #get sessions for non-matched
+        #upload those with sessions
+
+
+        return results
 
     @utils.accept_singleton(basestring)
     @utils.empty_arg_shortcircuit(return_code='{}')

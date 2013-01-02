@@ -27,9 +27,7 @@
 
 """Utility functions used across api code."""
 
-import string
 import re
-import copy
 from htmlentitydefs import name2codepoint
 
 import mutagen
@@ -38,6 +36,10 @@ import chardet
 
 from apilogging import LogController
 log = LogController.get_logger("utils")
+
+def get_track_info(filename):
+    """Return a dictionary with keys matching upload_pb2.Track."""
+    pass
 
 def guess_str_encoding(s):
     """Return a tuple (guessed encoding, confidence)."""
