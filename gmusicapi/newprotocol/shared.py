@@ -10,6 +10,7 @@ import sys
 import requests
 
 from gmusicapi.exceptions import ParseException
+from gmusicapi.utils import utils
 
 
 Transaction = namedtuple(
@@ -25,20 +26,23 @@ class Call(object):
     """Abstract class for an api call.
     These classes are never instantiated."""
 
+    #http method to use
+    method = utils.NotImplementedField
+
     #should the call be logged?
     gets_logged = True
 
-    #most calls send a xsrf token in the url params
+    #send a xsrf token in the url params?
     send_xt = True
 
-    #static request config options can be defined in a call:
-    #  method – HTTP method to use.
+    #static request config options, (m) signals a merge will occur:
+    static_config = {}
     #  url – URL to send.
-    #  headers – dictionary of headers to send.
+    #  headers (m) – dictionary of headers to send.
     #  files – dictionary of {filename: fileobject} files to multipart upload.
     #  data – the body to attach the request.
     #          If a dictionary is provided, form-encoding will take place.
-    #  params – dictionary of URL parameters to append to the URL.
+    #  params (m) – dictionary of URL parameters to append to the URL.
     #These probably won't be used:
     #  cookies – dictionary or CookieJar of cookies to attach to this request.
     #  auth – Auth handler or (user, pass) tuple.
@@ -56,7 +60,8 @@ class Call(object):
 
     @classmethod
     def _request_factory(cls, dynamic_config):
-        """Return a PreparedRequest by combining method with dynamic config."""
+        """Return a PreparedRequest by combining static and dynamic config.
+        Dynamic config takes precendence."""
 
         #valid dynamic config:
         #  url – URL to send.
@@ -72,6 +77,12 @@ class Call(object):
 
         config = dynamic_config
         config['method'] = cls.method
+
+        get_items = lambda d, key: d.get(key, {}).items()
+
+        for merge_key in ('headers', 'params'):
+            config[merge_key] = dict(get_items(cls.static_config, merge_key) +
+                                     get_items(dynamic_config, merge_key))
 
         req = requests.Request(**config)
 

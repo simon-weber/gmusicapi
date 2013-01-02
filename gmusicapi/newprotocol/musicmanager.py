@@ -46,6 +46,7 @@ class MmCall(Call):
     @classmethod
     def verify_res_schema(cls, res):
         """Parsing also verifies the schema for protobufs."""
+        #TODO could verify the response_type
         pass
 
     @classmethod
@@ -71,19 +72,20 @@ class MmCall(Call):
 
 
 class AuthenticateUploader(MmCall):
-    """Sent to (re)auth our upload client.
-    I'm currently using clientlogin; the real MM uses OAuth."""
+    """Sent to auth, reauth, or register our upload client."""
 
     _suburl = 'upauth'
     req_msg_type = upload_pb2.UpAuthRequest
 
     @classmethod
     def verify_res_success(cls, res):
-        if res.HasField('auth_status') and res.auth_status != upload_pb2.UploadResponse.OK:
+        if res.HasField('auth_status') and \
+           res.auth_status != upload_pb2.UploadResponse.OK:
+
             raise CallFailure(
-                    "Two accounts have already been registered on this machine."
+                    "Two accounts have been registered on this machine."
                     " Only 2 are allowed; deauthorize accounts to continue."
-                    " See http://goo.gl/3VIsR for more information.",
+                    " See http://goo.gl/O6xe7 for more information.",
                     cls.__name__)
 
     @classmethod
@@ -96,5 +98,29 @@ class AuthenticateUploader(MmCall):
 
         req_msg.uploader_id = uploader_id
         req_msg.friendly_name = uploader_friendly_name
+
+        return req_msg
+
+
+class UploadMetadata(MmCall):
+    _suburl = 'metadata'
+
+    static_config = {
+        'params': {'version': 1}
+    }
+
+    req_msg_type = upload_pb2.UploadMetadataRequest
+
+    @classmethod
+    def _build_protobuf(cls, track, uploader_id):
+        """Track is a dictionary with a subset of locker_pb2.Track fields.
+        This call supports multiple tracks, but I don't."""
+        req_msg = cls.req_msg_type()
+
+        msg_track = req_msg.track.add()
+        for k, v in track.iteritems():
+            setattr(msg_track, k, v)
+
+        req_msg.uploader_id = uploader_id
 
         return req_msg
