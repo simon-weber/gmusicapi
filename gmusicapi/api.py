@@ -79,24 +79,12 @@ from gmusicapi.gmtools import tools
 from gmusicapi.utils.clientlogin import ClientLogin
 from gmusicapi.utils.tokenauth import TokenAuth
 
+from gmusicapi.exceptions import (
+    CallFailure, ParseException, ValidationException
+)
 from gmusicapi.newprotocol import webclient, musicmanager
-from gmusicapi.newprotocol.shared import ParseException, ValidationException
 
 supported_upload_filetypes = ("mp3", "m4a", "ogg", "flac", "wma") 
-
-class CallFailure(exceptions.Exception):
-    """Exception raised when the Google Music server responds that a call failed.
-    
-    Attributes:
-        callname -- name of the newprotocol.Call that failed
-    """
-    def __init__(self, message, callname):
-        Exception.__init__(self, message)
-
-        self.callname = callname
-
-    def __str__(self):
-        return "%s: %s" % (self.callname, Exception.__str__(self)
 
 
 class Api(UsesLog):

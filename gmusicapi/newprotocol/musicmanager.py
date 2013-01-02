@@ -3,7 +3,7 @@
 
 """Calls made by the Music Manager (related to uploading)."""
 
-from gmusicapi.api import CallFailure
+from gmusicapi.exceptions import CallFailure
 from gmusicapi.newprotocol import upload_pb2
 from gmusicapi.newprotocol.shared import Call, Transaction
 from gmusicapi.utils import utils
@@ -83,7 +83,7 @@ class AuthenticateUploader(MmCall):
             raise CallFailure(
                     "Two accounts have already been registered on this machine."
                     " Only 2 are allowed; deauthorize accounts to continue."
-                    "See http://goo.gl/3VIsR for more information.",
+                    " See http://goo.gl/3VIsR for more information.",
                     cls.__name__)
 
     @classmethod

@@ -34,10 +34,10 @@ import inspect
 from getpass import getpass
 import re
 
-from ..api import Api, CallFailure
-from ..protocol import WC_Protocol, MetadataExpectations
-from ..utils.apilogging import LogController
-from ..utils import utils
+from gmusicapi.api import Api
+from gmusicapi.exceptions import CallFailure
+from gmusicapi.protocol import MetadataExpectations
+from gmusicapi.utils.apilogging import LogController
 
 md_expts = MetadataExpectations.get_all_expectations()
 log = LogController.get_logger("utils")

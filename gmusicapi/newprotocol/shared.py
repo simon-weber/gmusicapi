@@ -9,6 +9,8 @@ import sys
 
 import requests
 
+from gmusicapi.exceptions import ParseException
+
 
 Transaction = namedtuple(
     'Transaction',
@@ -17,16 +19,6 @@ Transaction = namedtuple(
      'verify_res_success',  # f(parsed_res) -> throws CallFailure
     ],
 )
-
-
-class ParseException(Exception):
-    """Thrown by parse_response on errors."""
-    pass
-
-
-class ValidationException(Exception):
-    """Thrown by Transaction.verify_res_schema on errors."""
-    pass
 
 
 class Call(object):

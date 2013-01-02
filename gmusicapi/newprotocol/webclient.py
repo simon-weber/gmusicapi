@@ -6,8 +6,8 @@ from urllib import quote_plus
 
 import validictory
 
-from gmusicapi.api import CallFailure
-from gmusicapi.newprotocol.shared import Call, Transaction, ValidationException
+from gmusicapi.exceptions import CallFailure, ValidationException
+from gmusicapi.newprotocol.shared import Call, Transaction
 from gmusicapi.utils import utils
 
 
@@ -58,7 +58,6 @@ class WcCall(Call):
                     "are made too quickly (eg creating a playlist then"
                     "modifying it before the server has created it)",
                     cls.__name__)
-
 
     @classmethod
     def parse_response(cls, text):
