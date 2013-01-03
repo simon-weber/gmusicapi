@@ -15,6 +15,7 @@ Also, check out these nifty projects that use gmusicapi:
 *  David Dooling's [sync scripts for Banshee](https://github.com/ddgenome/banshee-helper-scripts)
 *  Mendhak's [Rhythmbox metadata sync plugin](https://github.com/mendhak/rhythmbox-gmusic-sync)
 *  Ryan McGuire's [GMusicFS](https://github.com/EnigmaCurry/GMusicFS) - a FUSE filesystem linked to your music
+*  crabmanX's [Google Music support](https://github.com/crabmanX/google-music-resolver) for http://www.tomahawk-player.org
 
 
 ##Features
