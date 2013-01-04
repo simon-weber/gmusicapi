@@ -88,3 +88,31 @@ class AddPlaylist(WcCall):
         :param title: the title of the playlist to create.
         """
         return {"title": title}
+
+
+class ReportBadSongMatch(WcCall):
+    """Request to signal the uploader to reupload a matched track."""
+
+    method = 'POST'
+
+    #eg response: [ [0], [] ]
+    res_schema = {
+        'type': 'array',
+        'items': {
+            'type': 'array'
+        }
+    }
+
+    @classmethod
+    def build_transaction(cls, song_id):
+        #This is a weird one.
+        return Transaction(
+            cls._request_factory({
+                'url': cls._base_url + cls._suburl + 'fixsongmatch',
+                #Here, the body is just raw json
+                'data': json.dumps([["", 1], [[song_id]]]),
+                'params': {'format': 'jsarray'},  # not sure if other formats exist
+            }),
+            cls.verify_res_schema,
+            cls.verify_res_success
+        )

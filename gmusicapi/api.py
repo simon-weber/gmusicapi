@@ -132,7 +132,7 @@ class Api(UsesLog):
         :param password: plaintext password. It will not be stored and is sent over ssl.
         :param perform_upload_auth: if True, register/authenticate as an upload device
         :param uploader_id: unique id; default is mac address.
-        :param uploader_name: human-readable non-unique id; default is hostname
+        :param uploader_name: human-readable non-unique id; default is "<hostname> (gmusicapi)"
 
         Users of two-factor authentication will need to set an application-specific password
         to log in.
@@ -151,10 +151,10 @@ class Api(UsesLog):
             if uploader_id is None:
                 mac = hex(getmac())[2:-1]
                 mac = ':'.join([mac[x:x + 2] for x in range(0, 10, 2)])
-                uploader_id = mac
+                uploader_id = mac.upper()
 
             if uploader_name is None:
-                uploader_name = gethostname()
+                uploader_name = gethostname() + " (gmusicapi)"
 
             try:
                 #self._mm_pb_call("upload_auth")
@@ -618,14 +618,20 @@ class Api(UsesLog):
         self.log.debug("n call %s(%s %s)", call_name, args, kwargs)
 
         transaction = protocol.build_transaction(*args, **kwargs)
+        request = transaction.request
+
+        #TODO log request? protobuf is already encoded...
+        print
+        print request.method, request.url
+        print request.headers
 
         #TODO refactor this once session things are figured out
         if protocol.__bases__[0].__name__ == 'WcCall':
-            response = self.session.send_wc_request(transaction.request,
+            response = self.session.send_wc_request(request,
                                                     send_xt=protocol.send_xt)
             text = response.read()
         else:
-            response = self.session.send_mm_request(transaction.request)
+            response = self.session.send_mm_request(request)
             text = response.read()
 
         #TODO check return code
@@ -755,17 +761,20 @@ class Api(UsesLog):
             with open(filepath, 'rb') as f:
                 contents = f.read()
 
+            #This process can be done for multiple tracks at a time, but verification is
+            # way easier for one track at a time.
             track_pb = md_protocol.fill_track_info(filepath, contents)
             #TODO allow metadata faking
-            self._make_call(md_protocol, track_pb, self.uploader_id)
+            md_res = self._make_call(md_protocol, [track_pb], self.uploader_id)
 
-            #Need to think this over; currently, there wouldn't be a way to reupload since
-            # a regular music manager would be the reupload request.
-            #Could do it interactively, but that breaks unattended uploads.
-            #if scan_and_match:
+            #Need to think about scan + match.
+            #Currently, there wouldn't be an easy way to reupload since I don't store
+            # information about previous uploads.
+
+            #Form upload session requests (for songs GM wants).
+            #session_requests = self.mm_protocol.make_upload_session_requests(cid_map, metadataresp)
+            #for filename, server_id, payload in session_requests:
             #    pass
-            #    #send samples for matching
-            #    #add matched to results
 
             #get sessions for non-matched
             #upload those with sessions
@@ -1114,7 +1123,7 @@ class PlaySession(object):
         # which cause 404s and xsrf revalidation. eventually, this should just
         # be sending over a requests Session, but this works for now.
         return self.open_web_url(prep_request.url, data=prep_request.body,
-                                 send_xt=send_xt)
+                                 send_xt=send_xt, headers=prep_request.headers)
 
     def send_mm_request(self, request):
         """Send a request using the music manager session."""
@@ -1125,10 +1134,10 @@ class PlaySession(object):
         prep_request = request.prepare()
 
         return self.open_web_url(prep_request.url, data=prep_request.body,
-                                 send_xt=False)
+                                 send_xt=False, headers=prep_request.headers)
 
     def open_web_url(self, url_builder, extra_args=None, data=None,
-                     useragent=None, send_xt=True):
+                     useragent=None, send_xt=True, headers=None):
         """
         Opens an https url using the current session and returns the response.
         Code adapted from:
@@ -1160,7 +1169,10 @@ class PlaySession(object):
         if not useragent:
             useragent = self._user_agent
 
-        opener.addheaders = [('User-agent', useragent)]
+        if headers:
+            opener.addheaders = headers.items()
+        else:
+            opener.addheaders = [('User-agent', useragent)]
 
         if data:
             response = opener.open(url, data)

@@ -25,6 +25,9 @@ class MmCall(Call):
 
     #nearly all mm calls are POSTs
     method = 'POST'
+    static_config = {
+        'headers': {'USER-AGENT': 'Music Manager (1, 0, 24, 7712 - Windows)'}
+    }
 
     #protobuf calls don't send the xt token
     send_xt = False
@@ -47,7 +50,6 @@ class MmCall(Call):
             cls.verify_res_schema,
             cls.verify_res_success
         )
-        pass
 
     @classmethod
     def verify_res_schema(cls, res):
@@ -113,9 +115,10 @@ class AuthenticateUploader(MmCall):
 class UploadMetadata(MmCall):
     _suburl = 'metadata'
 
-    static_config = {
-        'params': {'version': 1}
-    }
+    static_config = dict(
+        MmCall.static_config.items() +
+        {'params': {'version': 1}}.items()
+    )
 
     req_msg_type = upload_pb2.UploadMetadataRequest
 
@@ -189,7 +192,7 @@ class UploadMetadata(MmCall):
             #attempt to handle non-ascii path encodings.
             enc = utils.guess_str_encoding(filepath)[0]
 
-            filename = os.path.split(filepath)[1]
+            filename = os.path.basename(filepath)
             track.title = filename.decode(enc)
 
         if "date" in audio:
@@ -218,15 +221,80 @@ class UploadMetadata(MmCall):
         return track
 
     @classmethod
-    def _build_protobuf(cls, track, uploader_id):
-        """Track is a filled locker_pb2.Track.
-        This call supports multiple tracks, but I don't."""
+    def _build_protobuf(cls, tracks, uploader_id):
+        """Track is a list of filled locker_pb2.Track."""
         req_msg = cls.req_msg_type()
 
-        #Python protobuf generated code is a bit wonky;
-        # this is just like append.
-        req_msg.track.extend([track])
-
+        req_msg.track.extend(tracks)
         req_msg.uploader_id = uploader_id
 
+        #TODO log this better
+        print "request: ->"
+        print cls.filter_response(req_msg)
+        print "<-"
+
         return req_msg
+
+
+class GetUploadSession(MmCall):
+    """Called before an upload; server returns a nonce for use when uploading."""
+
+    #This is a json call, and doesn't share much with the other calls.
+    @classmethod
+    def build_transaction(cls, *args, **kwargs):
+        return Transaction(
+            cls._request_factory({
+                'url': cls._base_url + cls._suburl,
+                'data': cls._build_protobuf(
+                    *args, **kwargs).SerializeToString(),
+                'headers': {'Content-Type': 'application/x-google-protobuf'},
+            }),
+            cls.verify_res_schema,
+            cls.verify_res_success
+        )
+
+    #@classmethod
+    #def _build_json(cls, track):
+    #    """track is a locker_pb2.Track, and the sid is from a metadata upload."""
+    #    for upload in server_response.response.uploads:
+    #        filename = filemap[upload.id]
+    #        audio = MP3(filename, ID3 = EasyID3)
+    #        upload_title = audio["title"] if "title" in audio else filename.split(r'/')[-1]
+
+    #        inlined = {
+    #            "title": "jumper-uploader-title-42",
+    #            "ClientId": upload.id,
+    #            "ClientTotalSongCount": len(server_response.response.uploads),
+    #            "CurrentTotalUploadedCount": "0",
+    #            "CurrentUploadingTrack": upload_title,
+    #            "ServerId": upload.serverId,
+    #            "SyncNow": "true",
+    #            "TrackBitRate": audio.info.bitrate,
+    #            "TrackDoNotRematch": "false",
+    #            "UploaderId": self.mac
+    #        }
+    #        payload = {
+    #          "clientId": "Jumper Uploader",
+    #          "createSessionRequest": {
+    #            "fields": [
+    #                {
+    #                    "external": {
+    #                  "filename": os.path.basename(filename),
+    #                  "name": os.path.abspath(filename),
+    #                  "put": {},
+    #                  "size": os.path.getsize(filename)
+    #                }
+    #                }
+    #            ]
+    #          },
+    #          "protocolVersion": "0.8"
+    #        }
+    #        for key in inlined:
+    #            payload['createSessionRequest']['fields'].append({
+    #                "inlined": {
+    #                    "content": str(inlined[key]),
+    #                    "name": key
+    #                }
+    #            })
+
+    #        sessions.append((filename, upload.serverId, payload))
