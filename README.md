@@ -20,9 +20,10 @@ Also, check out these nifty projects that use gmusicapi:
 
 ##Features
 
-**New in version 2012.11.09** 
+**New in version 2013.01.05** 
 
-* minor bugfixes
+* compatibility update for playlist modification
+* note that there are various problems related to uploading at the moment - they'll be addressed in a future release
 
 **Feature Overview:**
 
@@ -33,7 +34,7 @@ Also, check out these nifty projects that use gmusicapi:
 
 * Song streaming and downloading
 
-* Song uploading of all Google-supported file formats (mp3, unprotected m4a, ogg, flac, wma)
+* Song uploading of all Google-supported file formats (currently flaky)
 
 * Playlist manipulation:
     * creation
@@ -41,7 +42,7 @@ Also, check out these nifty projects that use gmusicapi:
     * song deletion, addition, and reordering
 
 * Song manipulation:
-    * metadata modification (be sure to read protocol_info)
+    * metadata modification (be sure to read the documentation)
     * removal from library
 
 * Searching for songs, artists, and albums.
@@ -50,6 +51,7 @@ Also, check out these nifty projects that use gmusicapi:
 
 * album art manipulation
 * better upload support
+* better documentation
 
 ##Usage
 
