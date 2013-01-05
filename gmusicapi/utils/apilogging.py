@@ -29,6 +29,7 @@
 """Logging support for the entire package."""
 
 import logging
+import pkg_resources
 
 root_logger_name = "gmusicapi"
 log_filename = "gmusicapi.log"
@@ -60,6 +61,7 @@ class LogController(object):
     logger.addHandler(ch)
 
     logger.info("!-- Starting log --!")
+    logger.info("version: " + pkg_resources.get_distribution("gmusicapi").version)
 
 
     #Map {Logger name: number distributed} for all distributed Loggers.

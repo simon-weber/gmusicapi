@@ -39,7 +39,7 @@ import copy
 import time
 import random
 
-from ..protocol import WC_Protocol, Metadata_Expectations
+from ..protocol import WC_Protocol, MetadataExpectations
 from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
 
@@ -84,7 +84,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         #Verify the playlist has it.
         tracks = self.api.get_playlist_songs(p_id)
 
-        self.assertTrue(tracks[0]["id"] == self.r_song_id)
+        self.assertEqual(tracks[0]["id"], self.r_song_id)
         
 
     def pl_2a_remove_song(self):
@@ -98,7 +98,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         #Verify.
         tracks = self.api.get_playlist_songs(p_id)
 
-        self.assertTrue(len(tracks) == 0)
+        self.assertEqual(len(tracks), 0)
 
     def pl_3_change_name(self):
         """Change the playlist's name."""
@@ -160,11 +160,10 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         
         server_tracks = self.api.get_playlist_songs(p_id)
 
-        self.assertTrue(len(tracks) == len(server_tracks))
+        self.assertEqual(len(tracks), len(server_tracks))
 
-        self.assertTrue(
-            all((local_t["id"] == server_t["id"]
-                 for local_t, server_t in zip(tracks, server_tracks))))
+        for local_t, server_t in zip(tracks, server_tracks):
+            self.assertEqual(local_t['id'], server_t['id'])
 
     def cpl_3_delete(self):
         """Delete the playlist."""
@@ -183,7 +182,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
                                    random.randrange(len(self.test_filenames)))
 
         result = self.api.upload(some_files)
-        self.assertTrue(len(some_files) == len(result))
+        self.assertEqual(len(some_files), len(result))
 
         #A bit messy; need to pass the ids on to the next step.
         self.uploaded_ids = result.values()
@@ -198,7 +197,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
                        self.uploaded_ids]
 
         for info_tuple in info_tuples:
-            self.assertTrue(info_tuple[1] == 0)
+            self.assertEqual(info_tuple[1], 0)
 
 
     def updel_2_delete(self):
@@ -221,7 +220,8 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
     #     #The api doesn't expose the actual response here,
     #     # instead we expect a tuple with 2 entries.
     #     res = self.api.get_song_download_info(self.r_song_id)
-    #     self.assertTrue(len(res) == 2 and isinstance(res, tuple))
+    #     self.assertEqual(len(res), 2)
+    #     self.assertIsInstance(res, tuple)
 
     def test_change_song_metadata(self):
         """Change a song's metadata, then restore it."""
@@ -232,7 +232,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         #Generate noticably changed metadata for ones we can change.
         #Changing immutable ones voids the request (although we get back success:True and our expected values).
         new_md = copy.deepcopy(orig_md)
-        expts = Metadata_Expectations.get_all_expectations()
+        expts = MetadataExpectations.get_all_expectations()
 
         for name, expt in expts.items():
             if name in orig_md and expt.mutable:
@@ -240,7 +240,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
                 new_val = test_utils.modify_md(name, old_val)
 
                 self.log.debug("%s: %s modified to %s", name, repr(old_val), repr(new_val))
-                self.assertTrue(new_val != old_val)
+                self.assertNotEqual(new_val, old_val)
                 new_md[name] = new_val
 
         #Make the call to change the metadata.
@@ -288,7 +288,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
                         #Check mutability if it's not a volatile key.
                         if not expt.volatile:
                             same, message = test_utils.md_entry_same(name, orig_md, result_md)
-                            self.assertTrue(same == (not expt.mutable), "metadata mutability incorrect: " + message)
+                            self.assertEqual(same, (not expt.mutable), "metadata mutability incorrect: " + message)
 
                         #Check dependent md.
                         if expt.depends_on:

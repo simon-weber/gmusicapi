@@ -43,7 +43,7 @@ copyright = u'2012, Simon Weber'
 # built documents.
 #
 # The short X.Y version.
-version = '2012.11.09'
+version = '2013.01.05'
 # The full version, including alpha/beta/rc tags.
 release = version
 

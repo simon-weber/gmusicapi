@@ -286,10 +286,13 @@ class SongMatcher(object):
     #A named tuple to hold the frozen args when querying recursively.
     QueryState = collections.namedtuple('QueryState', 'orig t_breaker mods auto')
 
-    def query_library(self, query, tie_breaker=no_tiebreak, modifiers=[], auto=False):
+    def query_library(self, query, tie_breaker=no_tiebreak, modifiers=None, auto=False):
         """Queries the library for songs.
         returns a list of matches, or None.
         """
+
+        if not modifiers:
+            modifiers = []
 
         try:
             if not auto:

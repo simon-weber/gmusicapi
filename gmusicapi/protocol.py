@@ -28,25 +28,26 @@
 """The protocol layer is a one-to-one mapping of calls to Google Music."""
 
 
-import string
 import os
-import random
-from collections import namedtuple
-import exceptions
 from uuid import getnode as getmac
 from socket import gethostname
 import base64
 import hashlib
+try:
+    from urllib.parse import urlencode
+except ImportError:
+    from urllib import urlencode
 
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 
-import metadata_pb2
-from utils import utils
-from utils.apilogging import LogController #TODO this is a hack
+from gmusicapi import metadata_pb2
+from gmusicapi.utils import utils
+#TODO this is a hack
+from gmusicapi.utils.apilogging import LogController
 
 
-class WC_Call(object):
+class WcCall(object):
     """An abstract class to hold the protocol for a web client call."""
     
     _base_url = 'https://play.google.com/music/'
@@ -56,7 +57,7 @@ class WC_Call(object):
     _suburl = 'services/'
 
     #Should the response to this call be logged?
-    #The request is always logged, currently.
+    #Lengthy calls (eg get all songs) are generally not logged.
     gets_logged = True
 
     #Do we need to be logged in before making the call?
@@ -65,29 +66,30 @@ class WC_Call(object):
     #Most calls will send u=0 and the xt cookie in the querystring.
     @classmethod
     def build_url(cls, query_string=None):
-        """Return the url to make the call at."""
+        """Return a url and encoded qstring."""
 
         #Most calls send u=0 and xt=<cookie value>
-        qstring = '?u=0&xt={0}'.format(query_string['xt'])
+        qstring = urlencode({'u': 0,
+                             'xt': query_string['xt']})
 
-        return cls._base_url + cls._suburl + cls.__name__ + qstring
+        return cls._base_url + cls._suburl + cls.__name__ + '?' + qstring
 
     #Calls all have different request and response formats.
     @staticmethod
     def build_transaction():
-        """Return a tuple of (filled request, response schemas)."""
+        """Return a tuple of (filled request, response schemas).
+        Implementing classes change the arguments - there's no generic form."""
         raise NotImplementedError
 
 
 class _DefinesNameMetaclass(type):
-    """A metaclass to create a 'name' attribute for _Metadata that respects
-    any necessary name mangling."""
+    """Creates a 'name' attribute that stores the class name."""
 
-    def __new__(cls, name, bases, dct):
-        dct['name'] = name.split('gm_')[-1]
-        return super(_DefinesNameMetaclass, cls).__new__(cls, name, bases, dct)
+    def __new__(mcs, name, bases, dct):
+        dct['name'] = name
+        return super(_DefinesNameMetaclass, mcs).__new__(mcs, name, bases, dct)
 
-class _Metadata_Expectation(object):
+class _MetadataExpectation(object):
     """An abstract class to hold expectations for a particular metadata entry.
 
     Its default values are correct for most entries."""
@@ -121,10 +123,10 @@ class _Metadata_Expectation(object):
     #The name of the Metadata class our value depends on, or None.
     depends_on = None 
 
-    #A function that takes the dependent key's value
-    # and returns our own. Only implemented for dependent keys.
     @staticmethod
     def dependent_transformation(value):
+        """Given the dependent key's value, return ours.
+        Only implemented for dependent keys."""
         raise NotImplementedError
 
     #Is this entry optional?
@@ -142,36 +144,28 @@ class _Metadata_Expectation(object):
 
         return schema
     
-class UnknownExpectation(_Metadata_Expectation):
+class UnknownExpectation(_MetadataExpectation):
     """A flexible expectation intended to be given when we know nothing about a key."""
     val_type = "any"
     mutable = False
     
 
-class Metadata_Expectations(object):
+class MetadataExpectations(object):
     """Holds expectations about metadata."""
-
-    #Class names are GM response keys.
-    #Clashes are prefixed with a gm_ (eg gm_type).
 
     @classmethod
     def get_expectation(cls, key, warn_on_unknown=True):
         """Get the Expectation associated with the given key name.
         If no Expectation exists for that name, an immutable Expectation of any type is returned."""
 
-        mangle = False
-        if not hasattr(cls,key):
-            mangle = True
-
-        expt_name = "gm_" + key if mangle else key
-
         try:
-            expt = getattr(cls,expt_name)
-            if not issubclass(expt, _Metadata_Expectation):
+            expt = getattr(cls, key)
+            if not issubclass(expt, _MetadataExpectation):
                 raise TypeError
             return expt
         except (AttributeError, TypeError):
-            if warn_on_unknown: LogController.get_logger("get_expectation").warning("unknown metadata type '%s'", key)
+            if warn_on_unknown:
+                LogController.get_logger("get_expectation").warning("unknown metadata type '%s'", key)
 
             return UnknownExpectation
 
@@ -189,7 +183,7 @@ class Metadata_Expectations(object):
         return expts
 
     #Mutable metadata:
-    class rating(_Metadata_Expectation):
+    class rating(_MetadataExpectation):
         val_type = "integer"
         #0 = no thumb
         #1 = down thumb
@@ -198,120 +192,140 @@ class Metadata_Expectations(object):
         #it in Gear -> Music labs) 4 stars also means thumbs up
         allowed_values = range(6)
 
-    #strings (the default value for val_type
-    class composer(_Metadata_Expectation):
+    #strings (the default value for val_type)
+    class composer(_MetadataExpectation):
         pass
-    class album(_Metadata_Expectation):
+    class album(_MetadataExpectation):
         pass
-    class albumArtist(_Metadata_Expectation):
+    class albumArtist(_MetadataExpectation):
         pass
-    class genre(_Metadata_Expectation):
+    class genre(_MetadataExpectation):
         pass
-    class name(_Metadata_Expectation):
+    class name(_MetadataExpectation):
         pass
-    class artist(_Metadata_Expectation):
+    class artist(_MetadataExpectation):
         pass
 
     #integers
-    class disc(_Metadata_Expectation):
+    class disc(_MetadataExpectation):
         optional = True
         val_type = "integer"
-    class year(_Metadata_Expectation):
+    class year(_MetadataExpectation):
         optional = True
         val_type = "integer"
-    class track(_Metadata_Expectation):
+    class track(_MetadataExpectation):
         optional = True
         val_type = "integer"
-    class totalTracks(_Metadata_Expectation):
+    class totalTracks(_MetadataExpectation):
         optional = True
         val_type = "integer"
-    class playCount(_Metadata_Expectation):
+    class playCount(_MetadataExpectation):
         val_type = "integer"
-    class totalDiscs(_Metadata_Expectation):
+    class totalDiscs(_MetadataExpectation):
         optional = True
         val_type = "integer"
 
 
 
     #Immutable metadata:
-    class durationMillis(_Metadata_Expectation):
+    class durationMillis(_MetadataExpectation):
         mutable = False #you can change this, but probably don't want to.
         val_type = "integer"
-    class comment(_Metadata_Expectation):
+    class comment(_MetadataExpectation):
         mutable = False
-    class id(_Metadata_Expectation):
+    class id(_MetadataExpectation):
         mutable = False
-    class deleted(_Metadata_Expectation):
+    class deleted(_MetadataExpectation):
         mutable = False
         val_type = "boolean"
-    class creationDate(_Metadata_Expectation):
+    class creationDate(_MetadataExpectation):
         mutable = False
         val_type = "integer"
-    class albumArtUrl(_Metadata_Expectation):
+    class albumArtUrl(_MetadataExpectation):
         mutable = False
         optional = True #only seen when there is album art.
-    class gm_type(_Metadata_Expectation):
+    class type(_MetadataExpectation):
         mutable = False
         val_type = "integer"
-    class beatsPerMinute(_Metadata_Expectation):
+    class beatsPerMinute(_MetadataExpectation):
         mutable = False
         val_type = "integer"
-    class url(_Metadata_Expectation):
+    class url(_MetadataExpectation):
         mutable = False
-    class playlistEntryId(_Metadata_Expectation):
+    class playlistEntryId(_MetadataExpectation):
         mutable = False
         optional = True #only seen when songs are in the context of a playlist.
-    class subjectToCuration(_Metadata_Expectation):
+    class subjectToCuration(_MetadataExpectation):
         mutable = False
         val_type = "boolean"
-    class matchedId(_Metadata_Expectation):
+    class matchedId(_MetadataExpectation): #related to scan-and-match?
         mutable = False
     
-    #Seems to be a matching track in the store.
-    class storeId(_Metadata_Expectation):
+    #newish keys:
+    class storeId(_MetadataExpectation):
+        #Seems to be a matching track in the store.
         mutable = False
         optional = True
-        
-    
+
+    class reuploading(_MetadataExpectation):
+        mutable = False
+        optional = True  # only seen in the UK - related to scan and match?
+        val_type = "boolean"
+
+    #introduced in issue 62:
+    class albumMatchedId(_MetadataExpectation):
+        mutable = False
+        optional = True  # scan and match for entire albums?
+
+    class pending(_MetadataExpectation):
+        mutable = False
+        optional = True  # scan and match results pending?
+        val_type = "boolean"
+
+    class url(_MetadataExpectation):
+        mutable = False
+        optional = True
+
+
     #Dependent metadata:
-    class title(_Metadata_Expectation):
+    class title(_MetadataExpectation):
         depends_on = "name"
         
         @staticmethod
         def dependent_transformation(other_value):
             return other_value #nothing changes
 
-    class titleNorm(_Metadata_Expectation):
+    class titleNorm(_MetadataExpectation):
         depends_on = "name"
 
         @staticmethod
         def dependent_transformation(other_value):
-            return string.lower(other_value)
+            return other_value.lower()
 
-    class albumArtistNorm(_Metadata_Expectation):
+    class albumArtistNorm(_MetadataExpectation):
         depends_on = "albumArtist"
 
         @staticmethod
         def dependent_transformation(other_value):
-            return string.lower(other_value)
+            return other_value.lower()
 
-    class albumNorm(_Metadata_Expectation):
+    class albumNorm(_MetadataExpectation):
         depends_on = "album"
 
         @staticmethod
         def dependent_transformation(other_value):
-            return string.lower(other_value)    
+            return other_value.lower()
 
-    class artistNorm(_Metadata_Expectation):
+    class artistNorm(_MetadataExpectation):
         depends_on = "artist"
 
         @staticmethod
         def dependent_transformation(other_value):
-            return string.lower(other_value)
+            return other_value.lower()
 
     
     #Metadata we have no control over:
-    class lastPlayed(_Metadata_Expectation):
+    class lastPlayed(_MetadataExpectation):
         mutable = False
         volatile = True
         val_type = "integer"
@@ -330,7 +344,7 @@ class WC_Protocol(object):
                    #don't allow metadata not in expectations
                    "additionalProperties":False} 
 
-    for name, expt in Metadata_Expectations.get_all_expectations().items():
+    for name, expt in MetadataExpectations.get_all_expectations().items():
         song_schema["properties"][name] = expt.get_schema()
 
     song_array = {"type":"array",
@@ -353,7 +367,7 @@ class WC_Protocol(object):
 
     #All api calls are named as they appear in the request.
 
-    class addplaylist(WC_Call):
+    class addplaylist(WcCall):
         """Creates a new playlist."""
 
         @staticmethod
@@ -376,7 +390,7 @@ class WC_Protocol(object):
             return (req, res)
 
 
-    class addtoplaylist(WC_Call):
+    class addtoplaylist(WcCall):
         """Adds songs to a playlist."""
 
         @staticmethod
@@ -386,8 +400,12 @@ class WC_Protocol(object):
             :param song_ids: a list of song ids
             """
 
-            req = {"playlistId": playlist_id, "songIds": song_ids} 
-                                      
+            #TODO I highly doubt type always equals 1.
+            #Probably, this is the 'type' in the metadata, but why would the
+            # server need it? It stores that value.
+            song_refs = [{'id': sid, 'type': 1} for sid in song_ids]
+            req = {"playlistId": playlist_id, "songRefs": song_refs}
+
             #{"playlistId":"<same as above>","songIds":[{"playlistEntryId":"<new id>","songId":"<same as above>"}]}
             res = {"type": "object",
                       "properties":{
@@ -410,7 +428,7 @@ class WC_Protocol(object):
             return (req, res)
 
 
-    class modifyplaylist(WC_Call):
+    class modifyplaylist(WcCall):
         """Changes the name of a playlist."""
 
         @staticmethod
@@ -429,7 +447,7 @@ class WC_Protocol(object):
 
             return (req, res)
 
-    class changeplaylistorder(WC_Call):
+    class changeplaylistorder(WcCall):
         """Reorders songs currently in a playlist."""
         
         @staticmethod
@@ -463,7 +481,7 @@ class WC_Protocol(object):
  
             return (req, res)
     
-    class deleteplaylist(WC_Call):
+    class deleteplaylist(WcCall):
         """Deletes a playlist."""
 
         @staticmethod
@@ -485,7 +503,7 @@ class WC_Protocol(object):
             return (req, res)
         
 
-    class deletesong(WC_Call):
+    class deletesong(WcCall):
         """Delete a song from the library or a playlist."""
 
         @staticmethod
@@ -511,7 +529,7 @@ class WC_Protocol(object):
                    }
             return (req, res)
 
-    class loadalltracks(WC_Call):
+    class loadalltracks(WcCall):
         """Loads tracks from the library.
         Since libraries can have many tracks, GM gives them back in chunks.
         Chunks will send a continuation token to get the next chunk.
@@ -544,7 +562,7 @@ class WC_Protocol(object):
 
             return (req, res)
 
-    class loadplaylist(WC_Call):
+    class loadplaylist(WcCall):
         """Loads tracks from a playlist.
         Tracks include playlistEntryIds.
         """
@@ -571,7 +589,7 @@ class WC_Protocol(object):
             return (req, res)
         
     
-    class modifyentries(WC_Call):
+    class modifyentries(WcCall):
         """Edit the metadata of songs."""
 
         @classmethod
@@ -584,7 +602,7 @@ class WC_Protocol(object):
 
             for song in songs:
                 for key in song:
-                    allowed_values = Metadata_Expectations.get_expectation(key).allowed_values
+                    allowed_values = MetadataExpectations.get_expectation(key).allowed_values
                     if allowed_values and song[key] not in allowed_values:
                         LogController.get_logger("modifyentries").warning("setting key {0} to unallowed value {1} for id {2}. Check metadata expectations in protocol.py".format(key, song[key], song["id"]))
                         
@@ -600,7 +618,7 @@ class WC_Protocol(object):
                    }
             return (req, res)
 
-    class multidownload(WC_Call):
+    class multidownload(WcCall):
         """Get download links and counts for songs."""
 
         @staticmethod
@@ -626,7 +644,7 @@ class WC_Protocol(object):
                    }
             return (req, res)
 
-    class play(WC_Call):
+    class play(WcCall):
         """Get a url that holds a file to stream."""
 
         #play is strange, it doesn't use music/services/play, just music/play
@@ -636,8 +654,13 @@ class WC_Protocol(object):
         def build_url(cls, query_string):
             #xt is not sent for play.
             #Instead, the songid is sent in the querystring, along with pt=e, for unknown reasons.
-            qstring = '?u=0&pt=e'
-            return cls._base_url + cls._suburl + cls.__name__ + qstring
+            args = query_string
+            args['u'] = 0
+            args['pt'] = 'e'
+
+            qstring = urlencode(args)
+
+            return cls._base_url + cls._suburl + cls.__name__ + '?' + qstring
 
         @staticmethod
         def build_transaction():
@@ -652,7 +675,7 @@ class WC_Protocol(object):
             return (req, res)
         
 
-    class search(WC_Call):
+    class search(WcCall):
         """Search for songs, artists and albums.
         GM ignores punctuation."""
     
@@ -747,14 +770,16 @@ class MM_Protocol(object):
     def make_metadata_request(self, filenames):
         """Returns (Metadata protobuff, dictionary mapping ClientId to filename) for the given mp3s."""
 
-        filemap = {} #this maps a generated ClientID with a filename
+        filemap = {} #map clientid -> filename
 
         metadata = self.make_pb("metadata_request")
 
         for filename in filenames:
 
             if not filename.split(".")[-1].lower() == "mp3":
-                self.log.error("Cannot upload '%s' because it is not an mp3.")
+                LogController.get_logger("make_metadata_request").error(
+                        "cannot upload '%s' because it is not an mp3.", filename)
+                continue
 
             track = metadata.tracks.add()
 
@@ -800,6 +825,7 @@ class MM_Protocol(object):
                 track.title = filename.decode(enc).split(r'/')[-1]
 
 
+            #TODO refactor
             if "album" in audio: track.album = audio["album"][0]
             if "artist" in audio: track.artist = audio["artist"][0]
             if "composer" in audio: track.composer = audio["composer"][0]

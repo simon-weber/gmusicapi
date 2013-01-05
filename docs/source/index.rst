@@ -88,4 +88,4 @@ These dictionaries have up to 30 keys. Here is an example::
 
 In addition, songs retrieved in the context of a playlist will contain a `playlistEntryId` which is unique to the relevant playlist.
 
-See ``Metadata_Expectations`` in ``protocol.py`` for complete information.
+See ``MetadataExpectations`` in ``protocol.py`` for complete information.

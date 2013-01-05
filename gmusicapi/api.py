@@ -34,11 +34,7 @@ This api is not supported nor endorsed by Google, and could break at any time.
 """
 
 import json
-import re
-import string
 import time
-import exceptions
-import collections
 import copy
 import contextlib
 import tempfile
@@ -71,28 +67,30 @@ from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 import validictory
 
-from protocol import WC_Protocol, MM_Protocol
-from utils import utils
-from utils.apilogging import UsesLog
-from gmtools import tools
-from utils.clientlogin import ClientLogin
-from utils.tokenauth import TokenAuth
+from gmusicapi.protocol import WC_Protocol, MM_Protocol
+from gmusicapi.utils import utils
+from gmusicapi.utils.apilogging import UsesLog
+from gmusicapi.gmtools import tools
+from gmusicapi.utils.clientlogin import ClientLogin
+from gmusicapi.utils.tokenauth import TokenAuth
 
 supported_upload_filetypes = ("mp3", "m4a", "ogg", "flac", "wma") 
 
-class CallFailure(exceptions.Exception):
+class CallFailure(Exception):
     """Exception raised when the Google Music server responds that a call failed.
     
     Attributes:
-        name -- name of Api function that had the failing call
+        callname -- name of Api function that had the failing call
         res  -- the body of the failed response
     """
-    def __init__(self, name, res):
-        self.name = name
+    def __init__(self, message, callname, res):
+        Exception.__init__(self, message)
+
+        self.callname = callname
         self.res = res
 
     def __str__(self):
-        return "api call {} failed; server returned {}".format(self.name, self.res)
+        return "api call {} failed; server returned {}".format(self.callname, self.res)
 
 class Api(UsesLog):
     def __init__(self, suppress_failure=False):
@@ -136,7 +134,7 @@ class Api(UsesLog):
         """Authenticates the api with the given credentials.
         Returns True on success, False on failure.
 
-        :param email: eg "`test@gmail.com`"
+        :param email: eg `test@gmail.com` or just `test`.
         :param password: plaintext password. It will not be stored and is sent over ssl.
 
         Users of two-factor authentication will need to set an application-specific password
@@ -322,13 +320,13 @@ class Api(UsesLog):
         return playlists
         
     def _playlist_list_to_dict(self, pl_list):
-        d = {}
+        ret = {}
 
         for name, pid in ((p["title"], p["playlistId"]) for p in pl_list):
-            if not name in d: d[name] = []
-            d[name].append(pid)
+            if not name in ret: ret[name] = []
+            ret[name].append(pid)
 
-        return d
+        return ret
         
     def _get_auto_playlists(self):
         """For auto playlists, returns a dictionary which maps autoplaylist name to id."""
@@ -343,7 +341,7 @@ class Api(UsesLog):
     def get_song_download_info(self, song_id):
         """Returns a tuple ``("<download url>", <download count>)``.
 
-        GM allows 2 downloads per song.
+        GM allows 2 downloads per song. This call does not register a download - that is done when the download url is retrieved.
 
         :param song_id: a single song id.
         """
@@ -356,11 +354,11 @@ class Api(UsesLog):
     def get_stream_url(self, song_id):
         """Returns a url that points to a streamable version of this song. 
 
+        While this call requires authentication, listening to the returned url does not. The url expires after about a minute.
+
         :param song_id: a single song id.
 
         *This is only intended for streaming*. The streamed audio does not contain metadata. Use :func:`get_song_download_info` to download complete files with metadata.
-
-        Reading the file does not require authentication.        
         """
 
         #This call is strange. The body is empty, and the songid is passed in the querystring.
@@ -488,8 +486,8 @@ class Api(UsesLog):
                     else:
                         self.log.warning("reverted changes safely; playlist id of '%s' is now '%s'", playlist_name, backup_id)
                         playlist_id = backup_id
-            finally:
-                return playlist_id
+
+            return playlist_id
     
     @utils.accept_singleton(basestring, 2)
     @utils.empty_arg_shortcircuit(position=2)
@@ -632,7 +630,7 @@ class Api(UsesLog):
             
             if not self.suppress_failure:
                 calling_func_name = inspect.stack()[1][3]
-                raise CallFailure(calling_func_name, res) #normally caused by bad arguments to the server
+                raise CallFailure('', calling_func_name, res) #normally caused by bad arguments to the server
 
         #Calls are not required to have a schema, and
         # schemas are only for successful calls.
@@ -668,7 +666,7 @@ class Api(UsesLog):
     
 
     @utils.accept_singleton(basestring)
-    @utils.empty_arg_shortcircuit(ret={})
+    @utils.empty_arg_shortcircuit(return_code='{}')
     def upload(self, filenames):
         """Uploads the given filenames. Returns a dictionary with ``{"<filename>": "<new song id>"}`` pairs for each successful upload.
 
@@ -680,14 +678,11 @@ class Api(UsesLog):
 
         Unlike Google's Music Manager, this function will currently allow the same song to be uploaded more than once if its tags are changed. This is subject to change in the future.
         """
-        if not filenames:
-            return {}
-
         results = {}
 
         with self._temp_mp3_conversion(filenames) as (upload_files, orig_fnames):
 
-            fname_to_id = self._upload_mp3s(map(lambda f: f.name, upload_files))
+            fname_to_id = self._upload_mp3s([f.name for f in upload_files])
 
             for fname, sid in fname_to_id.items():
                 results[orig_fnames[fname]] = sid
@@ -735,7 +730,7 @@ class Api(UsesLog):
                             t_handle.write(audio_data)
                             
 
-                    except OSError as e:
+                    except OSError:
                         if err_output is not None:
                             self.log.error("FFmpeg could not convert the file to mp3. output was: %s", err_output)
                         else:
@@ -993,7 +988,7 @@ class PlaySession(object):
         self.__init__()
 
 
-    def open_web_url(self, url_builder, extra_args=None, data=None, ua=None):
+    def open_web_url(self, url_builder, extra_args=None, data=None, useragent=None):
         """
         Opens an https url using the current session and returns the response.
         Code adapted from:
@@ -1002,34 +997,28 @@ class PlaySession(object):
         :param url_builder: the url, or a function to receieve a dictionary of querystring arg/val pairs and return the url.
         :param extra_args: (optional) key/val querystring pairs.
         :param data: (optional) encoded POST data.
-        :param ua: (optional) The User Age to use for the request.
+        :param useragent: (optional) The User Agent to use for the request.
         """
         # I couldn't find a case where we don't need to be logged in
         if not self.logged_in:
             raise NotLoggedIn
 
+        args = {'xt': self.get_cookie("xt")}
+
+        if extra_args:
+            args = dict(args.items() + extra_args.items())
+
         if isinstance(url_builder, basestring):
             url = url_builder
         else:
-            url = url_builder({'xt':self.get_cookie("xt")})
-
-        #Add in optional pairs to the querystring.
-        if extra_args:
-            #Assumes that a qs has already been started (ie we don't need to put a ? first)
-            assert (url.find('?') >= 0)
-
-            extra_url_args = ""
-            for name, val in extra_args.iteritems():
-                extra_url_args += "&{0}={1}".format(name, val)
-
-            url += extra_url_args
+            url = url_builder(args)
 
         opener = build_opener(HTTPCookieProcessor(self.cookies))
 
-        if not ua:
-            ua = self._user_agent
+        if not useragent:
+            useragent = self._user_agent
 
-        opener.addheaders = [('User-agent', ua)]
+        opener.addheaders = [('User-agent', useragent)]
 
         if data:
             response = opener.open(url, data)

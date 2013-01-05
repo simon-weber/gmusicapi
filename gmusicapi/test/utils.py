@@ -35,11 +35,11 @@ from getpass import getpass
 import re
 
 from ..api import Api, CallFailure
-from ..protocol import WC_Protocol, Metadata_Expectations
+from ..protocol import WC_Protocol, MetadataExpectations
 from ..utils.apilogging import LogController
 from ..utils import utils
 
-md_expts = Metadata_Expectations.get_all_expectations()
+md_expts = MetadataExpectations.get_all_expectations()
 log = LogController.get_logger("utils")
 
 #A regex for the gm id format, eg:
@@ -76,7 +76,7 @@ def modify_md(md_name, val):
     #Check for metadata that must get specific values.
     if md_expts[md_name].allowed_values != None:
         #Assume old_val is a possible value, and return
-        # the value one index after it.
+        # the value one modulus index after it.
 
         possible = md_expts[md_name].allowed_values
         val_i = 0
@@ -237,6 +237,6 @@ class BaseTest(unittest.TestCase):
             #Other kinds of exceptions may be raised inside the code
             # being tested; those should be re-raised so we can trace them.
             except CallFailure as f:
-                raise self.fail("test {} step {} call to {} failure: {}".format(prefix, step, f.name, f.res))
+                raise self.fail("test {} step {} call to {} failure: {}".format(prefix, step, f.callname, f.res))
             except AssertionError as e:
                 raise #it's actually easiest to just reraise this, so we can track down what went wrong
