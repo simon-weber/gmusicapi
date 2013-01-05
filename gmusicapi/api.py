@@ -35,7 +35,6 @@ This api is not supported nor endorsed by Google, and could break at any time.
 
 import json
 import time
-import exceptions
 import copy
 import contextlib
 import tempfile
@@ -77,7 +76,7 @@ from gmusicapi.utils.tokenauth import TokenAuth
 
 supported_upload_filetypes = ("mp3", "m4a", "ogg", "flac", "wma") 
 
-class CallFailure(exceptions.Exception):
+class CallFailure(Exception):
     """Exception raised when the Google Music server responds that a call failed.
     
     Attributes:
