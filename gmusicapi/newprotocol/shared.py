@@ -3,57 +3,148 @@
 
 """Definitions shared by multiple clients."""
 
-from collections import namedtuple
 import json
 import sys
+import types
 
 from google.protobuf.descriptor import FieldDescriptor
-import requests
+from requests import Request
 
 from gmusicapi.exceptions import ParseException
-from gmusicapi.utils import utils
+
+#There's a lot of code here to simplify call definition, but it's not scary - promise.
+#Request objects are currently requests.Request; see http://docs.python-requests.org
 
 
-Transaction = namedtuple(
-    'Transaction',
-    [
-        'request',  # requests.Request
-        'verify_res_schema',  # f(parsed_res) -> throws ValidationException
-        'verify_res_success',  # f(parsed_res) -> throws CallFailure
-    ],
-)
+class BuildRequestMeta(type):
+    """Metaclass to create build_request from static/dynamic config."""
+
+    def __new__(cls, name, bases, dct):
+        #Create _key methods on the class from combining static_key and dynamic_key.
+
+        #To explain some of the funkiness wrt closures, see:
+        # http://stackoverflow.com/questions/233673/lexical-closures-in-python
+
+        config = {}  # stores key: val for static or f(*args, **kwargs) -> val for dyn
+        dyn = lambda key: 'dynamic_' + key
+        stat = lambda key: 'static_' + key
+
+        merge_keys = ('headers', 'params')
+        all_keys = ('method', 'url', 'files', 'data') + merge_keys
+
+        for key in all_keys:
+            if dyn(key) not in dct and stat(key) not in dct:
+                continue  # this key will be ignored; requests will default it
+
+            #use get on left since dyn might not be declared
+            config[key] = dct.get(dyn(key)) or dct[stat(key)]
+
+        for key in merge_keys:
+            #merge case: dyn took precedence above, but stat also exists
+            if dyn(key) in config and stat(key) in dct:
+                def key_closure(stat_val=dct[stat(key)], dyn_func=dct[dyn(key)]):
+                    def build_key(cls, *args, **kwargs):
+                        dyn_val = dyn_func(cls, *args, **kwargs)
+
+                        stat_val.update(dyn_val)
+                        return stat_val
+                    return build_key
+                config[key] = classmethod(key_closure())
+
+        #create the actual build_request method
+        def req_closure(config=config):
+            def build_request(cls, *args, **kwargs):
+                req_kwargs = {}
+                for key, val in config.items():
+                    if isinstance(val, types.FunctionType):
+                        val = val(cls, *args, **kwargs)
+                    req_kwargs[key] = val
+
+                return Request(**req_kwargs)
+            return build_request
+
+        dct['build_request'] = classmethod(req_closure())
+
+        return super(BuildRequestMeta, cls).__new__(cls, name, bases, dct)
 
 
 class Call(object):
-    """Abstract class for an api call.
-    These classes are never instantiated."""
+    """
+    The client Call interface is:
 
-    #http method to use
-    method = utils.NotImplementedField
+     req = SomeCall.build_request(some, params)
+     req.prepare() # this is specific to requests.Request
 
-    #should the call be logged?
-    gets_logged = True
+     response_text = <send off the request somehow>
 
-    #send a xsrf token in the url params?
-    send_xt = True
+     try:
+        res = SomeCall.process_response(response_text)
+     except ParseException, ValidationException, CallFailure
+        ...
 
-    #static request config options, (m) signals a merge will occur:
-    static_config = {}
-    #  url – URL to send.
-    #  headers (m) – dictionary of headers to send.
-    #  files – dictionary of {filename: fileobject} files to multipart upload.
-    #  data – the body to attach the request.
-    #          If a dictionary is provided, form-encoding will take place.
-    #  params (m) – dictionary of URL parameters to append to the URL.
-    #These probably won't be used:
-    #  cookies – dictionary or CookieJar of cookies to attach to this request.
-    #  auth – Auth handler or (user, pass) tuple.
-    #  hooks – dictionary of callback hooks, for internal usage.
+     #res is python data, the call succeeded, and the response was formatted as expected
 
-    @classmethod
-    def build_transaction(cls, *args, **kwargs):
-        """Given call-specific args, return a Transaction."""
-        raise NotImplementedError
+
+    Calls define how to build their requests through static and dynamic data.
+    For example, a request might always send some user-agent: this is static.
+    Or, it might need the name of a song to modify: this is dynamic.
+
+    Possible values to use in the request are:
+        method: eg 'GET' or 'POST'
+        url: string
+        headers (m): dictionary
+        files: dictionary of {filename: fileobject} files to multipart upload.
+        data: the body of the request
+                If a dictionary is provided, form-encoding will take place.
+                A string will be sent as-is.
+        params (m): dictionary of URL parameters to append to the URL.
+
+    Calls can define them statically:
+        class SomeCall(Call):
+            static_url = 'http://foo.com/thiscall'
+
+    Or dynamically:
+        class SomeCall(Call):
+            #this takes whatever params are needed (ie not necessarily something called endpoint)
+            #*args, **kwargs are passed from SomeCall.build_request
+            def dynamic_url(endpoint):
+                return 'http://foo.com/' + endpoint
+
+    Dynamic data takes precedence over static if both exist,
+     except for attributes marked with (m) above. These get merged, with dynamic overriding
+     on key conflicts (though this really shouldn't be relied on).
+    Here's an example that has static and dynamic headers:
+        class SomeCall(Call):
+            static_headers = {'user-agent': "I'm totally a Google client!"}
+
+            @classmethod
+            def dynamic_headers(cls, keep_alive=False):
+                return {'Connection': keep_alive}
+
+    If neither is defined, the param is not passed to the Request when creating it.
+
+
+    There's three static bool fields to declare what auth the session should send:
+        send_xt: param/cookie xsrf token
+
+     AND/OR
+
+        send_clientlogin: google clientlogin cookies
+     OR
+        send_sso: google SSO (authtoken) cookies
+
+
+    Calls can also define filter_response - this takes the result of process_response and
+     formats it to be logged. It's useful for taking out eg gross byte fields.
+
+    Calls are organized semantically, so one endpoint might have multiple calls.
+    """
+
+    __metaclass__ = BuildRequestMeta
+
+    send_xt = False
+    send_clientlogin = False
+    send_sso = False
 
     @classmethod
     def parse_response(cls, text):
@@ -64,36 +155,6 @@ class Call(object):
     def filter_response(cls, msg):
         """Return a version of a parsed response appropriate for logging."""
         return msg  # default to identity
-
-    @classmethod
-    def _request_factory(cls, dynamic_config):
-        """Return a PreparedRequest by combining static and dynamic config.
-        Dynamic config takes precendence."""
-
-        #valid dynamic config:
-        #  url – URL to send.
-        #  headers – dictionary of headers to send.
-        #  files – dictionary of {filename: fileobject} to multipart upload.
-        #  data – the body to attach the request.
-        #          If a dictionary is provided, form-encoding will take place.
-        #  params – dictionary of URL parameters to append to the URL.
-        #These probably won't be used:
-        #  cookies – dictionary or CookieJar of cookies
-        #  auth – Auth handler or (user, pass) tuple.
-        #  hooks – dictionary of callback hooks, for internal usage.
-
-        config = dynamic_config
-        config['method'] = cls.method
-
-        get_items = lambda d, key: d.get(key, {}).items()
-
-        for merge_key in ('headers', 'params'):
-            config[merge_key] = dict(get_items(cls.static_config, merge_key) +
-                                     get_items(dynamic_config, merge_key))
-
-        req = requests.Request(**config)
-
-        return req
 
     @staticmethod
     def parse_json(text):
