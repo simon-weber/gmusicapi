@@ -1,3 +1,7 @@
+2013.01.05:
+	compatibility update for playlist mutation
+	various metadata compatibility updates
+
 2012.11.09:
 	bugfix: support for uploading uppercase filenames (Tom Graham)
 	bugfix: fix typo in multidownload validation, and add test

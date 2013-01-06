@@ -82,7 +82,6 @@ from gmusicapi.newprotocol import webclient, musicmanager
 
 supported_upload_filetypes = ("mp3", "m4a", "ogg", "flac", "wma") 
 
-
 class Api(UsesLog):
     def __init__(self, suppress_failure=False):
         """Initializes an Api.

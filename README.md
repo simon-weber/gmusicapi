@@ -10,6 +10,14 @@ For those looking to port or contribute, see the porting section below. There's 
 
 For bugs reports, feature requests, and contributions, go ahead and [open an issue](https://github.com/simon-weber/Unofficial-Google-Music-API/issues/new).
 
+Also, check out these nifty projects that use gmusicapi:
+*  Malcolm Still's [command line Google Music client](https://github.com/mstill/thunner) ([screenshot](http://i.imgur.com/Mwl0k.png))
+*  David Dooling's [sync scripts for Banshee](https://github.com/ddgenome/banshee-helper-scripts)
+*  Mendhak's [Rhythmbox metadata sync plugin](https://github.com/mendhak/rhythmbox-gmusic-sync)
+*  Ryan McGuire's [GMusicFS](https://github.com/EnigmaCurry/GMusicFS) - a FUSE filesystem linked to your music
+*  Kilian Lackhove's [Google Music support](https://github.com/crabmanX/google-music-resolver) for http://www.tomahawk-player.org
+
+
 ##Features
 
 **New in version 2012.11.09** 
@@ -38,10 +46,10 @@ For bugs reports, feature requests, and contributions, go ahead and [open an iss
 
 * Searching for songs, artists, and albums.
 
-**Possible future features:**
+**Coming soon:**
 
 * album art manipulation
-* two-factor authentication support
+* better upload support
 
 ##Usage
 
@@ -61,9 +69,8 @@ To check that everything is set up correctly, you can run the test suite: `pytho
 
 ###Getting Started
 
-gmusicapi.api.Api is the user-facing interface. The provided example.py should be enough to get you started. For more information, see the [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest) and testing code. 
+gmusicapi.api.Api is the user-facing interface. The provided example.py should be enough to get you started. For complete information, see the [documentation](http://readthedocs.org/docs/unofficial-google-music-api/en/latest). The testing code might also be useful.
 
-In addition, Michal Odnous has built [an example](https://github.com/odiroot/Unofficial-Google-Music-API/blob/master/example_play.py) that will play songs from your library.
 
 ##Ports
 
@@ -77,7 +84,7 @@ Here are the ports I'm currently aware of:
 
 Get in touch if you're working on a port. Even if I can't contribute, I might know people who'd like to.
 
-The current implementation uses the same interface that a web browser does, and a code overview can be found [on the wiki](https://github.com/simon-weber/Unofficial-Google-Music-API/wiki/Codebase-Overview). Darryl Pogue is working on a more durable implementation by emulating Google's Android app. His work is [here](https://github.com/dpogue/Unofficial-Google-Music-API), and may easier to port. More information this alternative protocol is [here](https://github.com/dpogue/Unofficial-Google-Music-API/wiki/Skyjam-API).
+The current implementation uses the same interface that a web browser does, and a code overview can be found [on the wiki](https://github.com/simon-weber/Unofficial-Google-Music-API/wiki/Codebase-Overview). Darryl Pogue is worked on a more durable implementation by emulating Google's Android app. His work is [here](https://github.com/dpogue/Unofficial-Google-Music-API), and may easier to port. More information this alternative protocol is [here](https://github.com/dpogue/Unofficial-Google-Music-API/wiki/Skyjam-API).
 
 Either way, you'll probably want to ignore anything related to Music Manager; that's just for uploading. If uploading interests you, more information is [here](https://github.com/simon-weber/google-music-protocol).
 
@@ -97,3 +104,5 @@ Nothing related to authenticated gets logged aside from "logged in" and "logged 
 
 Copyright 2012 [Simon Weber](http://www.simonmweber.com).  
 Licensed under the 3-clause BSD. See COPYING.
+
+[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/68a92ecf6b6590372f435fb2674d072e "githalytics.com")](http://githalytics.com/simon-weber/Unofficial-Google-Music-API)
