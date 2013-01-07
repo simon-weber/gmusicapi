@@ -5,7 +5,6 @@
 
 import json
 import sys
-import types
 
 from google.protobuf.descriptor import FieldDescriptor
 from requests import Request
@@ -20,52 +19,58 @@ class BuildRequestMeta(type):
     """Metaclass to create build_request from static/dynamic config."""
 
     def __new__(cls, name, bases, dct):
-        #Create _key methods on the class from combining static_key and dynamic_key.
-
-        #To explain some of the funkiness wrt closures, see:
-        # http://stackoverflow.com/questions/233673/lexical-closures-in-python
-
-        config = {}  # stores key: val for static or f(*args, **kwargs) -> val for dyn
-        dyn = lambda key: 'dynamic_' + key
-        stat = lambda key: 'static_' + key
+        #To not mess with mro and inheritance, build the class first.
+        new_cls = super(BuildRequestMeta, cls).__new__(cls, name, bases, dct)
 
         merge_keys = ('headers', 'params')
         all_keys = ('method', 'url', 'files', 'data') + merge_keys
 
+        config = {}  # stores key: val for static or f(*args, **kwargs) -> val for dyn
+        dyn = lambda key: 'dynamic_' + key
+        stat = lambda key: 'static_' + key
+        has_key = lambda key: hasattr(new_cls, key)
+        get_key = lambda key: getattr(new_cls, key)
+
         for key in all_keys:
-            if dyn(key) not in dct and stat(key) not in dct:
+            if not has_key(dyn(key)) and not has_key(stat(key)):
                 continue  # this key will be ignored; requests will default it
 
-            #use get on left since dyn might not be declared
-            config[key] = dct.get(dyn(key)) or dct[stat(key)]
+            if has_key(dyn(key)):
+                config[key] = get_key(dyn(key))
+            else:
+                config[key] = get_key(stat(key))
 
         for key in merge_keys:
             #merge case: dyn took precedence above, but stat also exists
-            if dyn(key) in config and stat(key) in dct:
-                def key_closure(stat_val=dct[stat(key)], dyn_func=dct[dyn(key)]):
-                    def build_key(cls, *args, **kwargs):
-                        dyn_val = dyn_func(cls, *args, **kwargs)
+            if dyn(key) in config and has_key(stat(key)):
+                def key_closure(stat_val=get_key(stat(key)), dyn_func=get_key(dyn(key))):
+                    def build_key(*args, **kwargs):
+                        dyn_val = dyn_func(*args, **kwargs)
 
                         stat_val.update(dyn_val)
                         return stat_val
                     return build_key
-                config[key] = classmethod(key_closure())
+                config[key] = key_closure()
+
+        #To explain some of the funkiness wrt closures, see:
+        # http://stackoverflow.com/questions/233673/lexical-closures-in-python
 
         #create the actual build_request method
         def req_closure(config=config):
             def build_request(cls, *args, **kwargs):
                 req_kwargs = {}
                 for key, val in config.items():
-                    if isinstance(val, types.FunctionType):
-                        val = val(cls, *args, **kwargs)
+                    if hasattr(val, '__call__'):
+                        val = val(*args, **kwargs)
+
                     req_kwargs[key] = val
 
                 return Request(**req_kwargs)
             return build_request
 
-        dct['build_request'] = classmethod(req_closure())
+        new_cls.build_request = classmethod(req_closure())
 
-        return super(BuildRequestMeta, cls).__new__(cls, name, bases, dct)
+        return new_cls
 
 
 class Call(object):
@@ -134,8 +139,8 @@ class Call(object):
         send_sso: google SSO (authtoken) cookies
 
 
-    Calls can also define filter_response - this takes the result of process_response and
-     formats it to be logged. It's useful for taking out eg gross byte fields.
+    Calls must define parse_response.
+    Calls can also define filter_response, validate and check_success.
 
     Calls are organized semantically, so one endpoint might have multiple calls.
     """
@@ -147,9 +152,29 @@ class Call(object):
     send_sso = False
 
     @classmethod
+    def process_response(cls, text):
+        """Parses and verifies response data."""
+        res = cls.parse_response(text)
+
+        cls.validate(res)
+        cls.check_success(res)
+
+        #TODO log with filter_response
+
+        return res
+
+    @classmethod
     def parse_response(cls, text):
         """Parses http text to data for call responses."""
         raise NotImplementedError
+
+    @classmethod
+    def validate(cls, res):
+        pass
+
+    @classmethod
+    def check_success(cls, res):
+        pass
 
     @classmethod
     def filter_response(cls, msg):
@@ -157,7 +182,7 @@ class Call(object):
         return msg  # default to identity
 
     @staticmethod
-    def parse_json(text):
+    def _parse_json(text):
         try:
             return json.loads(text)
         except ValueError as e:
@@ -165,7 +190,7 @@ class Call(object):
             raise ParseException(e.message), None, trace
 
     @staticmethod
-    def filter_proto(msg, make_copy=True):
+    def _filter_proto(msg, make_copy=True):
         """Filter all byte fields in the message and submessages."""
         filtered = msg
         if make_copy:
@@ -191,7 +216,7 @@ class Call(object):
             is_repeated = hasattr(field, '__len__')
 
             if not is_repeated:
-                Call.filter_proto(field, make_copy=False)
+                Call._filter_proto(field, make_copy=False)
 
             else:
                 for i in range(len(field)):
@@ -199,7 +224,7 @@ class Call(object):
                     old_fields = [f for f in field]
                     del field[:]
 
-                    field.extend([Call.filter_proto(f, make_copy=False)
+                    field.extend([Call._filter_proto(f, make_copy=False)
                                   for f in old_fields])
 
         return filtered

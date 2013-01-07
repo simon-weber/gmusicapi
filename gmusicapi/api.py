@@ -616,10 +616,8 @@ class Api(UsesLog):
 
         self.log.debug("n call %s(%s %s)", call_name, args, kwargs)
 
-        transaction = protocol.build_transaction(*args, **kwargs)
-        request = transaction.request
+        request = protocol.build_request(*args, **kwargs)
 
-        #TODO log request? protobuf is already encoded...
         print
         print request.method, request.url
         print request.headers
@@ -636,20 +634,12 @@ class Api(UsesLog):
         #TODO check return code
 
         try:
-            res = protocol.parse_response(text)
-            #TODO log response
-            print protocol.filter_response(res)
+            res = protocol.process_response(text)
         except ParseException:
             self.log.warning("couldn't parse %s response: %s", call_name, text)
-
-        try:
-            transaction.verify_res_success(res)
         except CallFailure:
             if not self.suppress_failure:
                 raise
-
-        try:
-            transaction.verify_res_schema(res)
         except ValidationException:
             self.log.warning("unexpected response from %s: %r", call_name, res)
 
@@ -697,7 +687,7 @@ class Api(UsesLog):
             
             if not self.suppress_failure:
                 calling_func_name = inspect.stack()[1][3]
-                raise CallFailure('', calling_func_name, res) #normally caused by bad arguments to the server
+                raise CallFailure('', calling_func_name) # normally caused by bad arguments to the server
 
         #Calls are not required to have a schema, and
         # schemas are only for successful calls.

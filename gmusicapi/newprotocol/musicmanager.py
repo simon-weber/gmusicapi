@@ -7,66 +7,36 @@ import base64
 import hashlib
 import os
 
+from decorator import decorator
 import mutagen
 
 from gmusicapi.exceptions import CallFailure
 from gmusicapi.newprotocol import upload_pb2, locker_pb2
-from gmusicapi.newprotocol.shared import Call, Transaction
+from gmusicapi.newprotocol.shared import Call
 from gmusicapi.utils import utils
+
+
+@decorator
+def pb(f, *args, **kwargs):
+    """Decorator to serialize a protobuf message."""
+    msg = f(*args, **kwargs)
+    return msg.SerializeToString()
 
 
 class MmCall(Call):
     """Abstract base for Music Manager calls."""
 
     _base_url = 'https://android.clients.google.com/upsj/'
-    #mm calls sometimes have strange names. I'll name mine semantically, using
-    #this for the actual url.
-    _suburl = utils.NotImplementedField
 
-    #nearly all mm calls are POSTs
-    method = 'POST'
-    static_config = {
-        'headers': {'USER-AGENT': 'Music Manager (1, 0, 24, 7712 - Windows)'}
-    }
+    static_method = 'POST'
+    static_headers = {'USER-AGENT': 'Music Manager (1, 0, 54, 4672 HTTPS - Windows)'}
 
-    #protobuf calls don't send the xt token
-    send_xt = False
+    #'headers': {'Content-Type': 'application/x-google-protobuf'},
 
-    #implementing classes define req/res protos
-    req_msg_type = utils.NotImplementedField
+    send_clientlogin = True
+
     #this is a shared union class that has all specific upload types
     res_msg_type = upload_pb2.UploadResponse
-
-    @classmethod
-    def build_transaction(cls, *args, **kwargs):
-        #template out the transaction; most of it is shared.
-        return Transaction(
-            cls._request_factory({
-                'url': cls._base_url + cls._suburl,
-                'data': cls._build_protobuf(
-                    *args, **kwargs).SerializeToString(),
-                'headers': {'Content-Type': 'application/x-google-protobuf'},
-            }),
-            cls.verify_res_schema,
-            cls.verify_res_success
-        )
-
-    @classmethod
-    def verify_res_schema(cls, res):
-        """Parsing also verifies the schema for protobufs."""
-        #TODO could verify the response_type
-        pass
-
-    @classmethod
-    def verify_res_success(cls, res):
-        #TODO not sure how to do this yet.
-        #auth is a factor, but both protocols share that, I think
-        pass
-
-    @classmethod
-    def _build_protobuf(cls, *args, **kwargs):
-        """Return a req_msg_type filled with call-specific args."""
-        raise NotImplementedError
 
     @classmethod
     def parse_response(cls, text):
@@ -86,11 +56,10 @@ class MmCall(Call):
 class AuthenticateUploader(MmCall):
     """Sent to auth, reauth, or register our upload client."""
 
-    _suburl = 'upauth'
-    req_msg_type = upload_pb2.UpAuthRequest
+    static_url = MmCall._base_url + 'upauth'
 
     @classmethod
-    def verify_res_success(cls, res):
+    def check_success(cls, res):
         if res.HasField('auth_status') and res.auth_status != upload_pb2.UploadResponse.OK:
             raise CallFailure(
                 "Two accounts have been registered on this machine."
@@ -99,12 +68,13 @@ class AuthenticateUploader(MmCall):
                 cls.__name__)
 
     @classmethod
-    def _build_protobuf(cls, uploader_id, uploader_friendly_name):
+    @pb
+    def dynamic_data(cls, uploader_id, uploader_friendly_name):
         """
         :param uploader_id: MM uses host MAC address
         :param uploader_friendly_name: MM uses hostname
         """
-        req_msg = cls.req_msg_type()
+        req_msg = upload_pb2.UpAuthRequest()
 
         req_msg.uploader_id = uploader_id
         req_msg.friendly_name = uploader_friendly_name
@@ -113,14 +83,9 @@ class AuthenticateUploader(MmCall):
 
 
 class UploadMetadata(MmCall):
-    _suburl = 'metadata'
+    static_url = MmCall._base_url + 'metadata'
 
-    static_config = dict(
-        MmCall.static_config.items() +
-        {'params': {'version': 1}}.items()
-    )
-
-    req_msg_type = upload_pb2.UploadMetadataRequest
+    static_params = {'version': 1}.items()
 
     @staticmethod
     def get_track_clientid(file_contents):
@@ -221,17 +186,13 @@ class UploadMetadata(MmCall):
         return track
 
     @classmethod
-    def _build_protobuf(cls, tracks, uploader_id):
+    @pb
+    def dynamic_data(cls, tracks, uploader_id):
         """Track is a list of filled locker_pb2.Track."""
-        req_msg = cls.req_msg_type()
+        req_msg = upload_pb2.UploadMetadataRequest()
 
         req_msg.track.extend(tracks)
         req_msg.uploader_id = uploader_id
-
-        #TODO log this better
-        print "request: ->"
-        print cls.filter_response(req_msg)
-        print "<-"
 
         return req_msg
 
@@ -240,18 +201,6 @@ class GetUploadSession(MmCall):
     """Called before an upload; server returns a nonce for use when uploading."""
 
     #This is a json call, and doesn't share much with the other calls.
-    @classmethod
-    def build_transaction(cls, *args, **kwargs):
-        return Transaction(
-            cls._request_factory({
-                'url': cls._base_url + cls._suburl,
-                'data': cls._build_protobuf(
-                    *args, **kwargs).SerializeToString(),
-                'headers': {'Content-Type': 'application/x-google-protobuf'},
-            }),
-            cls.verify_res_schema,
-            cls.verify_res_success
-        )
 
     #@classmethod
     #def _build_json(cls, track):
