@@ -23,7 +23,7 @@ Also, check out these nifty projects that use gmusicapi:
 **New in version 2013.01.05** 
 
 * compatibility update for playlist modification
-* note that there are various problems related to uploading at the moment - they'll be addressed in a future release
+* there are various problems with uploading at the moment - it's being tracked in [this issue](https://github.com/simon-weber/Unofficial-Google-Music-API/issues/51#issuecomment-11833220)
 
 **Feature Overview:**
 
