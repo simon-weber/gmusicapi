@@ -130,7 +130,13 @@ class Api(UsesLog):
         :param email: eg `test@gmail.com` or just `test`.
         :param password: plaintext password. It will not be stored and is sent over ssl.
         :param perform_upload_auth: if True, register/authenticate as an upload device
-        :param uploader_id: unique id; default is mac address.
+        :param uploader_id: unique id in mac address form, eg '01:23:45:67:89:AB'.
+                            default is mac address incremented by 1, and should be used when
+                            possible.
+                            Upload behavior will be unexpected if a Music Manager uses the same id.
+                            OSError will be raised if this is not provided and a mac could not be
+                            determined (eg when running on a VPS). If provided, it's best to use
+                            the same id on all future runs.
         :param uploader_name: human-readable non-unique id; default is "<hostname> (gmusicapi)"
 
         Users of two-factor authentication will need to set an application-specific password
@@ -148,7 +154,13 @@ class Api(UsesLog):
 
         if perform_upload_auth:
             if uploader_id is None:
-                mac = hex(getmac())[2:-1]
+                mac = getmac()
+                if (mac >> 40) % 2:
+                    raise OSError('uploader_id not provided, and a valid MAC could not be found.')
+                else:
+                    mac += 1 % (1 << 48)  # to distinguish us from a Music Manager on this machine
+
+                mac = hex(mac)[2:-1]
                 mac = ':'.join([mac[x:x + 2] for x in range(0, 10, 2)])
                 uploader_id = mac.upper()
 

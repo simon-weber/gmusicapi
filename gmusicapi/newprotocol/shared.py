@@ -200,9 +200,9 @@ class Call(object):
         #    filtered.field_name = '<name>'
 
         #Filter all byte fields.
-        for field_name in (fd.name for fd, val in fields
-                           if fd.type == FieldDescriptor.TYPE_BYTES):
-            setattr(filtered, field_name, '<bytes>')
+        for field_name, val in ((fd.name, val) for fd, val in fields
+                                if fd.type == FieldDescriptor.TYPE_BYTES):
+            setattr(filtered, field_name, "<%s bytes>" % len(val))
 
         #Filter submessages.
         for field in (val for fd, val in fields
