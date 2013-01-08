@@ -50,7 +50,7 @@ class MmCall(Call):
 
     @classmethod
     def filter_response(cls, msg):
-        return Call.filter_proto(msg)
+        return Call._filter_proto(msg)
 
 
 class AuthenticateUploader(MmCall):

@@ -83,9 +83,17 @@ class Call(object):
      response_text = <send off the request somehow>
 
      try:
-        res = SomeCall.process_response(response_text)
-     except ParseException, ValidationException, CallFailure
-        ...
+         res = SomeCall.parse_response(response_text)
+     except ParseException
+         ...
+
+     try:
+         SomeCall.validate(res)
+         SomeCall.check_success(res)
+     except ValidationException:
+         ...
+     except CallFailure:
+         ...
 
      #res is python data, the call succeeded, and the response was formatted as expected
 
@@ -150,18 +158,6 @@ class Call(object):
     send_xt = False
     send_clientlogin = False
     send_sso = False
-
-    @classmethod
-    def process_response(cls, text):
-        """Parses and verifies response data."""
-        res = cls.parse_response(text)
-
-        cls.validate(res)
-        cls.check_success(res)
-
-        #TODO log with filter_response
-
-        return res
 
     @classmethod
     def parse_response(cls, text):

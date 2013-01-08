@@ -581,7 +581,6 @@ class Api(UsesLog):
 
         :param query: the search query.
 
-
         Search results are organized based on how they were found. Hits on an album title return information on that album. Here is an example album result::
 
             {'artistName': 'The Cat Empire',
@@ -604,9 +603,27 @@ class Api(UsesLog):
 
         res = self._wc_call("search", query)['results']
 
-        return {"album_hits":res["albums"],
-                "artist_hits":res["artists"],
-                "song_hits":res["songs"]}
+        return {"album_hits": res["albums"],
+                "artist_hits": res["artists"],
+                "song_hits": res["songs"]}
+
+    @utils.accept_singleton(basestring)
+    @utils.empty_arg_shortcircuit()
+    def report_incorrect_match(self, song_ids):
+        """Equivalent to the 'Fix Incorrect Match' button, this requests re-uploading of songs.
+        Returns the song_ids given.
+
+        :param song_ids: a list of songids to report, or a single song id.
+
+        Note that if you uploaded the song through this api, it won't be reuploaded
+        automatically - this currently only works for songs uploaded with the Music Manager.
+
+        This should only be used on matched tracks with song['type'] == 6.
+        """
+
+        self._make_call(webclient.ReportBadSongMatch, song_ids)
+
+        return song_ids
 
     def _make_call(self, protocol, *args, **kwargs):
         """Returns the response of a web client/music manager call.
@@ -634,14 +651,33 @@ class Api(UsesLog):
         #TODO check return code
 
         try:
-            res = protocol.process_response(text)
+            res = protocol.parse_response(text)
         except ParseException:
-            self.log.warning("couldn't parse %s response: %s", call_name, text)
+            self.log.exception("couldn't parse %s response: %r", call_name, text)
+            if not self.suppress_failure:
+                raise CallFailure("the server's response could not be understood."
+                                  " The call may still have succeeded, but it's unlikely.",
+                                  call_name)
+            else:
+                #TODO what happens now?
+                res = None
+        try:
+            protocol.check_success(res)
+            protocol.validate(res)
         except CallFailure:
             if not self.suppress_failure:
                 raise
+            else:
+                self.log.exception('the server responded that the call failed.'
+                                   ' This is usually caused by invalid arguments.',
+                                   call_name)
         except ValidationException:
-            self.log.warning("unexpected response from %s: %r", call_name, res)
+            self.log.exception(
+                "please report the following unknown response format for %s: %r",
+                call_name, res
+            )
+
+        print protocol.filter_response(res)
 
         return res
 

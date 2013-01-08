@@ -79,14 +79,14 @@ class ReportBadSongMatch(WcCall):
     static_url = WcCall._base_url + WcCall._suburl + 'fixsongmatch'
     static_params = {'format': 'jsarray'}
 
-    #eg response: [ [0], [] ]
-    res_schema = {
-        'type': 'array',
-        'items': {
-            'type': 'array'
-        }
-    }
+    #This response is always the same.
+    expected_response = [[0], []]
 
     @classmethod
-    def dynamic_data(song_id):
-        return json.dumps([["", 1], [[song_id]]])
+    def validate(cls, res):
+        if res != cls.expected_response:
+            raise ValidationException("response != %r" % cls.expected_response)
+
+    @staticmethod
+    def dynamic_data(song_ids):
+        return json.dumps([["", 1], [song_ids]])
