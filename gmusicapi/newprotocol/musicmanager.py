@@ -197,6 +197,29 @@ class UploadMetadata(MmCall):
         return req_msg
 
 
+class GetUploadJobs(MmCall):
+    static_url = MmCall._base_url + 'getjobs'
+
+    static_params = {'version': 1}.items()
+
+    @classmethod
+    def check_success(cls, res):
+        if res.HasField('getjobs_response') and not res.getjobs_response.get_tracks_success:
+            raise CallFailure('get_tracks_success == False', cls.__name__)
+
+    @classmethod
+    @pb
+    def dynamic_data(cls, uploader_id):
+        """
+        :param uploader_id: MM uses host MAC address
+        """
+        req_msg = upload_pb2.GetJobsRequest()
+
+        req_msg.uploader_id = uploader_id
+
+        return req_msg
+
+
 class GetUploadSession(MmCall):
     """Called before an upload; server returns a nonce for use when uploading."""
 

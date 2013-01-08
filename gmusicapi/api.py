@@ -661,7 +661,11 @@ class Api(UsesLog):
             else:
                 #TODO what happens now?
                 res = None
+
+        print protocol.filter_response(res)
+
         try:
+            #order is important; validate only has a schema for a successful response
             protocol.check_success(res)
             protocol.validate(res)
         except CallFailure:
@@ -676,8 +680,6 @@ class Api(UsesLog):
                 "please report the following unknown response format for %s: %r",
                 call_name, res
             )
-
-        print protocol.filter_response(res)
 
         return res
 
