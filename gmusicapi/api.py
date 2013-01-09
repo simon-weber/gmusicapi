@@ -821,7 +821,7 @@ class Api(UsesLog):
             return uploaded, matched, not_uploaded
 
         #Handle scan and match sample requests.
-        for client_id in (e.client_track_id for e in md_res.signed_challenge_info):
+        for client_id in (e.challenge_info.client_track_id for e in md_res.signed_challenge_info):
             #one entry for each track that the server wants a sample for
             #TODO scan and match
             path, contents, track = local_info[client_id]
@@ -830,7 +830,7 @@ class Api(UsesLog):
                 ' but scan and match is not implemented yet'
             )
 
-        #Handle sample responses and general upload requests.
+        #Read sample responses and prep upload requests.
         to_upload = {}  # {serverid: (path, contents, Track)}
         for res in md_res.track_sample_response:
             path, contents, track = local_info[res.client_track_id]
@@ -840,8 +840,8 @@ class Api(UsesLog):
             elif res.response_code == TrackSampleResponse.UPLOAD_REQUESTED:
                 to_upload[res.server_track_id] = (path, contents, track)
             else:
-                self.log.warning("server rejected upload of '%s'."
-                                 " code: %s" % (path, res.response_code))
+                self.log.warning("server rejected upload of '%s'. code: %s",
+                                 path, res.response_code)
                 not_uploaded[path] = str(res.response_code)
 
         print 'to_upload:', {sid: path for (sid, (path, contents, track))
@@ -850,11 +850,51 @@ class Api(UsesLog):
         if not to_upload:
             return uploaded, matched, not_uploaded
 
-        #TODO: Get upload sessions.
-        #with uploader_requested -> [session request] -> sessions (state: open)
+        #Send upload requests.
+        for server_id, (path, contents, track) in to_upload.items():
+            #It can take a few tries to get an session.
+            should_retry = True
+            attempts = 0
 
-        #TODO: Upload tracks.
-        #open sessions -> [upload] -> session closed (state: finalized)
+            while should_retry and attempts < 5:
+                session = self._make_call(musicmanager.GetUploadSession,
+                                          self.uploader_id, len(uploaded),
+                                          track, path, server_id)
+                attempts += 1
+
+                got_session, error_details = musicmanager.GetUploadSession.process_session(session)
+
+                if got_session:
+                    self.log.info("got an upload session for '%s'", path)
+                    break
+
+                should_retry, reason, error_code = error_details
+                self.log.debug("problem getting upload session: %s\ncode=%s retrying=%s",
+                               reason, error_code, should_retry)
+                time.sleep(5)  # wait before retrying
+            else:
+                self.log.info("giving up on upload session for '%s'" % path)
+                not_uploaded[path] = ("could not get an upload session:"
+                                      " %s (code %s)" % (reason, error_code))
+                continue  # to next upload
+
+            #got a session, do the upload
+            #this terribly inconsistent naming isn't my fault: Google--
+            session = session['sessionStatus']
+            external = session['externalFieldTransfers'][0]
+
+            session_url = external['putInfo']['url']
+            content_type = external['content_type']
+
+            upload_response = self._make_call(musicmanager.UploadFile,
+                                              session_url, content_type, contents)
+
+            success = upload_response.get('sessionStatus', {}).get('state')
+            if success:
+                uploaded[path] = server_id
+            else:
+                #think 404 == already uploaded. serverside check on clientid?
+                not_uploaded[path] = 'could not finalize upload'
 
         return uploaded, matched, not_uploaded
 
@@ -1199,7 +1239,8 @@ class PlaySession(object):
         # which cause 404s and xsrf revalidation. eventually, this should just
         # be sending over a requests Session, but this works for now.
         return self.open_web_url(prep_request.url, data=prep_request.body,
-                                 send_xt=send_xt, headers=prep_request.headers)
+                                 send_xt=send_xt, headers=prep_request.headers,
+                                 method=prep_request.method)
 
     def send_mm_request(self, request):
         """Send a request using the music manager session."""
@@ -1210,10 +1251,11 @@ class PlaySession(object):
         prep_request = request.prepare()
 
         return self.open_web_url(prep_request.url, data=prep_request.body,
-                                 send_xt=False, headers=prep_request.headers)
+                                 send_xt=False, headers=prep_request.headers,
+                                 method=prep_request.method)
 
     def open_web_url(self, url_builder, extra_args=None, data=None,
-                     useragent=None, send_xt=True, headers=None):
+                     useragent=None, send_xt=True, headers=None, method=None):
         """
         Opens an https url using the current session and returns the response.
         Code adapted from:
@@ -1250,13 +1292,17 @@ class PlaySession(object):
         else:
             opener.addheaders = [('User-agent', useragent)]
 
+        if method is not None:
+            #wow, this is terrible. see
+            #http://stackoverflow.com/questions/111945/is-there-any-way-to-do-http-put-in-python
+            opener.get_method = lambda: method
+
         if data:
             response = opener.open(url, data)
         else:
             response = opener.open(url)
 
         return response
-
 
     def post_protobuf(self, path, protobuf):
         """

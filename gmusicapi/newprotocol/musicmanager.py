@@ -5,6 +5,7 @@
 
 import base64
 import hashlib
+import json
 import os
 
 from decorator import decorator
@@ -197,6 +198,7 @@ class UploadMetadata(MmCall):
 
 
 class GetUploadJobs(MmCall):
+    #TODO
     static_url = MmCall._base_url + 'getjobs'
 
     static_params = {'version': 1}.items()
@@ -220,52 +222,135 @@ class GetUploadJobs(MmCall):
 
 
 class GetUploadSession(MmCall):
-    """Called before an upload; server returns a nonce for use when uploading."""
+    """Called when we want to upload; the server returns the url to use.
+    This is a json call, and doesn't share much with the other calls."""
 
-    #This is a json call, and doesn't share much with the other calls.
+    static_method = 'POST'
+    static_url = 'http://uploadsj.clients.google.com/uploadsj/rupio'
 
-    #@classmethod
-    #def _build_json(cls, track):
-    #    """track is a locker_pb2.Track, and the sid is from a metadata upload."""
-    #    for upload in server_response.response.uploads:
-    #        filename = filemap[upload.id]
-    #        audio = MP3(filename, ID3 = EasyID3)
-    #        upload_title = audio["title"] if "title" in audio else filename.split(r'/')[-1]
+    #not yet able to intercept newer call, so we use an older version
+    static_headers = {'USER-AGENT': 'Music Manager (1, 0, 24, 7712 - Windows)'}
 
-    #        inlined = {
-    #            "title": "jumper-uploader-title-42",
-    #            "ClientId": upload.id,
-    #            "ClientTotalSongCount": len(server_response.response.uploads),
-    #            "CurrentTotalUploadedCount": "0",
-    #            "CurrentUploadingTrack": upload_title,
-    #            "ServerId": upload.serverId,
-    #            "SyncNow": "true",
-    #            "TrackBitRate": audio.info.bitrate,
-    #            "TrackDoNotRematch": "false",
-    #            "UploaderId": self.mac
-    #        }
-    #        payload = {
-    #          "clientId": "Jumper Uploader",
-    #          "createSessionRequest": {
-    #            "fields": [
-    #                {
-    #                    "external": {
-    #                  "filename": os.path.basename(filename),
-    #                  "name": os.path.abspath(filename),
-    #                  "put": {},
-    #                  "size": os.path.getsize(filename)
-    #                }
-    #                }
-    #            ]
-    #          },
-    #          "protocolVersion": "0.8"
-    #        }
-    #        for key in inlined:
-    #            payload['createSessionRequest']['fields'].append({
-    #                "inlined": {
-    #                    "content": str(inlined[key]),
-    #                    "name": key
-    #                }
-    #            })
+    @classmethod
+    def parse_response(cls, text):
+        return cls._parse_json(text)
 
-    #        sessions.append((filename, upload.serverId, payload))
+    @staticmethod
+    def filter_response(res):
+        return res
+
+    @staticmethod
+    def dynamic_data(uploader_id, num_already_uploaded,
+                     track, filepath, server_id):
+        """track is a locker_pb2.Track, and the server_id is from a metadata upload."""
+        #small info goes inline, big things get their own external PUT.
+        #still not sure as to thresholds - I've seen big album art go inline.
+        inlined = {
+            "title": "jumper-uploader-title-42",
+            "ClientId": track.client_id,
+            "ClientTotalSongCount": "1",  # this supports more than 1 concurrent request
+            "CurrentTotalUploadedCount": str(num_already_uploaded),
+            "CurrentUploadingTrack": track.title,
+            "ServerId": server_id,
+            "SyncNow": "true",
+            "TrackBitRate": track.original_bit_rate,
+            "TrackDoNotRematch": "false",
+            "UploaderId": uploader_id,
+        }
+
+        message = {
+            "clientId": "Jumper Uploader",
+            "createSessionRequest": {
+                "fields": [
+                    {
+                        "external": {
+                            "filename": os.path.basename(filepath),
+                            "name": os.path.abspath(filepath),
+                            "put": {},
+                            #used to use this; don't see it in examples
+                            #"size": track.estimated_size,
+                        }
+                    }
+                ]
+            },
+            "protocolVersion": "0.8"
+        }
+
+        #Insert the inline info.
+        for key in inlined:
+            message['createSessionRequest']['fields'].append(
+                {
+                    "inlined": {
+                        "content": str(inlined[key]),
+                        "name": key
+                    }
+                }
+            )
+
+        return json.dumps(message)
+
+    @staticmethod
+    def process_session(res):
+        """Return (got_session, error_details).
+        error_details is (should_retry, reason, error_code) or None if got_session."""
+
+        if 'sessionStatus' in res:
+            return (True, None)
+
+        if 'errorMessage' in res:
+            #This terribly nested structure is Google's doing.
+            error_code = (res['errorMessage']['additionalInfo']
+                          ['uploader_service.GoogleRupioAdditionalInfo']
+                          ['completionInfo']['customerSpecificInfo']['ResponseCode'])
+
+            got_session = False
+
+            if error_code == 503:
+                #Servers still syncing; retry with no penalty.
+                should_retry = True
+                reason = 'upload servers still syncing'
+
+            elif error_code == 200:
+                should_retry = False
+                reason = 'this song is already uploaded'
+
+            elif error_code == 404:
+                should_retry = False
+                reason = 'the request was rejected'
+
+            else:
+                should_retry = True
+                reason = 'the server reported an unknown error'
+
+            return (got_session, (should_retry, reason, error_code))
+
+        return (False, (True, "the server's response could not be understood", None))
+
+
+class UploadFile(MmCall):
+    """Called after getting a session to actually upload a file."""
+    #TODO recent protocols use multipart encoding
+
+    static_method = 'PUT'
+    static_headers = {'USER-AGENT': 'Music Manager (1, 0, 24, 7712 - Windows)'}
+
+    @classmethod
+    def parse_response(cls, text):
+        return cls._parse_json(text)
+
+    @staticmethod
+    def filter_response(res):
+        return res
+
+    @staticmethod
+    def dynamic_headers(session_url, content_type, audio):
+        return {'CONTENT-TYPE': content_type}
+
+    @staticmethod
+    def dynamic_url(session_url, content_type, audio):
+        #this actually includes params, but easier to pass them straight through
+        return session_url
+
+    @staticmethod
+    def dynamic_data(session_url, content_type, audio):
+        return audio
