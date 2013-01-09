@@ -183,7 +183,7 @@ class Call(object):
             return json.loads(text)
         except ValueError as e:
             trace = sys.exc_info()[2]
-            raise ParseException(e.message), None, trace
+            raise ParseException(str(e)), None, trace
 
     @staticmethod
     def _filter_proto(msg, make_copy=True):

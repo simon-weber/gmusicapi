@@ -79,8 +79,10 @@ from gmusicapi.exceptions import (
     AlreadyLoggedIn, NotLoggedIn
 )
 from gmusicapi.newprotocol import webclient, musicmanager
+from gmusicapi.newprotocol.upload_pb2 import TrackSampleResponse
 
-supported_upload_filetypes = ("mp3", "m4a", "ogg", "flac", "wma") 
+supported_upload_filetypes = ("mp3", "m4a", "ogg", "flac", "wma")
+
 
 class Api(UsesLog):
     def __init__(self, suppress_failure=False):
@@ -752,21 +754,13 @@ class Api(UsesLog):
                     
         return res
 
-
     #---
     #   Api features supported by the Music Manager interface:
     #---
 
-
-    #This works, but the protocol isn't quite right.
-    #For now, you're better off just taking len(get_all_songs)
-    # to get a count of songs in the library. 20,000 songs is the limit for free users.
-
     # def get_quota(self):
     #     """Returns a tuple of (allowed number of tracks, total tracks, available tracks)."""
-
     #     quota = self._mm_pb_call("client_state").quota
-
     #     #protocol incorrect here...
     #     return (quota.maximumTracks, quota.totalTracks, quota.availableTracks)
 
@@ -774,10 +768,10 @@ class Api(UsesLog):
     @utils.empty_arg_shortcircuit(return_code='{}')
     def _upload_new(self, filepaths):
         """Uploads the given filepaths.
-        Returns a dictionary ``{"<filepath>": "<new song id>"}`` with keys for
-        each successful upload.
-
-        Returns an empty dictionary if all uploads fail. CallFailure will never be raised.
+        Return a 3-tuple (uploaded, matched, not_uploaded) of dictionaries:
+            uploaded: {filepath: new server id}
+            matched: {filepath: new server id}
+            not_uploaded: {filepath: string reason (eg 'ALREADY_UPLOADED')
 
         :param filepaths: a list of filepaths, or a single filepath.
 
@@ -791,35 +785,78 @@ class Api(UsesLog):
                               " run Api.login(...perform_upload_auth=True...)"
                               " first.")
 
-        results = {}
+        #To return.
+        uploaded = {}
+        matched = {}
+        not_uploaded = {}
 
-        md_protocol = musicmanager.UploadMetadata  # to save typing
+        #Gather local information on the files.
+        local_info = {}  # {clientid: (path, contents, Track)}
+        for path in filepaths:
+            try:
+                with open(path, 'rb') as f:
+                    contents = f.read()
+                track = musicmanager.UploadMetadata.fill_track_info(path, contents)
+            except (IOError, ValueError) as e:
+                self.log.exception("problem gathering upload info of '%s'" % path)
+                not_uploaded[path] = str(e)
+            else:
+                local_info[track.client_id] = (path, contents, track)
 
-        #get file information
-        for filepath in filepaths:
-            with open(filepath, 'rb') as f:
-                contents = f.read()
+        if not local_info:
+            return uploaded, matched, not_uploaded
 
-            #This process can be done for multiple tracks at a time, but verification is
-            # way easier for one track at a time.
-            track_pb = md_protocol.fill_track_info(filepath, contents)
-            #TODO allow metadata faking
-            md_res = self._make_call(md_protocol, [track_pb], self.uploader_id)
+        #TODO allow metadata faking
 
-            #Need to think about scan + match.
-            #Currently, there wouldn't be an easy way to reupload since I don't store
-            # information about previous uploads.
+        #Upload metadata; the server tells us what to do next.
+        res = self._make_call(musicmanager.UploadMetadata,
+                              [track for (path, contents, track) in local_info.values()],
+                              self.uploader_id)
 
-            #Form upload session requests (for songs GM wants).
-            #session_requests = self.mm_protocol.make_upload_session_requests(cid_map, metadataresp)
-            #for filename, server_id, payload in session_requests:
-            #    pass
+        if res.HasField('metadata_response'):
+            md_res = res.metadata_response
+        else:
+            #TODO this should be handled by response validation
+            self.log.warning('UploadMetadata res did not have metadata_response')
+            return uploaded, matched, not_uploaded
 
-            #get sessions for non-matched
-            #upload those with sessions
+        #Handle scan and match sample requests.
+        for client_id in (e.client_track_id for e in md_res.signed_challenge_info):
+            #one entry for each track that the server wants a sample for
+            #TODO scan and match
+            path, contents, track = local_info[client_id]
+            not_uploaded[path] = (
+                'the server asked for a scan and match sample,'
+                ' but scan and match is not implemented yet'
+            )
 
-        #TODO need a way to distinguish how uploading happened (match vs uploaded)
-        return results
+        #Handle sample responses and general upload requests.
+        to_upload = {}  # {serverid: (path, contents, Track)}
+        for res in md_res.track_sample_response:
+            path, contents, track = local_info[res.client_track_id]
+
+            if res.response_code == TrackSampleResponse.MATCHED:
+                matched[path] = res.server_track_id
+            elif res.response_code == TrackSampleResponse.UPLOAD_REQUESTED:
+                to_upload[res.server_track_id] = (path, contents, track)
+            else:
+                self.log.warning("server rejected upload of '%s'."
+                                 " code: %s" % (path, res.response_code))
+                not_uploaded[path] = str(res.response_code)
+
+        print 'to_upload:', {sid: path for (sid, (path, contents, track))
+                             in to_upload.items()}
+
+        if not to_upload:
+            return uploaded, matched, not_uploaded
+
+        #TODO: Get upload sessions.
+        #with uploader_requested -> [session request] -> sessions (state: open)
+
+        #TODO: Upload tracks.
+        #open sessions -> [upload] -> session closed (state: finalized)
+
+        return uploaded, matched, not_uploaded
 
     @utils.accept_singleton(basestring)
     @utils.empty_arg_shortcircuit(return_code='{}')

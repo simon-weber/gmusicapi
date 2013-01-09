@@ -29,7 +29,7 @@ class WcCall(Call):
             return validictory.validate(res, cls._res_schema)
         except ValueError as e:
             trace = sys.exc_info()[2]
-            raise ValidationException(e.message), None, trace
+            raise ValidationException(str(e)), None, trace
 
     @classmethod
     def check_success(cls, res):

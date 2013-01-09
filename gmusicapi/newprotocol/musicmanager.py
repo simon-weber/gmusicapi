@@ -120,15 +120,15 @@ class UploadMetadata(MmCall):
     @classmethod
     def fill_track_info(cls, filepath, file_contents):
         """Given the path and contents of a track, return a filled locker_pb2.Track.
-        On problems, return None."""
+        On problems, raise ValueError."""
         track = locker_pb2.Track()
 
         track.client_id = cls.get_track_clientid(file_contents)
 
         extension = filepath.split('.')[-1].upper()
         if not hasattr(locker_pb2.Track, extension):
-            #TODO warn - unsupported filetype
-            return None
+            raise ValueError("unsupported filetype")
+
         track.original_content_type = getattr(locker_pb2.Track, extension)
 
         track.estimated_size = os.path.getsize(filepath)
@@ -143,8 +143,7 @@ class UploadMetadata(MmCall):
         #Populate information from mutagen.
         audio = mutagen.File(filepath)
         if audio is None:
-            #TODO warn - could not open to read metadata
-            return None
+            raise ValueError("could not open to read metadata")
 
         track.original_bit_rate = int(audio.info.bitrate / 1000)
         track.duration_millis = int(audio.info.length * 1000)
