@@ -771,7 +771,7 @@ class Api(UsesLog):
         Return a 3-tuple (uploaded, matched, not_uploaded) of dictionaries:
             uploaded: {filepath: new server id}
             matched: {filepath: new server id}
-            not_uploaded: {filepath: string reason (eg 'ALREADY_UPLOADED')
+            not_uploaded: {filepath: string reason (eg 'ALREADY_UPLOADED')}
 
         :param filepaths: a list of filepaths, or a single filepath.
 
@@ -842,7 +842,7 @@ class Api(UsesLog):
             else:
                 self.log.warning("server rejected upload of '%s'. code: %s",
                                  path, res.response_code)
-                not_uploaded[path] = str(res.response_code)
+                not_uploaded[path] = 'server error code: ' + str(res.response_code)
 
         print 'to_upload:', {sid: path for (sid, (path, contents, track))
                              in to_upload.items()}

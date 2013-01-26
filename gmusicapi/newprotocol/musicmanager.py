@@ -135,19 +135,29 @@ class UploadMetadata(MmCall):
         track.estimated_size = os.path.getsize(filepath)
         track.last_modified_timestamp = int(os.path.getmtime(filepath))
 
-        #These are zeroed in my examples.
+        #These are typically zeroed in my examples.
         track.play_count = 0
         track.client_date_added = 0
         track.recent_timestamp = 0
         track.rating = locker_pb2.Track.NOT_RATED  # star rating
 
-        #Populate information from mutagen.
+        #Populate information about the encoding.
         audio = mutagen.File(filepath)
         if audio is None:
             raise ValueError("could not open to read metadata")
 
-        track.original_bit_rate = int(audio.info.bitrate / 1000)
         track.duration_millis = int(audio.info.length * 1000)
+
+        #Mutagen does not provide bitrate for FLACs; see:
+        # http://code.google.com/p/mutagen/issues/detail?id=31
+        #So, we provide an estimation (bits / milliseconds).
+        #Hopefully this doesn't make a difference on the server.
+        if extension == 'FLAC':
+            track.original_bit_rate = (track.estimated_size * 8) / track.duration_millis
+        else:
+            track.original_bit_rate = int(audio.info.bitrate / 1000)
+
+        #Populate metadata.
 
         #Title is required.
         #If it's not in the metadata, the filename will be used.
