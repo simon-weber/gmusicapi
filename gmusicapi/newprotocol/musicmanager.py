@@ -143,7 +143,7 @@ class UploadMetadata(MmCall):
         track.rating = locker_pb2.Track.NOT_RATED  # star rating
 
         #Populate information about the encoding.
-        audio = mutagen.File(filepath)
+        audio = mutagen.File(filepath, easy=True)
         if audio is None:
             raise ValueError("could not open to read metadata")
 
@@ -376,17 +376,15 @@ class ProvideSample(MmCall):
 
     @staticmethod
     @pb
-    def dynamic_data(file_contents, server_challenge, track):
+    def dynamic_data(file_contents, server_challenge, track, uploader_id):
         """Raise ValueError on problems."""
-        msg = upload_pb2.TrackSample()
+        msg = upload_pb2.UploadSampleRequest()
 
-        #Python protobuff generated interface is wonky;
-        # you can't set a msg field without setting an element of that field first.
-        msg.track.title = ""
-        msg.track.CopyFrom(track)
+        msg.uploader_id = uploader_id
 
-        msg.signed_challenge_info.signature = ""
-        msg.signed_challenge_info.CopyFrom(server_challenge)
+        sample_msg = upload_pb2.TrackSample()
+        sample_msg.track.CopyFrom(track)
+        sample_msg.signed_challenge_info.CopyFrom(server_challenge)
 
         #The sample is simply a small (usually 15 second) clip of the song,
         # transcoded into 128kbs mp3. The server dictates where the cut should be made.
@@ -414,15 +412,23 @@ class ProvideSample(MmCall):
                 raise OSError  # handle errors in except
 
         except OSError:
-            msg = 'could not create a scan and match sample with avconv. '
+            err_msg = 'could not create a scan and match sample with avconv. '
 
             if err_output is not None:
-                msg += 'Is it installed?'
+                err_msg += 'Is it installed?'
             else:
-                msg += "output: '%s'" % err_output
+                err_msg += "output: '%s'" % err_output
 
-            raise ValueError(msg)
+            raise ValueError(err_msg)
 
-        msg.sample = sample
+        else:
+            sample_msg.sample = sample
+
+        #You can provide multiple samples; I just provide one.
+        msg.track_sample.extend([sample_msg])
+
+        #debug
+        print MmCall.filter_response(msg)
+        print
 
         return msg

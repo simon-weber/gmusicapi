@@ -79,7 +79,7 @@ from gmusicapi.exceptions import (
     AlreadyLoggedIn, NotLoggedIn
 )
 from gmusicapi.newprotocol import webclient, musicmanager
-from gmusicapi.newprotocol.upload_pb2 import TrackSampleResponse
+from gmusicapi.newprotocol import upload_pb2
 
 supported_upload_filetypes = ("mp3", "m4a", "ogg", "flac", "wma")
 
@@ -645,7 +645,10 @@ class Api(UsesLog):
 
         call_name = protocol.__name__
 
-        self.log.debug("n call %s(%s %s)", call_name, args, kwargs)
+        self.log.debug("n call %s(args=%s, kwargs=%s)",
+                       call_name,
+                       [utils.truncate(a) for a in args],
+                       {k: utils.truncate(v) for (k, v) in kwargs.items()})
 
         request = protocol.build_request(*args, **kwargs)
 
@@ -808,6 +811,12 @@ class Api(UsesLog):
 
         #TODO allow metadata faking
 
+        #debug
+        for (path, contents, track) in local_info.values():
+            print path
+            print track
+            print
+
         #Upload metadata; the server tells us what to do next.
         res = self._make_call(musicmanager.UploadMetadata,
                               [track for (path, contents, track) in local_info.values()],
@@ -829,26 +838,32 @@ class Api(UsesLog):
 
             try:
                 res = self._make_call(musicmanager.ProvideSample,
-                                      contents, sample_request, track)
+                                      contents, sample_request, track, self.uploader_id)
             except ValueError as e:
                 self.log.exception("couldn't create scan and match sample for '%s'" % path)
                 not_uploaded[path] = str(e)
             else:
-                responses.append(res.metadata_response.track_sample_response)
+                responses.extend(res.sample_response.track_sample_response)
 
         #Read sample responses and prep upload requests.
         to_upload = {}  # {serverid: (path, contents, Track)}
         for res in responses:
             path, contents, track = local_info[res.client_track_id]
 
-            if res.response_code == TrackSampleResponse.MATCHED:
+            if res.response_code == upload_pb2.TrackSampleResponse.MATCHED:
                 matched[path] = res.server_track_id
-            elif res.response_code == TrackSampleResponse.UPLOAD_REQUESTED:
+            elif res.response_code == upload_pb2.TrackSampleResponse.UPLOAD_REQUESTED:
                 to_upload[res.server_track_id] = (path, contents, track)
             else:
                 self.log.warning("server rejected upload of '%s'. code: %s",
                                  path, res.response_code)
-                not_uploaded[path] = 'server error code: ' + str(res.response_code)
+
+                #Get the symbolic name of the response code enum:
+                enum_desc = upload_pb2._TRACKSAMPLERESPONSE.enum_types[0]
+                res_name = enum_desc.values_by_number[res.response_code].name
+                #<complaint about terrible protobuf interface here>
+
+                not_uploaded[path] = "server error %s: %s" % (res.response_code, res_name)
 
         print 'to_upload:', {sid: path for (sid, (path, contents, track))
                              in to_upload.items()}

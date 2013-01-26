@@ -27,8 +27,8 @@
 
 """Utility functions used across api code."""
 
-import re
 from htmlentitydefs import name2codepoint
+import re
 
 import mutagen
 from decorator import decorator
@@ -37,9 +37,14 @@ import chardet
 from apilogging import LogController
 log = LogController.get_logger("utils")
 
-def get_track_info(filename):
-    """Return a dictionary with keys matching upload_pb2.Track."""
-    pass
+
+def truncate(x, max_chars=100):
+    """Truncate an element for logging."""
+    if isinstance(x, basestring) and len(x) > 100:
+        return x[:max_chars] + '...'
+
+    return x
+
 
 def guess_str_encoding(s):
     """Return a tuple (guessed encoding, confidence)."""
