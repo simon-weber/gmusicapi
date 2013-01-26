@@ -820,19 +820,25 @@ class Api(UsesLog):
             self.log.warning('UploadMetadata res did not have metadata_response')
             return uploaded, matched, not_uploaded
 
-        #Handle scan and match sample requests.
-        for client_id in (e.challenge_info.client_track_id for e in md_res.signed_challenge_info):
-            #one entry for each track that the server wants a sample for
-            #TODO scan and match
-            path, contents, track = local_info[client_id]
-            not_uploaded[path] = (
-                'the server asked for a scan and match sample,'
-                ' but scan and match is not implemented yet'
-            )
+        responses = [r for r in md_res.track_sample_response]
+        sample_requests = [req for req in md_res.signed_challenge_info]
+
+        #Send scan and match samples if requested.
+        for sample_request in sample_requests:
+            path, contents, track = local_info[sample_request.challenge_info.client_track_id]
+
+            try:
+                res = self._make_call(musicmanager.ProvideSample,
+                                      contents, sample_request, track)
+            except ValueError as e:
+                self.log.exception("couldn't create scan and match sample for '%s'" % path)
+                not_uploaded[path] = str(e)
+            else:
+                responses.append(res.metadata_response.track_sample_response)
 
         #Read sample responses and prep upload requests.
         to_upload = {}  # {serverid: (path, contents, Track)}
-        for res in md_res.track_sample_response:
+        for res in responses:
             path, contents, track = local_info[res.client_track_id]
 
             if res.response_code == TrackSampleResponse.MATCHED:
@@ -846,9 +852,6 @@ class Api(UsesLog):
 
         print 'to_upload:', {sid: path for (sid, (path, contents, track))
                              in to_upload.items()}
-
-        if not to_upload:
-            return uploaded, matched, not_uploaded
 
         #Send upload requests.
         for server_id, (path, contents, track) in to_upload.items():

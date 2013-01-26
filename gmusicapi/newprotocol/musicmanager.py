@@ -7,6 +7,7 @@ import base64
 import hashlib
 import json
 import os
+import subprocess
 
 from decorator import decorator
 import mutagen
@@ -86,7 +87,7 @@ class AuthenticateUploader(MmCall):
 class UploadMetadata(MmCall):
     static_url = MmCall._base_url + 'metadata'
 
-    static_params = {'version': 1}.items()
+    static_params = {'version': 1}
 
     @staticmethod
     def get_track_clientid(file_contents):
@@ -211,7 +212,7 @@ class GetUploadJobs(MmCall):
     #TODO
     static_url = MmCall._base_url + 'getjobs'
 
-    static_params = {'version': 1}.items()
+    static_params = {'version': 1}
 
     @classmethod
     def check_success(cls, res):
@@ -364,3 +365,64 @@ class UploadFile(MmCall):
     @staticmethod
     def dynamic_data(session_url, content_type, audio):
         return audio
+
+
+class ProvideSample(MmCall):
+    """Give the server a scan and match sample."""
+
+    static_method = 'POST'
+    static_params = {'version': 1}
+    static_url = 'https://android.clients.google.com/upsj/sample'
+
+    @staticmethod
+    @pb
+    def dynamic_data(file_contents, server_challenge, track):
+        """Raise ValueError on problems."""
+        msg = upload_pb2.TrackSample()
+
+        #Python protobuff generated interface is wonky;
+        # you can't set a msg field without setting an element of that field first.
+        msg.track.title = ""
+        msg.track.CopyFrom(track)
+
+        msg.signed_challenge_info.signature = ""
+        msg.signed_challenge_info.CopyFrom(server_challenge)
+
+        #The sample is simply a small (usually 15 second) clip of the song,
+        # transcoded into 128kbs mp3. The server dictates where the cut should be made.
+        try:
+            err_output = None
+            sample_spec = server_challenge.challenge_info  # convenience
+
+            #avconv with input on stdin, output to stdout
+            p = subprocess.Popen(
+                ['avconv',
+                 '-i', 'pipe:0',
+                 '-t', str(sample_spec.duration_millis / 1000),
+                 '-ss', str(sample_spec.start_millis / 1000),
+                 '-ab', '128k',
+                 #don't output id3 headers
+                 '-f', 's16be',
+                 '-c', 'libmp3lame',
+                 'pipe:1'],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE,
+            )
+
+            sample, err_output = p.communicate(input=file_contents)
+
+            if p.returncode != 0:
+                raise OSError  # handle errors in except
+
+        except OSError:
+            msg = 'could not create a scan and match sample with avconv. '
+
+            if err_output is not None:
+                msg += 'Is it installed?'
+            else:
+                msg += "output: '%s'" % err_output
+
+            raise ValueError(msg)
+
+        msg.sample = sample
+
+        return msg

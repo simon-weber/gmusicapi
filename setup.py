@@ -60,7 +60,7 @@ This api is not supported nor endorsed by Google, and could break at any time.
         "Operating System :: OS Independent",
         "Topic :: Multimedia :: Sound/Audio",
         "Topic :: Software Development :: Libraries :: Python Modules"
-        ],
+    ],
     include_package_data=True,
     zip_safe=False,
 )
