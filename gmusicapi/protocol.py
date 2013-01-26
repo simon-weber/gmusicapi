@@ -286,6 +286,11 @@ class MetadataExpectations(object):
         mutable = False
         optional = True
 
+    class bitrate(_MetadataExpectation):
+        mutable = False
+        optional = True
+        val_type = "integer"
+
 
     #Dependent metadata:
     class title(_MetadataExpectation):
