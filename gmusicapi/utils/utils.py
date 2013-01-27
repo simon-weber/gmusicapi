@@ -38,21 +38,38 @@ from apilogging import LogController
 log = LogController.get_logger("utils")
 
 
-def truncate(x, max_els=100):
-    """Return a 'shorter' truncated x of the same type."""
+def truncate(x, max_els=100, recurse_levels=0):
+    """Return a 'shorter' truncated x of the same type.
+    recurse_levels is only valid for homogeneous lists/tuples.
+    max_els ignored for song dictionaries."""
+
+    #Coerce tuple to list to ease truncation.
+    is_tuple = False
+    if isinstance(x, tuple):
+        is_tuple = True
+        x = list(x)
+
     try:
         if len(x) > max_els:
             if isinstance(x, basestring):
                 return x[:max_els] + '...'
 
-            if isinstance(x, list):
-                return x[:max_els] + ['...']
-
-            if isinstance(x, tuple):
-                return x[:max_els] + ('...',)
-
             if isinstance(x, dict):
-                return dict(x.items()[:max_els] + [('...', '...')])
+                if 'id' in x and 'titleNorm' in x:
+                    #assume to be a song dict
+                    trunc = {k: x.get(k) for k in ['title', 'artist', 'album']}
+                    trunc['...'] = '...'
+                    return trunc
+                else:
+                    return dict(x.items()[:max_els] + [('...', '...')])
+
+            if isinstance(x, list):
+                trunc = x[:max_els] + ['...']
+                if recurse_levels > 0:
+                    trunc = [truncate(e, recurse_levels - 1) for e in trunc[:-1]]
+                if is_tuple:
+                    trunc = tuple(trunc)
+                return trunc
 
     except TypeError:
         #does not have len

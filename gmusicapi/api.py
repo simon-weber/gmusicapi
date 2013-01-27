@@ -315,14 +315,16 @@ class Api(UsesLog):
         return library
 
     def get_playlist_songs(self, playlist_id):
-        """Returns a list of `song dictionaries`__, which include `playlistEntryId` keys for the given playlist.
+        """Returns a list of `song dictionaries`__, which include `playlistEntryId` keys
+        for the given playlist.
 
         :param playlist_id: id of the playlist to load.
 
         __ `GM Metadata Format`_
         """
 
-        return self._wc_call("loadplaylist", playlist_id)["playlist"]
+        res = self._make_call(webclient.GetPlaylistSongs, playlist_id)
+        return res['playlist']
 
     def get_all_playlist_ids(self, auto=True, user=True, always_id_lists=False):
         """Returns a dictionary mapping playlist types to dictionaries of ``{"<playlist name>": "<playlist id>"}`` pairs.
@@ -343,21 +345,21 @@ class Api(UsesLog):
 
         playlists = {}
 
-        res = self._wc_call("loadplaylist", "all")
-
         if auto:
             playlists['auto'] = self._get_auto_playlists()
         if user:
+            res = self._make_call(webclient.GetPlaylistSongs, 'all')
             playlists['user'] = self._playlist_list_to_dict(res['playlists'])
 
         #Break down singleton lists if desired.
         if not always_id_lists:
             for p_dict in playlists.itervalues():
                 for name, id_list in p_dict.iteritems():
-                    if len(id_list) == 1: p_dict[name]=id_list[0]
-        
+                    if len(id_list) == 1:
+                        p_dict[name] = id_list[0]
+
         return playlists
-        
+
     def _playlist_list_to_dict(self, pl_list):
         ret = {}
 

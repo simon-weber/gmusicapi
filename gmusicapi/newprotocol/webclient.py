@@ -149,6 +149,12 @@ class AddToPlaylist(WcCall):
             )
         }
 
+    @staticmethod
+    def filter_response(msg):
+        filtered = copy.copy(msg)
+        filtered['songIds'] = ["<%s songs>" % len(filtered['songIds'])]
+        return filtered
+
 
 class ChangePlaylistName(WcCall):
     """Changes the name of a playlist."""
@@ -223,6 +229,12 @@ class ChangePlaylistOrder(WcCall):
             )
         }
 
+    @staticmethod
+    def filter_response(msg):
+        filtered = copy.copy(msg)
+        filtered['movedSongIds'] = ["<%s songs>" % len(filtered['movedSongIds'])]
+        return filtered
+
 
 class DeletePlaylist(WcCall):
     """Delete a playlist."""
@@ -283,6 +295,12 @@ class DeleteSongs(WcCall):
             )
         }
 
+    @staticmethod
+    def filter_response(msg):
+        filtered = copy.copy(msg)
+        filtered['deleteIds'] = ["<%s songs>" % len(filtered['deleteIds'])]
+        return filtered
+
 
 class GetLibrarySongs(WcCall):
     """Loads tracks from the library.
@@ -320,9 +338,54 @@ class GetLibrarySongs(WcCall):
 
     @staticmethod
     def filter_response(msg):
-        """Don't log all songs, just a few."""
+        """Only log the number of songs."""
         filtered = copy.copy(msg)
-        filtered['playlist'] = utils.truncate(msg['playlist'], max_els=2)
+        filtered['playlist'] = ["<%s songs>" % len(filtered['playlist'])]
+
+        return filtered
+
+
+class GetPlaylistSongs(WcCall):
+    """Loads tracks from a playlist.
+    Tracks include playlistEntryIds.
+    """
+
+    static_method = 'POST'
+    static_url = service_url + 'loadplaylist'
+
+    @classmethod
+    def dynamic_data(cls, playlist_id):
+        """
+        :param playlist_id: id to retrieve from, or 'all' to get all playlists.
+        """
+
+        #This call has a dynamic response schema based on the request.
+
+        if playlist_id == 'all':
+            cls._res_schema = {
+                "type": "object",
+                "properties": {
+                    "playlists": pl_array,
+                },
+                "additionalProperties": False
+            }
+
+            return {'json': json.dumps({})}
+
+        else:
+            cls._res_schema = pl_schema
+            return {'json': json.dumps({'id': playlist_id})}
+
+    @staticmethod
+    def filter_response(msg):
+        """Log number of songs/playlists."""
+        filtered = copy.copy(msg)
+
+        if 'playlists' in msg:
+            filtered['playlists'] = ["<%s playlists>" % len(filtered['playlists'])]
+
+        else:
+            filtered['playlist'] = ["<%s songs>" % len(filtered['playlist'])]
 
         return filtered
 
