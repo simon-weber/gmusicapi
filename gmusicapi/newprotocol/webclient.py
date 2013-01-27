@@ -1,16 +1,53 @@
 """Calls made by the web client."""
 
+import copy
 import json
 import sys
 
 import validictory
 
 from gmusicapi.exceptions import CallFailure, ValidationException
+from gmusicapi.protocol import MetadataExpectations  # TODO migrate
 from gmusicapi.newprotocol.shared import Call
 from gmusicapi.utils import utils
 
 base_url = 'https://play.google.com/music/'
 service_url = base_url + 'services/'
+
+#Shared response schemas, built to include metadata expectations.
+song_schema = {
+    "type": "object",
+    "properties": {
+        name: expt.get_schema() for
+        name, expt in MetadataExpectations.get_all_expectations().items()
+    },
+    #don't allow metadata not in expectations
+    "additionalProperties": False
+}
+
+song_array = {
+    "type": "array",
+    "items": song_schema
+}
+
+pl_schema = {
+    "type": "object",
+    "properties": {
+        "continuation": {"type": "boolean"},
+        "playlist": song_array,
+        "playlistId": {"type": "string"},
+        "unavailableTrackCount": {"type": "integer"},
+        #only appears when loading multiple playlists
+        "title": {"type": "string", "required": False},
+        "continuationToken": {"type": "string", "required": False}
+    },
+    "additionalProperties": False
+}
+
+pl_array = {
+    "type": "array",
+    "items": pl_schema
+}
 
 
 class WcCall(Call):
@@ -245,6 +282,49 @@ class DeleteSongs(WcCall):
                 {"songIds": song_ids, "entryIds": entry_ids, "listId": playlist_id}
             )
         }
+
+
+class GetLibrarySongs(WcCall):
+    """Loads tracks from the library.
+    Since libraries can have many tracks, GM gives them back in chunks.
+    Chunks will send a continuation token to get the next chunk.
+    The first request needs no continuation token.
+    The last response will not send a token.
+    """
+
+    static_method = 'POST'
+    static_url = service_url + 'loadalltracks'
+
+    _res_schema = {
+        "type": "object",
+        "properties": {
+            "continuation": {"type": "boolean"},
+            "differentialUpdate": {"type": "boolean"},
+            "playlistId": {"type": "string"},
+            "requestTime": {"type": "integer"},
+            "playlist": song_array,
+        },
+        "additionalProperties": {
+            "continuationToken": {"type": "string"}}
+    }
+
+    @staticmethod
+    def dynamic_data(cont_token=None):
+        """:param cont_token: (optional) token to get the next library chunk."""
+        if not cont_token:
+            req = {}
+        else:
+            req = {"continuationToken": cont_token}
+
+        return {'json': json.dumps(req)}
+
+    @staticmethod
+    def filter_response(msg):
+        """Don't log all songs, just a few."""
+        filtered = copy.copy(msg)
+        filtered['playlist'] = utils.truncate(msg['playlist'], max_els=2)
+
+        return filtered
 
 
 class ReportBadSongMatch(WcCall):

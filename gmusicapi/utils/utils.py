@@ -38,10 +38,25 @@ from apilogging import LogController
 log = LogController.get_logger("utils")
 
 
-def truncate(x, max_chars=100):
-    """Truncate an element for logging."""
-    if isinstance(x, basestring) and len(x) > 100:
-        return x[:max_chars] + '...'
+def truncate(x, max_els=100):
+    """Return a 'shorter' truncated x of the same type."""
+    try:
+        if len(x) > max_els:
+            if isinstance(x, basestring):
+                return x[:max_els] + '...'
+
+            if isinstance(x, list):
+                return x[:max_els] + ['...']
+
+            if isinstance(x, tuple):
+                return x[:max_els] + ('...',)
+
+            if isinstance(x, dict):
+                return dict(x.items()[:max_els] + [('...', '...')])
+
+    except TypeError:
+        #does not have len
+        pass
 
     return x
 

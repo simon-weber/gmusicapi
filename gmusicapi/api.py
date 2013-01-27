@@ -297,18 +297,18 @@ class Api(UsesLog):
 
     def get_all_songs(self):
         """Returns a list of `song dictionaries`__.
-        
+
         __ `GM Metadata Format`_
         """
 
         library = []
 
-        lib_chunk = self._wc_call("loadalltracks")
-    
+        lib_chunk = self._make_call(webclient.GetLibrarySongs)
+
         while 'continuationToken' in lib_chunk:
-            library += lib_chunk['playlist'] #misleading name; this is the entire chunk
-            
-            lib_chunk = self._wc_call("loadalltracks", lib_chunk['continuationToken'])
+            library += lib_chunk['playlist']  # 'playlist' is misleading; this is the entire chunk
+
+            lib_chunk = self._make_call(webclient.GetLibrarySongs, lib_chunk['continuationToken'])
 
         library += lib_chunk['playlist']
 
