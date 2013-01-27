@@ -419,6 +419,37 @@ class ChangeSongMetadata(WcCall):
         return filtered
 
 
+class GetDownloadInfo(WcCall):
+    """Get download links and counts for songs."""
+
+    static_method = 'POST'
+    static_url = service_url + 'multidownload'
+
+    _res_schema = {
+        "type": "object",
+        "properties": {
+            "downloadCounts": {
+                "type": "object",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "integer"}
+                    }
+                }
+            },
+            "url": {"type": "string"}
+        },
+        "additionalProperties": False
+    }
+
+    @staticmethod
+    def dynamic_data(song_ids):
+        """
+        :param: (list) song_ids
+        """
+        return {'json': json.dumps({'songIds': song_ids})}
+
+
 class ReportBadSongMatch(WcCall):
     """Request to signal the uploader to reupload a matched track."""
 

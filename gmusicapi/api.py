@@ -366,36 +366,38 @@ class Api(UsesLog):
         ret = {}
 
         for name, pid in ((p["title"], p["playlistId"]) for p in pl_list):
-            if not name in ret: ret[name] = []
+            if not name in ret:
+                ret[name] = []
             ret[name].append(pid)
 
         return ret
-        
+
     def _get_auto_playlists(self):
         """For auto playlists, returns a dictionary which maps autoplaylist name to id."""
-        
+
         #Auto playlist ids are hardcoded in the wc javascript.
-        #If Google releases Music internationally, this will probably be broken.
+        #If Google releases Music internationally, this might be broken.
         #When testing, an incorrect name here will be caught.
-        return {"Thumbs up": "auto-playlist-thumbs-up", 
+        return {"Thumbs up": "auto-playlist-thumbs-up",
                 "Last added": "auto-playlist-recent",
                 "Free and purchased": "auto-playlist-promo"}
 
     def get_song_download_info(self, song_id):
         """Returns a tuple ``("<download url>", <download count>)``.
 
-        GM allows 2 downloads per song. This call does not register a download - that is done when the download url is retrieved.
+        GM allows 2 downloads per song.
+        This call does not register a download - that is done when the download url is retrieved.
 
         :param song_id: a single song id.
         """
 
-        #The protocol expects a list of songs - could extend with accept_singleton
-        info = self._wc_call("multidownload", [song_id])
+        #TODO the protocol expects a list of songs - could extend with accept_singleton
+        info = self._make_call(webclient.GetDownloadInfo, [song_id])
 
         return (info["url"], info["downloadCounts"][song_id])
 
     def get_stream_url(self, song_id):
-        """Returns a url that points to a streamable version of this song. 
+        """Returns a url that points to a streamable version of this song.
 
         While this call requires authentication, listening to the returned url does not. The url expires after about a minute.
 
