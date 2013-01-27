@@ -187,6 +187,32 @@ class ChangePlaylistOrder(WcCall):
         }
 
 
+class DeletePlaylist(WcCall):
+    """Delete a playlist."""
+
+    static_method = 'POST'
+    static_url = service_url + 'deleteplaylist'
+
+    _res_schema = {
+        "type": "object",
+        "properties": {
+            "deleteId": {"type": "string"}
+        },
+        "additionalProperties": False
+    }
+
+    @staticmethod
+    def dynamic_data(playlist_id):
+        """
+        :param playlist_id: id of the playlist to delete.
+        """
+        return {
+            'json': json.dumps(
+                {"id": playlist_id}
+            )
+        }
+
+
 class ReportBadSongMatch(WcCall):
     """Request to signal the uploader to reupload a matched track."""
 

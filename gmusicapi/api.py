@@ -279,7 +279,9 @@ class Api(UsesLog):
         :param playlist_id: id of the playlist to delete.
         """
 
-        return self._wc_call("deleteplaylist", playlist_id)['deleteId']
+        res = self._make_call(webclient.DeletePlaylist, playlist_id)
+
+        return res['deleteId']
 
     @utils.accept_singleton(basestring)
     @utils.empty_arg_shortcircuit()
