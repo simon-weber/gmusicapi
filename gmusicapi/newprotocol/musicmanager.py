@@ -41,10 +41,10 @@ class MmCall(Call):
     res_msg_type = upload_pb2.UploadResponse
 
     @classmethod
-    def parse_response(cls, text):
+    def parse_response(cls, response):
         """Parse the cls.res_msg_type proto msg."""
         res_msg = cls.res_msg_type()
-        res_msg.ParseFromString(text)
+        res_msg.ParseFromString(response.content)
 
         #TODO do something with ParseError
 
@@ -64,8 +64,8 @@ class AuthenticateUploader(MmCall):
     def check_success(cls, res):
         if res.HasField('auth_status') and res.auth_status != upload_pb2.UploadResponse.OK:
             raise CallFailure(
-                "Two accounts have been registered on this machine."
-                " Only 2 are allowed; deauthorize this machine to continue."
+                "Two accounts have been registered for this uploader_id/machine."
+                " Only 2 are allowed; deauthorize this uploader_id/machine to continue."
                 " See http://goo.gl/O6xe7 for more information.",
                 cls.__name__)
 
@@ -127,7 +127,11 @@ class UploadMetadata(MmCall):
 
         track.client_id = cls.get_track_clientid(file_contents)
 
-        extension = filepath.split('.')[-1].upper()
+        extension = os.path.splitext(filepath)[1].upper()
+        if extension:
+            #Trim leading period if it exists (ie extension not empty).
+            extension = extension[1:]
+
         if not hasattr(locker_pb2.Track, extension):
             raise ValueError("unsupported filetype")
 
@@ -146,24 +150,39 @@ class UploadMetadata(MmCall):
         audio = mutagen.File(filepath, easy=True)
         if audio is None:
             raise ValueError("could not open to read metadata")
+        elif isinstance(audio, mutagen.asf.ASF):
+            #WMA entries store more info than just the value.
+            #Monkeypatch in a dict {key: value} to keep interface the same for all filetypes.
+            asf_dict = {k: [ve.value for ve in v] for (k, v) in audio.tags.as_dict().items()}
+            audio.tags = asf_dict
+
+        print filepath
+        print audio.__class__
 
         track.duration_millis = int(audio.info.length * 1000)
 
-        #Mutagen does not provide bitrate for FLACs; see:
-        # http://code.google.com/p/mutagen/issues/detail?id=31
-        #So, we provide an estimation (bits / milliseconds).
-        #Hopefully this doesn't make a difference on the server.
-        if extension == 'FLAC':
-            track.original_bit_rate = (track.estimated_size * 8) / track.duration_millis
-        else:
-            track.original_bit_rate = int(audio.info.bitrate / 1000)
+        try:
+            print 'info bitrate: ', audio.info.bitrate
+            bitrate = int(audio.info.bitrate / 1000)
+        except AttributeError:
+            #mutagen doesn't provide bitrate for FLAC and OGGFLAC.
+            #Provide an estimation instead. This shouldn't matter too much;
+            # the bitrate will always be > 320, which is the highest scan and match quality.
+            bitrate = (track.estimated_size * 8) / track.duration_millis
+            print 'estimating bitrate!', bitrate
+
+        track.original_bit_rate = bitrate
 
         #Populate metadata.
 
         #Title is required.
         #If it's not in the metadata, the filename will be used.
         if "title" in audio:
-            track.title = audio["title"][0]
+            title = audio['title'][0]
+            if isinstance(title, mutagen.asf.ASFUnicodeAttribute):
+                title = title.value
+
+            track.title = title
         else:
             #attempt to handle non-ascii path encodings.
             enc = utils.guess_str_encoding(filepath)[0]
@@ -243,8 +262,8 @@ class GetUploadSession(MmCall):
     static_headers = {'USER-AGENT': 'Music Manager (1, 0, 24, 7712 - Windows)'}
 
     @classmethod
-    def parse_response(cls, text):
-        return cls._parse_json(text)
+    def parse_response(cls, response):
+        return cls._parse_json(response.text)
 
     @staticmethod
     def filter_response(res):
@@ -346,8 +365,8 @@ class UploadFile(MmCall):
     static_headers = {'USER-AGENT': 'Music Manager (1, 0, 24, 7712 - Windows)'}
 
     @classmethod
-    def parse_response(cls, text):
-        return cls._parse_json(text)
+    def parse_response(cls, response):
+        return cls._parse_json(response.text)
 
     @staticmethod
     def filter_response(res):

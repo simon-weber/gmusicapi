@@ -83,8 +83,8 @@ class WcCall(Call):
                 cls.__name__)
 
     @classmethod
-    def parse_response(cls, text):
-        return cls._parse_json(text)
+    def parse_response(cls, response):
+        return cls._parse_json(response.text)
 
 
 class AddPlaylist(WcCall):

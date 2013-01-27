@@ -174,18 +174,15 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
     def test_change_playlist(self):
         self.run_steps("cpl")
 
-
     def updel_1_upload(self):
-        """Upload some test files."""
+        """Upload test files."""
 
-        some_files = random.sample(self.test_filenames, 
-                                   random.randrange(len(self.test_filenames)))
-
-        uploaded, matched, not_uploaded = self.api.upload(some_files)
-        self.assertEqual(len(not_uploaded), 0)
+        uploaded, matched, not_uploaded = self.api.upload(self.test_filenames)
+        if not_uploaded:
+            self.fail("upload failed: %s" % not_uploaded)
 
         #A bit messy; need to pass the ids on to the next step.
-        self.uploaded_ids = result.values()
+        self.uploaded_ids = uploaded.values() + matched.values()
 
     def updel_1a_get_dl_info(self):
         """Check how many times the newly uploaded songs have been
@@ -199,17 +196,13 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         for info_tuple in info_tuples:
             self.assertEqual(info_tuple[1], 0)
 
-
     def updel_2_delete(self):
         """Delete the uploaded test files."""
         self.api.delete_songs(self.uploaded_ids)
-
         del self.uploaded_ids
 
-    #def test_up_deletion(self):
-    #    self.run_steps("updel_")
-
-        
+    def test_up_deletion(self):
+        self.run_steps("updel_")
 
     #---
     #   Non-monolithic tests:

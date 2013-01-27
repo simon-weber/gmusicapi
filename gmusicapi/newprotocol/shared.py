@@ -78,24 +78,23 @@ class Call(object):
     The client Call interface is:
 
      req = SomeCall.build_request(some, params)
-     req.prepare() # this is specific to requests.Request
-
-     response_text = <send off the request somehow>
+     prep_req = req.prepare()
+     response = <requests.Session.send(prep_req)>
 
      try:
-         res = SomeCall.parse_response(response_text)
+         msg = SomeCall.parse_response(response)
      except ParseException
          ...
 
      try:
-         SomeCall.validate(res)
-         SomeCall.check_success(res)
+         SomeCall.validate(msg)
+         SomeCall.check_success(msg)
      except ValidationException:
          ...
      except CallFailure:
          ...
 
-     #res is python data, the call succeeded, and the response was formatted as expected
+     #msg is python data, the call succeeded, and the response was formatted as expected
 
 
     Calls define how to build their requests through static and dynamic data.
@@ -160,16 +159,16 @@ class Call(object):
     send_sso = False
 
     @classmethod
-    def parse_response(cls, text):
-        """Parses http text to data for call responses."""
+    def parse_response(cls, response):
+        """Parses a requests.Response to data."""
         raise NotImplementedError
 
     @classmethod
-    def validate(cls, res):
+    def validate(cls, msg):
         pass
 
     @classmethod
-    def check_success(cls, res):
+    def check_success(cls, msg):
         pass
 
     @classmethod

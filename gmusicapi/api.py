@@ -62,7 +62,6 @@ except ImportError:
 
 import requests
 
-from gmusicapi.protocol import MM_Protocol
 from gmusicapi.utils import utils
 from gmusicapi.utils.apilogging import UsesLog
 from gmusicapi.gmtools import tools
@@ -89,8 +88,6 @@ class Api(UsesLog):
         self.suppress_failure = suppress_failure
 
         self.session = PlaySession()
-
-        self.mm_protocol = MM_Protocol()
 
         self.uploader_id = None
         self.uploader_name = None
@@ -174,6 +171,7 @@ class Api(UsesLog):
 
             except CallFailure:
                 self.log.exception("could not authenticate for uploading")
+                self.session.logout()
                 return False
 
         return True
@@ -669,32 +667,29 @@ class Api(UsesLog):
         if protocol.__bases__[0].__name__ == 'WcCall':
             response = self.session.send_wc_request(request,
                                                     send_xt=protocol.send_xt)
-            #text = response.read()
-            text = response.text
         else:
             response = self.session.send_mm_request(request)
-            text = response.content
 
         #TODO check return code
 
         try:
-            res = protocol.parse_response(text)
+            msg = protocol.parse_response(response)
         except ParseException:
-            self.log.exception("couldn't parse %s response: %r", call_name, text)
+            self.log.exception("couldn't parse %s response: %r", call_name, response.content)
             if not self.suppress_failure:
                 raise CallFailure("the server's response could not be understood."
                                   " The call may still have succeeded, but it's unlikely.",
                                   call_name)
             else:
                 #TODO what happens now?
-                res = None
+                msg = None
 
-        self.log.debug(protocol.filter_response(res))
+        self.log.debug(protocol.filter_response(msg))
 
         try:
             #order is important; validate only has a schema for a successful response
-            protocol.check_success(res)
-            protocol.validate(res)
+            protocol.check_success(msg)
+            protocol.validate(msg)
         except CallFailure:
             if not self.suppress_failure:
                 raise
@@ -705,10 +700,10 @@ class Api(UsesLog):
         except ValidationException:
             self.log.exception(
                 "please report the following unknown response format for %s: %r",
-                call_name, res
+                call_name, msg
             )
 
-        return res
+        return msg
 
     #---
     #   Api features supported by the Music Manager interface:
@@ -956,7 +951,6 @@ class PlaySession(object):
         self.logged_in = self._get_cookies()
 
         return self.logged_in
-
 
     def logout(self):
         """
