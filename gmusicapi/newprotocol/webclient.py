@@ -127,9 +127,62 @@ class ChangePlaylistName(WcCall):
 
     @staticmethod
     def dynamic_data(playlist_id, new_name):
+        """
+        :param playlist_id: id of the playlist to rename.
+        :param new_title: desired title.
+        """
         return {
             'json': json.dumps(
                 {"playlistId": playlist_id, "playlistName": new_name}
+            )
+        }
+
+
+class ChangePlaylistOrder(WcCall):
+    """Reorder existing tracks in a playlist."""
+
+    static_method = 'POST'
+    static_url = service_url + 'changeplaylistorder'
+
+    _res_schema = {
+        "type": "object",
+        "properties": {
+            "afterEntryId": {"type": "string", "blank": True},
+            "playlistId": {"type": "string"},
+            "movedSongIds": {
+                "type": "array",
+                "items": {"type": "string"}
+            }
+        },
+        "additionalProperties": False
+    }
+
+    @staticmethod
+    def dynamic_data(playlist_id, song_ids_moving, entry_ids_moving,
+                     after_entry_id=None, before_entry_id=None):
+        """
+        :param playlist_id: id of the playlist getting reordered.
+        :param song_ids_moving: a list of consecutive song ids. Matches entry_ids_moving.
+        :param entry_ids_moving: a list of consecutive entry ids to move. Matches song_ids_moving.
+        :param after_entry_id: the entry id to place these songs after. Default first position.
+        :param before_entry_id: the entry id to place these songs before. Default last position.
+        """
+
+        # empty string means first/last position
+        if after_entry_id is None:
+            after_entry_id = ""
+        if before_entry_id is None:
+            before_entry_id = ""
+
+        return {
+            'json': json.dumps(
+                {
+                    "playlistId": playlist_id,
+                    "movedSongIds": song_ids_moving,
+                    "movedEntryIds": entry_ids_moving,
+                    "afterEntryId": after_entry_id,
+                    "beforeEntryId": before_entry_id
+                }
             )
         }
 

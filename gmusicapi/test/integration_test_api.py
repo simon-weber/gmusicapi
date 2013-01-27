@@ -136,6 +136,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         #Apply random modifications.
         delete, add_dupe, add_blank, reorder = [random.choice([True, False]) for i in xrange(4)]
+        reorder = True
 
         if tracks and delete:
             self.log.debug("deleting tracks")
@@ -171,8 +172,8 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
         
-    #def test_change_playlist(self):
-    #    self.run_steps("cpl")
+    def test_change_playlist(self):
+        self.run_steps("cpl")
 
 
     def updel_1_upload(self):

@@ -207,7 +207,7 @@ class Api(UsesLog):
         :param new_title: desired title.
         """
 
-        self._wc_call("modifyplaylist", playlist_id, new_name)
+        self._make_call(webclient.ChangePlaylistName, playlist_id, new_name)
 
         return playlist_id  # the call actually doesn't return anything.
 
@@ -272,7 +272,6 @@ class Api(UsesLog):
         """
 
         return self._make_call(webclient.AddPlaylist, name)['id']
-        #return self._wc_call("addplaylist", name)['id']
 
     def delete_playlist(self, playlist_id):
         """Deletes a playlist. Returns the deleted id.
@@ -450,6 +449,7 @@ class Api(UsesLog):
 
             backup_id = self.copy_playlist(playlist_id, playlist_name + "_gmusicapi_backup")
 
+
         #Ensure CallFailures do not get suppressed in our subcalls.
         #Did not unsuppress the above copy_playlist call, since we should fail 
         # out if we can't ensure the backup was made.
@@ -501,7 +501,9 @@ class Api(UsesLog):
                 # able to get around this by messing with afterEntry and beforeEntry parameters.
                 sids, eids = zip(*tools.get_id_pairs(desired_playlist[::-1]))
 
-                if sids: self._wc_call("changeplaylistorder", playlist_id, sids, eids)
+
+                if sids:
+                    self._make_call(webclient.ChangePlaylistOrder, playlist_id, sids, eids)
 
                 ##Clean up the backup.
                 if safe: self.delete_playlist(backup_id)
@@ -656,6 +658,7 @@ class Api(UsesLog):
 
         request = protocol.build_request(*args, **kwargs)
 
+        #debug
         print
         print request.method, request.url
         print request.headers
@@ -870,8 +873,6 @@ class Api(UsesLog):
 
                 not_uploaded[path] = "server error %s: %s" % (res.response_code, res_name)
 
-        print 'to_upload:', {sid: path for (sid, (path, contents, track))
-                             in to_upload.items()}
 
         #Send upload requests.
         for server_id, (path, contents, track) in to_upload.items():
