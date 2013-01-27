@@ -475,6 +475,44 @@ class GetStreamUrl(WcCall):
         }
 
 
+class Search(WcCall):
+    """Fuzzily search for songs, artists and albums.
+    Not needed for most use-cases; local search is usually faster and more flexible"""
+
+    static_method = 'POST'
+    static_url = service_url + 'search'
+
+    _res_schema = {
+        "type": "object",
+        "properties": {
+            "results": {
+                "type": "object",
+                "properties": {
+                    "artists": song_array,  # hits on artists
+                    "songs": song_array,    # hits on tracks
+                    "albums": {             # hits on albums; no track info returned
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "artistName": {"type": "string", "blank": True},
+                                "imageUrl": {"type": "string", "required": False},
+                                "albumArtist": {"type": "string", "blank": True},
+                                "albumName": {"type": "string"},
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "additionalProperties": False
+    }
+
+    @staticmethod
+    def dynamic_data(query):
+        return {'json': json.dumps({'q': query})}
+
+
 class ReportBadSongMatch(WcCall):
     """Request to signal the uploader to reupload a matched track."""
 

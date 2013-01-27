@@ -607,20 +607,21 @@ class Api(UsesLog):
         res = self._make_call(webclient.DeleteSongs, sids, playlist_id, eids)
 
         return res['deleteIds']
-    
-        
+
     def search(self, query):
-        """Searches for songs and albums.
+        """Queries the server for songs and albums.
+        Generally, this isn't needed; just get all tracks and locally search over them.
 
         :param query: the search query.
 
-        Search results are organized based on how they were found. Hits on an album title return information on that album. Here is an example album result::
+        Search results are organized based on how they were found.
+        Hits on an album title return information on that album. Here is an example album result::
 
             {'artistName': 'The Cat Empire',
              'imageUrl': '<url>',
-             'albumArtist': 'The Cat Empire', 
+             'albumArtist': 'The Cat Empire',
              'albumName': 'Cities: The Cat Empire Project'}
-        
+
         Hits on song or artist name return the matching `song dictionary`__.
 
         The responses are returned in a dictionary, arranged by hit type::
@@ -634,7 +635,7 @@ class Api(UsesLog):
         __ `GM Metadata Format`_
         """
 
-        res = self._wc_call("search", query)['results']
+        res = self._make_call(webclient.Search, query)['results']
 
         return {"album_hits": res["albums"],
                 "artist_hits": res["artists"],
