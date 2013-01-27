@@ -9,12 +9,12 @@ from gmusicapi.exceptions import CallFailure, ValidationException
 from gmusicapi.newprotocol.shared import Call
 from gmusicapi.utils import utils
 
+base_url = 'https://play.google.com/music/'
+service_url = base_url + 'services/'
+
 
 class WcCall(Call):
     """Abstract base for web client calls."""
-
-    _base_url = 'https://play.google.com/music/'
-    _suburl = 'services/'
 
     send_xt = True
     send_sso = True
@@ -24,7 +24,7 @@ class WcCall(Call):
 
     @classmethod
     def validate(cls, res):
-        """Use validictory and a static schema (stored in cls.res_schema)."""
+        """Use validictory and a static schema (stored in cls._res_schema)."""
         try:
             return validictory.validate(res, cls._res_schema)
         except ValueError as e:
@@ -54,15 +54,17 @@ class AddPlaylist(WcCall):
     """Creates a new playlist."""
 
     static_method = 'POST'
-    static_url = WcCall._base_url + WcCall._suburl + 'addplaylist'
+    static_url = service_url + 'addplaylist'
 
-    _res_schema = {"type": "object",
-                   "properties": {
-                       "id": {"type": "string"},
-                       "title": {"type": "string"},
-                       "success": {"type": "boolean"},
-                   },
-                   "additionalProperties": False}
+    _res_schema = {
+        "type": "object",
+        "properties": {
+            "id": {"type": "string"},
+            "title": {"type": "string"},
+            "success": {"type": "boolean"},
+        },
+        "additionalProperties": False
+    }
 
     @staticmethod
     def dynamic_data(title):
@@ -72,11 +74,49 @@ class AddPlaylist(WcCall):
         return {'json': json.dumps({"title": title})}
 
 
+class AddToPlaylist(WcCall):
+    """Adds songs to a playlist."""
+    static_method = 'POST'
+    static_url = service_url + 'addtoplaylist'
+
+    _res_schema = {
+        "type": "object",
+        "properties": {
+            "playlistId": {"type": "string"},
+            "songIds": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "songId": {"type": "string"},
+                        "playlistEntryId": {"type": "string"}
+                    }
+                }
+            }
+        },
+        "additionalProperties": False
+    }
+
+    @staticmethod
+    def dynamic_data(playlist_id, song_ids):
+        """
+        :param playlist_id: id of the playlist to add to.
+        :param song_ids: a list of song ids
+        """
+        #TODO unsure what type means here. Likely involves uploaded vs store/free.
+        song_refs = [{'id': sid, 'type': 1} for sid in song_ids]
+
+        return {
+            'json': json.dumps(
+                {"playlistId": playlist_id, "songRefs": song_refs}
+            )
+        }
+
 class ReportBadSongMatch(WcCall):
     """Request to signal the uploader to reupload a matched track."""
 
     static_method = 'POST'
-    static_url = WcCall._base_url + WcCall._suburl + 'fixsongmatch'
+    static_url = service_url + 'fixsongmatch'
     static_params = {'format': 'jsarray'}
 
     #This response is always the same.

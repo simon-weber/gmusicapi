@@ -524,19 +524,22 @@ class Api(UsesLog):
                         playlist_id = backup_id
 
             return playlist_id
-    
+
     @utils.accept_singleton(basestring, 2)
     @utils.empty_arg_shortcircuit(position=2)
     def add_songs_to_playlist(self, playlist_id, song_ids):
-        """Adds songs to a playlist. Returns a list of (song id, playlistEntryId) tuples that were added.
+        """Appends songs to a playlist.
+        Returns a list of (song id, playlistEntryId) tuples that were added.
 
         :param playlist_id: id of the playlist to add to.
         :param song_ids: a list of song ids, or a single song id.
         """
 
-        return [(s['songId'], s['playlistEntryId'])
-                for s in 
-                self._wc_call("addtoplaylist", playlist_id, song_ids)['songIds']]
+        res = self._make_call(webclient.AddToPlaylist, playlist_id, song_ids)
+        new_entries = res['songIds']
+
+        return [(e['songId'], e['playlistEntryId']) for e in new_entries]
+
 
     @utils.accept_singleton(basestring, 2)
     @utils.empty_arg_shortcircuit(position=2)
