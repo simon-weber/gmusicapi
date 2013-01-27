@@ -26,11 +26,13 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-"""`gmusicapi` enables interaction with Google Music. This includes both web-client and Music Manager features.
+"""`gmusicapi` enables interaction with Google Music.
+This includes both web-client and Music Manager features.
 
 This api is not supported nor endorsed by Google, and could break at any time.
 
-**Respect Google in your use of the API.** Use common sense: protocol compliance, reasonable load, etc.
+**Respect Google in your use of the API.**
+Use common sense: protocol compliance, reasonable load, etc.
 """
 
 import json
@@ -42,13 +44,6 @@ import subprocess
 import os
 from uuid import getnode as getmac
 from socket import gethostname
-#used for _wc_call to get its calling parent.
-#according to http://stackoverflow.com/questions/1095543/get-name-of-calling-functions-module-in-python,
-# this
-#  "will interact strangely with import hooks,
-#  won't work on ironpython,
-#  and may behave in surprising ways on jython"
-import inspect
 
 try:
     # These are for python3 support
@@ -66,9 +61,8 @@ except ImportError:
     unistr = unicode
 
 import requests
-import validictory
 
-from gmusicapi.protocol import WC_Protocol, MM_Protocol
+from gmusicapi.protocol import MM_Protocol
 from gmusicapi.utils import utils
 from gmusicapi.utils.apilogging import UsesLog
 from gmusicapi.gmtools import tools
@@ -96,7 +90,6 @@ class Api(UsesLog):
 
         self.session = PlaySession()
 
-        self.wc_protocol = WC_Protocol()
         self.mm_protocol = MM_Protocol()
 
         self.uploader_id = None
@@ -720,63 +713,6 @@ class Api(UsesLog):
                 call_name, res
             )
 
-        return res
-
-    def _wc_call(self, service_name, *args, **kw):
-        """Returns the response of a web client call.
-        :param service_name: the name of the call, eg ``search``
-        additional positional arguments are passed to ``build_body``for the retrieved protocol.
-        if a 'query_args' key is present in kw, it is assumed to be a dictionary of additional key/val pairs to append to the query string.
-        """
-
-
-        protocol = getattr(self.wc_protocol, service_name)
-
-        #Always log the request.
-        self.log.debug("wc_call %s %s", service_name, args)
-        
-        body, res_schema = protocol.build_transaction(*args)
-        
-
-        #Encode the body. It might be None (empty).
-        if body is not None: #body can be {}, which is different from None. {} is falsey.
-            body = "json=" + quote_plus(json.dumps(body))
-
-        extra_query_args = None
-        if 'query_args' in kw:
-            extra_query_args = kw['query_args']
-
-        res = self.session.open_web_url(protocol.build_url, extra_query_args, body)
-        
-        read = res.read()
-        res = json.loads(read)
-
-        if protocol.gets_logged:
-            self.log.debug("wc_call response %s", res)
-        else:
-            self.log.debug("wc_call response <suppressed>")
-
-        #Check if the server reported success.
-        success = utils.call_succeeded(res)
-        if not success:
-            self.log.error("call to %s failed", service_name)
-            self.log.debug("full response: %s", res)
-            
-            if not self.suppress_failure:
-                calling_func_name = inspect.stack()[1][3]
-                raise CallFailure('', calling_func_name) # normally caused by bad arguments to the server
-
-        #Calls are not required to have a schema, and
-        # schemas are only for successful calls.
-        if success and res_schema:
-            try:
-                validictory.validate(res, res_schema)
-            except ValueError as details:
-                self.log.warning("Received an unexpected response from call %s.", service_name)
-                self.log.debug("full response: %s", res)
-                self.log.debug("failed schema: %s", res_schema)
-                self.log.warning("error was: %s", details)
-                    
         return res
 
     #---

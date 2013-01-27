@@ -39,7 +39,7 @@ import copy
 import time
 import random
 
-from ..protocol import WC_Protocol, MetadataExpectations
+from ..protocol import MetadataExpectations
 from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
 
