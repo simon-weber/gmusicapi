@@ -39,7 +39,7 @@ import copy
 import time
 import random
 
-from ..protocol import MetadataExpectations
+from gmusicapi.newprotocol.metadata import md_expectations
 from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
 
@@ -232,9 +232,8 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         #Generate noticably changed metadata for ones we can change.
         #Changing immutable ones voids the request (although we get back success:True and our expected values).
         new_md = copy.deepcopy(orig_md)
-        expts = MetadataExpectations.get_all_expectations()
 
-        for name, expt in expts.items():
+        for name, expt in md_expectations.items():
             if name in orig_md and expt.mutable:
                 old_val = orig_md[name]
                 new_val = test_utils.modify_md(name, old_val)
@@ -251,7 +250,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         #Recreate the dependent md to what they should be (based on how orig_md was changed)
         correct_dependent_md = {}
-        for name, expt in expts.items():
+        for name, expt in md_expectations.items():
             if expt.depends_on and name in orig_md:
                 master_name = expt.depends_on
                 correct_dependent_md[name] = expt.dependent_transformation(new_md[master_name])
@@ -283,15 +282,15 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
             try:
                 #Verify everything went as expected:
-                for name, expt in expts.items():
+                for name, expt in md_expectations.items():
                     if name in orig_md:
-                        #Check mutability if it's not a volatile key.
-                        if not expt.volatile:
+                        #Check mutability if it's not volatile or dependent.
+                        if not expt.volatile and expt.depends_on is None:
                             same, message = test_utils.md_entry_same(name, orig_md, result_md)
                             self.assertEqual(same, (not expt.mutable), "metadata mutability incorrect: " + message)
 
                         #Check dependent md.
-                        if expt.depends_on:
+                        if expt.depends_on is not None:
                             same, message = test_utils.md_entry_same(name, correct_dependent_md, result_md)
                             self.assertTrue(same, "dependent metadata incorrect: " + message)
 
@@ -322,7 +321,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
             try:
                 for name in orig_md:
                     #If it's not volatile, it should be back to what it was.
-                    if not expts[name].volatile:
+                    if not md_expectations[name].volatile:
                         same, message = test_utils.md_entry_same(name, orig_md, result_md)
                         self.assertTrue(same, "failed to revert: " + message)
                 

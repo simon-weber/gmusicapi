@@ -1,43 +1,55 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Expectations about track metadata."""
+"""Expectations about track metadata.
+Clients typically just use the dict md_expectations."""
+
+from collections import namedtuple
 
 
-class Expectation(object):
+"""
+These properties define knowledge about different metadata keys.
+
+    name: key in the song dictionary
+    type: a validictory type. possible values:
+            'string' - str and unicode objects
+            'integer' - ints
+            'number' - ints and floats
+            'boolean' - bools
+            'object' - dicts
+            'array' - lists and tuples
+            'null' - None
+            'any' - any type is acceptable
+    mutable: True if client can change the value
+    optional: True if the key is not always in the dictionary
+    volatile: True if the key can change between observations without a client change
+    depends_on: name of the key we take our value from, or None
+    dependent_transformation: lambda dependent_value: our_value, or None
+    allowed_values: sequence of possible values
+"""
+_Expectation = namedtuple(
+    '_Expectation',
+    [
+        'name', 'type', 'mutable', 'optional', 'volatile',
+        'depends_on', 'dependent_transformation',
+        'allowed_values'
+    ]
+)
+
+
+class Expectation(_Expectation):
     """Instantiated to represent information about a single metadata key."""
+    #This class just wraps the namedtuple to provide easy construction and some methods.
 
-    def __init__(self, name, type, mutable, optional, volatile=False,
-                 depends_on=None, dependent_transformation=None,
-                 allowed_values=None):
-        """
-        All params are available as fields after instantiation.
-
-        :param name: key in the song dictionary
-        :param type: a validictory type. possible values:
-                       "string" - str and unicode objects
-                       "integer" - ints
-                       "number" - ints and floats
-                       "boolean" - bools
-                       "object" - dicts
-                       "array" - lists and tuples
-                       "null" - None
-                       "any" - any type is acceptable
-        :param mutable: True if client can change the value
-        :param optional: True if the key is not always in the dictionary
-        :param volatile: True if the key can change between observations without a client change
-        :param depends_on: (optional) name of the key we take our value from
-        :param dependent_transformation: (optional) lambda dependent_value: our_value
-        :param allowed_values: (optional) list of possible values
-        """
-        self.name = name
-        self.type = type
-        self.mutable = mutable
-        self.optional = optional
-        self.volatile = volatile
-        self.depends_on = depends_on
-        self.dependent_transformation = dependent_transformation
-        self.allowed_values = allowed_values
+    def __new__(cls, name, type, mutable, optional, volatile=False,
+                depends_on=None, dependent_transformation=None,
+                allowed_values=None):
+        return cls.__bases__[0].__new__(
+            cls,
+            name, type, mutable, optional, volatile,
+            depends_on, dependent_transformation,
+            allowed_values
+        )
 
     def get_schema(self):
         """Return a validictory schema for this key."""
@@ -50,7 +62,7 @@ class Expectation(object):
 
         return schema
 
-all_expts = [
+_all_expts = [
     Expectation(name, 'string', mutable=True, optional=False) for name in
     (
         'composer', 'album', 'albumArtist', 'genre', 'name', 'artist'
@@ -87,7 +99,7 @@ all_expts = [
         'albumArtUrl': 'string',
     }.items()
 ] + [
-    Expectation(name + 'Norm', type, mutable=False, optional=False,
+    Expectation(name + 'Norm', 'string', mutable=False, optional=False,
                 depends_on=name,
                 dependent_transformation=lambda x: x.lower()) for name in
     (
@@ -95,7 +107,8 @@ all_expts = [
     )
 ] + [
     # 0, 1, 5: no, down, up thumbs
-    Expectation('rating', 'integer', mutable=True, optional=False, allowed_values=range(6)),
+    Expectation('rating', 'integer', mutable=True,
+                optional=False, allowed_values=tuple(range(6))),
 
     Expectation('lastPlayed', 'integer', mutable=False, optional=True, volatile=True),
     Expectation('playCount', 'integer', mutable=True, optional=False),
@@ -104,5 +117,8 @@ all_expts = [
                 depends_on='name', dependent_transformation=lambda x: x),
 
     Expectation('titleNorm', 'string', mutable=False, optional=False,
-                depends_on='title', dependent_transformation=lambda x: x.lower()),
+                depends_on='name', dependent_transformation=lambda x: x.lower()),
 ]
+
+#should be all the client code needs
+md_expectations = {expt.name: expt for expt in _all_expts}

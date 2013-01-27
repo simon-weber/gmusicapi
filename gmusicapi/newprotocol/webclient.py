@@ -7,7 +7,7 @@ import sys
 import validictory
 
 from gmusicapi.exceptions import CallFailure, ValidationException
-from gmusicapi.protocol import MetadataExpectations  # TODO migrate
+from gmusicapi.newprotocol.metadata import md_expectations
 from gmusicapi.newprotocol.shared import Call
 from gmusicapi.utils import utils
 
@@ -19,7 +19,7 @@ song_schema = {
     "type": "object",
     "properties": {
         name: expt.get_schema() for
-        name, expt in MetadataExpectations.get_all_expectations().items()
+        name, expt in md_expectations.items()
     },
     #don't allow metadata not in expectations
     "additionalProperties": False
