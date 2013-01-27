@@ -67,15 +67,15 @@ class TestRegressions(test_utils.BaseTest, UsesLog):
 
     def notags_1_upload_notags(self):
         """Upload the file without tags."""
-        result = self.api.upload(self.no_tags_filename)
-        self.assertTrue(self.no_tags_filename in result)
-        
+        uploaded, matched, not_uploaded = self.api.upload(self.no_tags_filename)
+        self.assertEqual(len(uploaded), 1)
+
         #Messy; need to pass on id to be deleted.
-        self.notags_uploaded_id = result[self.no_tags_filename]
+        self.notags_uploaded_id = uploaded[self.no_tags_filename]
 
     def notags_2_upload_hastags(self):
         """Upload the file with tags."""
-        result = self.api.upload(self.has_tags_filename)
+        uploaded, matched, not_uploaded = self.api.upload(self.has_tags_filename)
         self.assertTrue(self.has_tags_filename in result)
         
         self.hastags_uploaded_id = result[self.has_tags_filename]

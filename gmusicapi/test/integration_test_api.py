@@ -181,8 +181,8 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         some_files = random.sample(self.test_filenames, 
                                    random.randrange(len(self.test_filenames)))
 
-        result = self.api.upload(some_files)
-        self.assertEqual(len(some_files), len(result))
+        uploaded, matched, not_uploaded = self.api.upload(some_files)
+        self.assertEqual(len(not_uploaded), 0)
 
         #A bit messy; need to pass the ids on to the next step.
         self.uploaded_ids = result.values()

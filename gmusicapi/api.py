@@ -658,17 +658,12 @@ class Api(UsesLog):
 
         call_name = protocol.__name__
 
-        self.log.debug("n call %s(args=%s, kwargs=%s)",
+        self.log.debug("%s(args=%s, kwargs=%s)",
                        call_name,
                        [utils.truncate(a) for a in args],
                        {k: utils.truncate(v) for (k, v) in kwargs.items()})
 
         request = protocol.build_request(*args, **kwargs)
-
-        #debug
-        print
-        print request.method, request.url
-        print request.headers
 
         #TODO refactor this once session things are figured out
         if protocol.__bases__[0].__name__ == 'WcCall':
@@ -694,7 +689,7 @@ class Api(UsesLog):
                 #TODO what happens now?
                 res = None
 
-        print protocol.filter_response(res)
+        self.log.debug(protocol.filter_response(res))
 
         try:
             #order is important; validate only has a schema for a successful response
@@ -727,7 +722,7 @@ class Api(UsesLog):
 
     @utils.accept_singleton(basestring)
     @utils.empty_arg_shortcircuit(return_code='{}')
-    def _upload_new(self, filepaths):
+    def upload(self, filepaths):
         """Uploads the given filepaths.
         Return a 3-tuple (uploaded, matched, not_uploaded) of dictionaries:
             uploaded: {filepath: new server id}
@@ -872,230 +867,6 @@ class Api(UsesLog):
 
         return uploaded, matched, not_uploaded
 
-    @utils.accept_singleton(basestring)
-    @utils.empty_arg_shortcircuit(return_code='{}')
-    def upload(self, filenames):
-        """Uploads the given filenames. Returns a dictionary with ``{"<filename>": "<new song id>"}`` pairs for each successful upload.
-
-        Returns an empty dictionary if all uploads fail. CallFailure will never be raised.
-
-        :param filenames: a list of filenames, or a single filename.
-
-        All Google-supported filetypes are supported. Non-mp3 files will be transcoded to a 320kbs abr mp3 before being uploaded, just as Google's Music Manager does. The original filename will be returned, not the name of transcoded file.
-
-        Unlike Google's Music Manager, this function will currently allow the same song to be uploaded more than once if its tags are changed. This is subject to change in the future.
-        """
-        if self.uploader_id is None or self.uploader_name is None:
-            raise NotLoggedIn("Not authenticated as an upload device;"
-                              " run Api.login(...perform_upload_auth=True...)"
-                              " first.")
-
-        results = {}
-
-        with self._temp_mp3_conversion(filenames) as (upload_files, orig_fnames):
-
-            fname_to_id = self._upload_mp3s([f.name for f in upload_files])
-
-            for fname, sid in fname_to_id.items():
-                results[orig_fnames[fname]] = sid
-
-        return results
-        
-
-    @contextlib.contextmanager
-    def _temp_mp3_conversion(self, filenames):
-        """An internal context manager that converts files to temp mp3 files if needed.
-        Returns (list of file objects, {'temp filename':'orig fname'})
-
-        Only supported non-mp3s are converted and given a temp file."""
-        
-        temp_file_handles = []
-        all_file_handles = []
-
-        temp_to_orig = {}
-
-        try:
-            for orig_fn in filenames:
-                extension = orig_fn.split(".")[-1].lower()
-
-                if extension == "mp3":
-                    all_file_handles.append(file(orig_fn))
-                    temp_to_orig[orig_fn] = orig_fn
-
-                elif extension in supported_upload_filetypes:
-                    t_handle = tempfile.NamedTemporaryFile(prefix="gmusicapi", suffix=".mp3", delete=False)
-                    temp_file_handles.append(t_handle)
-
-                    try:
-                        self.log.info("converting %s to %s", orig_fn, t_handle.name)
-                        err_output = None
-
-                        #pipe:1 -> send output to stdout
-                        p = subprocess.Popen(["ffmpeg", "-i", orig_fn, "-f", "mp3", "-ab", "320k", "pipe:1"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                        
-                        audio_data, err_output = p.communicate()
-                        
-                        #Check for success and write out our temp file.
-                        if p.returncode is not 0:
-                            raise OSError
-                        else:
-                            t_handle.write(audio_data)
-                            
-
-                    except OSError:
-                        if err_output is not None:
-                            self.log.error("FFmpeg could not convert the file to mp3. output was: %s", err_output)
-                        else:
-                            self.log.exception("is FFmpeg installed? Failed to convert '%s' to mp3 while uploading. This file will not be uploaded. Error was:", orig_fn)
-
-                        continue
-
-                    finally:
-                        #Close the file so mutagen can write out its tags.
-                        t_handle.close()
-                        
-
-                    #Copy tags over. It's easier to do this here than mess with
-                    # passing overriding metadata into _upload() later on
-                    if not utils.copy_md_tags(orig_fn, t_handle.name):
-                        self.log.warn("failed to copy metadata to converted temp mp3 for '%s'. This file will still be uploaded, but Google Music may not receive (some of) its metadata.", orig_fn)
-
-                    all_file_handles.append(t_handle)
-                    temp_to_orig[t_handle.name] = orig_fn
-
-                else:
-                    self.log.error("'%s' is not of a supported filetype, and cannot be uploaded. Supported filetypes: %s", orig_fn, supported_upload_filetypes)
-
-
-            yield all_file_handles, temp_to_orig
-
-        finally:
-            #Ensure all temp files get deleted.
-            for t in temp_file_handles:
-                try:
-                    os.remove(t.name)
-                except OSError:
-                    self.log.exception("failed to delete temporary file '%s'", t.name)
-
-    def _upload_mp3s(self, filenames):
-        """Uploads a list of files. All files are assumed to be mp3s."""
-
-        #filename -> GM song id
-        fn_sid_map = {}
-
-        #Form and send the metadata request.
-        metadata_request, cid_map = self.mm_protocol.make_metadata_request(filenames)
-        metadataresp = self._mm_pb_call("metadata", metadata_request)
-
-        #Form upload session requests (for songs GM wants).
-        session_requests = self.mm_protocol.make_upload_session_requests(cid_map, metadataresp)
-
-        #Try to get upload sessions and upload each song.
-        #This section is in bad need of refactoring.
-        for filename, server_id, payload in session_requests:
-
-            post_data = json.dumps(payload)
-
-            success = False
-            already_uploaded = False
-            attempts = 0
-
-            while not success and attempts < 3:
-                
-                #Pull this out with the below call when it makes sense to.
-                res = json.loads(
-                    self.session.post_jumper(
-                        "/uploadsj/rupio", 
-                        post_data).read())
-
-                if 'sessionStatus' in res:
-                    self.log.debug("got a session. full response: %s", str(res))
-                    success = True
-                    break
-
-
-                elif 'errorMessage' in res:
-                    self.log.debug("upload error. full response: %s", str(res))
-
-                    error_code = res['errorMessage']['additionalInfo']['uploader_service.GoogleRupioAdditionalInfo']['completionInfo']['customerSpecificInfo']['ResponseCode']
-
-                    #This seems more like protocol-worthy information.
-                    if error_code == 503:
-                        #Servers still syncing; retry with no penalty.
-                        self.log.info("upload servers still syncing; trying again.")
-                        attempts -= 1
-
-                    elif error_code == 200:
-                        #GM reports that the file is already uploaded, probably because the hash matched a server-side file.
-                        self.log.warning("GM upload server reports %s is already uploaded as sid: %s", filename, server_id)
-                        success = True
-                        already_uploaded = True
-                        break
-
-                    elif error_code == 404:
-                        #Bad request. I've never seen this resolve through retries.
-                        self.log.warning("GM upload server")
-
-                    else:
-                        #Unknown error code.
-                        self.log.warning("upload service reported an unknown error code. Please report this to the project.\n  entire response: %s", str(res))
-                    
-                else:
-                    self.log.warning("upload service sent back a response that could not be interpreted. Please report this to the project.\n  entire response: %s", str(res))
-                    
-                                        
-                time.sleep(3)
-                self.log.info("trying again for a session.")
-                attempts += 1
-
-            if success and not already_uploaded:
-                #Got a session; upload the actual file.
-                up = res['sessionStatus']['externalFieldTransfers'][0]
-                self.log.info("uploading file. sid: %s", server_id)
-
-                with open(filename, mode="rb") as audio_data:
-                    res = json.loads(
-                        self.session.post_jumper( 
-                            up['putInfo']['url'], 
-                            audio_data, 
-                            {'Content-Type': up['content_type']}).read())
-                
-                self.log.debug("post_jumper res: %s", res)
-
-            
-                if res['sessionStatus']['state'] == 'FINALIZED':
-                    fn_sid_map[filename] = server_id
-                    self.log.info("successfully uploaded sid %s", server_id)
-
-            elif already_uploaded:
-                fn_sid_map[filename] = server_id
-
-            else:
-                self.log.warning("could not upload file %s (sid %s)", filename, server_id)
-
-        return fn_sid_map
-
-
-    def _mm_pb_call(self, service_name, req = None):
-        """Returns the protobuff response of a call to a predefined Music Manager protobuff service."""
-
-        self.log.debug("mm_pb_call: %s(%s)", service_name, str(req))
-
-        res = self.mm_protocol.make_pb(service_name + "_response")
-
-        if not req:
-            try:
-                req = self.mm_protocol.make_pb(service_name + "_request")
-            except AttributeError:
-                req = self.mm_protocol.make_pb(service_name) #some request types don't have _request appended.
-
-        url = self.mm_protocol.pb_services[service_name]
-
-        res.ParseFromString(self.session.post_protobuf(url, req))
-
-        self.log.debug("mm_pb_call response: [%s]", str(res))
-
-        return res
 
 #---
 #The session layer:
@@ -1215,13 +986,6 @@ class PlaySession(object):
 
         return res
 
-        #there are weird differences between requests and urllib here,
-        # which cause 404s and xsrf revalidation. eventually, this should just
-        # be sending over a requests Session, but this works for now.
-        #return self.open_web_url(prep_request.url, data=prep_request.body,
-        #                         send_xt=send_xt, headers=prep_request.headers,
-        #                         method=prep_request.method)
-
     def send_mm_request(self, request):
         """Send a request using the music manager session."""
         if not self.logged_in:
@@ -1234,94 +998,3 @@ class PlaySession(object):
         res = s.send(prep_request, verify=False)  # TODO only turn off verification when needed
 
         return res
-
-        #return self.open_web_url(prep_request.url, data=prep_request.body,
-        #                         send_xt=False, headers=prep_request.headers,
-        #                         method=prep_request.method)
-
-    def open_web_url(self, url_builder, extra_args=None, data=None,
-                     useragent=None, send_xt=True, headers=None, method=None):
-        """
-        Opens an https url using the current session and returns the response.
-        Code adapted from:
-        http://code.google.com/p/gdatacopier/source/browse/tags/gdatacopier-1.0.2/gdatacopier.py
-
-        :param url_builder: the url, or a function to receieve a dictionary of querystring arg/val pairs and return the url.
-        :param extra_args: (optional) key/val querystring pairs.
-        :param data: (optional) encoded POST data.
-        :param useragent: (optional) The User Agent to use for the request.
-        """
-        # I couldn't find a case where we don't need to be logged in
-        if not self.logged_in:
-            raise NotLoggedIn
-
-        args = {}
-        if send_xt:
-            args['xt'] = self.get_cookie("xt")
-
-        if extra_args:
-            args = dict(args.items() + extra_args.items())
-
-        if isinstance(url_builder, basestring):
-            url = url_builder
-        else:
-            url = url_builder(args)
-
-        opener = build_opener(HTTPCookieProcessor(self.cookies))
-
-        if not useragent:
-            useragent = self._user_agent
-
-        if headers:
-            opener.addheaders = headers.items()
-        else:
-            opener.addheaders = [('User-agent', useragent)]
-
-        if method is not None:
-            #wow, this is terrible. see
-            #http://stackoverflow.com/questions/111945/is-there-any-way-to-do-http-put-in-python
-            opener.get_method = lambda: method
-
-        if data:
-            response = opener.open(url, data)
-        else:
-            response = opener.open(url)
-
-        return response
-
-    def post_protobuf(self, path, protobuf):
-        """
-        Returns the response from encoding and posting the given data.
-
-        :param path: the name of the service url
-        :param proto: data to be encoded with protobuff
-        """
-        if not self.logged_in:
-            raise NotLoggedIn
-
-        urlpath = '/upsj/' + path
-        self.android.request('POST', urlpath, protobuf.SerializeToString(), {
-            'Cookie':       'SID=%s' % self.client.get_sid_token(),
-            'Content-Type': 'application/x-google-protobuf'
-        })
-
-        resp = self.android.getresponse()
-
-        return resp.read()
-
-
-    def post_jumper(self, url, encoded_data, headers=None):
-        """
-        Returns the response of a post to the MusicManager jumper service.
-        """
-        if not self.logged_in:
-            raise NotLoggedIn
-
-        if not headers:
-            headers = {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Cookie':       'SID=%s' % self.client.get_sid_token()
-            }
-
-        self.jumper.request('POST', url, encoded_data, headers)
-        return self.jumper.getresponse()
