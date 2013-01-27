@@ -65,6 +65,7 @@ except ImportError:
     from httplib import HTTPConnection, HTTPSConnection
     unistr = unicode
 
+import requests
 import validictory
 
 from gmusicapi.protocol import WC_Protocol, MM_Protocol
@@ -660,10 +661,11 @@ class Api(UsesLog):
         if protocol.__bases__[0].__name__ == 'WcCall':
             response = self.session.send_wc_request(request,
                                                     send_xt=protocol.send_xt)
-            text = response.read()
+            #text = response.read()
+            text = response.text
         else:
             response = self.session.send_mm_request(request)
-            text = response.read()
+            text = response.content
 
         #TODO check return code
 
@@ -1253,12 +1255,18 @@ class PlaySession(object):
         request.cookies = self.cookies
 
         prep_request = request.prepare()
+
+        s = requests.Session()
+        res = s.send(prep_request)
+
+        return res
+
         #there are weird differences between requests and urllib here,
         # which cause 404s and xsrf revalidation. eventually, this should just
         # be sending over a requests Session, but this works for now.
-        return self.open_web_url(prep_request.url, data=prep_request.body,
-                                 send_xt=send_xt, headers=prep_request.headers,
-                                 method=prep_request.method)
+        #return self.open_web_url(prep_request.url, data=prep_request.body,
+        #                         send_xt=send_xt, headers=prep_request.headers,
+        #                         method=prep_request.method)
 
     def send_mm_request(self, request):
         """Send a request using the music manager session."""
@@ -1268,9 +1276,14 @@ class PlaySession(object):
         request.cookies = {'SID': self.client.get_sid_token()}
         prep_request = request.prepare()
 
-        return self.open_web_url(prep_request.url, data=prep_request.body,
-                                 send_xt=False, headers=prep_request.headers,
-                                 method=prep_request.method)
+        s = requests.Session()
+        res = s.send(prep_request, verify=False)  # TODO only turn off verification when needed
+
+        return res
+
+        #return self.open_web_url(prep_request.url, data=prep_request.body,
+        #                         send_xt=False, headers=prep_request.headers,
+        #                         method=prep_request.method)
 
     def open_web_url(self, url_builder, extra_args=None, data=None,
                      useragent=None, send_xt=True, headers=None, method=None):
