@@ -112,6 +112,28 @@ class AddToPlaylist(WcCall):
             )
         }
 
+
+class ChangePlaylistName(WcCall):
+    """Changes the name of a playlist."""
+
+    static_method = 'POST'
+    static_url = service_url + 'modifyplaylist'
+
+    _res_schema = {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": False
+    }
+
+    @staticmethod
+    def dynamic_data(playlist_id, new_name):
+        return {
+            'json': json.dumps(
+                {"playlistId": playlist_id, "playlistName": new_name}
+            )
+        }
+
+
 class ReportBadSongMatch(WcCall):
     """Request to signal the uploader to reupload a matched track."""
 
