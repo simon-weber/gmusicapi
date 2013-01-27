@@ -291,7 +291,9 @@ class Api(UsesLog):
         :param song_ids: a list of song ids, or a single song id.
         """
 
-        return self._wc_call("deletesong", song_ids)['deleteIds']
+        res = self._make_call(webclient.DeleteSongs, song_ids)
+
+        return res['deleteIds']
 
     def get_all_songs(self):
         """Returns a list of `song dictionaries`__.
@@ -595,7 +597,9 @@ class Api(UsesLog):
         #Unzip the pairs.
         sids, eids = zip(*e_s_id_pairs)
 
-        return self._wc_call("deletesong", sids, eids, playlist_id)['deleteIds']
+        res = self._make_call(webclient.DeleteSongs, sids, playlist_id, eids)
+
+        return res['deleteIds']
     
         
     def search(self, query):

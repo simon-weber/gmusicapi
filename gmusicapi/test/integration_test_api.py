@@ -136,7 +136,6 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         #Apply random modifications.
         delete, add_dupe, add_blank, reorder = [random.choice([True, False]) for i in xrange(4)]
-        reorder = True
 
         if tracks and delete:
             self.log.debug("deleting tracks")
@@ -148,7 +147,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         if add_dupe:
             self.log.debug("adding dupe tracks from same playlist")
             tracks.extend(random.sample(tracks, random.randrange(len(tracks))))
-            
+
         if add_blank:
             self.log.debug("adding random tracks with no eid")
             tracks.extend(random.sample(self.library, random.randrange(len(tracks))))
@@ -158,7 +157,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
             random.shuffle(tracks)
 
         self.api.change_playlist(p_id, tracks)
-        
+
         server_tracks = self.api.get_playlist_songs(p_id)
 
         self.assertEqual(len(tracks), len(server_tracks))
@@ -207,8 +206,8 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         del self.uploaded_ids
 
-    def test_up_deletion(self):
-        self.run_steps("updel_")
+    #def test_up_deletion(self):
+    #    self.run_steps("updel_")
 
         
 

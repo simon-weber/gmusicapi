@@ -213,6 +213,40 @@ class DeletePlaylist(WcCall):
         }
 
 
+class DeleteSongs(WcCall):
+    """Delete a song from the entire library or a single playlist."""
+
+    static_method = 'POST'
+    static_url = service_url + 'deletesong'
+
+    _res_schema = {
+        "type": "object",
+        "properties": {
+            "listId": {"type": "string"},
+            "deleteIds":
+            {
+                "type": "array",
+                "items": {"type": "string"}
+            }
+        },
+        "additionalProperties": False
+    }
+
+    @staticmethod
+    def dynamic_data(song_ids, playlist_id='all', entry_ids=None):
+        """
+        :param song_ids: a list of song ids.
+        :param playlist_id: playlist id to delete from, or 'all' for deleting from library.
+        :param entry_ids: when deleting from playlists, corresponding list of entry ids.
+        """
+
+        return {
+            'json': json.dumps(
+                {"songIds": song_ids, "entryIds": entry_ids, "listId": playlist_id}
+            )
+        }
+
+
 class ReportBadSongMatch(WcCall):
     """Request to signal the uploader to reupload a matched track."""
 
