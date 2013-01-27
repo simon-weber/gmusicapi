@@ -399,18 +399,19 @@ class Api(UsesLog):
     def get_stream_url(self, song_id):
         """Returns a url that points to a streamable version of this song.
 
-        While this call requires authentication, listening to the returned url does not. The url expires after about a minute.
+        While this call requires authentication, listening to the returned url does not.
+        The url expires after about a minute.
 
         :param song_id: a single song id.
 
-        *This is only intended for streaming*. The streamed audio does not contain metadata. Use :func:`get_song_download_info` to download complete files with metadata.
+        *This is only intended for streaming*. The streamed audio does not contain metadata.
+        Use :func:`get_song_download_info` to download complete files with metadata.
         """
 
-        #This call is strange. The body is empty, and the songid is passed in the querystring.
-        res = self._wc_call("play", query_args={'songid': song_id})
-        
+        res = self._make_call(webclient.GetStreamUrl, song_id)
+
         return res['url']
-        
+
     def copy_playlist(self, orig_id, copy_name):
         """Copies the contents of a playlist to a new playlist. Returns the id of the new playlist.
 

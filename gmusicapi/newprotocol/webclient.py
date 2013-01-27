@@ -450,6 +450,31 @@ class GetDownloadInfo(WcCall):
         return {'json': json.dumps({'songIds': song_ids})}
 
 
+class GetStreamUrl(WcCall):
+    """Used to request a streaming link of a track."""
+
+    static_method = 'GET'
+    static_url = base_url + 'play'  # note use of base_url, not service_url
+
+    send_xt = False
+
+    _res_schema = {
+        "type": "object",
+        "properties": {
+            "url": {"type": "string"}
+        },
+        "additionalProperties": False
+    }
+
+    @staticmethod
+    def dynamic_params(song_id):
+        return {
+            'u': 0,  # select first user of logged in; probably shouldn't be hardcoded
+            'pt': 'e',  # unknown
+            'songid': song_id,
+        }
+
+
 class ReportBadSongMatch(WcCall):
     """Request to signal the uploader to reupload a matched track."""
 

@@ -676,7 +676,6 @@ class WC_Protocol(object):
                        },
                    "additionalProperties":False
                    }
-            res = None
             return (req, res)
         
 
