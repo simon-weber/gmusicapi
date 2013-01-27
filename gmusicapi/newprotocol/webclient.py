@@ -390,6 +390,35 @@ class GetPlaylistSongs(WcCall):
         return filtered
 
 
+class ChangeSongMetadata(WcCall):
+    """Edit the metadata of songs."""
+
+    static_method = 'POST'
+    static_url = service_url + 'modifyentries'
+
+    _res_schema = {
+        "type": "object",
+        "properties": {
+            "success": {"type": "boolean"},
+            "songs": song_array
+        },
+        "additionalProperties": False
+    }
+
+    @staticmethod
+    def dynamic_data(songs):
+        """
+        :param songs: a list of dictionary representations of songs
+        """
+        return {'json': json.dumps({'entries': songs})}
+
+    @staticmethod
+    def filter_response(msg):
+        filtered = copy.copy(msg)
+        filtered['songs'] = ["<%s songs>" % len(filtered['songs'])]
+        return filtered
+
+
 class ReportBadSongMatch(WcCall):
     """Request to signal the uploader to reupload a matched track."""
 

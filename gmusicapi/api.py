@@ -214,15 +214,17 @@ class Api(UsesLog):
     @utils.accept_singleton(dict)
     @utils.empty_arg_shortcircuit()
     def change_song_metadata(self, songs):
-        """Changes the metadata for songs given in `GM Metadata Format`_. Returns a list of the song ids changed.
+        """Changes the metadata for songs given in `GM Metadata Format`_.
+        Returns a list of the song ids changed.
 
         :param songs: a list of song dictionaries, or a single song dictionary.
 
 
-        The server response is *not* to be trusted. Instead, reload the library; this will always reflect changes.
+        The server response is *not* to be trusted.
+        Instead, reload the library; this will always reflect changes.
 
         These metadata keys are able to be changed:
-        
+
         * rating: set to 0 (no thumb), 1 (down thumb), or 5 (up thumb)
         * name: use this instead of `title`
         * album
@@ -238,9 +240,9 @@ class Api(UsesLog):
         * year
 
         These keys cannot be changed:
-        
+
         * comment
-        * id 
+        * id
         * deleted
         * creationDate
         * albumArtUrl
@@ -261,7 +263,7 @@ class Api(UsesLog):
         * lastPlayed: likely some kind of last-accessed timestamp
         """
 
-        res = self._wc_call("modifyentries", songs)
+        res = self._make_call(webclient.ChangeSongMetadata, songs)
 
         return [s['id'] for s in res['songs']]
 
