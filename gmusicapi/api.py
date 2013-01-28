@@ -770,12 +770,8 @@ class Api(UsesLog):
                               [track for (path, contents, track) in local_info.values()],
                               self.uploader_id)
 
-        if res.HasField('metadata_response'):
-            md_res = res.metadata_response
-        else:
-            #TODO this should be handled by response validation
-            self.log.warning('UploadMetadata res did not have metadata_response')
-            return uploaded, matched, not_uploaded
+        #TODO checking for proper contents should be handled in verification
+        md_res = res.metadata_response
 
         responses = [r for r in md_res.track_sample_response]
         sample_requests = [req for req in md_res.signed_challenge_info]

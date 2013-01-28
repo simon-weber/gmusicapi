@@ -157,7 +157,6 @@ class UploadMetadata(MmCall):
             audio.tags = asf_dict
 
         print filepath
-        print audio.__class__
 
         track.duration_millis = int(audio.info.length * 1000)
 
@@ -223,6 +222,9 @@ class UploadMetadata(MmCall):
 
         req_msg.track.extend(tracks)
         req_msg.uploader_id = uploader_id
+
+        #debug
+        print req_msg
 
         return req_msg
 
@@ -317,6 +319,9 @@ class GetUploadSession(MmCall):
                 }
             )
 
+        #debug
+        print json.dumps(message, sort_keys=True, indent=2)
+
         return json.dumps(message)
 
     @staticmethod
@@ -340,6 +345,7 @@ class GetUploadSession(MmCall):
                 should_retry = True
                 reason = 'upload servers still syncing'
 
+            #TODO unsure about these codes
             elif error_code == 200:
                 should_retry = False
                 reason = 'this song is already uploaded'
