@@ -428,7 +428,7 @@ class ProvideSample(MmCall):
                  '-f', 's16be',
                  '-c', 'libmp3lame',
                  'pipe:1'],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE
             )
 
             sample, err_output = p.communicate(input=file_contents)
@@ -436,13 +436,12 @@ class ProvideSample(MmCall):
             if p.returncode != 0:
                 raise OSError  # handle errors in except
 
-        except OSError:
-            err_msg = 'could not create a scan and match sample with avconv. '
+        except OSError as e:
+            #TODO would be better to log.exception here
+            err_msg = "could not create a scan and match sample with avconv: %s. " % e
 
             if err_output is not None:
-                err_msg += 'Is it installed?'
-            else:
-                err_msg += "output: '%s'" % err_output
+                err_msg += "stderr: '%s'" % err_output
 
             raise ValueError(err_msg)
 
