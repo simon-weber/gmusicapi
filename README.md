@@ -34,7 +34,7 @@ Also, check out these nifty projects that use gmusicapi:
 
 * Song streaming and downloading
 
-* Song uploading of all Google-supported file formats (currently flaky)
+* ~~Song uploading of all Google-supported file formats~~ uploading problems are currently being fixed (see [this issue](https://github.com/simon-weber/Unofficial-Google-Music-API/issues/51#issuecomment-11833220))
 
 * Playlist manipulation:
     * creation
