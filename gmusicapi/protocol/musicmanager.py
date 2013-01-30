@@ -160,8 +160,6 @@ class UploadMetadata(MmCall):
             asf_dict = {k: [ve.value for ve in v] for (k, v) in audio.tags.as_dict().items()}
             audio.tags = asf_dict
 
-        print filepath
-
         track.duration_millis = int(audio.info.length * 1000)
 
         try:
@@ -226,9 +224,6 @@ class UploadMetadata(MmCall):
 
         req_msg.track.extend(tracks)
         req_msg.uploader_id = uploader_id
-
-        #debug
-        print req_msg
 
         return req_msg
 
@@ -327,9 +322,6 @@ class GetUploadSession(MmCall):
                     }
                 }
             )
-
-        #debug
-        print json.dumps(message, sort_keys=True, indent=2)
 
         return json.dumps(message)
 
@@ -460,10 +452,6 @@ class ProvideSample(MmCall):
 
         #You can provide multiple samples; I just provide one.
         msg.track_sample.extend([sample_msg])
-
-        #debug
-        print MmCall.filter_response(msg)
-        print
 
         return msg
 

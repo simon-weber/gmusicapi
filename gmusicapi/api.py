@@ -40,36 +40,20 @@ import copy
 import contextlib
 from uuid import getnode as getmac
 from socket import gethostname
-
-try:
-    # These are for python3 support
-    from urllib.request import HTTPCookieProcessor, Request, build_opener
-    from urllib.error import HTTPError
-    from urllib.parse import urlencode, quote_plus
-    from http.client import HTTPConnection, HTTPSConnection
-    unistr = str
-except ImportError:
-    # Fallback to python2
-    from urllib2 import HTTPCookieProcessor, Request, build_opener
-    from urllib2 import HTTPError
-    from urllib import urlencode, quote_plus
-    from httplib import HTTPConnection, HTTPSConnection
-    unistr = unicode
+from urllib2 import HTTPCookieProcessor, Request, build_opener
 
 import requests
 
-from gmusicapi.utils import utils
-from gmusicapi.utils.apilogging import UsesLog
 from gmusicapi.gmtools import tools
-from gmusicapi.utils.clientlogin import ClientLogin
-from gmusicapi.utils.tokenauth import TokenAuth
-
 from gmusicapi.exceptions import (
     CallFailure, ParseException, ValidationException,
     AlreadyLoggedIn, NotLoggedIn
 )
-from gmusicapi.protocol import webclient, musicmanager
-from gmusicapi.protocol import upload_pb2
+from gmusicapi.protocol import webclient, musicmanager, upload_pb2
+from gmusicapi.utils import utils
+from gmusicapi.utils.apilogging import UsesLog
+from gmusicapi.utils.clientlogin import ClientLogin
+from gmusicapi.utils.tokenauth import TokenAuth
 
 
 class Api(UsesLog):
@@ -667,6 +651,161 @@ class Api(UsesLog):
 
         return self.change_song_metadata(song_dicts)
 
+    #---
+    #   Api features supported by the Music Manager interface:
+    #---
+
+    # def get_quota(self):
+    #     """Returns a tuple of (allowed number of tracks, total tracks, available tracks)."""
+    #     quota = self._mm_pb_call("client_state").quota
+    #     #protocol incorrect here...
+    #     return (quota.maximumTracks, quota.totalTracks, quota.availableTracks)
+
+    @utils.accept_singleton(basestring)
+    @utils.empty_arg_shortcircuit(return_code='{}')
+    def upload(self, filepaths):
+        """Uploads the given filepaths.
+        Return a 3-tuple (uploaded, matched, not_uploaded) of dictionaries:
+            uploaded: {filepath: new server id}
+            matched: {filepath: new server id}
+            not_uploaded: {filepath: string reason (eg 'ALREADY_UPLOADED')}
+
+        :param filepaths: a list of filepaths, or a single filepath.
+
+        All Google-supported filetypes are supported; see http://goo.gl/iEwLI for more information.
+
+        Unlike Google's Music Manager, this function will currently allow the same song to
+        be uploaded more than once if its tags are changed. This is subject to change in the future.
+        """
+        if self.uploader_id is None or self.uploader_name is None:
+            raise NotLoggedIn("Not authenticated as an upload device;"
+                              " run Api.login(...perform_upload_auth=True...)"
+                              " first.")
+
+        #To return.
+        uploaded = {}
+        matched = {}
+        not_uploaded = {}
+
+        #Gather local information on the files.
+        local_info = {}  # {clientid: (path, contents, Track)}
+        for path in filepaths:
+            try:
+                with open(path, 'rb') as f:
+                    contents = f.read()
+                track = musicmanager.UploadMetadata.fill_track_info(path, contents)
+            except (IOError, ValueError) as e:
+                self.log.exception("problem gathering local info of '%s'" % path)
+                not_uploaded[path] = str(e)
+            else:
+                local_info[track.client_id] = (path, contents, track)
+
+        if not local_info:
+            return uploaded, matched, not_uploaded
+
+        #TODO allow metadata faking
+
+        #Upload metadata; the server tells us what to do next.
+        res = self._make_call(musicmanager.UploadMetadata,
+                              [track for (path, contents, track) in local_info.values()],
+                              self.uploader_id)
+
+        #TODO checking for proper contents should be handled in verification
+        md_res = res.metadata_response
+
+        responses = [r for r in md_res.track_sample_response]
+        sample_requests = [req for req in md_res.signed_challenge_info]
+
+        #Send scan and match samples if requested.
+        for sample_request in sample_requests:
+            path, contents, track = local_info[sample_request.challenge_info.client_track_id]
+
+            try:
+                res = self._make_call(musicmanager.ProvideSample,
+                                      contents, sample_request, track, self.uploader_id)
+            except ValueError as e:
+                self.log.warning("couldn't create scan and match sample for '%s': %s", path, str(e))
+                not_uploaded[path] = str(e)
+            else:
+                responses.extend(res.sample_response.track_sample_response)
+
+        #Read sample responses and prep upload requests.
+        to_upload = {}  # {serverid: (path, contents, Track)}
+        for res in responses:
+            path, contents, track = local_info[res.client_track_id]
+
+            if res.response_code == upload_pb2.TrackSampleResponse.MATCHED:
+                matched[path] = res.server_track_id
+            elif res.response_code == upload_pb2.TrackSampleResponse.UPLOAD_REQUESTED:
+                to_upload[res.server_track_id] = (path, contents, track)
+            else:
+                #Get the symbolic name of the response code enum:
+                enum_desc = upload_pb2._TRACKSAMPLERESPONSE.enum_types[0]
+                res_name = enum_desc.values_by_number[res.response_code].name
+
+                err_msg = "TrackSampleResponse error %s: %s" % (res.response_code, res_name)
+
+                self.log.warning("upload of '%s' rejected: %s", path, err_msg)
+                not_uploaded[path] = err_msg
+
+        #Send upload requests.
+        if to_upload:
+            self._make_call(musicmanager.UpdateUploadState, 'start', self.uploader_id)
+
+            for server_id, (path, contents, track) in to_upload.items():
+                #It can take a few tries to get an session.
+                should_retry = True
+                attempts = 0
+
+                while should_retry and attempts < 5:
+                    session = self._make_call(musicmanager.GetUploadSession,
+                                              self.uploader_id, len(uploaded),
+                                              track, path, server_id)
+                    attempts += 1
+
+                    got_session, error_details = \
+                        musicmanager.GetUploadSession.process_session(session)
+
+                    if got_session:
+                        self.log.info("got an upload session for '%s'", path)
+                        break
+
+                    should_retry, reason, error_code = error_details
+                    self.log.debug("problem getting upload session: %s\ncode=%s retrying=%s",
+                                   reason, error_code, should_retry)
+                    time.sleep(5)  # wait before retrying
+                else:
+                    err_msg = "GetUploadSession error %s: %s" % (error_code, reason)
+
+                    self.log.warning("giving up on upload session for '%s': %s", path, err_msg)
+                    not_uploaded[path] = err_msg
+
+                    continue  # to next upload
+
+                #got a session, do the upload
+                #this terribly inconsistent naming isn't my fault: Google--
+                session = session['sessionStatus']
+                external = session['externalFieldTransfers'][0]
+
+                session_url = external['putInfo']['url']
+                content_type = external['content_type']
+
+                upload_response = self._make_call(musicmanager.UploadFile,
+                                                  session_url, content_type, contents)
+
+                success = upload_response.get('sessionStatus', {}).get('state')
+                if success:
+                    uploaded[path] = server_id
+                else:
+                    #think 404 == already uploaded. serverside check on clientid?
+                    self.debug.log("could not finalize upload of '%s'. response: %s",
+                                   path, upload_response)
+                    not_uploaded[path] = 'could not finalize upload'
+
+            self._make_call(musicmanager.UpdateUploadState, 'stopped', self.uploader_id)
+
+        return uploaded, matched, not_uploaded
+
     def _make_call(self, protocol, *args, **kwargs):
         """Returns the response of a protocol.Call.
         Additional kw/args are passed to protocol.build_transaction."""
@@ -717,163 +856,6 @@ class Api(UsesLog):
             )
 
         return msg
-
-    #---
-    #   Api features supported by the Music Manager interface:
-    #---
-
-    # def get_quota(self):
-    #     """Returns a tuple of (allowed number of tracks, total tracks, available tracks)."""
-    #     quota = self._mm_pb_call("client_state").quota
-    #     #protocol incorrect here...
-    #     return (quota.maximumTracks, quota.totalTracks, quota.availableTracks)
-
-    @utils.accept_singleton(basestring)
-    @utils.empty_arg_shortcircuit(return_code='{}')
-    def upload(self, filepaths):
-        """Uploads the given filepaths.
-        Return a 3-tuple (uploaded, matched, not_uploaded) of dictionaries:
-            uploaded: {filepath: new server id}
-            matched: {filepath: new server id}
-            not_uploaded: {filepath: string reason (eg 'ALREADY_UPLOADED')}
-
-        :param filepaths: a list of filepaths, or a single filepath.
-
-        All Google-supported filetypes are supported; see http://goo.gl/iEwLI for more information.
-
-        Unlike Google's Music Manager, this function will currently allow the same song to
-        be uploaded more than once if its tags are changed. This is subject to change in the future.
-        """
-        if self.uploader_id is None or self.uploader_name is None:
-            raise NotLoggedIn("Not authenticated as an upload device;"
-                              " run Api.login(...perform_upload_auth=True...)"
-                              " first.")
-
-        #To return.
-        uploaded = {}
-        matched = {}
-        not_uploaded = {}
-
-        #Gather local information on the files.
-        local_info = {}  # {clientid: (path, contents, Track)}
-        for path in filepaths:
-            try:
-                with open(path, 'rb') as f:
-                    contents = f.read()
-                track = musicmanager.UploadMetadata.fill_track_info(path, contents)
-            except (IOError, ValueError) as e:
-                self.log.exception("problem gathering upload info of '%s'" % path)
-                not_uploaded[path] = str(e)
-            else:
-                local_info[track.client_id] = (path, contents, track)
-
-        if not local_info:
-            return uploaded, matched, not_uploaded
-
-        #TODO allow metadata faking
-
-        #debug
-        for (path, contents, track) in local_info.values():
-            print path
-            print track
-            print
-
-        #Upload metadata; the server tells us what to do next.
-        res = self._make_call(musicmanager.UploadMetadata,
-                              [track for (path, contents, track) in local_info.values()],
-                              self.uploader_id)
-
-        #TODO checking for proper contents should be handled in verification
-        md_res = res.metadata_response
-
-        responses = [r for r in md_res.track_sample_response]
-        sample_requests = [req for req in md_res.signed_challenge_info]
-
-        #Send scan and match samples if requested.
-        for sample_request in sample_requests:
-            path, contents, track = local_info[sample_request.challenge_info.client_track_id]
-
-            try:
-                res = self._make_call(musicmanager.ProvideSample,
-                                      contents, sample_request, track, self.uploader_id)
-            except ValueError as e:
-                self.log.exception("couldn't create scan and match sample for '%s'" % path)
-                not_uploaded[path] = str(e)
-            else:
-                responses.extend(res.sample_response.track_sample_response)
-
-        #Read sample responses and prep upload requests.
-        to_upload = {}  # {serverid: (path, contents, Track)}
-        for res in responses:
-            path, contents, track = local_info[res.client_track_id]
-
-            if res.response_code == upload_pb2.TrackSampleResponse.MATCHED:
-                matched[path] = res.server_track_id
-            elif res.response_code == upload_pb2.TrackSampleResponse.UPLOAD_REQUESTED:
-                to_upload[res.server_track_id] = (path, contents, track)
-            else:
-                self.log.warning("server rejected upload of '%s'. code: %s",
-                                 path, res.response_code)
-
-                #Get the symbolic name of the response code enum:
-                enum_desc = upload_pb2._TRACKSAMPLERESPONSE.enum_types[0]
-                res_name = enum_desc.values_by_number[res.response_code].name
-                #<complaint about terrible protobuf interface here>
-
-                not_uploaded[path] = "server error %s: %s" % (res.response_code, res_name)
-
-        #Send upload requests.
-        if to_upload:
-            self._make_call(musicmanager.UpdateUploadState, 'start', self.uploader_id)
-
-        for server_id, (path, contents, track) in to_upload.items():
-            #It can take a few tries to get an session.
-            should_retry = True
-            attempts = 0
-
-            while should_retry and attempts < 5:
-                session = self._make_call(musicmanager.GetUploadSession,
-                                          self.uploader_id, len(uploaded),
-                                          track, path, server_id)
-                attempts += 1
-
-                got_session, error_details = musicmanager.GetUploadSession.process_session(session)
-
-                if got_session:
-                    self.log.info("got an upload session for '%s'", path)
-                    break
-
-                should_retry, reason, error_code = error_details
-                self.log.debug("problem getting upload session: %s\ncode=%s retrying=%s",
-                               reason, error_code, should_retry)
-                time.sleep(5)  # wait before retrying
-            else:
-                self.log.info("giving up on upload session for '%s'" % path)
-                not_uploaded[path] = ("could not get an upload session:"
-                                      " %s (code %s)" % (reason, error_code))
-                continue  # to next upload
-
-            #got a session, do the upload
-            #this terribly inconsistent naming isn't my fault: Google--
-            session = session['sessionStatus']
-            external = session['externalFieldTransfers'][0]
-
-            session_url = external['putInfo']['url']
-            content_type = external['content_type']
-
-            upload_response = self._make_call(musicmanager.UploadFile,
-                                              session_url, content_type, contents)
-
-            success = upload_response.get('sessionStatus', {}).get('state')
-            if success:
-                uploaded[path] = server_id
-            else:
-                #think 404 == already uploaded. serverside check on clientid?
-                not_uploaded[path] = 'could not finalize upload'
-
-        self._make_call(musicmanager.UpdateUploadState, 'stopped', self.uploader_id)
-
-        return uploaded, matched, not_uploaded
 
 
 #---
