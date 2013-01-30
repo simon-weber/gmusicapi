@@ -39,12 +39,15 @@ import copy
 import time
 import random
 
-from ..protocol import WC_Protocol, MetadataExpectations
+from gmusicapi.protocol.metadata import md_expectations
 from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
 
 #Expected to be in this directory.
-test_filenames = ("test.mp3", "test.flac", "test.m4a", "test.ogg", "test.wma")
+test_filenames = ('noise.mp3', 'noise.flac', 'noise.m4a',
+                  'noise.ogg', 'noise.wma',
+                  'no_tags.mp3', 'unicode_한글.mp3')
+
 
 class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
@@ -147,7 +150,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         if add_dupe:
             self.log.debug("adding dupe tracks from same playlist")
             tracks.extend(random.sample(tracks, random.randrange(len(tracks))))
-            
+
         if add_blank:
             self.log.debug("adding random tracks with no eid")
             tracks.extend(random.sample(self.library, random.randrange(len(tracks))))
@@ -157,7 +160,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
             random.shuffle(tracks)
 
         self.api.change_playlist(p_id, tracks)
-        
+
         server_tracks = self.api.get_playlist_songs(p_id)
 
         self.assertEqual(len(tracks), len(server_tracks))
@@ -174,18 +177,15 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
     def test_change_playlist(self):
         self.run_steps("cpl")
 
-
     def updel_1_upload(self):
-        """Upload some test files."""
+        """Upload test files."""
 
-        some_files = random.sample(self.test_filenames, 
-                                   random.randrange(len(self.test_filenames)))
-
-        result = self.api.upload(some_files)
-        self.assertEqual(len(some_files), len(result))
+        uploaded, matched, not_uploaded = self.api.upload(self.test_filenames)
+        if not_uploaded:
+            self.fail("upload failed: %s" % not_uploaded)
 
         #A bit messy; need to pass the ids on to the next step.
-        self.uploaded_ids = result.values()
+        self.uploaded_ids = uploaded.values() + matched.values()
 
     def updel_1a_get_dl_info(self):
         """Check how many times the newly uploaded songs have been
@@ -199,29 +199,25 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         for info_tuple in info_tuples:
             self.assertEqual(info_tuple[1], 0)
 
-
     def updel_2_delete(self):
         """Delete the uploaded test files."""
         self.api.delete_songs(self.uploaded_ids)
-
         del self.uploaded_ids
 
     def test_up_deletion(self):
         self.run_steps("updel_")
-
-        
 
     #---
     #   Non-monolithic tests:
     #---
 
     #Works, but the protocol isn't mature enough to support the call (yet).
-    # def test_get_song_download_info(self):
-    #     #The api doesn't expose the actual response here,
-    #     # instead we expect a tuple with 2 entries.
-    #     res = self.api.get_song_download_info(self.r_song_id)
-    #     self.assertEqual(len(res), 2)
-    #     self.assertIsInstance(res, tuple)
+    def test_get_song_download_info(self):
+         #The api doesn't expose the actual response here,
+         # instead we expect a tuple with 2 entries.
+         res = self.api.get_song_download_info(self.r_song_id)
+         self.assertEqual(len(res), 2)
+         self.assertIsInstance(res, tuple)
 
     def test_change_song_metadata(self):
         """Change a song's metadata, then restore it."""
@@ -232,9 +228,8 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         #Generate noticably changed metadata for ones we can change.
         #Changing immutable ones voids the request (although we get back success:True and our expected values).
         new_md = copy.deepcopy(orig_md)
-        expts = MetadataExpectations.get_all_expectations()
 
-        for name, expt in expts.items():
+        for name, expt in md_expectations.items():
             if name in orig_md and expt.mutable:
                 old_val = orig_md[name]
                 new_val = test_utils.modify_md(name, old_val)
@@ -251,7 +246,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         #Recreate the dependent md to what they should be (based on how orig_md was changed)
         correct_dependent_md = {}
-        for name, expt in expts.items():
+        for name, expt in md_expectations.items():
             if expt.depends_on and name in orig_md:
                 master_name = expt.depends_on
                 correct_dependent_md[name] = expt.dependent_transformation(new_md[master_name])
@@ -283,15 +278,15 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
             try:
                 #Verify everything went as expected:
-                for name, expt in expts.items():
+                for name, expt in md_expectations.items():
                     if name in orig_md:
-                        #Check mutability if it's not a volatile key.
-                        if not expt.volatile:
+                        #Check mutability if it's not volatile or dependent.
+                        if not expt.volatile and expt.depends_on is None:
                             same, message = test_utils.md_entry_same(name, orig_md, result_md)
                             self.assertEqual(same, (not expt.mutable), "metadata mutability incorrect: " + message)
 
                         #Check dependent md.
-                        if expt.depends_on:
+                        if expt.depends_on is not None:
                             same, message = test_utils.md_entry_same(name, correct_dependent_md, result_md)
                             self.assertTrue(same, "dependent metadata incorrect: " + message)
 
@@ -322,7 +317,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
             try:
                 for name in orig_md:
                     #If it's not volatile, it should be back to what it was.
-                    if not expts[name].volatile:
+                    if not md_expectations[name].volatile:
                         same, message = test_utils.md_entry_same(name, orig_md, result_md)
                         self.assertTrue(same, "failed to revert: " + message)
                 

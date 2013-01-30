@@ -25,7 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#TODO title, version, etc. see requests
 
-from .api import Api, CallFailure
-
-__all__ = ['Api', 'CallFailure']
+from gmusicapi.api import Api
+from gmusicapi.exceptions import CallFailure
