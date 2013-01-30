@@ -44,7 +44,10 @@ from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
 
 #Expected to be in this directory.
-test_filenames = ("test.mp3", "test.flac", "test.m4a", "test.ogg", "test.wma")
+test_filenames = ('noise.mp3', 'noise.flac', 'noise.m4a',
+                  'noise.ogg', 'noise.wma',
+                  'no_tags.mp3', 'unicode_한글.mp3')
+
 
 class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 

@@ -876,20 +876,18 @@ class PlaySession(object):
     PLAY_URL = 'https://play.google.com/music/listen?u=0&hl=en'
 
     # Common User Agent used for web requests
-    _user_agent = "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.8.1.6) Gecko/20061201 Firefox/2.0.0.6 (Ubuntu-feisty)"
+    _user_agent = (
+        "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.8.1.6) "
+        "Gecko/20061201 Firefox/2.0.0.6 (Ubuntu-feisty)"
+    )
 
     def __init__(self):
         """
         Initializes a default unauthenticated session.
         """
         self.client = None
-        self.cookies = None
+        self.web_cookies = None
         self.logged_in = False
-
-        # Wish there were better names for these
-        self.android = HTTPSConnection('android.clients.google.com')
-        self.jumper  = HTTPConnection('uploadsj.clients.google.com')
-
 
     def _get_cookies(self):
         """
@@ -899,28 +897,29 @@ class PlaySession(object):
         if self.logged_in:
             raise AlreadyLoggedIn
 
-        handler = build_opener(HTTPCookieProcessor(self.cookies))
-        req = Request(self.PLAY_URL, None, {}) #header)
-        resp_obj = handler.open(req)
+        handler = build_opener(HTTPCookieProcessor(self.web_cookies))
+        req = Request(self.PLAY_URL, None, {})  # header
+        resp_obj = handler.open(req)  # TODO is this necessary?
 
-        return  (
-                    self.get_cookie('sjsaid') is not None and
-                    self.get_cookie('xt') is not None
-                )
+        return (
+            self.get_web_cookie('sjsaid') is not None and
+            self.get_web_cookie('xt') is not None
+        )
 
-
-    def get_cookie(self, name):
+    def get_web_cookie(self, name):
         """
         Finds the value of a cookie by name, returning None on failure.
 
         :param name: The name of the cookie to find.
         """
-        for cookie in self.cookies:
+        if self.web_cookies is None:
+            return None
+
+        for cookie in self.web_cookies:
             if cookie.name == name:
                 return cookie.value
 
         return None
-
 
     def login(self, email, password):
         """
@@ -942,7 +941,7 @@ class PlaySession(object):
             return False
 
         tokenauth.authenticate(self.client)
-        self.cookies = tokenauth.get_cookies()
+        self.web_cookies = tokenauth.get_cookies()
 
         self.logged_in = self._get_cookies()
 
@@ -964,10 +963,10 @@ class PlaySession(object):
         #These should probably be stored in session.
         if send_xt:
             request.params['u'] = 0
-            request.params['xt'] = self.get_cookie('xt')
+            request.params['xt'] = self.get_web_cookie('xt')
 
         request.headers['User-agent'] = self._user_agent
-        request.cookies = self.cookies
+        request.cookies = self.web_cookies
 
         prep_request = request.prepare()
 
