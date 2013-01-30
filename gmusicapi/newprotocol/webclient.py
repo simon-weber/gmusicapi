@@ -531,3 +531,31 @@ class ReportBadSongMatch(WcCall):
     @staticmethod
     def dynamic_data(song_ids):
         return json.dumps([["", 1], [song_ids]])
+
+
+class UploadImage(WcCall):
+    """Upload an image for use as album art."""
+
+    static_method = 'POST'
+    static_url = service_url + 'imageupload'
+    static_params = {'zx': '',  # ??
+                     'u': 0}  # TODO probably shouldn't hardcode this
+
+    #TODO this is returning (None, None)
+    #Can't seem to set on the webclient either; maybe it's them?
+    #I don't see the upload call being fired.
+    _res_schema = {
+        'type': 'object',
+        'properties': {
+            'imageUrl': {'type': 'string', 'blank': False},
+            'imageDisplayUrl': {'type': 'string', 'blank': False},
+        },
+        'additionalProperties': False
+    }
+
+    @staticmethod
+    def dynamic_data(image):
+        """
+        :param image: contents of the image as a bytestring.
+        """
+        return image

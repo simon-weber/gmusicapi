@@ -65,7 +65,7 @@ class Expectation(_Expectation):
 _all_expts = [
     Expectation(name, 'string', mutable=True, optional=False) for name in
     (
-        'composer', 'album', 'albumArtist', 'genre', 'name', 'artist'
+        'composer', 'album', 'albumArtist', 'genre', 'name', 'artist', 'comment',
     )
 ] + [
     Expectation(name, 'integer', mutable=True, optional=True) for name in
@@ -76,7 +76,6 @@ _all_expts = [
     Expectation(name, type, mutable=False, optional=False) for (name, type) in
     {
         'durationMillis': 'integer',
-        'comment': 'string',
         'id': 'string',
         'deleted': 'boolean',
         'creationDate': 'integer',

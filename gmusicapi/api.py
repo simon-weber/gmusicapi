@@ -644,6 +644,29 @@ class Api(UsesLog):
 
         return song_ids
 
+    @utils.accept_singleton(basestring)
+    @utils.empty_arg_shortcircuit()
+    def change_album_art(self, song_ids, image_filepath):
+        """Change the album art of songs.
+
+        :param song_ids: a list of song ids, or a single song id
+        :param image_filepath: filepath of the art to use. jpg and png are known to work.
+
+        Note that this always uploads the given art. If you already have the art uploaded and set
+        for another song, you can just copy over the the 'albumArtUrl' key, then set the change
+        with :func:`change_song_metadata`.
+        """
+
+        with open(image_filepath) as f:
+            image = f.read()
+
+        res = self._make_call(webclient.UploadImage, image)
+        url = res['imageUrl']
+
+        song_dicts = [{'id': id, 'albumArtUrl': url} for id in song_ids]
+
+        return self.change_song_metadata(song_dicts)
+
     def _make_call(self, protocol, *args, **kwargs):
         """Returns the response of a web client/music manager call.
         Additional kw/args passed to protocol.build_transaction."""
@@ -692,6 +715,7 @@ class Api(UsesLog):
                                    ' This is usually caused by invalid arguments.',
                                    call_name)
         except ValidationException:
+            #TODO link to some protocol for reporting this
             self.log.exception(
                 "please report the following unknown response format for %s: %r",
                 call_name, msg
