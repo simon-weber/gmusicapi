@@ -5,7 +5,7 @@ class CallFailure(Exception):
     """Exception raised when a Google Music server responds that a call failed.
 
     Attributes:
-        callname -- name of the newprotocol.Call that failed
+        callname -- name of the protocol.Call that failed
     """
     def __init__(self, message, callname):
         Exception.__init__(self, message)

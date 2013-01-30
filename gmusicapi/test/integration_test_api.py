@@ -39,7 +39,7 @@ import copy
 import time
 import random
 
-from gmusicapi.newprotocol.metadata import md_expectations
+from gmusicapi.protocol.metadata import md_expectations
 from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
 

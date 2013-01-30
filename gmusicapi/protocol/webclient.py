@@ -7,8 +7,8 @@ import sys
 import validictory
 
 from gmusicapi.exceptions import CallFailure, ValidationException
-from gmusicapi.newprotocol.metadata import md_expectations
-from gmusicapi.newprotocol.shared import Call
+from gmusicapi.protocol.metadata import md_expectations
+from gmusicapi.protocol.shared import Call
 from gmusicapi.utils import utils
 
 base_url = 'https://play.google.com/music/'

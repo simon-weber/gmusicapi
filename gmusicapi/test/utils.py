@@ -36,7 +36,7 @@ import re
 
 from gmusicapi.api import Api
 from gmusicapi.exceptions import CallFailure, NotLoggedIn
-from gmusicapi.newprotocol.metadata import md_expectations
+from gmusicapi.protocol.metadata import md_expectations
 from gmusicapi.utils.apilogging import LogController
 
 log = LogController.get_logger("utils")

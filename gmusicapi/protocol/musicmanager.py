@@ -13,8 +13,8 @@ from decorator import decorator
 import mutagen
 
 from gmusicapi.exceptions import CallFailure
-from gmusicapi.newprotocol import upload_pb2, locker_pb2
-from gmusicapi.newprotocol.shared import Call
+from gmusicapi.protocol import upload_pb2, locker_pb2
+from gmusicapi.protocol.shared import Call
 from gmusicapi.utils import utils
 
 

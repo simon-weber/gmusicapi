@@ -68,8 +68,8 @@ from gmusicapi.exceptions import (
     CallFailure, ParseException, ValidationException,
     AlreadyLoggedIn, NotLoggedIn
 )
-from gmusicapi.newprotocol import webclient, musicmanager
-from gmusicapi.newprotocol import upload_pb2
+from gmusicapi.protocol import webclient, musicmanager
+from gmusicapi.protocol import upload_pb2
 
 
 class Api(UsesLog):
