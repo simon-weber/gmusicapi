@@ -668,8 +668,8 @@ class Api(UsesLog):
         return self.change_song_metadata(song_dicts)
 
     def _make_call(self, protocol, *args, **kwargs):
-        """Returns the response of a web client/music manager call.
-        Additional kw/args passed to protocol.build_transaction."""
+        """Returns the response of a protocol.Call.
+        Additional kw/args are passed to protocol.build_transaction."""
 
         call_name = protocol.__name__
 
@@ -680,12 +680,7 @@ class Api(UsesLog):
 
         request = protocol.build_request(*args, **kwargs)
 
-        #TODO refactor this once session things are figured out
-        if protocol.__bases__[0].__name__ == 'WcCall':
-            response = self.session.send_wc_request(request,
-                                                    send_xt=protocol.send_xt)
-        else:
-            response = self.session.send_mm_request(request)
+        response = self.session.send(request, protocol.get_auth(), protocol.session_options)
 
         #TODO check return code
 
@@ -975,37 +970,37 @@ class PlaySession(object):
         """
         self.__init__()
 
-    #These two functions will be the exposed part of the new Session.
-    #Hopefully, requests.Session can be used behind the scenens.
-    def send_wc_request(self, request, send_xt=True):
-        """Send a request using the web client session."""
-        if not self.logged_in:
+    def send(self, request, auth, session_options):
+        """Send a request from a Call.
+
+        :param request: filled requests.Request
+        :param auth: result of Call.get_auth()
+        :param session_options: dict of kwargs to pass to requests.Session.send
+        """
+
+        if any(auth) and not self.logged_in:
             raise NotLoggedIn
 
-        #These should probably be stored in session.
+        send_xt, send_clientlogin, send_sso = auth
+
+        if request.cookies is None:
+            request.cookies = {}
+
+        #Attach auth.
         if send_xt:
             request.params['u'] = 0
             request.params['xt'] = self.get_web_cookie('xt')
 
-        request.headers['User-agent'] = self._user_agent
-        request.cookies = self.web_cookies
+        if send_clientlogin:
+            request.cookies['SID'] = self.client.get_sid_token()
 
-        prep_request = request.prepare()
+        if send_sso:
+            #dict <- CookieJar
+            web_cookies = {c.name: c.value for c in self.web_cookies}
+            request.cookies.update(web_cookies)
 
+        prepped = request.prepare()
         s = requests.Session()
-        res = s.send(prep_request)
 
-        return res
-
-    def send_mm_request(self, request):
-        """Send a request using the music manager session."""
-        if not self.logged_in:
-            raise NotLoggedIn
-
-        request.cookies = {'SID': self.client.get_sid_token()}
-        prep_request = request.prepare()
-
-        s = requests.Session()
-        res = s.send(prep_request, verify=False)  # TODO only turn off verification when needed
-
+        res = s.send(prepped, **session_options)
         return res

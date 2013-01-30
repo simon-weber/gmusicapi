@@ -18,6 +18,10 @@ from gmusicapi.newprotocol.shared import Call
 from gmusicapi.utils import utils
 
 
+#This url has SSL issues, hence the verify=False for session_options.
+_android_url = 'https://android.clients.google.com/upsj/'
+
+
 @decorator
 def pb(f, *args, **kwargs):
     """Decorator to serialize a protobuf message."""
@@ -27,8 +31,6 @@ def pb(f, *args, **kwargs):
 
 class MmCall(Call):
     """Abstract base for Music Manager calls."""
-
-    _base_url = 'https://android.clients.google.com/upsj/'
 
     static_method = 'POST'
     static_headers = {'USER-AGENT': 'Music Manager (1, 0, 54, 4672 HTTPS - Windows)'}
@@ -58,7 +60,8 @@ class MmCall(Call):
 class AuthenticateUploader(MmCall):
     """Sent to auth, reauth, or register our upload client."""
 
-    static_url = MmCall._base_url + 'upauth'
+    static_url = _android_url + 'upauth'
+    session_options = {'verify': False}  # the android url has SSL troubles
 
     @classmethod
     def check_success(cls, res):
@@ -85,7 +88,8 @@ class AuthenticateUploader(MmCall):
 
 
 class UploadMetadata(MmCall):
-    static_url = MmCall._base_url + 'metadata'
+    static_url = _android_url + 'metadata'
+    session_options = {'verify': False}
 
     static_params = {'version': 1}
 
@@ -231,7 +235,8 @@ class UploadMetadata(MmCall):
 
 class GetUploadJobs(MmCall):
     #TODO
-    static_url = MmCall._base_url + 'getjobs'
+    static_url = _android_url + 'getjobs'
+    session_options = {'verify': False}
 
     static_params = {'version': 1}
 
@@ -401,7 +406,8 @@ class ProvideSample(MmCall):
 
     static_method = 'POST'
     static_params = {'version': 1}
-    static_url = 'https://android.clients.google.com/upsj/sample'
+    static_url = _android_url + 'sample'
+    session_options = {'verify': False}
 
     @staticmethod
     @pb
@@ -470,7 +476,8 @@ class UpdateUploadState(MmCall):
 
     static_method = 'POST'
     static_params = {'version': 1}
-    static_url = 'https://android.clients.google.com/upsj/uploadstate'
+    static_url = _android_url + 'sample'
+    session_options = {'verify': False}
 
     @staticmethod
     @pb

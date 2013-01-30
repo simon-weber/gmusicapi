@@ -145,6 +145,7 @@ class Call(object):
      OR
         send_sso: google SSO (authtoken) cookies
 
+    session_options can also be set to a dict of kwargs to pass to requests.Session.send.
 
     Calls must define parse_response.
     Calls can also define filter_response, validate and check_success.
@@ -157,6 +158,7 @@ class Call(object):
     send_xt = False
     send_clientlogin = False
     send_sso = False
+    session_options = {}
 
     @classmethod
     def parse_response(cls, response):
@@ -175,6 +177,11 @@ class Call(object):
     def filter_response(cls, msg):
         """Return a version of a parsed response appropriate for logging."""
         return msg  # default to identity
+
+    @classmethod
+    def get_auth(cls):
+        """Return a 3-tuple send (xt, clientlogin, sso)."""
+        return (cls.send_xt, cls.send_clientlogin, cls.send_sso)
 
     @staticmethod
     def _parse_json(text):
