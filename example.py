@@ -26,16 +26,17 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-from gmusicapi.api import Api
+from gmusicapi import Api
 from getpass import getpass
 
-def init():
-    """Makes an instance of the api and attempts to login with it.
-    Returns the authenticated api.
+
+def ask_for_credentials():
+    """Make an instance of the api and attempts to login with it.
+    Return the authenticated api.
     """
-    
-    api = Api() 
-    
+
+    api = Api()
+
     logged_in = False
     attempts = 0
 
@@ -48,11 +49,11 @@ def init():
 
     return api
 
-def main():
-    """Demonstrates some api features."""
 
-    #Make a new instance of the api and prompt the user to log in.
-    api = init()
+def demonstration():
+    """Demonstrate some api features."""
+
+    api = ask_for_credentials()
 
     if not api.is_authenticated():
         print "Sorry, those credentials weren't accepted."
@@ -77,19 +78,18 @@ def main():
         first_song["name"],
         first_song["artist"])
 
-
     #We're going to create a new playlist and add a song to it.
     #Songs are uniquely identified by 'song ids', so let's get the id:
     song_id = first_song["id"]
 
     print "I'm going to make a new playlist and add that song to it."
-    print "Don't worry, I'll delete it when we're finished."
+    print "I'll delete it when we're finished."
     print
     playlist_name = raw_input("Enter a name for the playlist: ")
 
     #Like songs, playlists have unique ids.
-    #Note that Google Music allows more than one playlist of the
-    # exact same name, so you'll always have to work with ids.
+    #Google Music allows more than one playlist of the same name;
+    # these ids are necessary.
     playlist_id = api.create_playlist(playlist_name)
     print "Made the playlist."
     print
@@ -100,14 +100,15 @@ def main():
     print
 
     #We're all done! The user can now go and see that the playlist is there.
-    raw_input("You can now check on Google Music that the playlist exists. \n When done, press enter to delete the playlist:")
+    #The web client syncs our changes in real time.
+    raw_input("You can now check on Google Music that the playlist exists.\n"
+              "When done, press enter to delete the playlist:")
     api.delete_playlist(playlist_id)
     print "Deleted the playlist."
-
 
     #It's good practice to logout when finished.
     api.logout()
     print "All done!"
 
 if __name__ == '__main__':
-    main()
+    demonstration()
