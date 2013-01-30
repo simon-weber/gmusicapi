@@ -418,6 +418,12 @@ class ChangeSongMetadata(WcCall):
         filtered['songs'] = ["<%s songs>" % len(filtered['songs'])]
         return filtered
 
+    @staticmethod
+    def validate(msg):
+        """The data that comes back doesn't follow normal metadata rules,
+        and is meaningless anyway; it'll lie about results."""
+        pass
+
 
 class GetDownloadInfo(WcCall):
     """Get download links and counts for songs."""
