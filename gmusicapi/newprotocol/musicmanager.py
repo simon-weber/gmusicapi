@@ -161,14 +161,12 @@ class UploadMetadata(MmCall):
         track.duration_millis = int(audio.info.length * 1000)
 
         try:
-            print 'info bitrate: ', audio.info.bitrate
             bitrate = int(audio.info.bitrate / 1000)
         except AttributeError:
             #mutagen doesn't provide bitrate for FLAC and OGGFLAC.
             #Provide an estimation instead. This shouldn't matter too much;
             # the bitrate will always be > 320, which is the highest scan and match quality.
             bitrate = (track.estimated_size * 8) / track.duration_millis
-            print 'estimating bitrate!', bitrate
 
         track.original_bit_rate = bitrate
 
@@ -185,13 +183,15 @@ class UploadMetadata(MmCall):
         else:
             #attempt to handle non-ascii path encodings.
             enc = utils.guess_str_encoding(filepath)[0]
-
             filename = os.path.basename(filepath)
             track.title = filename.decode(enc)
 
         if "date" in audio:
-            #assumption; should check examples
-            track.year = int(audio["date"][0].split("-")[0])
+            try:
+                track.year = int(audio["date"][0].split("-")[0])
+            except ValueError:
+                #TODO log
+                pass
 
         #Mass-populate the rest of the simple fields.
         #Merge shared and unshared fields into {mutagen: Track}.
@@ -310,10 +310,14 @@ class GetUploadSession(MmCall):
 
         #Insert the inline info.
         for key in inlined:
+            payload = inlined[key]
+            if not isinstance(payload, basestring):
+                payload = str(payload)
+
             message['createSessionRequest']['fields'].append(
                 {
                     "inlined": {
-                        "content": str(inlined[key]),
+                        "content": payload,
                         "name": key
                     }
                 }
