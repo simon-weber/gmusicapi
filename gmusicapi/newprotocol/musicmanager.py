@@ -460,3 +460,34 @@ class ProvideSample(MmCall):
         print
 
         return msg
+
+
+class UpdateUploadState(MmCall):
+    """Notify the server that we will be starting/stopping/pausing our upload.
+
+    I believe this is used for the webclient 'currently uploading' widget.
+    """
+
+    static_method = 'POST'
+    static_params = {'version': 1}
+    static_url = 'https://android.clients.google.com/upsj/uploadstate'
+
+    @staticmethod
+    @pb
+    def dynamic_data(to_state, uploader_id):
+        """Raise ValueError on problems.
+
+        :param to_state: one of 'start', 'paused', or 'stopped'
+        """
+
+        msg = upload_pb2.UpdateUploadStateRequest()
+        msg.uploader_id = uploader_id
+
+        try:
+            state = getattr(upload_pb2.UpdateUploadStateRequest, to_state.upper())
+        except AttributeError as e:
+            raise ValueError(str(e))
+
+        msg.state = state
+
+        return msg

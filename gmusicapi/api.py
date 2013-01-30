@@ -35,13 +35,9 @@ This api is not supported nor endorsed by Google, and could break at any time.
 Use common sense: protocol compliance, reasonable load, etc.
 """
 
-import json
 import time
 import copy
 import contextlib
-import tempfile
-import subprocess
-import os
 from uuid import getnode as getmac
 from socket import gethostname
 
@@ -74,8 +70,6 @@ from gmusicapi.exceptions import (
 )
 from gmusicapi.newprotocol import webclient, musicmanager
 from gmusicapi.newprotocol import upload_pb2
-
-supported_upload_filetypes = ("mp3", "m4a", "ogg", "flac", "wma")
 
 
 class Api(UsesLog):
@@ -809,8 +803,10 @@ class Api(UsesLog):
 
                 not_uploaded[path] = "server error %s: %s" % (res.response_code, res_name)
 
-
         #Send upload requests.
+        if to_upload:
+            self._make_call(musicmanager.UpdateUploadState, 'start', self.uploader_id)
+
         for server_id, (path, contents, track) in to_upload.items():
             #It can take a few tries to get an session.
             should_retry = True
@@ -855,6 +851,8 @@ class Api(UsesLog):
             else:
                 #think 404 == already uploaded. serverside check on clientid?
                 not_uploaded[path] = 'could not finalize upload'
+
+        self._make_call(musicmanager.UpdateUploadState, 'stopped', self.uploader_id)
 
         return uploaded, matched, not_uploaded
 
