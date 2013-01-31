@@ -4,7 +4,7 @@
 """Expectations about track metadata.
 Clients typically just use the dict md_expectations."""
 
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 
 
 """
@@ -84,6 +84,7 @@ _all_expts = [
         'url': 'string',
         'subjectToCuration': 'boolean',  # ??
         'matchedId': 'string',  # related to scan and match?
+        'recentTimestamp': 'integer',  # ??
     }.items()
 ] + [
     Expectation(name, type, mutable=False, optional=True) for (name, type) in
@@ -119,5 +120,9 @@ _all_expts = [
                 depends_on='name', dependent_transformation=lambda x: x.lower()),
 ]
 
-#should be all the client code needs
-md_expectations = {expt.name: expt for expt in _all_expts}
+#Create the dict for client code. If they look up something we don't know about,
+# give them a flexible immutable key.
+_immutable_key = lambda: Expectation('unknown', 'any', mutable=False, optional=True)
+md_expectations = defaultdict(_immutable_key)
+for expt in _all_expts:
+    md_expectations[expt.name] = expt
