@@ -798,7 +798,7 @@ class Api(UsesLog):
                     uploaded[path] = server_id
                 else:
                     #think 404 == already uploaded. serverside check on clientid?
-                    self.debug.log("could not finalize upload of '%s'. response: %s",
+                    self.log.debug("could not finalize upload of '%s'. response: %s",
                                    path, upload_response)
                     not_uploaded[path] = 'could not finalize upload'
 
