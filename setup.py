@@ -19,7 +19,7 @@ setup(
     install_requires=[
         'validictory == 0.9.0',
         'decorator == 3.3.2',
-        'mutagen == 1.20',
+        'mutagen == 1.21',
         'protobuf == 2.4.1',
         'chardet == 2.1.1',
         'requests == 1.1.0',
