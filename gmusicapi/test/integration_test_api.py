@@ -11,17 +11,21 @@ when it is finished, but no guarantees are made."""
 import copy
 from glob import glob
 import os
+import random
 import string
+import sys
 import time
 import unittest
-import random
 
 from gmusicapi.protocol.metadata import md_expectations
 from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
 
-#Expected to be in this directory.
-test_filenames = glob('audiotest*')
+#Test files are located in the same directory as this test runner.
+cwd = os.getcwd()
+os.chdir(os.path.dirname(sys.argv[0]))
+test_filenames = glob(u'audiotest*')
+os.chdir(cwd)
 
 
 class TestWCApiCalls(test_utils.BaseTest, UsesLog):
