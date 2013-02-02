@@ -639,7 +639,8 @@ class Api(UsesLog):
     @utils.accept_singleton(basestring)
     @utils.empty_arg_shortcircuit(return_code='{}')
     def upload(self, filepaths):
-        """Uploads the given filepaths.
+        """Uploads the given filepaths. Any non-mp3 files will be transcoded before being uploaded.
+
         Return a 3-tuple (uploaded, matched, not_uploaded) of dictionaries:
             uploaded: {filepath: new server id}
             matched: {filepath: new server id}
@@ -765,14 +766,22 @@ class Api(UsesLog):
                 session_url = external['putInfo']['url']
                 content_type = external['content_type']
 
+                try:
+                    #TODO expose quality
+                    transcoded_audio = utils.transcode_to_mp3(contents)
+                except (OSError, ValueError) as e:
+                    self.log.warning("error transcoding %s: %s", path, e)
+                    not_uploaded[path] = "transcoding error: %s" % e
+                    continue
+
                 upload_response = self._make_call(musicmanager.UploadFile,
-                                                  session_url, content_type, contents)
+                                                  session_url, content_type, transcoded_audio)
 
                 success = upload_response.get('sessionStatus', {}).get('state')
                 if success:
                     uploaded[path] = server_id
                 else:
-                    #think 404 == already uploaded. serverside check on clientid?
+                    #404 == already uploaded? serverside check on clientid?
                     self.log.debug("could not finalize upload of '%s'. response: %s",
                                    path, upload_response)
                     not_uploaded[path] = 'could not finalize upload'

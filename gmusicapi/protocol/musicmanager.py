@@ -7,7 +7,6 @@ import base64
 import hashlib
 import json
 import os
-import subprocess
 
 from decorator import decorator
 import mutagen
@@ -394,7 +393,8 @@ class UploadFile(MmCall):
 
 
 class ProvideSample(MmCall):
-    """Give the server a scan and match sample."""
+    """Give the server a scan and match sample.
+    The sample is a 128k mp3 slice of the file, usually 15 seconds long."""
 
     static_method = 'POST'
     static_params = {'version': 1}
@@ -404,7 +404,7 @@ class ProvideSample(MmCall):
     @staticmethod
     @pb
     def dynamic_data(file_contents, server_challenge, track, uploader_id):
-        """Raise ValueError on problems."""
+        """Raise OSError on transcoding problems, or ValueError for invalid input."""
         msg = upload_pb2.UploadSampleRequest()
 
         msg.uploader_id = uploader_id
@@ -413,44 +413,17 @@ class ProvideSample(MmCall):
         sample_msg.track.CopyFrom(track)
         sample_msg.signed_challenge_info.CopyFrom(server_challenge)
 
+        sample_spec = server_challenge.challenge_info  # convenience
+
         #The sample is simply a small (usually 15 second) clip of the song,
         # transcoded into 128kbs mp3. The server dictates where the cut should be made.
-        try:
-            err_output = None
-            sample_spec = server_challenge.challenge_info  # convenience
+        sample_msg.sample = utils.transcode_to_mp3(
+            file_contents, quality='128k',
+            slice_start=sample_spec.start_millis / 1000,
+            slice_duration=sample_spec.duration_millis / 1000
+        )
 
-            #avconv with input on stdin, output to stdout
-            p = subprocess.Popen(
-                ['avconv',
-                 '-i', 'pipe:0',
-                 '-t', str(sample_spec.duration_millis / 1000),
-                 '-ss', str(sample_spec.start_millis / 1000),
-                 '-ab', '128k',
-                 #don't output id3 headers
-                 '-f', 's16be',
-                 '-c', 'libmp3lame',
-                 'pipe:1'],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE
-            )
-
-            sample, err_output = p.communicate(input=file_contents)
-
-            if p.returncode != 0:
-                raise OSError  # handle errors in except
-
-        except OSError as e:
-            #TODO would be better to log.exception here
-            err_msg = "could not create a scan and match sample with avconv: %s. " % e
-
-            if err_output is not None:
-                err_msg += "stderr: '%s'" % err_output
-
-            raise ValueError(err_msg)
-
-        else:
-            sample_msg.sample = sample
-
-        #You can provide multiple samples; I just provide one.
+        #You can provide multiple samples; I just provide one at a time.
         msg.track_sample.extend([sample_msg])
 
         return msg
@@ -459,7 +432,8 @@ class ProvideSample(MmCall):
 class UpdateUploadState(MmCall):
     """Notify the server that we will be starting/stopping/pausing our upload.
 
-    I believe this is used for the webclient 'currently uploading' widget.
+    I believe this is used for the webclient 'currently uploading' widget, but that might also be
+    the current_uploading information.
     """
 
     static_method = 'POST'

@@ -5,6 +5,7 @@
 
 from htmlentitydefs import name2codepoint
 import re
+import subprocess
 
 import mutagen
 from decorator import decorator
@@ -12,6 +13,62 @@ import chardet
 
 from apilogging import LogController
 log = LogController.get_logger("utils")
+
+
+def transcode_to_mp3(audio_in, quality=4, slice_start=None, slice_duration=None):
+    """Return the bytestring result of transcoding audio_in to mp3.
+    An ID3 header is not included in the result.
+
+    :param audio_in: bytestring of input
+    :param quality: if int, pass to avconv -qscale. if string, pass to avconv -ab
+                    -qscale roughly corresponds to libmp3lame -V0, -V1...
+    :param slice_start: (optional) transcode a slice, starting at this many seconds
+    :param slice_duration: (optional) when used with slice_start, the number of seconds in the slice
+
+    Raise OSError on transcoding problems, or ValueError on param problems.
+    """
+
+    err_output = None
+    cmd = ['avconv', '-i', 'pipe:0']
+
+    if slice_duration is not None:
+        cmd.extend(['-t', str(slice_duration)])
+    if slice_start is not None:
+        cmd.extend(['-ss', str(slice_start)])
+
+    if isinstance(quality, int):
+        cmd.extend(['-qscale', str(quality)])
+    elif isinstance(quality, basestring):
+        cmd.extend(['-ab', quality])
+    else:
+        raise ValueError("quality must be int or string, but received %r" % quality)
+
+    cmd.extend(['-f', 's16be',  # don't output id3 headers
+                '-c', 'libmp3lame',
+                'pipe:1'])
+
+    #TODO might be good to log the final command
+
+    try:
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+
+        audio_out, err_output = proc.communicate(input=audio_in)
+
+        if proc.returncode != 0:
+            raise OSError  # handle errors in except
+
+    except OSError as e:
+        #TODO would be better to log.exception here
+        err_msg = "transcoding failed: %s. " % e
+
+        if err_output is not None:
+            err_msg += "stderr: '%s'" % err_output
+
+        raise OSError(err_msg)
+
+    else:
+        return audio_out
 
 
 def truncate(x, max_els=100, recurse_levels=0):
