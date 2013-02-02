@@ -8,11 +8,12 @@ A successful test run should not appear to mutate the library
 when it is finished, but no guarantees are made."""
 
 
-import unittest
+import copy
+from glob import glob
 import os
 import string
-import copy
 import time
+import unittest
 import random
 
 from gmusicapi.protocol.metadata import md_expectations
@@ -20,9 +21,7 @@ from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
 
 #Expected to be in this directory.
-test_filenames = ('noise.mp3', 'noise.flac', 'noise.m4a',
-                  'noise.ogg', 'noise.wma',
-                  'no_tags.mp3', 'unicode_한글.mp3')
+test_filenames = glob('audiotest*')
 
 
 class TestWCApiCalls(test_utils.BaseTest, UsesLog):
