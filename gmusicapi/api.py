@@ -328,8 +328,11 @@ class Api(UsesLog):
 
     def get_song_download_info(self, song_id):
         """Returns a tuple ``("<download url>", <download count>)``.
+        The url will be None if the download limit is exceeded.
 
-        GM allows 2 downloads per song.
+        GM allows 2 downloads per song. If downloads are made quickly,
+        the download count may not be accurate.
+
         This call does not register a download - that is done when the download url is retrieved.
 
         :param song_id: a single song id.
@@ -337,8 +340,9 @@ class Api(UsesLog):
 
         #TODO the protocol expects a list of songs - could extend with accept_singleton
         info = self._make_call(webclient.GetDownloadInfo, [song_id])
+        url = info.get('url')
 
-        return (info["url"], info["downloadCounts"][song_id])
+        return (url, info["downloadCounts"][song_id])
 
     def get_stream_url(self, song_id):
         """Returns a url that points to a streamable version of this song.
