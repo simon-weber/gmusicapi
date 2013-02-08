@@ -182,10 +182,13 @@ class UploadMetadata(MmCall):
 
             track.title = title
         else:
-            #attempt to handle non-ascii path encodings.
-            enc = utils.guess_str_encoding(filepath)[0]
-            filename = os.path.basename(filepath)
-            track.title = filename.decode(enc)
+            #handle non-ascii path encodings.
+            if not isinstance(filepath, unicode):
+                #not sure if this is possible
+                enc = utils.guess_str_encoding(filepath)[0]
+                filepath = filepath.decode(enc)
+
+            track.title = os.path.basename(filepath)
 
         if "date" in audio:
             try:
