@@ -164,8 +164,8 @@ class UploadMetadata(MmCall):
         try:
             bitrate = int(audio.info.bitrate / 1000)
         except AttributeError:
-            #mutagen doesn't provide bitrate for FLAC and OGGFLAC.
-            #Provide an estimation instead. This shouldn't matter too much;
+            #mutagen doesn't provide bitrate for some lossless formats (eg FLAC), so
+            # provide an estimation instead. This shouldn't matter too much;
             # the bitrate will always be > 320, which is the highest scan and match quality.
             bitrate = (track.estimated_size * 8) / track.duration_millis
 
