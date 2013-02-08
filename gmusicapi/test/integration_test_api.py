@@ -176,7 +176,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
                        self.uploaded_ids]
 
         for info_tuple in info_tuples:
-            self.assertEqual(info_tuple[1], 0)
+            self.assertNotEqual(info_tuple[0], None, 'should be available for download')
 
     def updel_2_delete(self):
         """Delete the uploaded test files."""

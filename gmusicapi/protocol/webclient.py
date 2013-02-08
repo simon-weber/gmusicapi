@@ -292,6 +292,10 @@ class DeleteSongs(WcCall):
         :param entry_ids: when deleting from playlists, corresponding list of entry ids.
         """
 
+        if entry_ids is None:
+            #this is strange, but apparently correct
+            entry_ids = [''] * len(song_ids)
+
         return {
             'json': json.dumps(
                 {"songIds": song_ids, "entryIds": entry_ids, "listId": playlist_id}
