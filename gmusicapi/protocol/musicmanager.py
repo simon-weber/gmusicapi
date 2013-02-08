@@ -220,11 +220,20 @@ class UploadMetadata(MmCall):
 
     @classmethod
     @pb
-    def dynamic_data(cls, tracks, uploader_id):
-        """Track is a list of filled locker_pb2.Track."""
+    def dynamic_data(cls, tracks, uploader_id, do_not_rematch=False):
+        """
+        :param tracks: list of filled locker_pb2.Track
+        :param uploader_id
+        :param do_not_rematch: seems to be ignored
+        """
+
         req_msg = upload_pb2.UploadMetadataRequest()
 
         req_msg.track.extend(tracks)
+
+        for track in req_msg.track:
+            track.do_not_rematch = do_not_rematch
+
         req_msg.uploader_id = uploader_id
 
         return req_msg
@@ -275,20 +284,20 @@ class GetUploadSession(MmCall):
 
     @staticmethod
     def dynamic_data(uploader_id, num_already_uploaded,
-                     track, filepath, server_id):
+                     track, filepath, server_id, do_not_rematch=False):
         """track is a locker_pb2.Track, and the server_id is from a metadata upload."""
         #small info goes inline, big things get their own external PUT.
         #still not sure as to thresholds - I've seen big album art go inline.
         inlined = {
             "title": "jumper-uploader-title-42",
             "ClientId": track.client_id,
-            "ClientTotalSongCount": "1",  # this supports more than 1 concurrent request
+            "ClientTotalSongCount": "1",  # TODO think this is ie "how many will you upload"
             "CurrentTotalUploadedCount": str(num_already_uploaded),
             "CurrentUploadingTrack": track.title,
             "ServerId": server_id,
             "SyncNow": "true",
             "TrackBitRate": track.original_bit_rate,
-            "TrackDoNotRematch": "false",
+            "TrackDoNotRematch": str(do_not_rematch).lower(),
             "UploaderId": uploader_id,
         }
 
