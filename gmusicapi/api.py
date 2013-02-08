@@ -642,21 +642,29 @@ class Api(UsesLog):
 
     @utils.accept_singleton(basestring)
     @utils.empty_arg_shortcircuit(return_code='{}')
-    def upload(self, filepaths):
+    def upload(self, filepaths, enable_matching=False):
         """Uploads the given filepaths. Any non-mp3 files will be transcoded before being uploaded.
 
-        Return a 3-tuple (uploaded, matched, not_uploaded) of dictionaries:
-            uploaded: {filepath: new server id}
-            matched: {filepath: new server id}
-            not_uploaded: {filepath: string reason (eg 'ALREADY_UPLOADED')}
+        Return a 3-tuple ``(uploaded, matched, not_uploaded)`` of dictionaries::
+
+            uploaded: {'filepath': 'new server id'}
+            matched: {'filepath': 'new server id'}
+            not_uploaded: {'filepath: 'reason, eg ALREADY_UPLOADED'}
 
         :param filepaths: a list of filepaths, or a single filepath.
+        :param enable_matching: if True, attempt to use `scan and match
+          <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=2920799&topic=2450455>`_
+          when uploading.
+          **WARNING**: currently, mismatched songs can *not* be fixed with the 'fix incorrect match'
+          button on Google Music; this will be supported in the future.
 
-        All Google-supported filetypes are supported; see http://goo.gl/iEwLI for more information.
+        All Google-supported filetypes are supported; see `Google's documentation
+        <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1100462>`_.
 
         Unlike Google's Music Manager, this function will currently allow the same song to
         be uploaded more than once if its tags are changed. This is subject to change in the future.
         """
+
         if self.uploader_id is None or self.uploader_name is None:
             raise NotLoggedIn("Not authenticated as an upload device;"
                               " run Api.login(...perform_upload_auth=True...)"
@@ -710,37 +718,74 @@ class Api(UsesLog):
                 responses.extend(res.sample_response.track_sample_response)
 
         #Read sample responses and prep upload requests.
-        to_upload = {}  # {serverid: (path, contents, Track)}
-        for res in responses:
-            path, contents, track = local_info[res.client_track_id]
+        to_upload = {}  # {serverid: (path, contents, Track, do_not_rematch?)}
+        for sample_res in responses:
+            path, contents, track = local_info[sample_res.client_track_id]
 
-            if res.response_code == upload_pb2.TrackSampleResponse.MATCHED:
-                matched[path] = res.server_track_id
-            elif res.response_code == upload_pb2.TrackSampleResponse.UPLOAD_REQUESTED:
-                to_upload[res.server_track_id] = (path, contents, track)
+            if sample_res.response_code == upload_pb2.TrackSampleResponse.MATCHED:
+                self.log.info("matched '%s' to sid %s", path, sample_res.server_track_id)
+
+                if enable_matching:
+                    matched[path] = sample_res.server_track_id
+                else:
+                    #Immediately request a reupload session (ie, hit 'fix incorrect match').
+                    try:
+                        self._make_call(webclient.ReportBadSongMatch, [sample_res.server_track_id])
+
+                        #Wait for server to register our request.
+                        retries = 0
+                        while retries < 5:
+                            jobs = self._make_call(musicmanager.GetUploadJobs, self.uploader_id)
+                            matching = [job for job in jobs.getjobs_response.tracks_to_upload
+                                        if (job.client_id == sample_res.client_track_id and
+                                            job.status == upload_pb2.TracksToUpload.FORCE_REUPLOAD)]
+                            if matching:
+                                reup_sid = matching[0].server_id
+                                break
+
+                            self.log.debug("wait for reup job (%s)", retries)
+                            time.sleep(2)
+                            retries += 1
+                        else:
+                            raise CallFailure(
+                                "could not get reupload/rematch job for '%s'" % path,
+                                'GetUploadJobs'
+                            )
+
+                    except CallFailure as e:
+                        self.log.exception("'%s' was matched without matching enabled", path)
+                        matched[path] = sample_res.server_track_id
+                    else:
+                        self.log.info("will reupload '%s'", path)
+
+                        to_upload[reup_sid] = (path, contents, track, True)
+
+            elif sample_res.response_code == upload_pb2.TrackSampleResponse.UPLOAD_REQUESTED:
+                to_upload[sample_res.server_track_id] = (path, contents, track, False)
             else:
-                #Get the symbolic name of the response code enum:
+                #Report the symbolic name of the response code enum.
                 enum_desc = upload_pb2._TRACKSAMPLERESPONSE.enum_types[0]
-                res_name = enum_desc.values_by_number[res.response_code].name
+                res_name = enum_desc.values_by_number[sample_res.response_code].name
 
-                err_msg = "TrackSampleResponse error %s: %s" % (res.response_code, res_name)
+                err_msg = "TrackSampleResponse code %s: %s" % (sample_res.response_code, res_name)
 
                 self.log.warning("upload of '%s' rejected: %s", path, err_msg)
                 not_uploaded[path] = err_msg
 
         #Send upload requests.
         if to_upload:
+            #TODO reordering requests could avoid wasting time waiting for reup sync
             self._make_call(musicmanager.UpdateUploadState, 'start', self.uploader_id)
 
-            for server_id, (path, contents, track) in to_upload.items():
+            for server_id, (path, contents, track, do_not_rematch) in to_upload.items():
                 #It can take a few tries to get an session.
                 should_retry = True
                 attempts = 0
 
-                while should_retry and attempts < 5:
+                while should_retry and attempts < 10:
                     session = self._make_call(musicmanager.GetUploadSession,
                                               self.uploader_id, len(uploaded),
-                                              track, path, server_id)
+                                              track, path, server_id, do_not_rematch)
                     attempts += 1
 
                     got_session, error_details = \
@@ -753,7 +798,13 @@ class Api(UsesLog):
                     should_retry, reason, error_code = error_details
                     self.log.debug("problem getting upload session: %s\ncode=%s retrying=%s",
                                    reason, error_code, should_retry)
-                    time.sleep(5)  # wait before retrying
+
+                    if error_code == 200 and do_not_rematch:
+                        #reupload requests need to wait on a server sync
+                        #200 == already uploaded, so force a retry in this case
+                        should_retry = True
+
+                    time.sleep(6)  # wait before retrying
                 else:
                     err_msg = "GetUploadSession error %s: %s" % (error_code, reason)
 
