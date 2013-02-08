@@ -21,7 +21,7 @@ for fname in glob(u'audiotest*'):
 
     #write
     base = os.path.basename(fname)
-    audio['title'] = base
+    audio['title'] = base + ' title'
     audio['artist'] = base + ' artist'
     audio.save()
 
