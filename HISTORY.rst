@@ -6,9 +6,14 @@ History
 2013.02.xx
 ++++++++++
 
-- breaking: upload return value for scan and match
-- breaking: get_all_playlist_ids always returns lists of ids; always_id_lists is gone
+- breaking: upload returns a 3-tuple
+- breaking: get_all_playlist_ids always returns lists of ids; remove always_id_lists option
+- breaking: remove suppress_failure option in Api.__init__
 - new: report_incorrect_match (only useful for Music Manager uploads)
+- uploading fixed
+- avconv replaces ffmpeg
+- scan and match is supported
+- huge code improvements
 
 2013.01.05
 ++++++++++

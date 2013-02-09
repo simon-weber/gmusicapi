@@ -10,7 +10,6 @@ This api is not supported nor endorsed by Google, and could break at any time.
 Use common sense: protocol compliance, reasonable load, etc.
 """
 
-import contextlib
 import copy
 from socket import gethostname
 import time
@@ -32,13 +31,8 @@ from gmusicapi.utils.tokenauth import TokenAuth
 
 
 class Api(UsesLog):
-    def __init__(self, suppress_failure=False):
-        """Initializes an Api.
-
-        :param suppress_failure: when ``True``, CallFailure will never be raised.
-        """
-
-        self.suppress_failure = suppress_failure
+    def __init__(self):
+        """Initializes an Api."""
 
         self.session = PlaySession()
 
@@ -46,19 +40,6 @@ class Api(UsesLog):
         self.uploader_name = None
 
         self.init_logger()
-
-    @contextlib.contextmanager
-    def _unsuppress_failures(self):
-        """An internal context manager to temporarily disable failure suppression.
-
-        This should wrap any Api code which tries to catch CallFailure."""
-
-        orig = self.suppress_failure
-        self.suppress_failure = False
-        try:
-            yield
-        finally:
-            self.suppress_failure = orig
 
     #---
     #   Authentication:
@@ -447,87 +428,85 @@ class Api(UsesLog):
 
             backup_id = self.copy_playlist(playlist_id, playlist_name + u"_gmusicapi_backup")
 
-        #Ensure CallFailures do not get suppressed in our subcalls.
-        #Did not unsuppress the above copy_playlist call, since we should fail
-        # out if we can't ensure the backup was made.
-        with self._unsuppress_failures():
-            try:
-                #Counter, Counter, and set of id pairs to delete, add, and keep.
-                to_del, to_add, to_keep = \
-                    tools.find_playlist_changes(server_tracks, desired_playlist)
+        try:
+            #Counter, Counter, and set of id pairs to delete, add, and keep.
+            to_del, to_add, to_keep = \
+                tools.find_playlist_changes(server_tracks, desired_playlist)
 
-                ##Delete unwanted entries.
-                to_del_eids = [pair[1] for pair in to_del.elements()]
-                if to_del_eids:
-                    self._remove_entries_from_playlist(playlist_id, to_del_eids)
+            ##Delete unwanted entries.
+            to_del_eids = [pair[1] for pair in to_del.elements()]
+            if to_del_eids:
+                self._remove_entries_from_playlist(playlist_id, to_del_eids)
 
-                ##Add new entries.
-                to_add_sids = [pair[0] for pair in to_add.elements()]
-                if to_add_sids:
-                    new_pairs = self.add_songs_to_playlist(playlist_id, to_add_sids)
+            ##Add new entries.
+            to_add_sids = [pair[0] for pair in to_add.elements()]
+            if to_add_sids:
+                new_pairs = self.add_songs_to_playlist(playlist_id, to_add_sids)
 
-                    ##Update desired tracks with added tracks server-given eids.
-                    #Map new sid -> [eids]
-                    new_sid_to_eids = {}
-                    for sid, eid in new_pairs:
-                        if not sid in new_sid_to_eids:
-                            new_sid_to_eids[sid] = []
-                        new_sid_to_eids[sid].append(eid)
+                ##Update desired tracks with added tracks server-given eids.
+                #Map new sid -> [eids]
+                new_sid_to_eids = {}
+                for sid, eid in new_pairs:
+                    if not sid in new_sid_to_eids:
+                        new_sid_to_eids[sid] = []
+                    new_sid_to_eids[sid].append(eid)
 
-                    for d_t in desired_playlist:
-                        if d_t["id"] in new_sid_to_eids:
-                            #Found a matching sid.
-                            match = d_t
-                            sid = match["id"]
-                            eid = match.get("playlistEntryId")
-                            pair = (sid, eid)
+                for d_t in desired_playlist:
+                    if d_t["id"] in new_sid_to_eids:
+                        #Found a matching sid.
+                        match = d_t
+                        sid = match["id"]
+                        eid = match.get("playlistEntryId")
+                        pair = (sid, eid)
 
-                            if pair in to_keep:
-                                to_keep.remove(pair)  # only keep one of the to_keep eids.
-                            else:
-                                match["playlistEntryId"] = new_sid_to_eids[sid].pop()
-                                if len(new_sid_to_eids[sid]) == 0:
-                                    del new_sid_to_eids[sid]
+                        if pair in to_keep:
+                            to_keep.remove(pair)  # only keep one of the to_keep eids.
+                        else:
+                            match["playlistEntryId"] = new_sid_to_eids[sid].pop()
+                            if len(new_sid_to_eids[sid]) == 0:
+                                del new_sid_to_eids[sid]
 
-                ##Now, the right eids are in the playlist.
-                ##Set the order of the tracks:
+            ##Now, the right eids are in the playlist.
+            ##Set the order of the tracks:
 
-                #The web client has no way to dictate the order without block insertion,
-                # but the api actually supports setting the order to a given list.
-                #For whatever reason, though, it needs to be set backwards; might be
-                # able to get around this by messing with afterEntry and beforeEntry parameters.
+            #The web client has no way to dictate the order without block insertion,
+            # but the api actually supports setting the order to a given list.
+            #For whatever reason, though, it needs to be set backwards; might be
+            # able to get around this by messing with afterEntry and beforeEntry parameters.
+            if desired_playlist:
+                #can't *-unpack an empty list
                 sids, eids = zip(*tools.get_id_pairs(desired_playlist[::-1]))
 
                 if sids:
                     self._make_call(webclient.ChangePlaylistOrder, playlist_id, sids, eids)
 
-                ##Clean up the backup.
-                if safe:
-                    self.delete_playlist(backup_id)
+            ##Clean up the backup.
+            if safe:
+                self.delete_playlist(backup_id)
 
-            except CallFailure:
-                self.log.info("a subcall of change_playlist failed - "
-                              "playlist %s is in an inconsistent state", playlist_id)
+        except CallFailure:
+            self.log.info("a subcall of change_playlist failed - "
+                          "playlist %s is in an inconsistent state", playlist_id)
 
-                if not safe:
-                    raise  # there's nothing we can do
-                else:  # try to revert to the backup
-                    self.log.info("attempting to revert changes from playlist "
-                                  "'%s_gmusicapi_backup'", playlist_name)
+            if not safe:
+                raise  # there's nothing we can do
+            else:  # try to revert to the backup
+                self.log.info("attempting to revert changes from playlist "
+                              "'%s_gmusicapi_backup'", playlist_name)
 
-                    try:
-                        self.delete_playlist(playlist_id)
-                        self.change_playlist_name(backup_id, playlist_name)
-                    except CallFailure:
-                        self.log.warning("failed to revert failed change_playlist call on '%s'",
-                                         playlist_name)
-                        raise
-                    else:
-                        self.log.info("reverted changes safely; playlist id of '%s' is now '%s'",
-                                      playlist_name, backup_id)
-                        playlist_id = backup_id
+                try:
+                    self.delete_playlist(playlist_id)
+                    self.change_playlist_name(backup_id, playlist_name)
+                except CallFailure:
+                    self.log.warning("failed to revert failed change_playlist call on '%s'",
+                                     playlist_name)
+                    raise
+                else:
+                    self.log.info("reverted changes safely; playlist id of '%s' is now '%s'",
+                                  playlist_name, backup_id)
+                    playlist_id = backup_id
 
-            return playlist_id
+        return playlist_id
 
     @utils.accept_singleton(basestring, 2)
     @utils.empty_arg_shortcircuit(position=2)
@@ -695,14 +674,14 @@ class Api(UsesLog):
     def upload(self, filepaths, transcode_quality=3, enable_matching=False):
         """Uploads the given filepaths.
         Any non-mp3 files will be `transcoded with avconv
-        <https://github.com/simon-weber/Unofficial-Google-Music-API/blob/develop/gmusicapi/utils/utils.py#L18>`_
-        before being uploaded.
+        <https://github.com/simon-weber/Unofficial-Google-Music-API/
+        blob/develop/gmusicapi/utils/utils.py#L18>`_ before being uploaded.
 
         Return a 3-tuple ``(uploaded, matched, not_uploaded)`` of dictionaries, eg::
 
             (
                 {'<filepath>': '<new server id>'},               # uploaded
-                {'<filepath>': '<new server id>'},              # matched
+                {'<filepath>': '<new server id>'},               # matched
                 {'<filepath>': '<reason, eg ALREADY_UPLOADED>'}  # not uploaded
             )
 
@@ -730,6 +709,8 @@ class Api(UsesLog):
             raise NotLoggedIn("Not authenticated as an upload device;"
                               " run Api.login(...perform_upload_auth=True...)"
                               " first.")
+
+        #TODO there is way too much code in this function.
 
         #To return.
         uploaded = {}
@@ -927,13 +908,9 @@ class Api(UsesLog):
             msg = protocol.parse_response(response)
         except ParseException:
             self.log.exception("couldn't parse %s response: %r", call_name, response.content)
-            if not self.suppress_failure:
-                raise CallFailure("the server's response could not be understood."
-                                  " The call may still have succeeded, but it's unlikely.",
-                                  call_name)
-            else:
-                #TODO what happens now?
-                msg = None
+            raise CallFailure("the server's response could not be understood."
+                              " The call may still have succeeded, but it's unlikely.",
+                              call_name)
 
         self.log.debug(protocol.filter_response(msg))
 
@@ -942,12 +919,7 @@ class Api(UsesLog):
             protocol.check_success(msg)
             protocol.validate(msg)
         except CallFailure:
-            if not self.suppress_failure:
-                raise
-            else:
-                self.log.exception('the server responded that the call failed.'
-                                   ' This is usually caused by invalid arguments.',
-                                   call_name)
+            raise
         except ValidationException:
             #TODO link to some protocol for reporting this
             self.log.exception(
