@@ -607,10 +607,11 @@ class Api(UsesLog):
         """Queries the server for songs and albums.
         Generally, this isn't needed; just get all tracks and locally search over them.
 
-        :param query: the search query.
+        :param query: a string keyword to search with.
 
         Search results are organized based on how they were found.
-        Hits on an album title return information on that album. Here is an example album result::
+
+        Hits on an album title are unique. Here is an example album result::
 
             {'artistName': 'The Cat Empire',
              'imageUrl': '<url>',
@@ -659,7 +660,7 @@ class Api(UsesLog):
     def change_album_art(self, song_ids, image_filepath):
         """Change the album art of songs.
 
-        :param song_ids: a list of song ids, or a single song id
+        :param song_ids: a list of song ids, or a single song id.
         :param image_filepath: filepath of the art to use. jpg and png are known to work.
 
         Note that this always uploads the given art. If you already have the art uploaded and set
@@ -1045,9 +1046,9 @@ class PlaySession(object):
     def send(self, request, auth, session_options):
         """Send a request from a Call.
 
-        :param request: filled requests.Request
-        :param auth: result of Call.get_auth()
-        :param session_options: dict of kwargs to pass to requests.Session.send
+        :param request: filled requests.Request.
+        :param auth: result of Call.get_auth().
+        :param session_options: dict of kwargs to pass to requests.Session.send.
         """
 
         if any(auth) and not self.logged_in:
