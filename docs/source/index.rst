@@ -24,7 +24,7 @@ Getting songs and playlists
 Song uploading, downloading, and streaming
 ------------------------------------------
 .. autoclass:: Api
-    :members: get_song_download_info, get_stream_url, upload
+    :members: get_song_download_info, get_stream_url, upload, report_incorrect_match
 
 Playlist manipulation
 ---------------------

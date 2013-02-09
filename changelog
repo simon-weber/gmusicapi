@@ -1,6 +1,7 @@
 2013.02.xx:
 	breaking: upload return value for scan and match
 	breaking: get_all_playlist_ids always returns lists of ids; always_id_lists is gone
+	new: report_incorrect_match (only useful for Music Manager uploads)
 
 2013.01.05:
 	compatibility update for playlist mutation

@@ -641,42 +641,44 @@ class Api(UsesLog):
     @utils.empty_arg_shortcircuit()
     def report_incorrect_match(self, song_ids):
         """Equivalent to the 'Fix Incorrect Match' button, this requests re-uploading of songs.
-        Returns the song_ids given.
+        Returns the song_ids provided.
 
         :param song_ids: a list of songids to report, or a single song id.
 
-        Note that if you uploaded the song through this api, it won't be reuploaded
+        Note that if you uploaded a song through gmusicapi, it won't be reuploaded
         automatically - this currently only works for songs uploaded with the Music Manager.
+        See issue `#89 <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/89>`_.
 
-        This should only be used on matched tracks with song['type'] == 6.
+        This should only be used on matched tracks (``song['type'] == 6``).
         """
 
         self._make_call(webclient.ReportBadSongMatch, song_ids)
 
         return song_ids
 
-    @utils.accept_singleton(basestring)
-    @utils.empty_arg_shortcircuit()
-    def change_album_art(self, song_ids, image_filepath):
-        """Change the album art of songs.
+    #TODO
+    #@utils.accept_singleton(basestring)
+    #@utils.empty_arg_shortcircuit()
+    #def change_album_art(self, song_ids, image_filepath):
+    #    """Change the album art of songs.
 
-        :param song_ids: a list of song ids, or a single song id.
-        :param image_filepath: filepath of the art to use. jpg and png are known to work.
+    #    :param song_ids: a list of song ids, or a single song id.
+    #    :param image_filepath: filepath of the art to use. jpg and png are known to work.
 
-        Note that this always uploads the given art. If you already have the art uploaded and set
-        for another song, you can just copy over the the 'albumArtUrl' key, then set the change
-        with :func:`change_song_metadata`.
-        """
+    #    Note that this always uploads the given art. If you already have the art uploaded and set
+    #    for another song, you can just copy over the the 'albumArtUrl' key, then set the change
+    #    with :func:`change_song_metadata`.
+    #    """
 
-        with open(image_filepath) as f:
-            image = f.read()
+    #    with open(image_filepath) as f:
+    #        image = f.read()
 
-        res = self._make_call(webclient.UploadImage, image)
-        url = res['imageUrl']
+    #    res = self._make_call(webclient.UploadImage, image)
+    #    url = res['imageUrl']
 
-        song_dicts = [{'id': id, 'albumArtUrl': url} for id in song_ids]
+    #    song_dicts = [{'id': id, 'albumArtUrl': url} for id in song_ids]
 
-        return self.change_song_metadata(song_dicts)
+    #    return self.change_song_metadata(song_dicts)
 
     #---
     #   Api features supported by the Music Manager interface:
