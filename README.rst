@@ -2,11 +2,24 @@ gmusicapi: an unofficial Python API for Google Play Music
 =========================================================
 
 This project allows control of
-`Google Music <http://music.google.com>`_ from Python. It is not
-supported nor endorsed by Google.
+`Google Music <http://music.google.com>`_ from Python.
 
-**Respect Google in your use of the API**. Use common sense
-(protocol compliance, reasonable load, etc) and don't ruin the fun
+.. code-block:: python
+
+    from gmusicapi import Api
+    api = Api()
+    api.login('user@gmail.com', 'my-password')
+    # => True
+
+    library = api.get_all_songs()
+    sweet_tracks = [track for track in library if track['artist'] == 'The Cat Empire']
+
+    playlist_id = api.create_playlist('Rad muzak')
+    api.change_playlist(playlist_id, sweet_tracks)
+    
+
+**This project is not supported nor endorsed by Google.**
+Use common sense (protocol compliance, reasonable load, etc) and don't ruin the fun
 for everyone else.
 
 For those looking to use the api, see the installation and usage
@@ -94,14 +107,14 @@ I would recommend *against* using ``easy_install``.
 If you want to make changes to gmusicapi, see the guidance in the
 `contributing doc <https://github.com/simon-weber/Unofficial-Google-Music-API/blob/master/CONTRIBUTING.md>`_.
 
-To upload filetypes other than mp3, you're going to need FFmpeg
-installed and in your system path. For Ubuntu users:
-``sudo apt-get install ffmpeg ubuntu-restricted-extras``. Windows
-users, get
-`the most recent static binaries <http://ffmpeg.zeranoe.com/builds/>`_
-and then
-`edit your path <http://www.computerhope.com/issues/ch000549.htm>`_
-to include the directory that contains ffmpeg.exe.
+To upload filetypes other than mp3, you're going to need `Libav's avconv <http://libav.org/avconv.html>`_
+installed and in your system path, along with at least libmp3lame. For Ubuntu users:
+``sudo apt-get install libav-tools ubuntu-restricted-extras``. Windows
+users, get `the most recent static binaries <http://win32.libav.org/releases/>`_
+and then `edit your path <http://www.computerhope.com/issues/ch000549.htm>`_
+to include the directory that contains avconv.exe. If you need to install from source,
+be sure to use ``./configure --enable-gpl --enable-nonfree --enable-libmp3lame``.
+`mediabuntu <http://www.medibuntu.org/>`_ and `deb-multimedia <http://www.deb-multimedia.org/>`_ might be useful.
 
 To check that everything is set up correctly, you can run the test
 suite: ``python -m gmusicapi.test.integration_test_api``. If
