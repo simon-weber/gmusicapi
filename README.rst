@@ -20,18 +20,17 @@ below. There's also
 For bugs reports, feature requests, and contributions, go ahead and
 `open an issue <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/new>`_.
 
-Also, check out these nifty projects that use gmusicapi: \* Malcolm
-Still's
-`command line Google Music client <https://github.com/mstill/thunner>`_
-(`screenshot <http://i.imgur.com/Mwl0k.png>`_) \* David Dooling's
-`sync scripts for Banshee <https://github.com/ddgenome/banshee-helper-scripts>`_
-\* Mendhak's
-`Rhythmbox metadata sync plugin <https://github.com/mendhak/rhythmbox-gmusic-sync>`_
-\* Ryan McGuire's
-`GMusicFS <https://github.com/EnigmaCurry/GMusicFS>`_ - a FUSE
-filesystem linked to your music \* Kilian Lackhove's
-`Google Music support <https://github.com/crabmanX/google-music-resolver>`_
-for http://www.tomahawk-player.org
+Also, check out these nifty projects that use gmusicapi:
+
+
+-  Malcolm Still's `command line Google Music client <https://github.com/mstill/thunner>`_
+   (`screenshot <http://i.imgur.com/Mwl0k.png>`_)
+-  David Dooling's `sync scripts for Banshee <https://github.com/ddgenome/banshee-helper-scripts>`_
+-  Mendhak's `Rhythmbox metadata sync plugin <https://github.com/mendhak/rhythmbox-gmusic-sync>`_
+-  Ryan McGuire's `GMusicFS <https://github.com/EnigmaCurry/GMusicFS>`_ - a FUSE
+   filesystem linked to your music
+-  Kilian Lackhove's `Google Music support <https://github.com/crabmanX/google-music-resolver>`_
+   for http://www.tomahawk-player.org
 
 Features
 --------
@@ -55,9 +54,7 @@ Features
 
 -  Song streaming and downloading
 
--  [STRIKEOUT:Song uploading of all Google-supported file formats]
-   uploading problems are currently being fixed (see
-   `this issue <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/51#issuecomment-11833220>`_)
+-  Song uploading of all Google-supported file formats
 
 -  Playlist manipulation:
    
@@ -175,7 +172,5 @@ logged aside from "logged in" and "logged out" messages.
 Copyright 2012 `Simon Weber <http://www.simonmweber.com>`_.
 Licensed under the 3-clause BSD. See COPYING.
 
-`|githalytics.com alpha| <http://githalytics.com/simon-weber/Unofficial-Google-Music-API>`_
-
-
-.. |githalytics.com alpha| image:: https://cruel-carlota.pagodabox.com/68a92ecf6b6590372f435fb2674d072e
+.. |githalytics| image:: https://cruel-carlota.pagodabox.com/68a92ecf6b6590372f435fb2674d072e
+.. _githalytics <http://githalytics.com/simon-weber/Unofficial-Google-Music-API>`_
