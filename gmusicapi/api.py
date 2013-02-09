@@ -700,11 +700,11 @@ class Api(UsesLog):
 
         Return a 3-tuple ``(uploaded, matched, not_uploaded)`` of dictionaries, eg::
 
-            {
-                'uploaded': {'<filepath>': '<new server id'},
-                'matched': {'<filepath>': '<new server id>'},
-                'not_uploaded': {'<filepath>: '<reason, eg ALREADY_UPLOADED>'}
-            }
+            (
+                {'<filepath>': '<new server id>'},               # uploaded
+                {'<filepath>': '<new server id>'},              # matched
+                {'<filepath>': '<reason, eg ALREADY_UPLOADED>'}  # not uploaded
+            )
 
         :param filepaths: a list of filepaths, or a single filepath.
         :param transcode_quality: if int, pass to avconv ``-qscale`` for libmp3lame
