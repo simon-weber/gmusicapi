@@ -66,8 +66,7 @@ class AuthenticateUploader(MmCall):
     def check_success(cls, res):
         if res.HasField('auth_status') and res.auth_status != upload_pb2.UploadResponse.OK:
             raise CallFailure(
-                "Two accounts have been registered for this uploader_id/machine."
-                " Only 2 are allowed; deauthorize this uploader_id/machine to continue."
+                "Too many uploader ids/machines are registered."
                 " See http://goo.gl/O6xe7 for more information.",
                 cls.__name__)
 

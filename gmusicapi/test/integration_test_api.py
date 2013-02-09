@@ -44,17 +44,17 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         cls.test_filenames = map(real_path, test_filenames)
 
     #---
-    #   Monolithic tests: 
+    #   Monolithic tests:
     #   (messy, but less likely to destructively modify the library)
     #   Modified from http://stackoverflow.com/questions/5387299/python-unittest-testcase-execution-order
     #---
-        
+
     def pl_1_create(self):
         """Create a playlist."""
         self.api.create_playlist('test playlist')
 
         #Need to reload playlists so it appears.
-        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
+        self.playlists = self.api.get_all_playlist_ids()['user']
 
 
     def pl_2_add_song(self):
@@ -67,14 +67,14 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         tracks = self.api.get_playlist_songs(p_id)
 
         self.assertEqual(tracks[0]["id"], self.r_song_id)
-        
+
 
     def pl_2a_remove_song(self):
         """Remove a song from the playlist."""
         p_id = self.playlists['test playlist'][-1]
 
         sid = self.api.get_playlist_songs(p_id)[0]["id"]
-        
+
         self.api.remove_songs_from_playlist(p_id, sid)
 
         #Verify.
@@ -88,29 +88,29 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         self.api.change_playlist_name(p_id, 'modified playlist')
 
-        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
-            
+        self.playlists = self.api.get_all_playlist_ids()['user']
+
     def pl_4_delete(self):
         """Delete the playlist."""
         self.api.delete_playlist(self.playlists['modified playlist'][-1])
 
-        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
+        self.playlists = self.api.get_all_playlist_ids()['user']
 
 
     def test_playlists(self):
         self.run_steps("pl")
-        
+
     def cpl_1_create(self):
         """Create and populate a random playlist."""
         self.api.create_playlist('playlist to change')
 
         #Need to reload playlists so it appears.
-        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
+        self.playlists = self.api.get_all_playlist_ids()['user']
 
         p_id = self.playlists['playlist to change'][-1]
 
         self.api.add_songs_to_playlist(p_id, [s["id"] for s in random.sample(self.library, 10)])
-                
+
     def cpl_2_change(self):
         """Change the playlist with random deletions, additions and reordering."""
         p_id = self.playlists['playlist to change'][-1]
@@ -151,8 +151,8 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         """Delete the playlist."""
         self.api.delete_playlist(self.playlists['playlist to change'][-1])
 
-        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
-        
+        self.playlists = self.api.get_all_playlist_ids()['user']
+
     def test_change_playlist(self):
         self.run_steps("cpl")
 
@@ -275,7 +275,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
             else:
                 success = True
 
-            
+
         #Revert the metadata.
         self.api.change_song_metadata(orig_md)
 
@@ -299,13 +299,13 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
                     if not md_expectations[name].volatile:
                         same, message = test_utils.md_entry_same(name, orig_md, result_md)
                         self.assertTrue(same, "failed to revert: " + message)
-                
+
             except AssertionError:
                 self.log.info("retrying server for reverted metadata")
                 if not attempts < max_attempts: raise
             else:
                 success = True
-        
+
 
     def test_search(self):
         self.api.search('e')
@@ -315,7 +315,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         #This is not robust; it's assumed that invalid calls will raise an error before this point.
         url = self.api.get_stream_url(self.r_song_id)
         self.assertTrue(url[:4] == "http")
-        
+
 
 if __name__ == '__main__':
     unittest.main()

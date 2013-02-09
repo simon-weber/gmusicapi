@@ -178,7 +178,7 @@ class BaseTest(unittest.TestCase):
         cls.library = cls.api.get_all_songs()
 
         #I can't think of a way to test auto playlists and instant mixes.
-        cls.playlists = cls.api.get_all_playlist_ids(always_id_lists=True)['user']
+        cls.playlists = cls.api.get_all_playlist_ids()['user']
 
     @classmethod
     def tearDownClass(cls):

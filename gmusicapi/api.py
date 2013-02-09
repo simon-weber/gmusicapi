@@ -35,7 +35,7 @@ class Api(UsesLog):
     def __init__(self, suppress_failure=False):
         """Initializes an Api.
 
-        :param suppress_failure: when True, CallFailure will never be raised.
+        :param suppress_failure: when ``True``, CallFailure will never be raised.
         """
 
         self.suppress_failure = suppress_failure
@@ -65,30 +65,40 @@ class Api(UsesLog):
     #---
 
     def is_authenticated(self):
-        """Returns whether the api is logged in."""
+        """Returns ``True`` if the Api can make an authenticated request."""
         return self.session.logged_in
 
     def login(self, email, password, perform_upload_auth=True,
               uploader_id=None, uploader_name=None):
-        """Authenticates the api with the given credentials.
-        Returns True on success, False on failure.
+        """Authenticates the api.
+        Returns ``True`` on success, ``False`` on failure.
 
-        :param email: eg `test@gmail.com` or just `test`.
-        :param password: plaintext password. It will not be stored and is sent over ssl.
-        :param perform_upload_auth: if True, register/authenticate as an upload device
-        :param uploader_id: unique id in mac address form, eg '01:23:45:67:89:AB'.
-                            default is mac address incremented by 1, and should be used when
-                            possible.
-                            Upload behavior will be unexpected if a Music Manager uses the same id.
-                            OSError will be raised if this is not provided and a mac could not be
-                            determined (eg when running on a VPS). If provided, it's best to use
-                            the same id on all future runs.
-        :param uploader_name: human-readable non-unique id; default is "<hostname> (gmusicapi)"
+        :param email: eg ``'test@gmail.com'`` or just ``'test'``.
+        :param password: password or app-specific password for 2-factor users.
+            This is not stored locally, and is sent over SSL.
 
-        Users of two-factor authentication will need to set an application-specific password
-        to log in.
+        :param perform_upload_auth: if ``True``, register/authenticate as an upload device.
+            This is only required when this Api will be used with :func:`upload`.
 
-        Uploads from this instance will send uploader_id and uploader_name.
+        :param uploader_id: (only useful in special cases) a unique id as a MAC address,
+            eg ``'01:23:45:67:89:AB'``.
+
+            The default is host MAC address incremented by 1.
+
+            Upload behavior may be unexpected if a Music Manager uses the same id.
+
+            `OSError` will be raised if this is not provided and a stable MAC could not be
+            determined (eg when running on a VPS).
+
+            If provided, it's best to use the same id on all future runs; there is a limit to
+            how many upload devices can be registered.
+
+        :param uploader_name: human-readable non-unique id; default is ``"<hostname> (gmusicapi)"``.
+            Users of two-factor authentication will need to set an application-specific password
+            to log in.
+
+        Uploads from this Api instance will use ``uploader_id`` and ``uploader_name`` with
+        :func:`upload`.
         """
 
         self.session.login(email, password)
@@ -104,7 +114,8 @@ class Api(UsesLog):
                 if (mac >> 40) % 2:
                     raise OSError('uploader_id not provided, and a valid MAC could not be found.')
                 else:
-                    mac += 1 % (1 << 48)  # to distinguish us from a Music Manager on this machine
+                    #distinguish us from a Music Manager on this machine
+                    mac = (mac + 1) % (1 << 48)
 
                 mac = hex(mac)[2:-1]
                 mac = ':'.join([mac[x:x + 2] for x in range(0, 10, 2)])
@@ -130,9 +141,7 @@ class Api(UsesLog):
         return True
 
     def logout(self):
-        """Forgets local authentication without affecting the server.
-        Always returns True.
-        """
+        """Forgets local authentication in this Api instance. Always returns ``True``."""
         self.session.logout()
         self.uploader_id = None
         self.uploader_name = None
@@ -167,44 +176,44 @@ class Api(UsesLog):
         The server response is *not* to be trusted.
         Instead, reload the library; this will always reflect changes.
 
-        These metadata keys are able to be changed:
+        These metadata/dictionary keys are able to be changed:
 
-        * rating: set to 0 (no thumb), 1 (down thumb), or 5 (up thumb)
-        * name: use this instead of `title`
-        * album
-        * albumArtist
-        * artist
-        * composer
-        * disc
-        * genre
-        * playCount
-        * totalDiscs
-        * totalTracks
-        * track
-        * year
+        * ``rating``: set to 0 (no thumb), 1 (down thumb), or 5 (up thumb)
+        * ``name``: use this instead of ``title``
+        * ``album``
+        * ``albumArtist``
+        * ``artist``
+        * ``composer``
+        * ``disc``
+        * ``genre``
+        * ``playCount``
+        * ``totalDiscs``
+        * ``totalTracks``
+        * ``track``
+        * ``year``
 
         These keys cannot be changed:
 
-        * comment
-        * id
-        * deleted
-        * creationDate
-        * albumArtUrl
-        * type
-        * beatsPerMinute
-        * url
+        * ``comment``
+        * ``id``
+        * ``deleted``
+        * ``creationDate``
+        * ``albumArtUrl``
+        * ``type``
+        * ``beatsPerMinute``
+        * ``url``
 
         These keys cannot be changed; their values are determined by another key's value:
 
-        * title: set to `name`
-        * titleNorm: set to lowercase of `name`
-        * albumArtistNorm: set to lowercase of `albumArtist`
-        * albumNorm: set to lowercase of `album`
-        * artistNorm: set to lowercase of `artist`
+        * ``title``: set to ``name``
+        * ``titleNorm``: set to lowercase of ``name``
+        * ``albumArtistNorm``: set to lowercase of ``albumArtist``
+        * ``albumNorm``: set to lowercase of ``album``
+        * ``artistNorm``: set to lowercase of ``artist``
 
         These keys cannot be changed, and may change unpredictably:
 
-        * lastPlayed: likely some kind of last-accessed timestamp
+        * ``lastPlayed``: likely some kind of last-accessed timestamp
         """
 
         res = self._make_call(webclient.ChangeSongMetadata, songs)
@@ -242,6 +251,7 @@ class Api(UsesLog):
         return res['deleteIds']
 
     def get_all_songs(self):
+        #TODO support an iterator; see #88
         """Returns a list of `song dictionaries`__.
 
         __ `GM Metadata Format`_
@@ -261,7 +271,7 @@ class Api(UsesLog):
         return library
 
     def get_playlist_songs(self, playlist_id):
-        """Returns a list of `song dictionaries`__, which include `playlistEntryId` keys
+        """Returns a list of `song dictionaries`__, which include ``playlistEntryId`` keys
         for the given playlist.
 
         :param playlist_id: id of the playlist to load.
@@ -272,21 +282,45 @@ class Api(UsesLog):
         res = self._make_call(webclient.GetPlaylistSongs, playlist_id)
         return res['playlist']
 
-    def get_all_playlist_ids(self, auto=True, user=True, always_id_lists=False):
-        """Returns a dictionary mapping playlist types to dictionaries of ``{"<playlist name>": "<playlist id>"}`` pairs.
+    def get_all_playlist_ids(self, auto=True, user=True):
+        """Returns a dictionary that maps playlist types to dictionaries.
+
+        :param auto: return a dict with an ``'auto'`` entry for autoplaylists.
+        :param user: return a dict with a ``'user'`` entry for user-created playlists.
+
+        Since Google Music allows multiple playlists of the same name,
+        the subdictionaries are of the form::
+
+            {'<playlist name>': ['<playlist id>', '<another id>']}
 
         Available playlist types are:
 
-        * "`auto`" - auto playlists
-        * "`user`" - user-defined playlists (including instant mixes)
+        * ``'auto'`` - automatically updated playlists like 'Free and purchased' and 'Last added'
+        * ``'user'`` - user-defined playlists, including mixes that were saved as a playlist.
 
-        :param auto: make an "`auto`" entry in the result.
-        :param user: make a "`user`" entry in the result.
-        :param always_id_lists: when False, map name -> id when there is a single playlist for that name. When True, always map to a list (which may only have a single id in it).
+        Playlist names can be unicode strings.
 
-        Google Music allows for multiple playlists of the same name. Since this is uncommon, `always_id_lists` is False by default: names will map directly to ids when unique. However, this can create ambiguity if the api user doesn't have advance knowledge of the playlists. In this case, setting `always_id_lists` to True is recommended.
+        There is currently no way to retrieve automatically-created instant mixes
+        (see issue `#67 <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/67>`_).
 
-        Note that playlist names can be unicode strings.
+        Here's an example response::
+
+            {
+                'auto':{
+                    'Free and purchased': 'auto-playlist-promo',
+                    'Thumbs up': 'auto-playlist-thumbs-up',
+                    'Last added': 'auto-playlist-recent'
+                },
+
+                'user':{
+                    u'Some Song Mix': [u'14814747-efbf-4500-93a1-53291e7a5919'],
+                    u'Two playlists have this name':[
+                        u'c89078a6-0c35-4f53-88fe-21afdc51a414',
+                        u'86c69009-ea5b-4474-bd2e-c0fe34ff5484'
+                    ]
+                }
+            }
+
         """
 
         playlists = {}
@@ -296,13 +330,6 @@ class Api(UsesLog):
         if user:
             res = self._make_call(webclient.GetPlaylistSongs, 'all')
             playlists['user'] = self._playlist_list_to_dict(res['playlists'])
-
-        #Break down singleton lists if desired.
-        if not always_id_lists:
-            for p_dict in playlists.itervalues():
-                for name, id_list in p_dict.iteritems():
-                    if len(id_list) == 1:
-                        p_dict[name] = id_list[0]
 
         return playlists
 
@@ -327,15 +354,16 @@ class Api(UsesLog):
                 "Free and purchased": "auto-playlist-promo"}
 
     def get_song_download_info(self, song_id):
-        """Returns a tuple ``("<download url>", <download count>)``.
-        The url will be None if the download limit is exceeded.
+        """Returns a tuple: ``('<download url>', <download count>}``.
+
+        :param song_id: a single song id.
+
+        ``url`` will be ``None`` if the download limit is exceeded.
 
         GM allows 2 downloads per song. If downloads are made quickly,
         the download count may not be accurate.
 
         This call does not register a download - that is done when the download url is retrieved.
-
-        :param song_id: a single song id.
         """
 
         #TODO the protocol expects a list of songs - could extend with accept_singleton
@@ -347,10 +375,10 @@ class Api(UsesLog):
     def get_stream_url(self, song_id):
         """Returns a url that points to a streamable version of this song.
 
-        While this call requires authentication, listening to the returned url does not.
-        The url expires after about a minute.
-
         :param song_id: a single song id.
+
+        While this call requires authentication, getting the returned url does not.
+        However, the url expires after about a minute.
 
         *This is only intended for streaming*. The streamed audio does not contain metadata.
         Use :func:`get_song_download_info` to download complete files with metadata.
@@ -368,28 +396,38 @@ class Api(UsesLog):
 
         Useful for making backups of playlists before modifications.
         """
-        
+
         orig_tracks = self.get_playlist_songs(orig_id)
-        
+
         new_id = self.create_playlist(copy_name)
         self.add_songs_to_playlist(new_id, [t["id"] for t in orig_tracks])
 
         return new_id
 
     def change_playlist(self, playlist_id, desired_playlist, safe=True):
-        """Changes the order and contents of an existing playlist. Returns the id of the playlist when finished - which may not be the argument, in the case of a failure and recovery.
-        
+        """Changes the order and contents of an existing playlist.
+        Returns the id of the playlist when finished -
+        this may not be the argument, in the case of a failure and recovery.
+
         :param playlist_id: the id of the playlist being modified.
-        :param desired_playlist: the desired contents and order as a list of song dictionaries, like is returned from :func:`get_playlist_songs`.
-        :param safe: if True, ensure playlists will not be lost if a problem occurs. This may slow down updates.
+        :param desired_playlist: the desired contents and order as a list of song dictionaries,
+            like is returned from :func:`get_playlist_songs`.
 
-        The server only provides 3 basic (atomic) playlist mutations: addition, deletion, and reordering. This function will automagically use these to apply a list representation of the desired changes.
+        :param safe: if ``True``, ensure playlists will not be lost if a problem occurs.
+            This may slow down updates.
 
-        However, this might involve multiple calls to the server, and if a call fails, the playlist will be left in an inconsistent state. The `safe` option makes a backup of the playlist before doing anything, so it can be rolled back if a problem occurs. This is enabled by default. Note that this might slow down updates of very large playlists.
+        The server only provides 3 basic playlist mutations: addition, deletion, and reordering.
+        This function will use these to automagically apply the desired changes.
 
-        There will always be a warning logged if a problem occurs, even if `safe` is False.
+        However, this might involve multiple calls to the server, and if a call fails,
+        the playlist will be left in an inconsistent state.
+        The ``safe`` option makes a backup of the playlist before doing anything, so it can be
+        rolled back if a problem occurs. This is enabled by default.
+        This might slow down updates of very large playlists.
+
+        There will always be a warning logged if a problem occurs, even if ``safe`` is ``False``.
         """
-        
+
         #We'll be modifying the entries in the playlist, and need to copy it.
         #Copying ensures two things:
         # 1. the user won't see our changes
@@ -398,28 +436,30 @@ class Api(UsesLog):
         desired_playlist = [copy.deepcopy(t) for t in desired_playlist]
         server_tracks = self.get_playlist_songs(playlist_id)
 
-        if safe: #make the backup.
-            #The backup is stored on the server as a new playlist with "_gmusicapi_backup" appended to the backed up name.
-            #We can't just store the backup here, since when rolling back we'd be relying on this function - and it just failed.
-            names_to_ids = self.get_all_playlist_ids(always_id_lists=True)['user']
-            playlist_name = (ni_pair[0] 
+        if safe:
+            #Make a backup.
+            #The backup is stored on the server as a new playlist with "_gmusicapi_backup"
+            # appended to the backed up name.
+            names_to_ids = self.get_all_playlist_ids()['user']
+            playlist_name = (ni_pair[0]
                              for ni_pair in names_to_ids.iteritems()
                              if playlist_id in ni_pair[1]).next()
 
             backup_id = self.copy_playlist(playlist_id, playlist_name + "_gmusicapi_backup")
 
-
         #Ensure CallFailures do not get suppressed in our subcalls.
-        #Did not unsuppress the above copy_playlist call, since we should fail 
+        #Did not unsuppress the above copy_playlist call, since we should fail
         # out if we can't ensure the backup was made.
         with self._unsuppress_failures():
             try:
                 #Counter, Counter, and set of id pairs to delete, add, and keep.
-                to_del, to_add, to_keep = tools.find_playlist_changes(server_tracks, desired_playlist)
+                to_del, to_add, to_keep = \
+                    tools.find_playlist_changes(server_tracks, desired_playlist)
 
                 ##Delete unwanted entries.
                 to_del_eids = [pair[1] for pair in to_del.elements()]
-                if to_del_eids: self._remove_entries_from_playlist(playlist_id, to_del_eids)
+                if to_del_eids:
+                    self._remove_entries_from_playlist(playlist_id, to_del_eids)
 
                 ##Add new entries.
                 to_add_sids = [pair[0] for pair in to_add.elements()]
@@ -434,22 +474,20 @@ class Api(UsesLog):
                             new_sid_to_eids[sid] = []
                         new_sid_to_eids[sid].append(eid)
 
-
                     for d_t in desired_playlist:
                         if d_t["id"] in new_sid_to_eids:
                             #Found a matching sid.
                             match = d_t
                             sid = match["id"]
-                            eid = match.get("playlistEntryId") 
+                            eid = match.get("playlistEntryId")
                             pair = (sid, eid)
 
                             if pair in to_keep:
-                                to_keep.remove(pair) #only keep one of the to_keep eids.
+                                to_keep.remove(pair)  # only keep one of the to_keep eids.
                             else:
                                 match["playlistEntryId"] = new_sid_to_eids[sid].pop()
                                 if len(new_sid_to_eids[sid]) == 0:
                                     del new_sid_to_eids[sid]
-
 
                 ##Now, the right eids are in the playlist.
                 ##Set the order of the tracks:
@@ -460,28 +498,33 @@ class Api(UsesLog):
                 # able to get around this by messing with afterEntry and beforeEntry parameters.
                 sids, eids = zip(*tools.get_id_pairs(desired_playlist[::-1]))
 
-
                 if sids:
                     self._make_call(webclient.ChangePlaylistOrder, playlist_id, sids, eids)
 
                 ##Clean up the backup.
-                if safe: self.delete_playlist(backup_id)
+                if safe:
+                    self.delete_playlist(backup_id)
 
             except CallFailure:
-                self.log.warning("a subcall of change_playlist failed - playlist %s is in an inconsistent state", playlist_id)
+                self.log.info("a subcall of change_playlist failed - "
+                              "playlist %s is in an inconsistent state", playlist_id)
 
-                if not safe: raise #there's nothing we can do
-                else: #try to revert to the backup
-                    self.log.warning("attempting to revert changes from playlist '%s_gmusicapi_backup'", playlist_name)
+                if not safe:
+                    raise  # there's nothing we can do
+                else:  # try to revert to the backup
+                    self.log.info("attempting to revert changes from playlist "
+                                  "'%s_gmusicapi_backup'", playlist_name)
 
                     try:
                         self.delete_playlist(playlist_id)
                         self.change_playlist_name(backup_id, playlist_name)
                     except CallFailure:
-                        self.log.error("failed to revert changes.")
+                        self.log.warning("failed to revert failed change_playlist call on '%s'",
+                                         playlist_name)
                         raise
                     else:
-                        self.log.warning("reverted changes safely; playlist id of '%s' is now '%s'", playlist_name, backup_id)
+                        self.log.info("reverted changes safely; playlist id of '%s' is now '%s'",
+                                      playlist_name, backup_id)
                         playlist_id = backup_id
 
             return playlist_id
@@ -501,16 +544,19 @@ class Api(UsesLog):
 
         return [(e['songId'], e['playlistEntryId']) for e in new_entries]
 
-
     @utils.accept_singleton(basestring, 2)
     @utils.empty_arg_shortcircuit(position=2)
     def remove_songs_from_playlist(self, playlist_id, sids_to_match):
-        """Removes all copies of the given song ids from a playlist. Returns a list of removed (sid, eid) pairs.
+        """Removes all copies of the given song ids from a playlist.
+        Returns a list of removed (sid, eid) pairs.
 
         :param playlist_id: id of the playlist to remove songs from.
         :param sids_to_match: a list of songids to match, or a single song id.
 
-        This does *not always* the inverse of a call to :func:`add_songs_to_playlist`, since multiple copies of the same song are removed. For more control in this case, get the playlist tracks with :func:`get_playlist_songs`, modify the list of tracks, then use :func:`change_playlist` to push changes to the server.
+        This does *not always* the inverse of a call to :func:`add_songs_to_playlist`,
+        since multiple copies of the same song are removed. For more control in this case,
+        get the playlist tracks with :func:`get_playlist_songs`, modify the list of tracks,
+        then use :func:`change_playlist` to push changes to the server.
         """
 
         playlist_tracks = self.get_playlist_songs(playlist_id)
@@ -522,12 +568,12 @@ class Api(UsesLog):
 
         if matching_eids:
             #Call returns "sid_eid" strings.
-            sid_eids = self._remove_entries_from_playlist(playlist_id, 
+            sid_eids = self._remove_entries_from_playlist(playlist_id,
                                                           matching_eids)
             return [s.split("_") for s in sid_eids]
         else:
             return []
-    
+
     @utils.accept_singleton(basestring, 2)
     @utils.empty_arg_shortcircuit(position=2)
     def _remove_entries_from_playlist(self, playlist_id, entry_ids_to_remove):
@@ -540,14 +586,15 @@ class Api(UsesLog):
         #GM requires the song ids in the call as well; find them.
         playlist_tracks = self.get_playlist_songs(playlist_id)
         remove_eid_set = set(entry_ids_to_remove)
-        
-        e_s_id_pairs = [(t["id"], t["playlistEntryId"]) 
+
+        e_s_id_pairs = [(t["id"], t["playlistEntryId"])
                         for t in playlist_tracks
                         if t["playlistEntryId"] in remove_eid_set]
 
         num_not_found = len(entry_ids_to_remove) - len(e_s_id_pairs)
         if num_not_found > 0:
-            self.log.warning("when removing, %d entry ids could not be found in playlist id %s", num_not_found, playlist_id)
+            self.log.warning("when removing, %d entry ids could not be found in playlist id %s",
+                             num_not_found, playlist_id)
 
         #Unzip the pairs.
         sids, eids = zip(*e_s_id_pairs)
@@ -643,16 +690,19 @@ class Api(UsesLog):
     @utils.accept_singleton(basestring)
     @utils.empty_arg_shortcircuit(return_code='{}')
     def upload(self, filepaths, enable_matching=False):
-        """Uploads the given filepaths. Any non-mp3 files will be transcoded before being uploaded.
+        """Uploads the given filepaths.
+        Any non-mp3 files will be transcoded with avconv before being uploaded.
 
-        Return a 3-tuple ``(uploaded, matched, not_uploaded)`` of dictionaries::
+        Return a 3-tuple ``(uploaded, matched, not_uploaded)`` of dictionaries, eg::
 
-            uploaded: {'filepath': 'new server id'}
-            matched: {'filepath': 'new server id'}
-            not_uploaded: {'filepath: 'reason, eg ALREADY_UPLOADED'}
+            {
+                'uploaded': {'<filepath>': '<new server id'},
+                'matched': {'<filepath>': '<new server id>'},
+                'not_uploaded': {'<filepath>: '<reason, eg ALREADY_UPLOADED>'}
+            }
 
         :param filepaths: a list of filepaths, or a single filepath.
-        :param enable_matching: if True, attempt to use `scan and match
+        :param enable_matching: if ``True``, attempt to use `scan and match
           <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=2920799&topic=2450455>`_
           when uploading.
           **WARNING**: currently, mismatched songs can *not* be fixed with the 'fix incorrect match'
@@ -848,6 +898,7 @@ class Api(UsesLog):
     def _make_call(self, protocol, *args, **kwargs):
         """Returns the response of a protocol.Call.
         Additional kw/args are passed to protocol.build_transaction."""
+        #TODO link up these docs
 
         call_name = protocol.__name__
 
@@ -930,14 +981,14 @@ class PlaySession(object):
     def _get_cookies(self):
         """
         Gets cookies needed for web and media streaming access.
-        Returns True if the necessary cookies are found, False otherwise.
+        Returns ``True`` if the necessary cookies are found, ``False`` otherwise.
         """
         if self.logged_in:
             raise AlreadyLoggedIn
 
         handler = build_opener(HTTPCookieProcessor(self.web_cookies))
         req = Request(self.PLAY_URL, None, {})  # header
-        resp_obj = handler.open(req)  # TODO is this necessary?
+        handler.open(req)  # TODO is this necessary?
 
         return (
             self.get_web_cookie('sjsaid') is not None and
@@ -963,7 +1014,7 @@ class PlaySession(object):
         """
         Attempts to create an authenticated session using the email and
         password provided.
-        Return True if the login was successful, False otherwise.
+        Return ``True`` if the login was successful, ``False`` otherwise.
         Raises AlreadyLoggedIn if the session is already authenticated.
 
         :param email: The email address of the account to log in.
