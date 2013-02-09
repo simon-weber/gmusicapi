@@ -122,7 +122,7 @@ class Api(UsesLog):
                 uploader_id = mac.upper()
 
             if uploader_name is None:
-                uploader_name = gethostname() + " (gmusicapi)"
+                uploader_name = gethostname() + u" (gmusicapi)"
 
             try:
                 #self._mm_pb_call("upload_auth")
@@ -298,7 +298,7 @@ class Api(UsesLog):
         * ``'auto'`` - automatically updated playlists like 'Free and purchased' and 'Last added'
         * ``'user'`` - user-defined playlists, including mixes that were saved as a playlist.
 
-        Playlist names can be unicode strings.
+        Playlist names will be unicode strings.
 
         There is currently no way to retrieve automatically-created instant mixes
         (see issue `#67 <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/67>`_).
@@ -349,9 +349,9 @@ class Api(UsesLog):
         #Auto playlist ids are hardcoded in the wc javascript.
         #If Google releases Music internationally, this might be broken.
         #When testing, an incorrect name here will be caught.
-        return {"Thumbs up": "auto-playlist-thumbs-up",
-                "Last added": "auto-playlist-recent",
-                "Free and purchased": "auto-playlist-promo"}
+        return {u'Thumbs up': u'auto-playlist-thumbs-up',
+                u'Last added': u'auto-playlist-recent',
+                u'Free and purchased': u'auto-playlist-promo'}
 
     def get_song_download_info(self, song_id):
         """Returns a tuple: ``('<download url>', <download count>}``.
@@ -445,7 +445,7 @@ class Api(UsesLog):
                              for ni_pair in names_to_ids.iteritems()
                              if playlist_id in ni_pair[1]).next()
 
-            backup_id = self.copy_playlist(playlist_id, playlist_name + "_gmusicapi_backup")
+            backup_id = self.copy_playlist(playlist_id, playlist_name + u"_gmusicapi_backup")
 
         #Ensure CallFailures do not get suppressed in our subcalls.
         #Did not unsuppress the above copy_playlist call, since we should fail
