@@ -3,11 +3,21 @@
 from distutils.core import setup
 from setuptools import find_packages
 
-import gmusicapi
+import re
+
+VERSIONFILE = 'gmusicapi/version.py'
+
+version_line = open(VERSIONFILE).read()
+version_re = r"^__version__ = ['\"]([^'\"]*)['\"]"
+match = re.search(version_re, version_line, re.M)
+if match:
+    version = match.group(1)
+else:
+    raise RuntimeError("Could not find version in '%s'" % VERSIONFILE)
 
 setup(
     name='gmusicapi',
-    version=gmusicapi.__version__,
+    version=version,
     author='Simon Weber',
     author_email='simon@simonmweber.com',
     url='http://pypi.python.org/pypi/gmusicapi/',
