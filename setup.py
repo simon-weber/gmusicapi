@@ -25,7 +25,7 @@ setup(
     scripts=[],
     license=open('LICENSE').read(),
     description='An unofficial api for Google Play Music.',
-    long_description=open('README.md').read(),
+    long_description=open('README.rst').read(),
     install_requires=[
         'validictory == 0.9.0',
         'decorator == 3.3.2',
