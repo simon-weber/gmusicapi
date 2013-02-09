@@ -2,8 +2,11 @@
 
 from distutils.core import setup
 from setuptools import find_packages
-
 import re
+
+#This hack is from http://stackoverflow.com/a/7071358/1231454;
+# the version is kept in a seperate file and gets parsed - this
+# way, setup.py doesn't have to import the package.
 
 VERSIONFILE = 'gmusicapi/version.py'
 
@@ -25,7 +28,8 @@ setup(
     scripts=[],
     license=open('LICENSE').read(),
     description='An unofficial api for Google Play Music.',
-    long_description=open('README.rst').read(),
+    long_description=(open('README.rst').read() + '\n\n' +
+                      open('HISTORY.rst').read()),
     install_requires=[
         'validictory == 0.9.0',
         'decorator == 3.3.2',
