@@ -172,5 +172,4 @@ logged aside from "logged in" and "logged out" messages.
 Copyright 2012 `Simon Weber <http://www.simonmweber.com>`_.
 Licensed under the 3-clause BSD. See COPYING.
 
-.. |githalytics| image:: https://cruel-carlota.pagodabox.com/68a92ecf6b6590372f435fb2674d072e
-.. _githalytics <http://githalytics.com/simon-weber/Unofficial-Google-Music-API>`_
+.. image:: https://cruel-carlota.pagodabox.com/68a92ecf6b6590372f435fb2674d072e
