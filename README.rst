@@ -114,6 +114,7 @@ users, get `the most recent static binaries <http://win32.libav.org/releases/>`_
 and then `edit your path <http://www.computerhope.com/issues/ch000549.htm>`_
 to include the directory that contains avconv.exe. If you need to install from source,
 be sure to use ``./configure --enable-gpl --enable-nonfree --enable-libmp3lame``.
+`mediabuntu <http://www.medibuntu.org/>`_ and `deb-multimedia <http://www.deb-multimedia.org/>`_ might be useful.
 
 To check that everything is set up correctly, you can run the test
 suite: ``python -m gmusicapi.test.integration_test_api``. If
