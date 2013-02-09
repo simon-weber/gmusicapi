@@ -692,9 +692,11 @@ class Api(UsesLog):
 
     @utils.accept_singleton(basestring)
     @utils.empty_arg_shortcircuit(return_code='{}')
-    def upload(self, filepaths, enable_matching=False):
+    def upload(self, filepaths, transcode_quality=3, enable_matching=False):
         """Uploads the given filepaths.
-        Any non-mp3 files will be transcoded with avconv before being uploaded.
+        Any non-mp3 files will be `transcoded with avconv
+        <https://github.com/simon-weber/Unofficial-Google-Music-API/blob/develop/gmusicapi/utils/utils.py#L18>`_
+        before being uploaded.
 
         Return a 3-tuple ``(uploaded, matched, not_uploaded)`` of dictionaries, eg::
 
@@ -705,9 +707,15 @@ class Api(UsesLog):
             }
 
         :param filepaths: a list of filepaths, or a single filepath.
+        :param transcode_quality: if int, pass to avconv ``-qscale`` for libmp3lame
+          (lower-better int, roughly corresponding to `hydrogenaudio -vX settings
+          <http://wiki.hydrogenaudio.org/index.php?title=LAME#Recommended_encoder_settings>`_).
+          If string, pass to avconv ``-ab`` (eg ``'128k'`` for an average bitrate of 128k). The
+          default is ~175kbs vbr.
+
         :param enable_matching: if ``True``, attempt to use `scan and match
           <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=2920799&topic=2450455>`_
-          when uploading.
+          to avoid uploading every song.
           **WARNING**: currently, mismatched songs can *not* be fixed with the 'fix incorrect match'
           button on Google Music; this will be supported in the future.
 
@@ -875,8 +883,7 @@ class Api(UsesLog):
                 content_type = external['content_type']
 
                 try:
-                    #TODO expose quality
-                    transcoded_audio = utils.transcode_to_mp3(contents)
+                    transcoded_audio = utils.transcode_to_mp3(contents, quality=transcode_quality)
                 except (OSError, ValueError) as e:
                     self.log.warning("error transcoding %s: %s", path, e)
                     not_uploaded[path] = "transcoding error: %s" % e
