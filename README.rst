@@ -96,7 +96,7 @@ Usage
 The API has been tested on Python 2.7.2 on Linux and Windows.
 
 Installation
-~~~~~~~~~~~~
+++++++++++++
 
 Use `pip <http://www.pip-installer.org/en/latest/index.html>`__:
 ``pip install gmusicapi`` will grab all the source dependencies.
@@ -126,7 +126,7 @@ an error during testing, please
 to let me know about it.
 
 Getting Started
-~~~~~~~~~~~~~~~
++++++++++++++++
 
 gmusicapi.api.Api is the user-facing interface. The provided
 `example.py <https://github.com/simon-weber/Unofficial-Google-Music-API/blob/master/example.py>`__
@@ -149,7 +149,7 @@ Here are the ports I'm currently aware of:
    `raydanhk <http://code.google.com/p/unofficial-google-music-api-php/>`__
 
 Porting Information for Developers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+++++++++++++++++++++++++++++++++++
 
 Get in touch if you're working on a port. Even if I can't
 contribute, I might know people who'd like to.
@@ -179,8 +179,6 @@ Debug logging is enabled by default. All logging is done to
 gmusicapi.log in your working directory, with warnings and above
 printed to the console. Nothing related to authenticated gets
 logged aside from "logged in" and "logged out" messages.
-
---------------
 
 Copyright 2012 `Simon Weber <http://www.simonmweber.com>`__.
 Licensed under the 3-clause BSD. See COPYING.
