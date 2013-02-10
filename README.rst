@@ -100,8 +100,6 @@ Installation
 
 Use `pip <http://www.pip-installer.org/en/latest/index.html>`__:
 ``pip install gmusicapi`` will grab all the source dependencies.
-Windows users could alternatively use the
-`installation binary on PyPI <http://pypi.python.org/pypi/gmusicapi/>`__.
 I would recommend *against* using ``easy_install``.
 
 If you want to make changes to gmusicapi, see the guidance in the
