@@ -23,7 +23,7 @@ from gmusicapi.exceptions import (
     CallFailure, ParseException, ValidationException,
     AlreadyLoggedIn, NotLoggedIn
 )
-from gmusicapi.protocol import webclient, musicmanager, upload_pb2
+from gmusicapi.protocol import webclient, musicmanager, upload_pb2, locker_pb2
 from gmusicapi.utils import utils
 from gmusicapi.utils.apilogging import UsesLog
 from gmusicapi.utils.clientlogin import ClientLogin
@@ -865,15 +865,17 @@ class Api(UsesLog):
                 session_url = external['putInfo']['url']
                 content_type = external['content_type']
 
-                try:
-                    transcoded_audio = utils.transcode_to_mp3(contents, quality=transcode_quality)
-                except (OSError, ValueError) as e:
-                    self.log.warning("error transcoding %s: %s", path, e)
-                    not_uploaded[path] = "transcoding error: %s" % e
-                    continue
+                if track.original_content_type != locker_pb2.Track.MP3:
+                    try:
+                        self.log.info("transcoding '%s' to mp3", path)
+                        contents = utils.transcode_to_mp3(contents, quality=transcode_quality)
+                    except (OSError, ValueError) as e:
+                        self.log.warning("error transcoding %s: %s", path, e)
+                        not_uploaded[path] = "transcoding error: %s" % e
+                        continue
 
                 upload_response = self._make_call(musicmanager.UploadFile,
-                                                  session_url, content_type, transcoded_audio)
+                                                  session_url, content_type, contents)
 
                 success = upload_response.get('sessionStatus', {}).get('state')
                 if success:
@@ -882,7 +884,7 @@ class Api(UsesLog):
                     #404 == already uploaded? serverside check on clientid?
                     self.log.debug("could not finalize upload of '%s'. response: %s",
                                    path, upload_response)
-                    not_uploaded[path] = 'could not finalize upload'
+                    not_uploaded[path] = 'could not finalize upload; details in log'
 
             self._make_call(musicmanager.UpdateUploadState, 'stopped', self.uploader_id)
 
