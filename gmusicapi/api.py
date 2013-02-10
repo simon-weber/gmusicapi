@@ -561,12 +561,16 @@ class Api(UsesLog):
         """Queries the server for songs and albums.
         Generally, this isn't needed; just get all tracks and locally search over them.
 
-        :param query: a string keyword to search with.
+        :param query: a string keyword to search with. Capitalization and punctuation are ignored.
 
         Search results are organized based on how they were found.
 
-        The responses are returned in a dictionary, arranged by hit type. For example, a search on
-        ``'cat'`` could return::
+        The responses are returned in a dictionary, arranged by hit type.
+        ``artist_hits`` and ``song_hits`` return a list of
+        :ref:`song dictionaries <songdict-format>`, while ``album_hits`` entries
+        have a different structure.
+
+        For example, a search on ``'cat'`` could return::
 
             {
                 "album_hits": [
@@ -598,11 +602,6 @@ class Api(UsesLog):
                 ]
             }
 
-        ``artist_hits`` and ``song_hits`` return a list of
-        :ref:`song dictionaries <songdict-format>`, while ``album_hits`` entries
-        have a different structure.
-
-        The search ignores punctuation.
         """
 
         res = self._make_call(webclient.Search, query)['results']
