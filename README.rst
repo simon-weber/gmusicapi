@@ -48,13 +48,13 @@ Also, check out these nifty projects that use gmusicapi:
 Features
 --------
 
-**New in version 2013.01.05**
+**New in version 2013.02.09**
 
-
--  compatibility update for playlist modification
--  there are various problems with uploading at the moment - it's
-   being tracked in
-   `this issue <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/51#issuecomment-11833220>`_
+-  uploading works again
+-  scan and match support
+-  avconv replaces ffmpeg
+-  major code quality and documentation improvements
+-  a bunch of more minor breaking changes; see HISTORY.rst for details
 
 **Feature Overview:**
 
@@ -67,7 +67,7 @@ Features
 
 -  Song streaming and downloading
 
--  Song uploading of all Google-supported file formats
+-  Song uploading/scan-and-match of all Google-supported file formats
 
 -  Playlist manipulation:
    
@@ -85,10 +85,10 @@ Features
 
 **Coming soon:**
 
-
--  album art manipulation
--  better upload support
--  better documentation
+-  album art manipulation (issues `#52
+   <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/52>`_ and `#38
+   <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/38>`_)
+-  library download support
 
 Usage
 -----
