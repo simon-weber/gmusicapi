@@ -154,7 +154,7 @@ class Api(UsesLog):
         """Changes the metadata for songs given in `GM Metadata Format`_.
         Returns a list of the song ids changed.
 
-        :param songs: a list of song dictionaries, or a single song dictionary.
+        :param songs: a list of `song dictionaries`__, or a single `song dictionary`__.
 
         Generally, stick to these metadata keys:
 
@@ -177,6 +177,9 @@ class Api(UsesLog):
         blob/develop/gmusicapi/protocol/metadata.py>`_.
         Better docs are in the works; see issue `#73
         <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/73>`_.
+
+
+        __ `GM Metadata Format`_
         """
 
         res = self._make_call(webclient.ChangeSongMetadata, songs)
@@ -369,7 +372,7 @@ class Api(UsesLog):
         this may be the same as the argument in the case of a failure and recovery.
 
         :param playlist_id: the id of the playlist being modified.
-        :param desired_playlist: the desired contents and order as a list of song dictionaries,
+        :param desired_playlist: the desired contents and order as a list of `song dictionaries`__,
           like is returned from :func:`get_playlist_songs`.
 
         :param safe: if ``True``, ensure playlists will not be lost if a problem occurs.
@@ -385,6 +388,8 @@ class Api(UsesLog):
         This might slow down updates of very large playlists.
 
         There will always be a warning logged if a problem occurs, even if ``safe`` is ``False``.
+
+        __ `GM Metadata Format`_
         """
 
         #We'll be modifying the entries in the playlist, and need to copy it.
@@ -568,20 +573,40 @@ class Api(UsesLog):
 
         Search results are organized based on how they were found.
 
-        Hits on an album title are unique. Here is an example album result::
+        The responses are returned in a dictionary, arranged by hit type. For example::
 
-            {'artistName': 'The Cat Empire',
-             'imageUrl': '<url>',
-             'albumArtist': 'The Cat Empire',
-             'albumName': 'Cities: The Cat Empire Project'}
+            {
+                "album_hits": [
+                    {
+                        "albumArtist": "The Cat Empire",
+                        "albumName": "Cities: The Cat Empire Project",
+                        "artistName": "The Cat Empire",
+                        "imageUrl": "//ssl.gstatic.com/music/fe/[...].png"
+                        # no more entries
+                    },
+                ],
+                "artist_hits": [
+                    {
+                        "album": "Cinema",
+                        "artist": "The Cat Empire",
+                        "id": "c9214fc1-91fa-3bd2-b25d-693727a5f978",
+                        "title": "Waiting"
+                        # ... normal song dictionary
+                    },
+                ],
+                "song_hits": [
+                    {
+                        "album": "Mandala",
+                        "artist": "RX Bandits",
+                        "id": "a7781438-8ec3-37ab-9c67-0ddb4115f60a",
+                        "title": "Breakfast Cat",
+                        # ... normal song dictionary
+                    },
+                ]
+            }
 
-        Hits on song or artist name return the matching `song dictionary`__.
-
-        The responses are returned in a dictionary, arranged by hit type::
-
-              {'album_hits':[<album dictionary>, ...],
-               'artist_hits':[<song dictionary>, ...],
-               'song_hits':[<song dictionary>, ...]}
+        ``artist_hits`` and ``song_hits`` return a list of `song dictionaries`__,
+        while ``album_hits`` entries have a different structure.
 
         The search ignores punctuation.
 

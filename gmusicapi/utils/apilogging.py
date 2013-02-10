@@ -4,12 +4,13 @@
 """Logging support for the entire package."""
 
 import logging
-import pkg_resources
+
+from gmusicapi import __version__
 
 root_logger_name = "gmusicapi"
 log_filename = "gmusicapi.log"
 
-#Logging code adapted from: 
+#Logging code adapted from:
 # http://docs.python.org/howto/logging-cookbook.html#logging-cookbook
 
 class LogController(object):
@@ -36,7 +37,7 @@ class LogController(object):
     logger.addHandler(ch)
 
     logger.info("!-- Starting log --!")
-    logger.info("version: " + pkg_resources.get_distribution("gmusicapi").version)
+    logger.info("version: " + __version__)
 
 
     #Map {Logger name: number distributed} for all distributed Loggers.
@@ -46,7 +47,7 @@ class LogController(object):
     @classmethod
     def get_logger(cls, name, unique=False):
         """Returns a logger for the given name. The root name is prepended.
-        
+
         :param name: the base name desired.
         :param unique: if True, return a unique version of the base name."""
 
@@ -65,7 +66,7 @@ class LogController(object):
 
 class UsesLog(object):
     """A mixin to provide the ability to get a unique logger."""
-    
+
     #Sometimes we want a logger for the class, other times for the instance.
     #Leave it up to the derived class to pick the correct one.
     #TODO: there's probably a way to just use one exposed method here.
