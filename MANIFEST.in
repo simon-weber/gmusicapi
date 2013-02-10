@@ -1,5 +1,6 @@
-include changelog COPYING example.py README.md
+include HISTORY.rst LICENSE example.py README.rst
 recursive-include gmusicapi *.py
 include docs/Makefile
 recursive-include docs/source *.py *.rst
-include gmusicapi/test/test.*
+include gmusicapi/test/audiotest*
+global-exclude _*.py

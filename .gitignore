@@ -7,9 +7,11 @@ Thumbs.db
 .*.swo
 *.tmproj
 
+_*.py
 *.pyc
 
 docs/build
+dist
 __pycache__
 gmusicapi.log
 

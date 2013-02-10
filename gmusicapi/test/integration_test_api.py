@@ -1,29 +1,5 @@
 #!/usr/bin/env python
-
-# Copyright (c) 2012, Simon Weber
-# All rights reserved.
-
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the copyright holder nor the
-#       names of the contributors may be used to endorse or promote products
-#       derived from this software without specific prior written permission.
-
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# -*- coding: utf-8 -*-
 
 """A test harness for checking that api calls mutate the server
 in the expected fashion. Unit testing is also performed.
@@ -32,19 +8,25 @@ A successful test run should not appear to mutate the library
 when it is finished, but no guarantees are made."""
 
 
-import unittest
-import os
-import string
 import copy
-import time
+from glob import glob
+import os
 import random
+import string
+import sys
+import time
+import unittest
 
-from ..protocol import WC_Protocol, MetadataExpectations
+from gmusicapi.protocol.metadata import md_expectations
 from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
 
-#Expected to be in this directory.
-test_filenames = ("test.mp3", "test.flac", "test.m4a", "test.ogg", "test.wma")
+#Test files are located in the same directory as this test runner.
+cwd = os.getcwd()
+os.chdir(os.path.dirname(sys.argv[0]))
+test_filenames = glob(u'audiotest*')
+os.chdir(cwd)
+
 
 class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
@@ -62,17 +44,17 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         cls.test_filenames = map(real_path, test_filenames)
 
     #---
-    #   Monolithic tests: 
+    #   Monolithic tests:
     #   (messy, but less likely to destructively modify the library)
     #   Modified from http://stackoverflow.com/questions/5387299/python-unittest-testcase-execution-order
     #---
-        
+
     def pl_1_create(self):
         """Create a playlist."""
         self.api.create_playlist('test playlist')
 
         #Need to reload playlists so it appears.
-        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
+        self.playlists = self.api.get_all_playlist_ids()['user']
 
 
     def pl_2_add_song(self):
@@ -85,14 +67,14 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         tracks = self.api.get_playlist_songs(p_id)
 
         self.assertEqual(tracks[0]["id"], self.r_song_id)
-        
+
 
     def pl_2a_remove_song(self):
         """Remove a song from the playlist."""
         p_id = self.playlists['test playlist'][-1]
 
         sid = self.api.get_playlist_songs(p_id)[0]["id"]
-        
+
         self.api.remove_songs_from_playlist(p_id, sid)
 
         #Verify.
@@ -106,29 +88,29 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         self.api.change_playlist_name(p_id, 'modified playlist')
 
-        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
-            
+        self.playlists = self.api.get_all_playlist_ids()['user']
+
     def pl_4_delete(self):
         """Delete the playlist."""
         self.api.delete_playlist(self.playlists['modified playlist'][-1])
 
-        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
+        self.playlists = self.api.get_all_playlist_ids()['user']
 
 
     def test_playlists(self):
         self.run_steps("pl")
-        
+
     def cpl_1_create(self):
         """Create and populate a random playlist."""
         self.api.create_playlist('playlist to change')
 
         #Need to reload playlists so it appears.
-        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
+        self.playlists = self.api.get_all_playlist_ids()['user']
 
         p_id = self.playlists['playlist to change'][-1]
 
         self.api.add_songs_to_playlist(p_id, [s["id"] for s in random.sample(self.library, 10)])
-                
+
     def cpl_2_change(self):
         """Change the playlist with random deletions, additions and reordering."""
         p_id = self.playlists['playlist to change'][-1]
@@ -147,7 +129,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         if add_dupe:
             self.log.debug("adding dupe tracks from same playlist")
             tracks.extend(random.sample(tracks, random.randrange(len(tracks))))
-            
+
         if add_blank:
             self.log.debug("adding random tracks with no eid")
             tracks.extend(random.sample(self.library, random.randrange(len(tracks))))
@@ -157,7 +139,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
             random.shuffle(tracks)
 
         self.api.change_playlist(p_id, tracks)
-        
+
         server_tracks = self.api.get_playlist_songs(p_id)
 
         self.assertEqual(len(tracks), len(server_tracks))
@@ -169,23 +151,20 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         """Delete the playlist."""
         self.api.delete_playlist(self.playlists['playlist to change'][-1])
 
-        self.playlists = self.api.get_all_playlist_ids(always_id_lists=True)['user']
-        
+        self.playlists = self.api.get_all_playlist_ids()['user']
+
     def test_change_playlist(self):
         self.run_steps("cpl")
 
-
     def updel_1_upload(self):
-        """Upload some test files."""
+        """Upload test files."""
 
-        some_files = random.sample(self.test_filenames, 
-                                   random.randrange(len(self.test_filenames)))
-
-        result = self.api.upload(some_files)
-        self.assertEqual(len(some_files), len(result))
+        uploaded, matched, not_uploaded = self.api.upload(self.test_filenames)
+        if not_uploaded:
+            self.fail("upload failed: %s" % not_uploaded)
 
         #A bit messy; need to pass the ids on to the next step.
-        self.uploaded_ids = result.values()
+        self.uploaded_ids = uploaded.values() + matched.values()
 
     def updel_1a_get_dl_info(self):
         """Check how many times the newly uploaded songs have been
@@ -197,31 +176,27 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
                        self.uploaded_ids]
 
         for info_tuple in info_tuples:
-            self.assertEqual(info_tuple[1], 0)
-
+            self.assertNotEqual(info_tuple[0], None, 'should be available for download')
 
     def updel_2_delete(self):
         """Delete the uploaded test files."""
         self.api.delete_songs(self.uploaded_ids)
-
         del self.uploaded_ids
 
     def test_up_deletion(self):
         self.run_steps("updel_")
-
-        
 
     #---
     #   Non-monolithic tests:
     #---
 
     #Works, but the protocol isn't mature enough to support the call (yet).
-    # def test_get_song_download_info(self):
-    #     #The api doesn't expose the actual response here,
-    #     # instead we expect a tuple with 2 entries.
-    #     res = self.api.get_song_download_info(self.r_song_id)
-    #     self.assertEqual(len(res), 2)
-    #     self.assertIsInstance(res, tuple)
+    def test_get_song_download_info(self):
+         #The api doesn't expose the actual response here,
+         # instead we expect a tuple with 2 entries.
+         res = self.api.get_song_download_info(self.r_song_id)
+         self.assertEqual(len(res), 2)
+         self.assertIsInstance(res, tuple)
 
     def test_change_song_metadata(self):
         """Change a song's metadata, then restore it."""
@@ -232,9 +207,8 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         #Generate noticably changed metadata for ones we can change.
         #Changing immutable ones voids the request (although we get back success:True and our expected values).
         new_md = copy.deepcopy(orig_md)
-        expts = MetadataExpectations.get_all_expectations()
 
-        for name, expt in expts.items():
+        for name, expt in md_expectations.items():
             if name in orig_md and expt.mutable:
                 old_val = orig_md[name]
                 new_val = test_utils.modify_md(name, old_val)
@@ -251,7 +225,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
         #Recreate the dependent md to what they should be (based on how orig_md was changed)
         correct_dependent_md = {}
-        for name, expt in expts.items():
+        for name, expt in md_expectations.items():
             if expt.depends_on and name in orig_md:
                 master_name = expt.depends_on
                 correct_dependent_md[name] = expt.dependent_transformation(new_md[master_name])
@@ -283,15 +257,15 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
             try:
                 #Verify everything went as expected:
-                for name, expt in expts.items():
+                for name, expt in md_expectations.items():
                     if name in orig_md:
-                        #Check mutability if it's not a volatile key.
-                        if not expt.volatile:
+                        #Check mutability if it's not volatile or dependent.
+                        if not expt.volatile and expt.depends_on is None:
                             same, message = test_utils.md_entry_same(name, orig_md, result_md)
                             self.assertEqual(same, (not expt.mutable), "metadata mutability incorrect: " + message)
 
                         #Check dependent md.
-                        if expt.depends_on:
+                        if expt.depends_on is not None:
                             same, message = test_utils.md_entry_same(name, correct_dependent_md, result_md)
                             self.assertTrue(same, "dependent metadata incorrect: " + message)
 
@@ -301,7 +275,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
             else:
                 success = True
 
-            
+
         #Revert the metadata.
         self.api.change_song_metadata(orig_md)
 
@@ -322,16 +296,16 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
             try:
                 for name in orig_md:
                     #If it's not volatile, it should be back to what it was.
-                    if not expts[name].volatile:
+                    if not md_expectations[name].volatile:
                         same, message = test_utils.md_entry_same(name, orig_md, result_md)
                         self.assertTrue(same, "failed to revert: " + message)
-                
+
             except AssertionError:
                 self.log.info("retrying server for reverted metadata")
                 if not attempts < max_attempts: raise
             else:
                 success = True
-        
+
 
     def test_search(self):
         self.api.search('e')
@@ -341,7 +315,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         #This is not robust; it's assumed that invalid calls will raise an error before this point.
         url = self.api.get_stream_url(self.r_song_id)
         self.assertTrue(url[:4] == "http")
-        
+
 
 if __name__ == '__main__':
     unittest.main()
