@@ -33,6 +33,8 @@ below. There's also
 For bugs reports, feature requests, and contributions, go ahead and
 `open an issue <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/new>`__.
 
+Feel free to drop by ``#gmusicapi`` on Freenode with general questions.
+
 Also, check out these nifty projects that use gmusicapi:
 
 
