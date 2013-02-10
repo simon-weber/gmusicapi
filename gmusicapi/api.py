@@ -151,10 +151,11 @@ class Api(UsesLog):
     @utils.accept_singleton(dict)
     @utils.empty_arg_shortcircuit()
     def change_song_metadata(self, songs):
-        """Changes the metadata for songs given in `GM Metadata Format`_.
+        """Changes the metadata for some :ref:`song dictionaries <songdict-format>`.
         Returns a list of the song ids changed.
 
-        :param songs: a list of `song dictionaries`__, or a single `song dictionary`__.
+        :param songs: a list of :ref:`song dictionaries <songdict-format>`,
+          or a single :ref:`song dictionary <songdict-format>`.
 
         Generally, stick to these metadata keys:
 
@@ -177,9 +178,6 @@ class Api(UsesLog):
         blob/develop/gmusicapi/protocol/metadata.py>`_.
         Better docs are in the works; see issue `#73
         <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/73>`_.
-
-
-        __ `GM Metadata Format`_
         """
 
         res = self._make_call(webclient.ChangeSongMetadata, songs)
@@ -218,10 +216,7 @@ class Api(UsesLog):
 
     def get_all_songs(self):
         #TODO support an iterator; see #88
-        """Returns a list of `song dictionaries`__.
-
-        __ `GM Metadata Format`_
-        """
+        """Returns a list of :ref:`song dictionaries <songdict-format>`."""
 
         library = []
 
@@ -237,12 +232,10 @@ class Api(UsesLog):
         return library
 
     def get_playlist_songs(self, playlist_id):
-        """Returns a list of `song dictionaries`__, which include ``playlistEntryId`` keys
-        for the given playlist.
+        """Returns a list of :ref:`song dictionaries <songdict-format>`,
+        which include ``playlistEntryId`` keys for the given playlist.
 
         :param playlist_id: id of the playlist to load.
-
-        __ `GM Metadata Format`_
         """
 
         res = self._make_call(webclient.GetPlaylistSongs, playlist_id)
@@ -372,8 +365,9 @@ class Api(UsesLog):
         this may be the same as the argument in the case of a failure and recovery.
 
         :param playlist_id: the id of the playlist being modified.
-        :param desired_playlist: the desired contents and order as a list of `song dictionaries`__,
-          like is returned from :func:`get_playlist_songs`.
+        :param desired_playlist: the desired contents and order as a list of
+          :ref:`song dictionaries <songdict-format>`, like is returned
+          from :func:`get_playlist_songs`.
 
         :param safe: if ``True``, ensure playlists will not be lost if a problem occurs.
           This may slow down updates.
@@ -388,8 +382,6 @@ class Api(UsesLog):
         This might slow down updates of very large playlists.
 
         There will always be a warning logged if a problem occurs, even if ``safe`` is ``False``.
-
-        __ `GM Metadata Format`_
         """
 
         #We'll be modifying the entries in the playlist, and need to copy it.
@@ -573,7 +565,8 @@ class Api(UsesLog):
 
         Search results are organized based on how they were found.
 
-        The responses are returned in a dictionary, arranged by hit type. For example::
+        The responses are returned in a dictionary, arranged by hit type. For example, a search on
+        ``'cat'`` could return::
 
             {
                 "album_hits": [
@@ -605,12 +598,11 @@ class Api(UsesLog):
                 ]
             }
 
-        ``artist_hits`` and ``song_hits`` return a list of `song dictionaries`__,
-        while ``album_hits`` entries have a different structure.
+        ``artist_hits`` and ``song_hits`` return a list of
+        :ref:`song dictionaries <songdict-format>`, while ``album_hits`` entries
+        have a different structure.
 
         The search ignores punctuation.
-
-        __ `GM Metadata Format`_
         """
 
         res = self._make_call(webclient.Search, query)['results']
