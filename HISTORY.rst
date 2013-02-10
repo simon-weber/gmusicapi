@@ -6,10 +6,23 @@ History
 2013.02.xx
 ++++++++++
 
-- breaking: upload returns a 3-tuple
+- breaking: upload returns a 3-tuple (`docs
+  <https://unofficial-google-music-api.readthedocs.org/en
+  /develop/#gmusicapi.api.Api.upload>`_)
+
 - breaking: get_all_playlist_ids always returns lists of ids; remove always_id_lists option
+  (`docs <https://unofficial-google-music-api.readthedocs.org/en
+  /develop/#gmusicapi.api.Api.get_all_playlist_ids>`_)
+
 - breaking: remove suppress_failure option in Api.__init__
-- new: report_incorrect_match (only useful for Music Manager uploads)
+- breaking: copy_playlist ``orig_id`` argument renamed to ``playlist_id`` (`docs
+  <https://unofficial-google-music-api.readthedocs.org/en
+  /develop/#gmusicapi.api.Api.copy_playlist>`_)
+
+- new: report_incorrect_match (only useful for Music Manager uploads) (`docs
+  <https://unofficial-google-music-api.readthedocs.org/en
+  /develop/#gmusicapi.api.Api.report_incorrect_match>`_)
+
 - uploading fixed
 - avconv replaces ffmpeg
 - scan and match is supported

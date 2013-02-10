@@ -61,25 +61,28 @@ class Api(UsesLog):
         :param perform_upload_auth: if ``True``, register/authenticate as an upload device.
             This is only required when this Api will be used with :func:`upload`.
 
-        :param uploader_id: (only useful in special cases) a unique id as a MAC address,
-            eg ``'01:23:45:67:89:AB'``.
+        :param uploader_id: a unique id as a MAC address, eg ``'01:23:45:67:89:AB'``.
+            This should only be provided in cases where the default
+            (host MAC address incremented by 1) will not work.
 
-            The default is host MAC address incremented by 1.
+            Upload behavior is undefined if a Music Manager uses the same id, especially when
+            reporting bad matches.
 
-            Upload behavior may be unexpected if a Music Manager uses the same id.
-
-            `OSError` will be raised if this is not provided and a stable MAC could not be
+            ``OSError`` will be raised if this is not provided and a stable MAC could not be
             determined (eg when running on a VPS).
 
-            If provided, it's best to use the same id on all future runs; there is a limit to
-            how many upload devices can be registered.
+            If provided, it's best to use the same id on all future runs for this machine,
+            because of the upload device limit explained below.
 
         :param uploader_name: human-readable non-unique id; default is ``"<hostname> (gmusicapi)"``.
-            Users of two-factor authentication will need to set an application-specific password
-            to log in.
 
-        Uploads from this Api instance will use ``uploader_id`` and ``uploader_name`` with
-        :func:`upload`.
+        Users of two-factor authentication will need to set an application-specific password
+        to log in.
+
+        There are strict limits on how many upload devices can be registered; refer to `Google's
+        docs <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1230356>`_. There
+        have been limits on deauthorizing devices in the past, so it's smart not to register
+        more devices than necessary.
         """
 
         self.session.login(email, password)
@@ -153,11 +156,7 @@ class Api(UsesLog):
 
         :param songs: a list of song dictionaries, or a single song dictionary.
 
-
-        The server response is *not* to be trusted.
-        Instead, reload the library; this will always reflect changes.
-
-        These metadata/dictionary keys are able to be changed:
+        Generally, stick to these metadata keys:
 
         * ``rating``: set to 0 (no thumb), 1 (down thumb), or 5 (up thumb)
         * ``name``: use this instead of ``title``
@@ -173,28 +172,11 @@ class Api(UsesLog):
         * ``track``
         * ``year``
 
-        These keys cannot be changed:
-
-        * ``comment``
-        * ``id``
-        * ``deleted``
-        * ``creationDate``
-        * ``albumArtUrl``
-        * ``type``
-        * ``beatsPerMinute``
-        * ``url``
-
-        These keys cannot be changed; their values are determined by another key's value:
-
-        * ``title``: set to ``name``
-        * ``titleNorm``: set to lowercase of ``name``
-        * ``albumArtistNorm``: set to lowercase of ``albumArtist``
-        * ``albumNorm``: set to lowercase of ``album``
-        * ``artistNorm``: set to lowercase of ``artist``
-
-        These keys cannot be changed, and may change unpredictably:
-
-        * ``lastPlayed``: likely some kind of last-accessed timestamp
+        For up-to-date information on metadata, refer to `the code
+        <https://github.com/simon-weber/Unofficial-Google-Music-API/
+        blob/develop/gmusicapi/protocol/metadata.py>`_.
+        Better docs are in the works; see issue `#73
+        <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/73>`_.
         """
 
         res = self._make_call(webclient.ChangeSongMetadata, songs)
@@ -266,25 +248,15 @@ class Api(UsesLog):
     def get_all_playlist_ids(self, auto=True, user=True):
         """Returns a dictionary that maps playlist types to dictionaries.
 
-        :param auto: return a dict with an ``'auto'`` entry for autoplaylists.
-        :param user: return a dict with a ``'user'`` entry for user-created playlists.
+        :param auto: create an ``'auto'`` subdictionary entry for autoplaylists like
+          'Free and purchased' and 'Last added'.
 
-        Since Google Music allows multiple playlists of the same name,
-        the subdictionaries are of the form::
+        :param user: create a user ``'user'`` subdictionary entry for user-created playlists.
 
-            {'<playlist name>': ['<playlist id>', '<another id>']}
+        User playlist names will be unicode strings.
 
-        Available playlist types are:
-
-        * ``'auto'`` - automatically updated playlists like 'Free and purchased' and 'Last added'
-        * ``'user'`` - user-defined playlists, including mixes that were saved as a playlist.
-
-        Playlist names will be unicode strings.
-
-        There is currently no way to retrieve automatically-created instant mixes
-        (see issue `#67 <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/67>`_).
-
-        Here's an example response::
+        Google Music allows multiple user playlists with the same name, so the ``'user'`` dictionary
+        will map onto lists of ids. Here's an example response::
 
             {
                 'auto':{
@@ -294,13 +266,19 @@ class Api(UsesLog):
                 },
 
                 'user':{
-                    u'Some Song Mix': [u'14814747-efbf-4500-93a1-53291e7a5919'],
+                    u'Some Song Mix':[
+                        u'14814747-efbf-4500-93a1-53291e7a5919'
+                    ],
+
                     u'Two playlists have this name':[
                         u'c89078a6-0c35-4f53-88fe-21afdc51a414',
                         u'86c69009-ea5b-4474-bd2e-c0fe34ff5484'
                     ]
                 }
             }
+
+        There is currently no support for retrieving automatically-created instant mixes
+        (see issue `#67 <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/67>`_).
 
         """
 
@@ -328,23 +306,23 @@ class Api(UsesLog):
         """For auto playlists, returns a dictionary which maps autoplaylist name to id."""
 
         #Auto playlist ids are hardcoded in the wc javascript.
-        #If Google releases Music internationally, this might be broken.
         #When testing, an incorrect name here will be caught.
         return {u'Thumbs up': u'auto-playlist-thumbs-up',
                 u'Last added': u'auto-playlist-recent',
                 u'Free and purchased': u'auto-playlist-promo'}
 
     def get_song_download_info(self, song_id):
-        """Returns a tuple: ``('<download url>', <download count>}``.
+        """Returns a tuple: ``('<url>', <download count>)``.
 
         :param song_id: a single song id.
 
         ``url`` will be ``None`` if the download limit is exceeded.
 
-        GM allows 2 downloads per song. If downloads are made quickly,
-        the download count may not be accurate.
+        GM allows 2 downloads per song. The download count may not always be accurate,
+        and the 2 download limit seems to be loosely enforced.
 
-        This call does not register a download - that is done when the download url is retrieved.
+        This call alone does not count towards a download -
+        the count is incremented when ``url`` is retrieved.
         """
 
         #TODO the protocol expects a list of songs - could extend with accept_singleton
@@ -358,7 +336,7 @@ class Api(UsesLog):
 
         :param song_id: a single song id.
 
-        While this call requires authentication, getting the returned url does not.
+        While this call requires authentication, retrieving the returned url does not.
         However, the url expires after about a minute.
 
         *This is only intended for streaming*. The streamed audio does not contain metadata.
@@ -369,16 +347,16 @@ class Api(UsesLog):
 
         return res['url']
 
-    def copy_playlist(self, orig_id, copy_name):
+    def copy_playlist(self, playlist_id, copy_name):
         """Copies the contents of a playlist to a new playlist. Returns the id of the new playlist.
 
-        :param orig_id: id of the playlist to be copied.
+        :param playlist_id: id of the playlist to be copied.
         :param copy_name: the name of the new copied playlist.
 
-        Useful for making backups of playlists before modifications.
+        This is useful for making backups of playlists before modifications.
         """
 
-        orig_tracks = self.get_playlist_songs(orig_id)
+        orig_tracks = self.get_playlist_songs(playlist_id)
 
         new_id = self.create_playlist(copy_name)
         self.add_songs_to_playlist(new_id, [t["id"] for t in orig_tracks])
@@ -388,14 +366,14 @@ class Api(UsesLog):
     def change_playlist(self, playlist_id, desired_playlist, safe=True):
         """Changes the order and contents of an existing playlist.
         Returns the id of the playlist when finished -
-        this may not be the argument, in the case of a failure and recovery.
+        this may be the same as the argument in the case of a failure and recovery.
 
         :param playlist_id: the id of the playlist being modified.
         :param desired_playlist: the desired contents and order as a list of song dictionaries,
-            like is returned from :func:`get_playlist_songs`.
+          like is returned from :func:`get_playlist_songs`.
 
         :param safe: if ``True``, ensure playlists will not be lost if a problem occurs.
-            This may slow down updates.
+          This may slow down updates.
 
         The server only provides 3 basic playlist mutations: addition, deletion, and reordering.
         This function will use these to automagically apply the desired changes.
@@ -695,14 +673,22 @@ class Api(UsesLog):
         :param enable_matching: if ``True``, attempt to use `scan and match
           <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=2920799&topic=2450455>`_
           to avoid uploading every song.
-          **WARNING**: currently, mismatched songs can *not* be fixed with the 'fix incorrect match'
-          button on Google Music; this will be supported in the future.
+          **WARNING**: currently, mismatched songs can *not* be fixed with the 'Fix Incorrect Match'
+          button or :func:`report_incorrect_match`. They would have to be deleted and reuploaded
+          with the Music Manager.
+          Fixing matches from gmusicapi will be supported in a future release; see issue `#89
+          <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/89>`_.
 
         All Google-supported filetypes are supported; see `Google's documentation
         <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1100462>`_.
 
         Unlike Google's Music Manager, this function will currently allow the same song to
         be uploaded more than once if its tags are changed. This is subject to change in the future.
+
+        If ``PERMANENT_ERROR`` is given as a not_uploaded reason, attempts to reupload will never
+        succeed. The file will need to be changed before the server will reconsider it; the easiest
+        way is to change metadata tags (it's not important that the tag be uploaded, just that the
+        contents of the file change somehow).
         """
 
         if self.uploader_id is None or self.uploader_name is None:
