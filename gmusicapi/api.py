@@ -56,23 +56,23 @@ class Api(UsesLog):
 
         :param email: eg ``'test@gmail.com'`` or just ``'test'``.
         :param password: password or app-specific password for 2-factor users.
-            This is not stored locally, and is sent over SSL.
+          This is not stored locally, and is sent over SSL.
 
         :param perform_upload_auth: if ``True``, register/authenticate as an upload device.
-            This is only required when this Api will be used with :func:`upload`.
+          This is only required when this Api will be used with :func:`upload`.
 
         :param uploader_id: a unique id as a MAC address, eg ``'01:23:45:67:89:AB'``.
-            This should only be provided in cases where the default
-            (host MAC address incremented by 1) will not work.
+          This should only be provided in cases where the default
+          (host MAC address incremented by 1) will not work.
 
-            Upload behavior is undefined if a Music Manager uses the same id, especially when
-            reporting bad matches.
+          Upload behavior is undefined if a Music Manager uses the same id, especially when
+          reporting bad matches.
 
-            ``OSError`` will be raised if this is not provided and a stable MAC could not be
-            determined (eg when running on a VPS).
+          ``OSError`` will be raised if this is not provided and a stable MAC could not be
+          determined (eg when running on a VPS).
 
-            If provided, it's best to use the same id on all future runs for this machine,
-            because of the upload device limit explained below.
+          If provided, it's best to use the same id on all future runs for this machine,
+          because of the upload device limit explained below.
 
         :param uploader_name: human-readable non-unique id; default is ``"<hostname> (gmusicapi)"``.
 
@@ -508,7 +508,7 @@ class Api(UsesLog):
         Returns a list of removed (sid, eid) pairs.
 
         :param playlist_id: id of the playlist to remove songs from.
-        :param sids_to_match: a list of songids to match, or a single song id.
+        :param sids_to_match: a list of song ids to match, or a single song id.
 
         This does *not always* the inverse of a call to :func:`add_songs_to_playlist`,
         since multiple copies of the same song are removed. For more control in this case,
@@ -600,7 +600,7 @@ class Api(UsesLog):
         """Equivalent to the 'Fix Incorrect Match' button, this requests re-uploading of songs.
         Returns the song_ids provided.
 
-        :param song_ids: a list of songids to report, or a single song id.
+        :param song_ids: a list of song ids to report, or a single song id.
 
         Note that if you uploaded a song through gmusicapi, it won't be reuploaded
         automatically - this currently only works for songs uploaded with the Music Manager.
