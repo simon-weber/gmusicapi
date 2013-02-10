@@ -80,7 +80,7 @@ class Api(UsesLog):
         to log in.
 
         There are strict limits on how many upload devices can be registered; refer to `Google's
-        docs <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1230356>`_. There
+        docs <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1230356>`__. There
         have been limits on deauthorizing devices in the past, so it's smart not to register
         more devices than necessary.
         """
@@ -175,9 +175,9 @@ class Api(UsesLog):
 
         For up-to-date information on metadata, refer to `the code
         <https://github.com/simon-weber/Unofficial-Google-Music-API/
-        blob/develop/gmusicapi/protocol/metadata.py>`_.
+        blob/develop/gmusicapi/protocol/metadata.py>`__.
         Better docs are in the works; see issue `#73
-        <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/73>`_.
+        <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/73>`__.
         """
 
         res = self._make_call(webclient.ChangeSongMetadata, songs)
@@ -274,7 +274,7 @@ class Api(UsesLog):
             }
 
         There is currently no support for retrieving automatically-created instant mixes
-        (see issue `#67 <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/67>`_).
+        (see issue `#67 <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/67>`__).
 
         """
 
@@ -620,7 +620,7 @@ class Api(UsesLog):
 
         Note that if you uploaded a song through gmusicapi, it won't be reuploaded
         automatically - this currently only works for songs uploaded with the Music Manager.
-        See issue `#89 <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/89>`_.
+        See issue `#89 <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/89>`__.
 
         This should only be used on matched tracks (``song['type'] == 6``).
         """
@@ -669,7 +669,7 @@ class Api(UsesLog):
         """Uploads the given filepaths.
         Any non-mp3 files will be `transcoded with avconv
         <https://github.com/simon-weber/Unofficial-Google-Music-API/
-        blob/develop/gmusicapi/utils/utils.py#L18>`_ before being uploaded.
+        blob/develop/gmusicapi/utils/utils.py#L18>`__ before being uploaded.
 
         Return a 3-tuple ``(uploaded, matched, not_uploaded)`` of dictionaries, eg::
 
@@ -682,21 +682,21 @@ class Api(UsesLog):
         :param filepaths: a list of filepaths, or a single filepath.
         :param transcode_quality: if int, pass to avconv ``-qscale`` for libmp3lame
           (lower-better int, roughly corresponding to `hydrogenaudio -vX settings
-          <http://wiki.hydrogenaudio.org/index.php?title=LAME#Recommended_encoder_settings>`_).
+          <http://wiki.hydrogenaudio.org/index.php?title=LAME#Recommended_encoder_settings>`__).
           If string, pass to avconv ``-ab`` (eg ``'128k'`` for an average bitrate of 128k). The
           default is ~175kbs vbr.
 
         :param enable_matching: if ``True``, attempt to use `scan and match
-          <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=2920799&topic=2450455>`_
+          <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=2920799&topic=2450455>`__
           to avoid uploading every song.
           **WARNING**: currently, mismatched songs can *not* be fixed with the 'Fix Incorrect Match'
           button or :func:`report_incorrect_match`. They would have to be deleted and reuploaded
           with the Music Manager.
           Fixing matches from gmusicapi will be supported in a future release; see issue `#89
-          <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/89>`_.
+          <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/89>`__.
 
         All Google-supported filetypes are supported; see `Google's documentation
-        <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1100462>`_.
+        <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1100462>`__.
 
         Unlike Google's Music Manager, this function will currently allow the same song to
         be uploaded more than once if its tags are changed. This is subject to change in the future.
