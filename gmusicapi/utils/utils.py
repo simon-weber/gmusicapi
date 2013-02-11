@@ -7,12 +7,60 @@ from htmlentitydefs import name2codepoint
 import re
 import subprocess
 
-import mutagen
-from decorator import decorator
 import chardet
+from decorator import decorator
+import mutagen
+from google.protobuf.descriptor import FieldDescriptor
 
 from apilogging import LogController
 log = LogController.get_logger("utils")
+
+#Map descriptor.CPPTYPE -> python type.
+_python_to_cpp_types = {
+    long: ('int32', 'int64', 'uint32', 'uint64'),
+    float: ('double', 'float'),
+    bool: ('bool',),
+    str: ('string',),
+}
+
+cpp_type_to_python = {
+    getattr(FieldDescriptor, 'CPPTYPE_' + cpp.upper()): python
+    for python, cpplist in _python_to_cpp_types.items()
+    for cpp in cpplist
+}
+
+
+def pb_set(msg, field_name, val):
+    """Return True and set val to field_name in msg if the assignment
+    is type-compatible, else return False.
+
+    val will be coerced to a proper type if needed.
+
+    :param msg: an instance of a protobuf.message
+    :param field_name:
+    :param val
+    """
+
+    #Find the proper type.
+    field_desc = msg.DESCRIPTOR.fields_by_name[field_name]
+    proper_type = cpp_type_to_python[field_desc.cpp_type]
+
+    #Try with the given type first.
+    #Their set hooks will automatically coerce.
+    try_types = (type(val), proper_type)
+
+    for t in try_types:
+        log.debug("attempt %s.%s = %s(%r)", msg.__class__.__name__, field_name, t, val)
+        try:
+            setattr(msg, field_name, t(val))
+            log.debug("success")
+            break
+        except (TypeError, ValueError):
+            log.debug("failure")
+    else:
+        return False  # no assignments stuck
+
+    return True
 
 
 def transcode_to_mp3(audio_in, quality=3, slice_start=None, slice_duration=None):
