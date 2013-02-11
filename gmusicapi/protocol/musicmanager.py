@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 
+import dateutil.parser
 from decorator import decorator
 import mutagen
 
@@ -202,10 +203,9 @@ class UploadMetadata(MmCall):
 
         if "date" in audio:
             date_val = str(audio['date'][0])
+            datetime = dateutil.parser.parse(date_val, fuzzy=True)
 
-            if not track_set('year', date_val):
-                #maybe it's formatted as a date?
-                track_set('year', date_val.split("-")[0])
+            track_set('year', datetime.year)
 
         #Mass-populate the rest of the simple fields.
         #Merge shared and unshared fields into {mutagen: Track}.
