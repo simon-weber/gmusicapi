@@ -201,12 +201,11 @@ class UploadMetadata(MmCall):
             track.title = os.path.basename(filepath)
 
         if "date" in audio:
-            date_val = audio['date'][0]
+            date_val = str(audio['date'][0])
 
-            #try to intelligently parse a year
-            if not track_set('year', date_val.split("-")[0]):
-                #give up and try to smash the value in
-                track_set('year', date_val)
+            if not track_set('year', date_val):
+                #maybe it's formatted as a date?
+                track_set('year', date_val.split("-")[0])
 
         #Mass-populate the rest of the simple fields.
         #Merge shared and unshared fields into {mutagen: Track}.
@@ -221,7 +220,7 @@ class UploadMetadata(MmCall):
 
         for mutagen_f, (track_f, track_total_f) in cls.count_fields.items():
             if mutagen_f in audio:
-                numstrs = audio[mutagen_f][0].split("/")
+                numstrs = str(audio[mutagen_f][0]).split("/")
                 track_set(track_f, numstrs[0])
 
                 if len(numstrs) == 2 and numstrs[1]:
