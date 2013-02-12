@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 
+import dateutil.parser
 from decorator import decorator
 import mutagen
 
@@ -172,6 +173,17 @@ class UploadMetadata(MmCall):
 
         #Populate metadata.
 
+        def track_set(field_name, val, msg=track):
+            """Returns result of utils.pb_set and logs on failures.
+            Should be used when setting directly from metadata."""
+            success = utils.pb_set(msg, field_name, val)
+
+            if not success:
+                #TODO log
+                pass
+
+            return success
+
         #Title is required.
         #If it's not in the metadata, the filename will be used.
         if "title" in audio:
@@ -179,7 +191,7 @@ class UploadMetadata(MmCall):
             if isinstance(title, mutagen.asf.ASFUnicodeAttribute):
                 title = title.value
 
-            track.title = title
+            track_set('title', title)
         else:
             #handle non-ascii path encodings.
             if not isinstance(filepath, unicode):
@@ -190,11 +202,10 @@ class UploadMetadata(MmCall):
             track.title = os.path.basename(filepath)
 
         if "date" in audio:
-            try:
-                track.year = int(audio["date"][0].split("-")[0])
-            except ValueError:
-                #TODO log
-                pass
+            date_val = str(audio['date'][0])
+            datetime = dateutil.parser.parse(date_val, fuzzy=True)
+
+            track_set('year', datetime.year)
 
         #Mass-populate the rest of the simple fields.
         #Merge shared and unshared fields into {mutagen: Track}.
@@ -205,15 +216,15 @@ class UploadMetadata(MmCall):
 
         for mutagen_f, track_f in fields.items():
             if mutagen_f in audio:
-                setattr(track, track_f, audio[mutagen_f][0])
+                track_set(track_f, audio[mutagen_f][0])
 
         for mutagen_f, (track_f, track_total_f) in cls.count_fields.items():
             if mutagen_f in audio:
-                numstrs = audio[mutagen_f][0].split("/")
-                setattr(track, track_f, int(numstrs[0]))
+                numstrs = str(audio[mutagen_f][0]).split("/")
+                track_set(track_f, numstrs[0])
 
                 if len(numstrs) == 2 and numstrs[1]:
-                    setattr(track, track_total_f, int(numstrs[1]))
+                    track_set(track_total_f, numstrs[1])
 
         return track
 

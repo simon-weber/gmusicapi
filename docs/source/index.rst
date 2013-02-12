@@ -51,7 +51,7 @@ Song Dictionary Format
 Google Music sends song metadata in dictionaries.
 Many of them cannot be changed, and others don't appear in all songs.
 See `the code <https://github.com/simon-weber/Unofficial-Google-Music-API
-/blob/develop/gmusicapi/protocol/metadata.py>`_ for complete information.
+/blob/develop/gmusicapi/protocol/metadata.py>`__ for complete information.
 
 Songs retrieved in the context of a playlist will contain a ``playlistEntryId``
 which is unique to the relevant playlist.

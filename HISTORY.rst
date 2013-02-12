@@ -3,25 +3,34 @@
 History
 -------
 
-2013.02.xx
+As of 2013.02.09, releases with breaking changes will be noted with ``**``.
+
+2013.02.11
 ++++++++++
+
+- improve handling of strange metadata when uploading
+- add a dependency on `dateutil <http://labix.org/python-dateutil>`__
+
+
+``**`` 2013.02.09
++++++++++++++++++
 
 - breaking: upload returns a 3-tuple (`docs
   <https://unofficial-google-music-api.readthedocs.org/en
-  /latest/#gmusicapi.api.Api.upload>`_)
+  /latest/#gmusicapi.api.Api.upload>`__)
 
 - breaking: get_all_playlist_ids always returns lists of ids; remove always_id_lists option
   (`docs <https://unofficial-google-music-api.readthedocs.org/en
-  /latest/#gmusicapi.api.Api.get_all_playlist_ids>`_)
+  /latest/#gmusicapi.api.Api.get_all_playlist_ids>`__)
 
 - breaking: remove suppress_failure option in Api.__init__
 - breaking: copy_playlist ``orig_id`` argument renamed to ``playlist_id`` (`docs
   <https://unofficial-google-music-api.readthedocs.org/en
-  /latest/#gmusicapi.api.Api.copy_playlist>`_)
+  /latest/#gmusicapi.api.Api.copy_playlist>`__)
 
 - new: report_incorrect_match (only useful for Music Manager uploads) (`docs
   <https://unofficial-google-music-api.readthedocs.org/en
-  /latest/#gmusicapi.api.Api.report_incorrect_match>`_)
+  /latest/#gmusicapi.api.Api.report_incorrect_match>`__)
 
 - uploading fixed
 - avconv replaces ffmpeg
