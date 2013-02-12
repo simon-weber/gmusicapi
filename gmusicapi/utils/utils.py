@@ -53,10 +53,10 @@ def pb_set(msg, field_name, val):
         log.debug("attempt %s.%s = %s(%r)", msg.__class__.__name__, field_name, t, val)
         try:
             setattr(msg, field_name, t(val))
-            log.debug("success")
+            log.debug("! success")
             break
         except (TypeError, ValueError):
-            log.debug("failure")
+            log.debug("X failure")
     else:
         return False  # no assignments stuck
 
