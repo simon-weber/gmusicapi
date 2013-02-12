@@ -37,6 +37,7 @@ setup(
         'protobuf == 2.4.1',
         'chardet == 2.1.1',
         'requests == 1.1.0',
+        'python-dateutil == 2.1',
         #for testing album art:
         #'hachoir-core == 1.3.3',
         #'hachoir-parser == 1.3.4',
