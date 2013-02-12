@@ -3,7 +3,9 @@
 History
 -------
 
-2013.02.09
+As of 2013.02.09, releases with breaking changes will be noted with ``**``.
+
+``**`` 2013.02.09
 ++++++++++
 
 - breaking: upload returns a 3-tuple (`docs
