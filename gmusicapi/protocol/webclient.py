@@ -80,9 +80,9 @@ class WcCall(Call):
         if 'success' in res and not res['success']:
             raise CallFailure(
                 "the server reported failure. This is usually"
-                "caused by bad arguments, but can also happen if requests"
-                "are made too quickly (eg creating a playlist then"
-                "modifying it before the server has created it)",
+                " caused by bad arguments, but can also happen if requests"
+                " are made too quickly (eg creating a playlist then"
+                " modifying it before the server has created it)",
                 cls.__name__)
 
     @classmethod
