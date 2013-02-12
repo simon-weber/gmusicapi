@@ -5,6 +5,11 @@ History
 
 As of 2013.02.09, releases with breaking changes will be noted with ``**``.
 
+2013.02.12
+++++++++++
+
+- fix packaging issues
+
 2013.02.11
 ++++++++++
 
