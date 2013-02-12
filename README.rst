@@ -50,13 +50,7 @@ Also, check out these nifty projects that use gmusicapi:
 Features
 --------
 
-**New in version 2013.02.09**
-
--  uploading works again
--  scan and match support
--  avconv replaces ffmpeg
--  major code quality and documentation improvements
--  a bunch of more minor breaking changes; see HISTORY.rst for details
+See ``HISTORY.rst`` for changes by version.
 
 **Feature Overview:**
 
@@ -95,7 +89,7 @@ Features
 Usage
 -----
 
-The API has been tested on Python 2.7.2 on Linux and Windows.
+The API has been tested on Python 2.7.3 on Linux and Windows.
 
 Installation
 ++++++++++++

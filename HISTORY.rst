@@ -5,8 +5,15 @@ History
 
 As of 2013.02.09, releases with breaking changes will be noted with ``**``.
 
-``**`` 2013.02.09
+2013.02.11
 ++++++++++
+
+- improve handling of strange metadata when uploading
+- add a dependency on `dateutil <http://labix.org/python-dateutil>`__
+
+
+``**`` 2013.02.09
++++++++++++++++++
 
 - breaking: upload returns a 3-tuple (`docs
   <https://unofficial-google-music-api.readthedocs.org/en
