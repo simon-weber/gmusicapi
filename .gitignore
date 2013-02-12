@@ -7,7 +7,7 @@ Thumbs.db
 .*.swo
 *.tmproj
 
-_*.py
+_local_*.py
 *.pyc
 
 docs/build

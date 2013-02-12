@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
-from setuptools import find_packages
+from setuptools import setup, find_packages
 import re
 
 #This hack is from http://stackoverflow.com/a/7071358/1231454;
 # the version is kept in a seperate file and gets parsed - this
 # way, setup.py doesn't have to import the package.
 
-VERSIONFILE = 'gmusicapi/version.py'
+VERSIONFILE = 'gmusicapi/_version.py'
 
 version_line = open(VERSIONFILE).read()
 version_re = r"^__version__ = ['\"]([^'\"]*)['\"]"

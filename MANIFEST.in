@@ -3,4 +3,4 @@ recursive-include gmusicapi *.py
 include docs/Makefile
 recursive-include docs/source *.py *.rst
 include gmusicapi/test/audiotest*
-global-exclude _*.py
+global-exclude _local_*.py
