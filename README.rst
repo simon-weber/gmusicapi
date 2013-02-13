@@ -89,7 +89,9 @@ See ``HISTORY.rst`` for changes by version.
 Usage
 -----
 
-The API has been tested on Python 2.7.3 on Linux and Windows.
+The API has been tested on Python 2.7.{2,3} on Linux and Windows.
+It is not currently compatible with other Python versions, though 2.6 support is in the works (issue `#84
+<https://github.com/simon-weber/Unofficial-Google-Music-API/issues/84>`__).
 
 Installation
 ++++++++++++
