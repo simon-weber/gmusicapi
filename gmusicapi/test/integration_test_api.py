@@ -318,4 +318,5 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
 
 if __name__ == '__main__':
+
     unittest.main()
