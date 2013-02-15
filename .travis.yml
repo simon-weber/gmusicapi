@@ -6,7 +6,7 @@ install: pip install -e .
 script: python -m gmusicapi.test.integration_test_api
 before_install: 
 - sudo apt-get update -qq
-- sudo apt-get install -qq libav-tools libavcodec-extra-53
+- sudo apt-get install -qq ubuntu-restricted-extras libav-tools
 branches: 
   only: 
   - develop

@@ -1053,9 +1053,8 @@ class PlaySession(object):
             request.cookies['SID'] = self.client.get_sid_token()
 
         if send_sso:
-            #dict <- CookieJar
-            web_cookies = {c.name: c.value for c in self.web_cookies}
-            request.cookies.update(web_cookies)
+            #TODO merge this without overwriting
+            request.cookies = self.web_cookies
 
         prepped = request.prepare()
         s = requests.Session()
