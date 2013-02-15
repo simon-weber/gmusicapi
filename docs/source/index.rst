@@ -1,97 +1,47 @@
-The Unofficial Google Music Api
-*******************************
+gmusicapi: an unofficial API for Google Play Music
+==================================================
 
-The api itself is hosted at GitHub: https://github.com/simon-weber/Unofficial-Google-Music-API.
+version v\ |version|
 
-.. currentmodule:: gmusicapi
-.. automodule:: gmusicapi.api
+This library allows control of
+`Google Music <http://music.google.com>`__ with Python.
 
+.. code-block:: python
 
+    from gmusicapi import Api
+    api = Api()
+    api.login('user@gmail.com', 'my-password')
+    # => True
 
-Api Features
-============
+    library = api.get_all_songs()
+    sweet_tracks = [track for track in library if track['artist'] == 'The Cat Empire']
 
-Setup and login
----------------
-.. autoclass:: Api
-    :members: __init__, login, logout
+    playlist_id = api.create_playlist('Rad muzak')
+    api.change_playlist(playlist_id, sweet_tracks)
+    
 
-Getting songs and playlists
----------------------------
-.. autoclass:: Api
-    :members: get_all_songs, get_all_playlist_ids, get_playlist_songs
+**This project is not supported nor endorsed by Google.**
+Use common sense (protocol compliance, reasonable load, etc) and don't ruin the fun
+for everyone else.
 
-Song uploading, downloading, and streaming
-------------------------------------------
-.. autoclass:: Api
-    :members: get_song_download_info, get_stream_url, upload, report_incorrect_match
+.. toctree::
+   :glob:
+   :hidden:
 
-Playlist manipulation
----------------------
-.. autoclass:: Api
-    :members: change_playlist, change_playlist_name, copy_playlist, create_playlist, delete_playlist, add_songs_to_playlist, remove_songs_from_playlist
+   usage
+   contributing
 
-Song manipulation
------------------
-.. autoclass:: Api
-    :members: change_song_metadata, delete_songs
+For help getting started, check out the :ref:`usage section <usage>`.
 
+If you'd like to help make gmusicapi better, the
+:ref:`contributing section <contributing>` is for you.
 
-Searching
----------
-.. autoclass:: Api
-    :members: search
+Lastly, the reference has details on specific features, as well as the format of
+the Google Music data you'll see.
 
+.. toctree::
+   :maxdepth: 2
 
-.. _songdict-format:
-
-Song Dictionary Format
-======================
-
-Google Music sends song metadata in dictionaries.
-Many of them cannot be changed, and others don't appear in all songs.
-See `the code <https://github.com/simon-weber/Unofficial-Google-Music-API
-/blob/develop/gmusicapi/protocol/metadata.py>`__ for complete information.
-
-Songs retrieved in the context of a playlist will contain a ``playlistEntryId``
-which is unique to the relevant playlist.
-
-Here is a non-playlist example, which might be out of date::
-
-    {
-      "album": "Heritage", 
-      "albumArtUrl": "//lh4.googleusercontent.com/...", 
-      "albumArtist": "Opeth", 
-      "albumArtistNorm": "opeth", 
-      "albumNorm": "heritage", 
-      "artist": "Opeth", 
-      "artistNorm": "opeth", 
-      "beatsPerMinute": 0, 
-      "bitrate": 320, 
-      "comment": "", 
-      "composer": "", 
-      "creationDate": 1354427077896500, 
-      "deleted": false, 
-      "disc": 0, 
-      "durationMillis": 418000, 
-      "genre": "Progressive Metal", 
-      "id": "5924d75a-931c-30ed-8790-f7fce8943c85", 
-      "lastPlayed": 1360449492166904, 
-      "matchedId": "Txsffypukmmeg3iwl3w5a5s3vzy", 
-      "name": "Haxprocess", 
-      "playCount": 0, 
-      "rating": 0, 
-      "recentTimestamp": 1354427941107000, 
-      "storeId": "Txsffypukmmeg3iwl3w5a5s3vzy", 
-      "subjectToCuration": false, 
-      "title": "Haxprocess", 
-      "titleNorm": "haxprocess", 
-      "totalDiscs": 0, 
-      "totalTracks": 10, 
-      "track": 6, 
-      "type": 2, 
-      "url": "", 
-      "year": 2011
-    }
-
-
+   reference/api
+   reference/metadata
+   reference/protocol

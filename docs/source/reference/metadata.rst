@@ -1,0 +1,4 @@
+.. _metadata:
+
+Song Metadata
+=============

@@ -1,5 +1,5 @@
 gmusicapi: an unofficial API for Google Play Music
-=========================================================
+==================================================
 
 .. image:: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API.png?branch=develop
         :target: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API
