@@ -5,6 +5,13 @@ History
 
 As of 2013.02.09, releases with breaking changes will be noted with ``**``.
 
+2013.XX.XX
+**********
+
+- user now controls logging (`docs
+  <https://unofficial-google-music-api.readthedocs.org/en
+  /latest/#gmusicapi.api.Api.__init__>`__)
+
 2013.02.14
 ++++++++++
 

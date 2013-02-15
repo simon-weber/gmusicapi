@@ -11,10 +11,10 @@ The api itself is hosted at GitHub: https://github.com/simon-weber/Unofficial-Go
 Api Features
 ============
 
-Authentication
---------------
+Setup and login
+---------------
 .. autoclass:: Api
-    :members: login, logout
+    :members: __init__, login, logout
 
 Getting songs and playlists
 ---------------------------

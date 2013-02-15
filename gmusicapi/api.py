@@ -36,12 +36,14 @@ class Api():
     def __init__(self, debug_logging=False):
         """Initializes an Api.
 
-        :param debug_logging: if True, attach log handlers to logger ``gmusicapi`` to
+        :param debug_logging: if ``True``, attach log handlers to logger ``gmusicapi`` to
           send all output to ``gmusicapi.log``, and warnings and above to the console.
-          if False, the user must set up handlers to see log output.
+          if ``False``, the user must set up handlers to see log output.
         """
 
         if debug_logging:
+            #This operates on the root logger.
+            #If more than one Api were instantiated, that behavior might be surprising.
             utils.configure_debug_logging()
 
         self.session = PlaySession()
