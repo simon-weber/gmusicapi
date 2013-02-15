@@ -9,6 +9,7 @@ import random
 import inspect
 from getpass import getpass
 import re
+import os
 
 from gmusicapi.api import Api
 from gmusicapi.exceptions import CallFailure, NotLoggedIn
@@ -32,6 +33,12 @@ def init():
 
     api = UnitTestedApi()
 
+    #Attempt to get auth from environ.
+    user, passwd = os.environ.get('GMUSICAPI_TEST_USER'), os.environ.get('GMUSICAPI_TEST_PASSWD')
+    if user and passwd:
+        api.login(user, passwd)
+        return api
+
     logged_in = False
     attempts = 0
 
@@ -39,9 +46,9 @@ def init():
 
     while not logged_in and attempts < 3:
         email = raw_input("Email: ")
-        password = getpass()
+        passwd = getpass()
 
-        logged_in = api.login(email, password)
+        logged_in = api.login(email, passwd)
         attempts += 1
 
     return api

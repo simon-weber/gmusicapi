@@ -1,0 +1,17 @@
+--- 
+language: python
+python: 
+- "2.7"
+install: pip install -e .
+script: python -m gmusicapi.test.integration_test_api
+before_install: 
+- sudo apt-get update -qq
+- sudo apt-get install -y ubuntu-restricted-extras libav-tools
+branches: 
+  only: 
+  - develop
+  - master
+env: 
+  matrix: 
+  - secure: "clLng5Ho48nJtDwCimLYPfBbCt8PhJ3AjtwCmISupIVheEiFMX8V9SBA2vGO\nPPp9INAf3rD+VqPBl7qVcPWEyH51fovhokbc1aGvaTaj6Fswm8iweXxVl9In\nOGmXxz6HLHYJU7I/emU6DERY3W3Yb29WJIkCuYjPkzcT+8BU424="
+  - secure: "AnkECjTBQ4hrQLAtJDVD51Gq6SuPz5PCM4YocVCNIgrWsTKvcwwIKFY5VxGG\nMBLAj82ivvJiLIEyh5pj1nxvtb5QMw+2gupTmq2ArZ2tWqGkK+UILICs7bum\n+AXxykW19kJ0as9z/l97ujQPoC7YYMQM7bBaS1YKp2JZDR1zIj0="

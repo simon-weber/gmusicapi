@@ -5,6 +5,11 @@ History
 
 As of 2013.02.09, releases with breaking changes will be noted with ``**``.
 
+2013.02.14
+++++++++++
+
+- fix international logins
+
 2013.02.12
 ++++++++++
 
@@ -15,7 +20,6 @@ As of 2013.02.09, releases with breaking changes will be noted with ``**``.
 
 - improve handling of strange metadata when uploading
 - add a dependency on `dateutil <http://labix.org/python-dateutil>`__
-
 
 ``**`` 2013.02.09
 +++++++++++++++++
