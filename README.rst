@@ -175,11 +175,6 @@ Google.
 Notes
 -----
 
-Debug logging is enabled by default. All logging is done to
-gmusicapi.log in your working directory, with warnings and above
-printed to the console. Nothing related to authenticated gets
-logged aside from "logged in" and "logged out" messages.
-
 Copyright 2012 `Simon Weber <http://www.simonmweber.com>`__.
 Licensed under the 3-clause BSD. See COPYING.
 
