@@ -3,21 +3,21 @@
 
 """Utilities used in testing."""
 
-import numbers
-import unittest
-import random
-import inspect
 from getpass import getpass
-import re
+import inspect
+import logging
+import numbers
 import os
+import random
+import re
 import sys
+import unittest
 
 from gmusicapi.api import Api
 from gmusicapi.exceptions import CallFailure, NotLoggedIn
 from gmusicapi.protocol.metadata import md_expectations
-from gmusicapi.utils.apilogging import LogController
 
-log = LogController.get_logger("utils")
+log = logging.getLogger(__name__)
 
 #A regex for the gm id format, eg:
 #c293dd5a-9aa9-33c4-8b09-0c865b56ce46
@@ -30,6 +30,20 @@ travis_id = 'E9:40:01:0E:51:7A'
 travis_name = 'Travis-CI (gmusicapi)'
 
 
+class NoticeLogging(logging.Handler):
+    """A log handler that, if asked to emit, will set
+    ``self.seen_message`` to True.
+    """
+
+    def __init__(self):
+        super(NoticeLogging, self).__init__()
+        self.seen_message = False
+
+    def emit(self, record):
+        print 'emitting!'
+        self.seen_message = True
+
+
 def init():
     """Makes an instance of the unit-tested api and attempts to login with it.
     Returns the authenticated api.
@@ -37,7 +51,7 @@ def init():
     This also detects if we're running on Travis, and if so, uses the environ for auth.
     """
 
-    api = UnitTestedApi()
+    api = UnitTestedApi(debug_logging=True)
 
     #Attempt to get auth from environ.
     user, passwd = os.environ.get('GMUSICAPI_TEST_USER'), os.environ.get('GMUSICAPI_TEST_PASSWD')

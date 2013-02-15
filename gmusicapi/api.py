@@ -11,6 +11,7 @@ Use common sense: protocol compliance, reasonable load, etc.
 """
 
 import copy
+import logging
 from socket import gethostname
 import time
 from urllib2 import HTTPCookieProcessor, Request, build_opener
@@ -25,21 +26,28 @@ from gmusicapi.exceptions import (
 )
 from gmusicapi.protocol import webclient, musicmanager, upload_pb2, locker_pb2
 from gmusicapi.utils import utils
-from gmusicapi.utils.apilogging import UsesLog
 from gmusicapi.utils.clientlogin import ClientLogin
 from gmusicapi.utils.tokenauth import TokenAuth
 
+log = logging.getLogger(__name__)
 
-class Api(UsesLog):
-    def __init__(self):
-        """Initializes an Api."""
+
+class Api():
+    def __init__(self, debug_logging=False):
+        """Initializes an Api.
+
+        :param debug_logging: if True, attach log handlers to logger ``gmusicapi`` to
+          send all output to ``gmusicapi.log``, and warnings and above to the console.
+          if False, the user must set up handlers to see log output.
+        """
+
+        if debug_logging:
+            utils.configure_debug_logging()
 
         self.session = PlaySession()
 
         self.uploader_id = None
         self.uploader_name = None
-
-        self.init_logger()
 
     #---
     #   Authentication:
@@ -87,10 +95,10 @@ class Api(UsesLog):
 
         self.session.login(email, password)
         if not self.is_authenticated():
-            self.log.info("failed to authenticate")
+            log.info("failed to authenticate")
             return False
 
-        self.log.info("authenticated")
+        log.info("authenticated")
 
         if perform_upload_auth:
             if uploader_id is None:
@@ -113,12 +121,12 @@ class Api(UsesLog):
                 self._make_call(musicmanager.AuthenticateUploader,
                                 uploader_id,
                                 uploader_name)
-                self.log.info("successful upload auth")
+                log.info("successful upload auth")
                 self.uploader_id = uploader_id
                 self.uploader_name = uploader_name
 
             except CallFailure:
-                self.log.exception("could not authenticate for uploading")
+                log.exception("could not authenticate for uploading")
                 self.session.logout()
                 return False
 
@@ -130,7 +138,7 @@ class Api(UsesLog):
         self.uploader_id = None
         self.uploader_name = None
 
-        self.log.info("logged out")
+        log.info("logged out")
 
         return True
 
@@ -460,25 +468,25 @@ class Api(UsesLog):
                 self.delete_playlist(backup_id)
 
         except CallFailure:
-            self.log.info("a subcall of change_playlist failed - "
-                          "playlist %s is in an inconsistent state", playlist_id)
+            log.info("a subcall of change_playlist failed - "
+                     "playlist %s is in an inconsistent state", playlist_id)
 
             if not safe:
                 raise  # there's nothing we can do
             else:  # try to revert to the backup
-                self.log.info("attempting to revert changes from playlist "
-                              "'%s_gmusicapi_backup'", playlist_name)
+                log.info("attempting to revert changes from playlist "
+                         "'%s_gmusicapi_backup'", playlist_name)
 
                 try:
                     self.delete_playlist(playlist_id)
                     self.change_playlist_name(backup_id, playlist_name)
                 except CallFailure:
-                    self.log.warning("failed to revert failed change_playlist call on '%s'",
-                                     playlist_name)
+                    log.warning("failed to revert failed change_playlist call on '%s'",
+                                playlist_name)
                     raise
                 else:
-                    self.log.info("reverted changes safely; playlist id of '%s' is now '%s'",
-                                  playlist_name, backup_id)
+                    log.info("reverted changes safely; playlist id of '%s' is now '%s'",
+                             playlist_name, backup_id)
                     playlist_id = backup_id
 
         return playlist_id
@@ -547,8 +555,8 @@ class Api(UsesLog):
 
         num_not_found = len(entry_ids_to_remove) - len(e_s_id_pairs)
         if num_not_found > 0:
-            self.log.warning("when removing, %d entry ids could not be found in playlist id %s",
-                             num_not_found, playlist_id)
+            log.warning("when removing, %d entry ids could not be found in playlist id %s",
+                        num_not_found, playlist_id)
 
         #Unzip the pairs.
         sids, eids = zip(*e_s_id_pairs)
@@ -727,7 +735,7 @@ class Api(UsesLog):
                     contents = f.read()
                 track = musicmanager.UploadMetadata.fill_track_info(path, contents)
             except (IOError, ValueError) as e:
-                self.log.exception("problem gathering local info of '%s'" % path)
+                log.exception("problem gathering local info of '%s'" % path)
                 not_uploaded[path] = str(e)
             else:
                 local_info[track.client_id] = (path, contents, track)
@@ -756,7 +764,7 @@ class Api(UsesLog):
                 res = self._make_call(musicmanager.ProvideSample,
                                       contents, sample_request, track, self.uploader_id)
             except ValueError as e:
-                self.log.warning("couldn't create scan and match sample for '%s': %s", path, str(e))
+                log.warning("couldn't create scan and match sample for '%s': %s", path, str(e))
                 not_uploaded[path] = str(e)
             else:
                 responses.extend(res.sample_response.track_sample_response)
@@ -767,7 +775,7 @@ class Api(UsesLog):
             path, contents, track = local_info[sample_res.client_track_id]
 
             if sample_res.response_code == upload_pb2.TrackSampleResponse.MATCHED:
-                self.log.info("matched '%s' to sid %s", path, sample_res.server_track_id)
+                log.info("matched '%s' to sid %s", path, sample_res.server_track_id)
 
                 if enable_matching:
                     matched[path] = sample_res.server_track_id
@@ -787,7 +795,7 @@ class Api(UsesLog):
                                 reup_sid = matching[0].server_id
                                 break
 
-                            self.log.debug("wait for reup job (%s)", retries)
+                            log.debug("wait for reup job (%s)", retries)
                             time.sleep(2)
                             retries += 1
                         else:
@@ -797,10 +805,10 @@ class Api(UsesLog):
                             )
 
                     except CallFailure as e:
-                        self.log.exception("'%s' was matched without matching enabled", path)
+                        log.exception("'%s' was matched without matching enabled", path)
                         matched[path] = sample_res.server_track_id
                     else:
-                        self.log.info("will reupload '%s'", path)
+                        log.info("will reupload '%s'", path)
 
                         to_upload[reup_sid] = (path, contents, track, True)
 
@@ -813,7 +821,7 @@ class Api(UsesLog):
 
                 err_msg = "TrackSampleResponse code %s: %s" % (sample_res.response_code, res_name)
 
-                self.log.warning("upload of '%s' rejected: %s", path, err_msg)
+                log.warning("upload of '%s' rejected: %s", path, err_msg)
                 not_uploaded[path] = err_msg
 
         #Send upload requests.
@@ -836,12 +844,12 @@ class Api(UsesLog):
                         musicmanager.GetUploadSession.process_session(session)
 
                     if got_session:
-                        self.log.info("got an upload session for '%s'", path)
+                        log.info("got an upload session for '%s'", path)
                         break
 
                     should_retry, reason, error_code = error_details
-                    self.log.debug("problem getting upload session: %s\ncode=%s retrying=%s",
-                                   reason, error_code, should_retry)
+                    log.debug("problem getting upload session: %s\ncode=%s retrying=%s",
+                              reason, error_code, should_retry)
 
                     if error_code == 200 and do_not_rematch:
                         #reupload requests need to wait on a server sync
@@ -852,7 +860,7 @@ class Api(UsesLog):
                 else:
                     err_msg = "GetUploadSession error %s: %s" % (error_code, reason)
 
-                    self.log.warning("giving up on upload session for '%s': %s", path, err_msg)
+                    log.warning("giving up on upload session for '%s': %s", path, err_msg)
                     not_uploaded[path] = err_msg
 
                     continue  # to next upload
@@ -867,10 +875,10 @@ class Api(UsesLog):
 
                 if track.original_content_type != locker_pb2.Track.MP3:
                     try:
-                        self.log.info("transcoding '%s' to mp3", path)
+                        log.info("transcoding '%s' to mp3", path)
                         contents = utils.transcode_to_mp3(contents, quality=transcode_quality)
                     except (OSError, ValueError) as e:
-                        self.log.warning("error transcoding %s: %s", path, e)
+                        log.warning("error transcoding %s: %s", path, e)
                         not_uploaded[path] = "transcoding error: %s" % e
                         continue
 
@@ -882,8 +890,8 @@ class Api(UsesLog):
                     uploaded[path] = server_id
                 else:
                     #404 == already uploaded? serverside check on clientid?
-                    self.log.debug("could not finalize upload of '%s'. response: %s",
-                                   path, upload_response)
+                    log.debug("could not finalize upload of '%s'. response: %s",
+                              path, upload_response)
                     not_uploaded[path] = 'could not finalize upload; details in log'
 
             self._make_call(musicmanager.UpdateUploadState, 'stopped', self.uploader_id)
@@ -897,10 +905,10 @@ class Api(UsesLog):
 
         call_name = protocol.__name__
 
-        self.log.debug("%s(args=%s, kwargs=%s)",
-                       call_name,
-                       [utils.truncate(a) for a in args],
-                       {k: utils.truncate(v) for (k, v) in kwargs.items()})
+        log.debug("%s(args=%s, kwargs=%s)",
+                  call_name,
+                  [utils.truncate(a) for a in args],
+                  {k: utils.truncate(v) for (k, v) in kwargs.items()})
 
         request = protocol.build_request(*args, **kwargs)
 
@@ -911,12 +919,12 @@ class Api(UsesLog):
         try:
             msg = protocol.parse_response(response)
         except ParseException:
-            self.log.exception("couldn't parse %s response: %r", call_name, response.content)
+            log.exception("couldn't parse %s response: %r", call_name, response.content)
             raise CallFailure("the server's response could not be understood."
                               " The call may still have succeeded, but it's unlikely.",
                               call_name)
 
-        self.log.debug(protocol.filter_response(msg))
+        log.debug(protocol.filter_response(msg))
 
         try:
             #order is important; validate only has a schema for a successful response
@@ -926,7 +934,7 @@ class Api(UsesLog):
             raise
         except ValidationException:
             #TODO link to some protocol for reporting this
-            self.log.exception(
+            log.exception(
                 "please report the following unknown response format for %s: %r",
                 call_name, msg
             )
@@ -1018,7 +1026,10 @@ class PlaySession(object):
         tokenauth.authenticate(self.client)
         self.web_cookies = tokenauth.get_cookies()
 
-        self.logged_in = self._get_cookies()
+        if self._get_cookies():
+            self.logged_in = True
+        else:
+            self.logged_in = False
 
         return self.logged_in
 
