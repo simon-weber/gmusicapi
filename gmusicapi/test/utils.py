@@ -10,6 +10,7 @@ import inspect
 from getpass import getpass
 import re
 import os
+import sys
 
 from gmusicapi.api import Api
 from gmusicapi.exceptions import CallFailure, NotLoggedIn
@@ -25,20 +26,36 @@ gm_id_regex = re.compile(("{h}{{8}}-" +
                          ("{h}{{4}}-" * 3) +
                          "{h}{{12}}").format(h=hex_set))
 
+travis_id = 'E9:40:01:0E:51:7A'
+travis_name = 'Travis-CI (gmusicapi)'
+
 
 def init():
     """Makes an instance of the unit-tested api and attempts to login with it.
     Returns the authenticated api.
+
+    This also detects if we're running on Travis, and if so, uses the environ for auth.
     """
 
     api = UnitTestedApi()
 
     #Attempt to get auth from environ.
     user, passwd = os.environ.get('GMUSICAPI_TEST_USER'), os.environ.get('GMUSICAPI_TEST_PASSWD')
+
+    if os.environ.get('TRAVIS'):
+        if not (user and passwd):
+            print 'on Travis but could not read auth from environ; quitting.'
+            sys.exit(1)
+
+        #Travis runs on VMs with no "real" mac - we have to provide one.
+        api.login(user, passwd, uploader_id=travis_id, uploader_name=travis_name)
+        return api
+
     if user and passwd:
         api.login(user, passwd)
         return api
 
+    #Prompt user for login.
     logged_in = False
     attempts = 0
 
