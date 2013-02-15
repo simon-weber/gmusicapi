@@ -12,8 +12,6 @@ branches:
   - develop
   - master
 env: 
-  global: 
-  - secure: |-
-      L6cpo9OEZpCjeWIyxHLepIIrIcfbHkTWA9FJqp4ajo8m0od02oMWaCTfouiM
-      vgfLJdnfFkZH+4J6wQTgjZAfebVJNFReJGiZMTMgUiHFpGQOWxMsMkQdCU9X
-      KOaTKLd0+D0kgSjGGj7zqvoAzYwXu3Xi76VpIxcAkluKOUL5IW0=
+  matrix: 
+  - secure: "clLng5Ho48nJtDwCimLYPfBbCt8PhJ3AjtwCmISupIVheEiFMX8V9SBA2vGO\nPPp9INAf3rD+VqPBl7qVcPWEyH51fovhokbc1aGvaTaj6Fswm8iweXxVl9In\nOGmXxz6HLHYJU7I/emU6DERY3W3Yb29WJIkCuYjPkzcT+8BU424="
+  - secure: "AnkECjTBQ4hrQLAtJDVD51Gq6SuPz5PCM4YocVCNIgrWsTKvcwwIKFY5VxGG\nMBLAj82ivvJiLIEyh5pj1nxvtb5QMw+2gupTmq2ArZ2tWqGkK+UILICs7bum\n+AXxykW19kJ0as9z/l97ujQPoC7YYMQM7bBaS1YKp2JZDR1zIj0="
