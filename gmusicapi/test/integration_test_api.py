@@ -171,7 +171,7 @@ class TestWCApiCalls(test_utils.BaseTest):
         """Check how many times the newly uploaded songs have been
         downloaded."""
         #gross - upload servers need time to sync
-        time.sleep(5)
+        time.sleep(15)
 
         info_tuples = [self.api.get_song_download_info(sid) for sid in
                        self.uploaded_ids]
