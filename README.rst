@@ -1,8 +1,12 @@
-gmusicapi: an unofficial Python API for Google Play Music
+gmusicapi: an unofficial API for Google Play Music
 =========================================================
 
+.. image:: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API.png?branch=develop
+        :target: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API
+
 This project allows control of
-`Google Music <http://music.google.com>`__ from Python.
+`Google Music <http://music.google.com>`__ with Python.
+
 
 .. code-block:: python
 
