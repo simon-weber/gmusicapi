@@ -36,3 +36,4 @@ Searching
 ---------
 .. autoclass:: Api
     :members: search
+

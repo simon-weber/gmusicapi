@@ -10,8 +10,8 @@ They are organized by the client that uses them.
 
 The names of these classes are semantic, and may not match their actual endpoint.
 
-Client code will generally use ``api._make_call`` and provide the parameters that
-``dynamic_data`` requires. This pattern can be used to make arbitrary low-level calls
+Client code will generally use ``api.Api._make_call`` and provide the parameters that
+``dynamic_data`` requires. This can be used to make arbitrary low-level calls
 to Google Music endpoints.
 
 It's tough to generate the exact schema of every call in a readable fashion,

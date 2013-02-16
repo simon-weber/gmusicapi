@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-**Client code should import the dictionary** ``md_expectations``.
+All known information on metadata is exposed in ``gmusicapi.protocol.metadata.md_expectations``.
 
 This holds a mapping of *name* to *Expectation*, where *Expectation* has
 the following fields:
@@ -35,13 +35,17 @@ the following fields:
   ``True`` if client can change the value.
 
 *optional*:
-  ``True`` if the key can be left out.
+  ``True`` if the key is not guaranteed to be present.
 
 *volatile*:
-  ``True`` if the key can change between observations without client mutation.
+  ``True`` if the key's value can change between observations without client mutation.
 
 *depends_on*:
-  name of the key we transform to take our value from, or ``None``. See *dependent_transformation*.
+  the name of the key we transform to take our value from, or ``None``.
+
+  These fields can never be changed: they are automatically set to
+  a modified form of some other field's value.
+  See *dependent_transformation* for more information.
 
 *dependent_transformation*:
   ``None``, or a function ``lambda dependent_value: our_value``.
@@ -55,10 +59,10 @@ the following fields:
   sequence of allowed values.
 
 *explanation*:
-  an explanatory string for non-obvious keys.
+  an explanatory string, typically empty for obvious fields.
 
 The above information is used to generate the documentation below.
-If you find a counterexample for these expectations, please `submit an issue
+If you find an example to clarify these expectations, please `submit an issue
 <https://github.com/simon-weber/Unofficial-Google-Music-API/issues>`__.
 """
 
@@ -125,7 +129,10 @@ _all_expts = [
         ('creationDate', 'integer', ''),
         ('type', 'integer',
          'An enum; 6 is known to signify a track which was scanned-and-matched.'),
-        ('beatsPerMinute', 'integer', ''),
+
+        ('beatsPerMinute', 'integer',
+         "the server does not calculate this - it's just what was in track metadata"),
+
         ('subjectToCuration', 'boolean', 'meaning unknown.'),
         ('matchedId', 'string', 'meaning unknown; related to scan and match?'),
         ('recentTimestamp', 'integer', 'meaning unknown.'),
@@ -178,10 +185,10 @@ for expt in _all_expts:
     md_expectations[expt.name] = expt
 
 
-#This code is a super-hack.
+#This code is a super-hack. KnownMetadataFields exists _purely_ for documentation.
 
 #We want dynamic documentation based on _all_expts, but __doc__ isn't a writable field
-#for non-{function, class, module} objects. So, create a dummy class, and dynamically
+#for non-{function, class, module} objects. So, we create a dummy class and dynamically
 #create its docstring to be arbitrary reST that documents our expectations.
 
 def detail_line(e):
@@ -198,8 +205,20 @@ def detail_line(e):
 
     return line
 
-#Create a definition list.
-docs = '\n\n'.join(
+#Note the hackiness of this class.
+dynamic_docs = """
+**This class exists only for documentation; do not try to import it.**
+
+Instead, client code should use ``gmusicapi.protocol.metadata.md_expectations``.
+
+See `the code <https://github.com/simon-weber/Unofficial-Google-Music-API/blob
+/develop/gmusicapi/protocol/metadata.py>`__ for an explanation of this hack.
+Ideas to clean this up are welcomed.
+
+"""
+
+#Create a reST definition list dynamically.
+dynamic_docs += '\n\n'.join(
     ("*{name}*\n"
      "  {type} {details}\n\n"
      "  {explanation}").format(
@@ -211,4 +230,4 @@ docs = '\n\n'.join(
 )
 
 
-KnownMetadataFields = type('KnownMetadataFields', (defaultdict,), {'__doc__': docs})
+KnownMetadataFields = type('KnownMetadataFields', (defaultdict,), {'__doc__': dynamic_docs})
