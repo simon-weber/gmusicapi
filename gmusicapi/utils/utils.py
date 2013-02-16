@@ -112,6 +112,8 @@ def transcode_to_mp3(audio_in, quality=3, slice_start=None, slice_duration=None)
     Raise OSError on transcoding problems, or ValueError on param problems.
     """
 
+    #TODO IOError makes more sense than OSError
+
     err_output = None
     cmd = ['avconv', '-i', 'pipe:0']
 
@@ -131,7 +133,7 @@ def transcode_to_mp3(audio_in, quality=3, slice_start=None, slice_duration=None)
                 '-c', 'libmp3lame',
                 'pipe:1'])
 
-    #TODO might be good to log the final command
+    log.debug('running transcode command %r', cmd)
 
     try:
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
@@ -142,12 +144,15 @@ def transcode_to_mp3(audio_in, quality=3, slice_start=None, slice_duration=None)
         if proc.returncode != 0:
             raise OSError  # handle errors in except
 
-    except OSError as e:
-        #TODO would be better to log.exception here
+    except (OSError, IOError) as e:
+        log.exception('transcoding failure')
+
         err_msg = "transcoding failed: %s. " % e
 
         if err_output is not None:
             err_msg += "stderr: '%s'" % err_output
+
+        log.debug('full failure output: %s', err_output)
 
         raise OSError(err_msg)
 

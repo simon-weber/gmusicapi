@@ -6,6 +6,7 @@
 import base64
 import hashlib
 import json
+import logging
 import os
 
 import dateutil.parser
@@ -16,6 +17,8 @@ from gmusicapi.exceptions import CallFailure
 from gmusicapi.protocol import upload_pb2, locker_pb2
 from gmusicapi.protocol.shared import Call
 from gmusicapi.utils import utils
+
+log = logging.getLogger(__name__)
 
 
 #This url has SSL issues, hence the verify=False for session_options.
@@ -66,10 +69,15 @@ class AuthenticateUploader(MmCall):
     @classmethod
     def check_success(cls, res):
         if res.HasField('auth_status') and res.auth_status != upload_pb2.UploadResponse.OK:
+            enum_desc = upload_pb2._UPLOADRESPONSE.enum_types[1]
+            res_name = enum_desc.values_by_number[res.auth_status].name
+
             raise CallFailure(
-                "Too many uploader ids/machines are registered."
-                " See http://goo.gl/O6xe7 for more information.",
-                cls.__name__)
+                "Upload auth error code %s: %s."
+                " See http://goo.gl/O6xe7 for more information. " % (
+                    res.auth_status, res_name
+                ), cls.__name__
+            )
 
     @classmethod
     @pb
@@ -179,8 +187,7 @@ class UploadMetadata(MmCall):
             success = utils.pb_set(msg, field_name, val)
 
             if not success:
-                #TODO log
-                pass
+                log.debug("could not pb_set track.%s = %r for '%s'", field_name, val, filepath)
 
             return success
 

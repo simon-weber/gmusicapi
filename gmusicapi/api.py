@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 
 
 class Api():
-    def __init__(self, debug_logging=False):
+    def __init__(self, debug_logging=True):
         """Initializes an Api.
 
         :param debug_logging: if ``True``, attach log handlers to logger ``gmusicapi`` to

@@ -40,7 +40,6 @@ class NoticeLogging(logging.Handler):
         self.seen_message = False
 
     def emit(self, record):
-        print 'emitting!'
         self.seen_message = True
 
 
