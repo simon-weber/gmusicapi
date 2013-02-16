@@ -187,7 +187,7 @@ class UploadMetadata(MmCall):
             success = utils.pb_set(msg, field_name, val)
 
             if not success:
-                log.debug("could not pb_set track.%s = %r for '%s'", field_name, val, filepath)
+                log.warning("could not pb_set track.%s = %r for '%s'", field_name, val, filepath)
 
             return success
 
