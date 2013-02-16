@@ -311,8 +311,11 @@ class DeleteSongs(WcCall):
 
 class GetLibrarySongs(WcCall):
     """Loads tracks from the library.
-    Since libraries can have many tracks, GM gives them back in chunks.
+
+    Libraries can have many tracks, so GM gives them back in chunks.
+
     Chunks will send a continuation token to get the next chunk.
+
     The first request needs no continuation token.
     The last response will not send a token.
     """

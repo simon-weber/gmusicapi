@@ -3,17 +3,15 @@
 
 """Utility functions used across api code."""
 
-from htmlentitydefs import name2codepoint
-import re
+import logging
 import subprocess
 
-import chardet
 from decorator import decorator
-import mutagen
 from google.protobuf.descriptor import FieldDescriptor
 
-from apilogging import LogController
-log = LogController.get_logger("utils")
+from gmusicapi import __version__
+
+log = logging.getLogger(__name__)
 
 #Map descriptor.CPPTYPE -> python type.
 _python_to_cpp_types = {
@@ -28,6 +26,44 @@ cpp_type_to_python = {
     for python, cpplist in _python_to_cpp_types.items()
     for cpp in cpplist
 }
+
+root_logger_name = "gmusicapi"
+log_filename = "gmusicapi.log"
+
+#set to True after configure_debug_logging is called to prevent
+# setting up more than once
+log_already_configured_flag = '_gmusicapi_debug_logging_setup'
+
+
+def configure_debug_logging():
+    """Warnings and above to terminal, below to gmusicapi.log.
+    Output includes line number."""
+
+    root_logger = logging.getLogger('gmusicapi')
+
+    if not getattr(root_logger, log_already_configured_flag, None):
+        root_logger.setLevel(logging.DEBUG)
+
+        fh = logging.FileHandler(log_filename)
+        fh.setLevel(logging.DEBUG)
+
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.WARNING)
+
+        root_logger.addHandler(fh)
+        root_logger.addHandler(ch)
+
+        #print out startup message without verbose formatting
+        root_logger.info("!-- begin debug log --!")
+        root_logger.info("version: " + __version__)
+
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s (%(lineno)s) [%(levelname)s]: %(message)s'
+        )
+        fh.setFormatter(formatter)
+        ch.setFormatter(formatter)
+
+        setattr(root_logger, log_already_configured_flag, True)
 
 
 def pb_set(msg, field_name, val):
@@ -120,7 +156,7 @@ def transcode_to_mp3(audio_in, quality=3, slice_start=None, slice_duration=None)
 
 
 def truncate(x, max_els=100, recurse_levels=0):
-    """Return a 'shorter' truncated x of the same type.
+    """Return a 'shorter' truncated x of the same type, useful for logging.
     recurse_levels is only valid for homogeneous lists/tuples.
     max_els ignored for song dictionaries."""
 
@@ -158,64 +194,6 @@ def truncate(x, max_els=100, recurse_levels=0):
 
     return x
 
-
-def guess_str_encoding(s):
-    """Return a tuple (guessed encoding, confidence)."""
-
-    res = chardet.detect(s)
-    return (res['encoding'], res['confidence'])
-
-def guess_file_encoding(filename):
-    with open(filename) as f:
-        return guess_str_encoding(f.read())
-
-def copy_md_tags(from_fname, to_fname):
-    """Copy all metadata from *from_fname* to *to_fname* and write.
-
-    Return True on success, False if not all keys were copied/saved."""
-
-    from_tags = mutagen.File(from_fname, easy=True)
-    to_tags = mutagen.File(to_fname, easy=True)
-
-    if from_tags is None or to_tags is None:
-        log.debug("couldn't find an appropriate handler for tag files: '%s' '%s'", from_fname, to_fname)
-        return False
-
-
-    success = True
-
-    for k,v in from_tags.iteritems():
-        try:
-            #Some tags don't store values in strings, but in special container types.
-            #Those should be converted to strings so we can safely save them.
-            #Also, the value might be a list of tags or a single tag.
-
-            if not isinstance(v, basestring):
-                safe = [str(e) for e in v]
-            else:
-                safe = str(e)
-
-            to_tags[k] = safe
-        except mutagen.easyid3.EasyID3KeyError as e:
-            #Raised because we're copying in an unsupported in easy-mode key.
-            log.debug("skipping non easy key", exc_info=True)
-        except:
-            #lots of things can go wrong, just skip the key
-            log.warning("problem when copying keys from '%s' to '%s'", from_fname, to_fname, exc_info=True)
-            success = False
-
-    try:
-        to_tags.save()
-    except:
-        log.warning("could not save tag file %s", to_fname, exc_info=True)
-        success = False
-
-    return success
-
-def to_camel_case(s):
-    """Given a sring in underscore form, returns a copy of it in camel case.
-    eg, camel_case('test_string') => 'TestString'. """
-    return ''.join(map(lambda x: x.title(), s.split('_')))
 
 def empty_arg_shortcircuit(return_code='[]', position=1):
     """Decorate a function to shortcircuit and return something immediately if
@@ -269,29 +247,7 @@ def accept_singleton(expected_type, position=1):
     return wrapper
 
 
-#From http://stackoverflow.com/questions/275174/how-do-i-perform-html-decoding-encoding-using-python-django
-name2codepoint['#39'] = 39
-def unescape_html(s):
-    """Return unescaped HTML code.
-
-    see http://wiki.python.org/moin/EscapingHtml."""
-    return re.sub('&(%s);' % '|'.join(name2codepoint),
-              lambda m: unichr(name2codepoint[m.group(1)]), s)
-
-
 #Used to mark a field as unimplemented.
-#From: http://stackoverflow.com/questions/1151212/equivalent-of-notimplementederror-for-fields-in-python
 @property
 def NotImplementedField(self):
     raise NotImplementedError
-
-def call_succeeded(response):
-    """Returns True if the call succeeded, False otherwise."""
-
-    #Failed responses always have a success=False key.
-    #Some successful responses do not have a success=True key, however.
-
-    if 'success' in response.keys():
-        return response['success']
-    else:
-        return True

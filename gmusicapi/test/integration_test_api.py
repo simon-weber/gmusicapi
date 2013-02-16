@@ -10,6 +10,7 @@ when it is finished, but no guarantees are made."""
 
 import copy
 from glob import glob
+import logging
 import os
 import random
 import string
@@ -18,8 +19,10 @@ import time
 import unittest
 
 from gmusicapi.protocol.metadata import md_expectations
-from ..utils.apilogging import UsesLog
 from ..test import utils as test_utils
+
+#unittest.main() will set __name__ to '__main__'; use a static name
+log = logging.getLogger('gmusicapi.test.integration_test_api')
 
 #Test files are located in the same directory as this test runner.
 cwd = os.getcwd()
@@ -28,13 +31,11 @@ test_filenames = glob(u'audiotest*')
 os.chdir(cwd)
 
 
-class TestWCApiCalls(test_utils.BaseTest, UsesLog):
+class TestWCApiCalls(test_utils.BaseTest):
 
     @classmethod
     def setUpClass(cls):
         super(TestWCApiCalls, cls).setUpClass()
-
-        cls.init_class_logger()
 
         #Get the full path of the test files.
         #Can't use abspath since this is relative to where _this_ file is,
@@ -120,22 +121,22 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         delete, add_dupe, add_blank, reorder = [random.choice([True, False]) for i in xrange(4)]
 
         if tracks and delete:
-            self.log.debug("deleting tracks")
+            log.debug("deleting tracks")
             track_is = range(len(tracks))
             #Select a random number of indices to delete.
             del_is = set(random.sample(track_is, random.choice(track_is)))
             tracks = [track for i, track in enumerate(tracks) if not i in del_is]
 
         if add_dupe:
-            self.log.debug("adding dupe tracks from same playlist")
+            log.debug("adding dupe tracks from same playlist")
             tracks.extend(random.sample(tracks, random.randrange(len(tracks))))
 
         if add_blank:
-            self.log.debug("adding random tracks with no eid")
+            log.debug("adding random tracks with no eid")
             tracks.extend(random.sample(self.library, random.randrange(len(tracks))))
 
         if reorder:
-            self.log.debug("shuffling tracks")
+            log.debug("shuffling tracks")
             random.shuffle(tracks)
 
         self.api.change_playlist(p_id, tracks)
@@ -170,7 +171,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         """Check how many times the newly uploaded songs have been
         downloaded."""
         #gross - upload servers need time to sync
-        time.sleep(5)
+        time.sleep(15)
 
         info_tuples = [self.api.get_song_download_info(sid) for sid in
                        self.uploaded_ids]
@@ -202,7 +203,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
         """Change a song's metadata, then restore it."""
         #Get a random song's metadata.
         orig_md = [s for s in self.library if s["id"] == self.r_song_id][0]
-        self.log.debug("original md: %s", repr(orig_md))
+        log.debug("original md: %s", repr(orig_md))
 
         #Generate noticably changed metadata for ones we can change.
         #Changing immutable ones voids the request (although we get back success:True and our expected values).
@@ -213,7 +214,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
                 old_val = orig_md[name]
                 new_val = test_utils.modify_md(name, old_val)
 
-                self.log.debug("%s: %s modified to %s", name, repr(old_val), repr(new_val))
+                log.debug("%s: %s modified to %s", name, repr(old_val), repr(new_val))
                 self.assertNotEqual(new_val, old_val)
                 new_md[name] = new_val
 
@@ -233,7 +234,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
                 # master_key, trans = dependent_md[name]
                 # correct_dependent_md[dep_key] = trans(new_md[master_key])
 
-                self.log.debug("dependents (%s): %s -> %s", name, new_md[master_name], correct_dependent_md[name])
+                log.debug("dependents (%s): %s -> %s", name, new_md[master_name], correct_dependent_md[name])
 
         #The library needs to be refreshed to flush the changes.
         #This might not happen right away, so we allow a few retries.
@@ -252,7 +253,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
             attempts += 1
 
             result_md = [s for s in self.library if s["id"] == orig_md["id"]][0]
-            self.log.debug("result md: %s", repr(result_md))
+            log.debug("result md: %s", repr(result_md))
 
 
             try:
@@ -270,7 +271,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
                             self.assertTrue(same, "dependent metadata incorrect: " + message)
 
             except AssertionError:
-                self.log.info("retrying server for changed metadata")
+                log.info("retrying server for changed metadata")
                 if not attempts < max_attempts: raise
             else:
                 success = True
@@ -291,7 +292,7 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
             attempts += 1
 
             result_md = [s for s in self.library if s["id"] == orig_md["id"]][0]
-            self.log.debug("result md: %s", repr(result_md))
+            log.debug("result md: %s", repr(result_md))
 
             try:
                 for name in orig_md:
@@ -301,11 +302,11 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
                         self.assertTrue(same, "failed to revert: " + message)
 
             except AssertionError:
-                self.log.info("retrying server for reverted metadata")
-                if not attempts < max_attempts: raise
+                log.info("retrying server for reverted metadata")
+                if not attempts < max_attempts:
+                    raise
             else:
                 success = True
-
 
     def test_search(self):
         self.api.search('e')
@@ -319,4 +320,17 @@ class TestWCApiCalls(test_utils.BaseTest, UsesLog):
 
 if __name__ == '__main__':
 
-    unittest.main()
+    #Fail the build if any log messages above warning are sent.
+    root_logger = logging.getLogger('gmusicapi')
+
+    noticer = test_utils.NoticeLogging()
+    noticer.setLevel(logging.WARNING)
+    root_logger.addHandler(noticer)
+
+    result = unittest.main(exit=False).result
+
+    if noticer.seen_message:
+        print '(failing build due to log warnings)'
+        sys.exit(1)
+
+    sys.exit(not result.wasSuccessful())

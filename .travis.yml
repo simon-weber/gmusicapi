@@ -2,16 +2,18 @@
 language: python
 python: 
 - "2.7"
-install: pip install -e .
+install:
+ - python setup.py sdist --formats=zip -k
+ - find ./dist -iname "*.zip" -print0 | xargs -0 pip install
 script: python -m gmusicapi.test.integration_test_api
 before_install: 
 - sudo apt-get update -qq
-- sudo apt-get install -y ubuntu-restricted-extras libav-tools
+- sudo apt-get install -qq libav-tools libavcodec-extra-53
 branches: 
   only: 
   - develop
   - master
 env: 
   matrix: 
-  - secure: "clLng5Ho48nJtDwCimLYPfBbCt8PhJ3AjtwCmISupIVheEiFMX8V9SBA2vGO\nPPp9INAf3rD+VqPBl7qVcPWEyH51fovhokbc1aGvaTaj6Fswm8iweXxVl9In\nOGmXxz6HLHYJU7I/emU6DERY3W3Yb29WJIkCuYjPkzcT+8BU424="
+  - secure: "g1ZSxQ41otwm7xq2/eK6YtlrNnEZoYe0oEPGlCVf9viyO2QVLzdNwCkc1cMX\nVRrTjMCSxaekyBEFUMvACD/ER5iK68Jj9QllzRPVm43ETD+ZvRpmwFMV2a8D\n9ZoABHrr9KqOUuTN7w0NvsELQR8wkJCZiysJTEU4xkHO6YZPrrA="
   - secure: "AnkECjTBQ4hrQLAtJDVD51Gq6SuPz5PCM4YocVCNIgrWsTKvcwwIKFY5VxGG\nMBLAj82ivvJiLIEyh5pj1nxvtb5QMw+2gupTmq2ArZ2tWqGkK+UILICs7bum\n+AXxykW19kJ0as9z/l97ujQPoC7YYMQM7bBaS1YKp2JZDR1zIj0="
