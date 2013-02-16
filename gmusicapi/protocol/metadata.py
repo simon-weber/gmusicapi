@@ -1,38 +1,76 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Expectations about track metadata.
-Clients typically just use the dict md_expectations."""
+"""
+**Client code should import the dictionary** ``md_expectations``.
+
+This holds a mapping of *name* to *Expectation*, where *Expectation* has
+the following fields:
+
+*name*
+  key name in the song dictionary (equal to the *name* keying ``md_expectations``).
+
+*type*:
+    a string holding a `validictory <https://github.com/sunlightlabs/validictory>`__ type.
+
+    Possible values:
+      :string:
+          str and unicode objects
+      :integer:
+          ints, longs
+      :number:
+          ints, longs and floats
+      :boolean:
+          bools
+      :object:
+          dicts
+      :array:
+          lists and tuples
+      :null:
+          ``None``
+      :any:
+          any type is possible
+
+*mutable*:
+  ``True`` if client can change the value.
+
+*optional*:
+  ``True`` if the key can be left out.
+
+*volatile*:
+  ``True`` if the key can change between observations without client mutation.
+
+*depends_on*:
+  name of the key we transform to take our value from, or ``None``. See *dependent_transformation*.
+
+*dependent_transformation*:
+  ``None``, or a function ``lambda dependent_value: our_value``.
+
+  For example, the ``artistNorm`` field is automatically set to the lowercase
+  of the ``artist`` field.
+  So, ``artistNorm.depends_on == 'artist'``, and the *dependent_transformation* for
+  ``artistNorm`` can be written as ``lambda artist: artist.lower()``.
+
+*allowed_values*:
+  sequence of allowed values.
+
+*explanation*:
+  an explanatory string for non-obvious keys.
+
+The above information is used to generate the documentation below.
+If you find a counterexample for these expectations, please `submit an issue
+<https://github.com/simon-weber/Unofficial-Google-Music-API/issues>`__.
+"""
 
 from collections import defaultdict, namedtuple
 
 
-"""
-These properties define knowledge about different metadata keys.
-
-    name: key in the song dictionary
-    type: a validictory type. possible values:
-            'string' - str and unicode objects
-            'integer' - ints
-            'number' - ints and floats
-            'boolean' - bools
-            'object' - dicts
-            'array' - lists and tuples
-            'null' - None
-            'any' - any type is acceptable
-    mutable: True if client can change the value
-    optional: True if the key is not always in the dictionary
-    volatile: True if the key can change between observations without a client change
-    depends_on: name of the key we take our value from, or None
-    dependent_transformation: lambda dependent_value: our_value, or None
-    allowed_values: sequence of possible values
-"""
 _Expectation = namedtuple(
     '_Expectation',
     [
         'name', 'type', 'mutable', 'optional', 'volatile',
         'depends_on', 'dependent_transformation',
-        'allowed_values'
+        'allowed_values', 'explanation'
     ]
 )
 
@@ -43,12 +81,12 @@ class Expectation(_Expectation):
 
     def __new__(cls, name, type, mutable, optional, volatile=False,
                 depends_on=None, dependent_transformation=None,
-                allowed_values=None):
+                allowed_values=None, explanation=''):
         return cls.__bases__[0].__new__(
             cls,
             name, type, mutable, optional, volatile,
             depends_on, dependent_transformation,
-            allowed_values
+            allowed_values, explanation
         )
 
     def get_schema(self):
@@ -56,12 +94,13 @@ class Expectation(_Expectation):
         schema = {}
         schema["type"] = self.type
         if self.type == "string":
-            schema["blank"] = True  # allow blank strings by default
+            schema["blank"] = True  # allow blank strings
         if self.optional:
             schema["required"] = False
 
         return schema
 
+#: All the expectations.
 _all_expts = [
     Expectation(name, 'string', mutable=True, optional=False) for name in
     (
@@ -73,51 +112,62 @@ _all_expts = [
         'disc', 'year', 'track', 'totalTracks', 'totalDiscs'
     )
 ] + [
-    Expectation(name, type, mutable=False, optional=False) for (name, type) in
-    {
-        'durationMillis': 'integer',
-        'id': 'string',
-        'deleted': 'boolean',
-        'creationDate': 'integer',
-        'type': 'integer',  # enum, values not known yet
-        'beatsPerMinute': 'integer',
-        'url': 'string',
-        'subjectToCuration': 'boolean',  # ??
-        'matchedId': 'string',  # related to scan and match?
-        'recentTimestamp': 'integer',  # ??
-    }.items()
+    Expectation(name, type_str, mutable=False, optional=False, explanation=explain)
+    for (name, type_str, explain) in
+    (
+        ('durationMillis', 'integer',
+         'length of a song in milliseconds.'),
+
+        ('id', 'string',
+         'a per-user unique id for this song; sometimes referred to as *server id* or *song id*.'),
+
+        ('deleted', 'boolean', ''),
+        ('creationDate', 'integer', ''),
+        ('type', 'integer',
+         'An enum; 6 is known to signify a track which was scanned-and-matched.'),
+        ('beatsPerMinute', 'integer', ''),
+        ('subjectToCuration', 'boolean', 'meaning unknown.'),
+        ('matchedId', 'string', 'meaning unknown; related to scan and match?'),
+        ('recentTimestamp', 'integer', 'meaning unknown.'),
+    )
 ] + [
-    Expectation(name, type, mutable=False, optional=True) for (name, type) in
-    {
-        'storeId': 'string',  # matching track in the store
-        'reuploading': 'boolean',  # scan and match reupload in progress
-        'albumMatchedId': 'string',  # scan and match for entire album?
-        'pending': 'boolean',  # unsure: server processing (eg for store match) pending?
-        'url': 'string',  # ??
-        'bitrate': 'integer',
-        'playlistEntryId': 'string',  # only appears in context of a playlist
-        'albumArtUrl': 'string',
-    }.items()
+    Expectation(name, type_str, mutable=False, optional=True, explanation=explain)
+    for (name, type_str, explain) in
+    (
+        ('storeId', 'string', 'an id of a matching track in the Play Store.'),
+        ('reuploading', 'boolean', 'scan-and-match reupload in progress.'),
+        ('albumMatchedId', 'string', 'id of matching album in the Play Store?'),
+        ('pending', 'boolean', 'unsure; server processing (eg for store match) pending?'),
+        ('url', 'string',  'meaning unknown.'),
+        ('bitrate', 'integer', "bitrate in kilobytes/second (eg 320)."),
+        ('playlistEntryId', 'string', 'identifies position in the context of a playlist.'),
+        ('albumArtUrl', 'string', "if present, the url of an image for this song's album art."),
+    )
 ] + [
     Expectation(name + 'Norm', 'string', mutable=False, optional=False,
                 depends_on=name,
-                dependent_transformation=lambda x: x.lower()) for name in
+                dependent_transformation=lambda x: x.lower(),
+                explanation="automatically set to lowercase of *%s*." % name)
+    for name in
     (
         'artist', 'albumArtist', 'album'
     )
 ] + [
     # 0, 1, 5: no, down, up thumbs
     Expectation('rating', 'integer', mutable=True,
-                optional=False, allowed_values=tuple(range(6))),
+                optional=False, allowed_values=tuple(range(6)),
+                explanation='0 == no thumb, 1 == down thumb, 5 == up thumb.'),
 
     Expectation('lastPlayed', 'integer', mutable=False, optional=True, volatile=True),
     Expectation('playCount', 'integer', mutable=True, optional=False),
 
     Expectation('title', 'string', mutable=False, optional=False,
-                depends_on='name', dependent_transformation=lambda x: x),
+                depends_on='name', dependent_transformation=lambda x: x,
+                explanation='misleading! automatically set to *name*.'),
 
     Expectation('titleNorm', 'string', mutable=False, optional=False,
-                depends_on='name', dependent_transformation=lambda x: x.lower()),
+                depends_on='name', dependent_transformation=lambda x: x.lower(),
+                explanation='misleading! automatically set to lowercase of *name*.'),
 ]
 
 #Create the dict for client code. If they look up something we don't know about,
@@ -126,3 +176,39 @@ _immutable_key = lambda: Expectation('unknown', 'any', mutable=False, optional=T
 md_expectations = defaultdict(_immutable_key)
 for expt in _all_expts:
     md_expectations[expt.name] = expt
+
+
+#This code is a super-hack.
+
+#We want dynamic documentation based on _all_expts, but __doc__ isn't a writable field
+#for non-{function, class, module} objects. So, create a dummy class, and dynamically
+#create its docstring to be arbitrary reST that documents our expectations.
+
+def detail_line(e):
+    """Given an expectation, return a readable one-line explanation of it."""
+    fields = [fname for fname in ('mutable', 'optional', 'volatile')
+              if getattr(e, fname, None)]
+
+    if e.depends_on:
+        fields.append("depends_on=%s" % e.depends_on)
+
+    line = ', '.join(fields)
+    if line:
+        line = "*(%s)*" % line
+
+    return line
+
+#Create a definition list.
+docs = '\n\n'.join(
+    ("*{name}*\n"
+     "  {type} {details}\n\n"
+     "  {explanation}").format(
+         name=e.name,
+         type=e.type,
+         details=detail_line(e),
+         explanation=e.explanation,
+     ) for e in sorted(_all_expts, key=lambda e: e.name)
+)
+
+
+KnownMetadataFields = type('KnownMetadataFields', (defaultdict,), {'__doc__': docs})
