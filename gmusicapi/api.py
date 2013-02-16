@@ -1,13 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""`gmusicapi` enables interaction with Google Music.
-This includes both web-client and Music Manager features.
-
-This api is not supported nor endorsed by Google, and could break at any time.
-
-**Respect Google in your use of the API.**
-Use common sense: protocol compliance, reasonable load, etc.
+"""
+The api module exposes Api, which is the main user-facing interface.
 """
 
 import copy

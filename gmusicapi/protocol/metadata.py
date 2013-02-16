@@ -14,21 +14,21 @@ the following fields:
     a string holding a `validictory <https://github.com/sunlightlabs/validictory>`__ type.
 
     Possible values:
-      :string:
+      :'string':
           str and unicode objects
-      :integer:
+      :'integer':
           ints, longs
-      :number:
+      :'number':
           ints, longs and floats
-      :boolean:
+      :'boolean':
           bools
-      :object:
+      :'object':
           dicts
-      :array:
+      :'array':
           lists and tuples
-      :null:
+      :'null':
           ``None``
-      :any:
+      :'any':
           any type is possible
 
 *mutable*:

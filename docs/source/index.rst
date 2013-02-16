@@ -42,13 +42,12 @@ Other features are on the way:
 
 See `the changelog
 <https://github.com/simon-weber/Unofficial-Google-Music-API/blob/develop/HISTORY.rst>`__
-for version history. The current version is |version|.
+for version history.
 
 Using gmusicapi
 ---------------
 
 .. toctree::
-   :glob:
    :hidden:
 
    usage
