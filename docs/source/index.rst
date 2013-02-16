@@ -38,7 +38,8 @@ Other features are on the way:
 -  album art manipulation (issues `#52
    <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/52>`__ and `#38
    <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/38>`__)
--  Music Manager library downloading
+-  Music Manager library downloading (issue `#90
+   <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/90>`__)
 
 See `the changelog
 <https://github.com/simon-weber/Unofficial-Google-Music-API/blob/develop/HISTORY.rst>`__

@@ -18,6 +18,6 @@ First, make sure Sphinx is installed: ``pip install sphinx``.
 
 Next, simply do ``cd gmusicapi/docs`` followed by ``make html``.
 
-If there weren't any problems, the docs are in ``./build/html``.
+If there weren't any problems, the docs are now in ``build/html``.
 You can serve them up locally with ``python -m SimpleHTTPServer``,
 then view them in your web browser at ``http://127.0.0.1:8000/build/html/``.
