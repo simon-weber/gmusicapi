@@ -233,7 +233,7 @@ class UploadMetadata(MmCall):
     def dynamic_data(cls, tracks, uploader_id, do_not_rematch=False):
         """
         :param tracks: list of filled locker_pb2.Track
-        :param uploader_id
+        :param uploader_id:
         :param do_not_rematch: seems to be ignored
         """
 
