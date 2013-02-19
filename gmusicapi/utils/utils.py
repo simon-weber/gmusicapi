@@ -129,7 +129,7 @@ def transcode_to_mp3(audio_in, quality=3, slice_start=None, slice_duration=None)
     else:
         raise ValueError("quality must be int or string, but received %r" % quality)
 
-    cmd.extend(['-f', 's16be',  # don't output id3 headers
+    cmd.extend(['-f', 's16le',  # don't output id3 headers
                 '-c', 'libmp3lame',
                 'pipe:1'])
 
