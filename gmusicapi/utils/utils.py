@@ -179,7 +179,7 @@ def truncate(x, max_els=100, recurse_levels=0):
             if isinstance(x, dict):
                 if 'id' in x and 'titleNorm' in x:
                     #assume to be a song dict
-                    trunc = {k: x.get(k) for k in ['title', 'artist', 'album']}
+                    trunc = dict((k, x.get(k)) for k in ['title', 'artist', 'album'])
                     trunc['...'] = '...'
                     return trunc
                 else:

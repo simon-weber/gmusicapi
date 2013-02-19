@@ -164,7 +164,7 @@ class UploadMetadata(MmCall):
         elif isinstance(audio, mutagen.asf.ASF):
             #WMA entries store more info than just the value.
             #Monkeypatch in a dict {key: value} to keep interface the same for all filetypes.
-            asf_dict = {k: [ve.value for ve in v] for (k, v) in audio.tags.as_dict().items()}
+            asf_dict = dict((k, [ve.value for ve in v]) for (k, v) in audio.tags.as_dict().items())
             audio.tags = asf_dict
 
         track.duration_millis = int(audio.info.length * 1000)
@@ -187,7 +187,7 @@ class UploadMetadata(MmCall):
             success = utils.pb_set(msg, field_name, val)
 
             if not success:
-                log.warning("could not pb_set track.%s = %r for '%s'", field_name, val, filepath)
+                log.info("could not pb_set track.%s = %r for '%s'", field_name, val, filepath)
 
             return success
 
@@ -217,7 +217,7 @@ class UploadMetadata(MmCall):
         #Mass-populate the rest of the simple fields.
         #Merge shared and unshared fields into {mutagen: Track}.
         fields = dict(
-            {shared: shared for shared in cls.shared_fields}.items() +
+            dict((shared, shared) for shared in cls.shared_fields).items() +
             cls.field_map.items()
         )
 

@@ -905,7 +905,8 @@ class Api():
         log.debug("%s(args=%s, kwargs=%s)",
                   call_name,
                   [utils.truncate(a) for a in args],
-                  {k: utils.truncate(v) for (k, v) in kwargs.items()})
+                  dict((k, utils.truncate(v)) for (k, v) in kwargs.items())
+                  )
 
         request = protocol.build_request(*args, **kwargs)
 

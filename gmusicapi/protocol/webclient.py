@@ -20,10 +20,10 @@ service_url = base_url + 'services/'
 #Shared response schemas, built to include metadata expectations.
 song_schema = {
     "type": "object",
-    "properties": {
-        name: expt.get_schema() for
+    "properties": dict(
+        (name, expt.get_schema()) for
         name, expt in md_expectations.items()
-    },
+    ),
     #don't allow metadata not in expectations
     "additionalProperties": False
 }
