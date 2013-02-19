@@ -16,7 +16,7 @@ import random
 import string
 import sys
 import time
-import unittest
+from gmusicapi.compat import unittest
 
 from gmusicapi.protocol.metadata import md_expectations
 from ..test import utils as test_utils

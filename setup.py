@@ -1,7 +1,19 @@
 #!/usr/bin/env python
 
-from setuptools import setup, find_packages
 import re
+from setuptools import setup, find_packages
+import sys
+
+#Only 2.6-2.7 are supported.
+if not ((2, 6, 0) <= sys.version_info[:3] <= (2, 7, 3)):
+    sys.stderr.write('gmusicapi does not officially support this Python version.\n')
+    #try to continue anyway
+
+dynamic_requires = []
+
+if sys.version_info[:2] == (2, 6):
+    dynamic_requires += ['unittest2 == 0.5.1', 'simplejson == 3.0.7']
+
 
 #This hack is from http://stackoverflow.com/a/7071358/1231454;
 # the version is kept in a seperate file and gets parsed - this
@@ -41,7 +53,7 @@ setup(
         #'hachoir-core == 1.3.3',
         #'hachoir-parser == 1.3.4',
         #'hachoir-metadata == 1.3.3',
-    ],
+    ] + dynamic_requires,
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.7',

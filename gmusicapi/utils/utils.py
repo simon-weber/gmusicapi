@@ -21,11 +21,11 @@ _python_to_cpp_types = {
     str: ('string',),
 }
 
-cpp_type_to_python = {
-    getattr(FieldDescriptor, 'CPPTYPE_' + cpp.upper()): python
+cpp_type_to_python = dict(
+    (getattr(FieldDescriptor, 'CPPTYPE_' + cpp.upper()), python)
     for python, cpplist in _python_to_cpp_types.items()
     for cpp in cpplist
-}
+)
 
 root_logger_name = "gmusicapi"
 log_filename = "gmusicapi.log"

@@ -11,7 +11,7 @@ import os
 import random
 import re
 import sys
-import unittest
+from gmusicapi.compat import unittest
 
 from gmusicapi.api import Api
 from gmusicapi.exceptions import CallFailure, NotLoggedIn
@@ -36,7 +36,7 @@ class NoticeLogging(logging.Handler):
     """
 
     def __init__(self):
-        super(NoticeLogging, self).__init__()
+        logging.Handler.__init__(self)  # cannot use super in py 2.6; logging is still old-style
         self.seen_message = False
 
     def emit(self, record):
