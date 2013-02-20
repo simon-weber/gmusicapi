@@ -46,7 +46,6 @@ setup(
         'decorator == 3.3.2',
         'mutagen == 1.21',
         'protobuf == 2.4.1',
-        'chardet == 2.1.1',
         'requests == 1.1.0',
         'python-dateutil == 2.1',
         #for testing album art:

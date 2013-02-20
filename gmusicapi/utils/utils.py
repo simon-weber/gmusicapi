@@ -23,7 +23,7 @@ _python_to_cpp_types = {
 
 cpp_type_to_python = dict(
     (getattr(FieldDescriptor, 'CPPTYPE_' + cpp.upper()), python)
-    for python, cpplist in _python_to_cpp_types.items()
+    for (python, cpplist) in _python_to_cpp_types.items()
     for cpp in cpplist
 )
 
