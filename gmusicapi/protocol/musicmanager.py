@@ -5,7 +5,6 @@
 
 import base64
 import hashlib
-import json
 import logging
 import os
 
@@ -13,6 +12,7 @@ import dateutil.parser
 from decorator import decorator
 import mutagen
 
+from gmusicapi.compat import json
 from gmusicapi.exceptions import CallFailure
 from gmusicapi.protocol import upload_pb2, locker_pb2
 from gmusicapi.protocol.shared import Call

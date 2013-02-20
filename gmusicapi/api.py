@@ -26,7 +26,6 @@ from gmusicapi.utils.tokenauth import TokenAuth
 
 log = logging.getLogger(__name__)
 
-
 class Api():
     def __init__(self, debug_logging=True):
         """Initializes an Api.

@@ -4,11 +4,11 @@
 """Calls made by the web client."""
 
 import copy
-import json
 import sys
 
 import validictory
 
+from gmusicapi.compat import json
 from gmusicapi.exceptions import CallFailure, ValidationException
 from gmusicapi.protocol.metadata import md_expectations
 from gmusicapi.protocol.shared import Call
