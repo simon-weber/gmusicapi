@@ -2,7 +2,7 @@
 language: python
 python: 
 - "2.7"
-- "2.6"
+# - "2.6"
 install:
  - python setup.py sdist --formats=zip -k
  - find ./dist -iname "*.zip" -print0 | xargs -0 pip install
