@@ -99,23 +99,21 @@ def pb_set(msg, field_name, val):
     return True
 
 
-def transcode_to_mp3(audio_in, quality=3, slice_start=None, slice_duration=None):
-    """Return the bytestring result of transcoding audio_in to mp3.
+def transcode_to_mp3(filepath, quality=3, slice_start=None, slice_duration=None):
+    """Return the bytestring result of transcoding the file at *filepath* to mp3.
     An ID3 header is not included in the result.
 
-    :param audio_in: bytestring of input
+    :param filepath: location of file
     :param quality: if int, pass to avconv -qscale. if string, pass to avconv -ab
                     -qscale roughly corresponds to libmp3lame -V0, -V1...
     :param slice_start: (optional) transcode a slice, starting at this many seconds
     :param slice_duration: (optional) when used with slice_start, the number of seconds in the slice
 
-    Raise OSError on transcoding problems, or ValueError on param problems.
+    Raise IOError on transcoding problems, or ValueError on param problems.
     """
 
-    #TODO IOError makes more sense than OSError
-
     err_output = None
-    cmd = ['avconv', '-i', 'pipe:0']
+    cmd = ['avconv', '-i', filepath]
 
     if slice_duration is not None:
         cmd.extend(['-t', str(slice_duration)])
@@ -137,12 +135,12 @@ def transcode_to_mp3(audio_in, quality=3, slice_start=None, slice_duration=None)
 
     try:
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+                                stderr=subprocess.PIPE)
 
-        audio_out, err_output = proc.communicate(input=audio_in)
+        audio_out, err_output = proc.communicate()
 
         if proc.returncode != 0:
-            raise OSError  # handle errors in except
+            raise IOError  # handle errors in except
 
     except (OSError, IOError) as e:
         log.exception('transcoding failure')
@@ -154,7 +152,7 @@ def transcode_to_mp3(audio_in, quality=3, slice_start=None, slice_duration=None)
 
         log.debug('full failure output: %s', err_output)
 
-        raise OSError(err_msg)
+        raise IOError(err_msg)
 
     else:
         return audio_out

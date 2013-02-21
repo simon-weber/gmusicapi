@@ -101,7 +101,7 @@ class UploadMetadata(MmCall):
     static_params = {'version': 1}
 
     @staticmethod
-    def get_track_clientid(file_contents):
+    def get_track_clientid(filepath):
         #The id is a 22 char hash of the file. It is found by:
         # stripping tags
         # getting an md5 sum
@@ -113,9 +113,12 @@ class UploadMetadata(MmCall):
         # so this shouldn't cause problems.
 
         #This will attempt to reupload files if their tags change.
-        cid = hashlib.md5(file_contents).digest()
-        cid = base64.encodestring(cid)[:-3]
-        return cid
+
+        m = hashlib.md5()
+        with open(filepath, 'rb') as f:
+            m.update(f.read())
+
+        return base64.encodestring(m.digest())[:-3]
 
     #these collections define how locker_pb2.Track fields align to mutagen's.
     shared_fields = ('album', 'artist', 'composer', 'genre')
@@ -131,12 +134,12 @@ class UploadMetadata(MmCall):
     }
 
     @classmethod
-    def fill_track_info(cls, filepath, file_contents):
+    def fill_track_info(cls, filepath):
         """Given the path and contents of a track, return a filled locker_pb2.Track.
         On problems, raise ValueError."""
         track = locker_pb2.Track()
 
-        track.client_id = cls.get_track_clientid(file_contents)
+        track.client_id = cls.get_track_clientid(filepath)
 
         extension = os.path.splitext(filepath)[1].upper()
         if extension:
@@ -427,8 +430,8 @@ class ProvideSample(MmCall):
 
     @staticmethod
     @pb
-    def dynamic_data(file_contents, server_challenge, track, uploader_id):
-        """Raise OSError on transcoding problems, or ValueError for invalid input."""
+    def dynamic_data(filepath, server_challenge, track, uploader_id):
+        """Raise IOError on transcoding problems, or ValueError for invalid input."""
         msg = upload_pb2.UploadSampleRequest()
 
         msg.uploader_id = uploader_id
@@ -442,7 +445,7 @@ class ProvideSample(MmCall):
         #The sample is simply a small (usually 15 second) clip of the song,
         # transcoded into 128kbs mp3. The server dictates where the cut should be made.
         sample_msg.sample = utils.transcode_to_mp3(
-            file_contents, quality='128k',
+            filepath, quality='128k',
             slice_start=sample_spec.start_millis / 1000,
             slice_duration=sample_spec.duration_millis / 1000
         )

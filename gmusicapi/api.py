@@ -730,17 +730,15 @@ class Api():
         not_uploaded = {}
 
         #Gather local information on the files.
-        local_info = {}  # {clientid: (path, contents, Track)}
+        local_info = {}  # {clientid: (path, Track)}
         for path in filepaths:
             try:
-                with open(path, 'rb') as f:
-                    contents = f.read()
-                track = musicmanager.UploadMetadata.fill_track_info(path, contents)
+                track = musicmanager.UploadMetadata.fill_track_info(path)
             except (IOError, ValueError) as e:
                 log.exception("problem gathering local info of '%s'" % path)
                 not_uploaded[path] = str(e)
             else:
-                local_info[track.client_id] = (path, contents, track)
+                local_info[track.client_id] = (path, track)
 
         if not local_info:
             return uploaded, matched, not_uploaded
@@ -749,7 +747,7 @@ class Api():
 
         #Upload metadata; the server tells us what to do next.
         res = self._make_call(musicmanager.UploadMetadata,
-                              [track for (path, contents, track) in local_info.values()],
+                              [track for (path, track) in local_info.values()],
                               self.uploader_id)
 
         #TODO checking for proper contents should be handled in verification
@@ -760,21 +758,21 @@ class Api():
 
         #Send scan and match samples if requested.
         for sample_request in sample_requests:
-            path, contents, track = local_info[sample_request.challenge_info.client_track_id]
+            path, track = local_info[sample_request.challenge_info.client_track_id]
 
             try:
                 res = self._make_call(musicmanager.ProvideSample,
-                                      contents, sample_request, track, self.uploader_id)
-            except ValueError as e:
+                                      path, sample_request, track, self.uploader_id)
+            except (IOError, ValueError) as e:
                 log.warning("couldn't create scan and match sample for '%s': %s", path, str(e))
                 not_uploaded[path] = str(e)
             else:
                 responses.extend(res.sample_response.track_sample_response)
 
         #Read sample responses and prep upload requests.
-        to_upload = {}  # {serverid: (path, contents, Track, do_not_rematch?)}
+        to_upload = {}  # {serverid: (path, Track, do_not_rematch?)}
         for sample_res in responses:
-            path, contents, track = local_info[sample_res.client_track_id]
+            path, track = local_info[sample_res.client_track_id]
 
             if sample_res.response_code == upload_pb2.TrackSampleResponse.MATCHED:
                 log.info("matched '%s' to sid %s", path, sample_res.server_track_id)
@@ -812,10 +810,10 @@ class Api():
                     else:
                         log.info("will reupload '%s'", path)
 
-                        to_upload[reup_sid] = (path, contents, track, True)
+                        to_upload[reup_sid] = (path, track, True)
 
             elif sample_res.response_code == upload_pb2.TrackSampleResponse.UPLOAD_REQUESTED:
-                to_upload[sample_res.server_track_id] = (path, contents, track, False)
+                to_upload[sample_res.server_track_id] = (path, track, False)
             else:
                 #Report the symbolic name of the response code enum.
                 enum_desc = upload_pb2._TRACKSAMPLERESPONSE.enum_types[0]
@@ -831,7 +829,7 @@ class Api():
             #TODO reordering requests could avoid wasting time waiting for reup sync
             self._make_call(musicmanager.UpdateUploadState, 'start', self.uploader_id)
 
-            for server_id, (path, contents, track, do_not_rematch) in to_upload.items():
+            for server_id, (path, track, do_not_rematch) in to_upload.items():
                 #It can take a few tries to get an session.
                 should_retry = True
                 attempts = 0
@@ -878,11 +876,14 @@ class Api():
                 if track.original_content_type != locker_pb2.Track.MP3:
                     try:
                         log.info("transcoding '%s' to mp3", path)
-                        contents = utils.transcode_to_mp3(contents, quality=transcode_quality)
-                    except (OSError, ValueError) as e:
+                        contents = utils.transcode_to_mp3(path, quality=transcode_quality)
+                    except (IOError, ValueError) as e:
                         log.warning("error transcoding %s: %s", path, e)
                         not_uploaded[path] = "transcoding error: %s" % e
                         continue
+                else:
+                    with open(path, 'rb') as f:
+                        contents = f.read()
 
                 upload_response = self._make_call(musicmanager.UploadFile,
                                                   session_url, content_type, contents)
