@@ -128,7 +128,7 @@ _all_expts = [
         ('deleted', 'boolean', ''),
         ('creationDate', 'integer', ''),
         ('type', 'integer',
-         'An enum; 6 is known to signify a track which was scanned-and-matched.'),
+         'An enum: 1: free/purchased, 2: uploaded/not matched, 6: uploaded/matched'),
 
         ('beatsPerMinute', 'integer',
          "the server does not calculate this - it's just what was in track metadata"),

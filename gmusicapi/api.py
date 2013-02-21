@@ -26,6 +26,7 @@ from gmusicapi.utils.tokenauth import TokenAuth
 
 log = logging.getLogger(__name__)
 
+
 class Api():
     def __init__(self, debug_logging=True):
         """Initializes an Api.
@@ -248,10 +249,18 @@ class Api():
     def get_all_playlist_ids(self, auto=True, user=True):
         """Returns a dictionary that maps playlist types to dictionaries.
 
-        :param auto: create an ``'auto'`` subdictionary entry for autoplaylists like
-          'Free and purchased' and 'Last added'.
+        :param auto: create an ``'auto'`` subdictionary entry.
+          Currently, this will just map to ``{}``; support for 'Shared with me' and
+          'Google Play recommends' is on the way (
+          `#102 <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/102>`__).
+
+          Other auto playlists are not stored on the server, but calculated by the client.
+          See `this gist <https://gist.github.com/simon-weber/5007769>`__ for sample code for
+          'Thumbs Up', 'Last Added', and 'Free and Purchased'.
 
         :param user: create a user ``'user'`` subdictionary entry for user-created playlists.
+          This includes anything that appears on the left side 'Playlists' bar (notably, saved
+          instant mixes).
 
         User playlist names will be unicode strings.
 
@@ -259,11 +268,7 @@ class Api():
         will map onto lists of ids. Here's an example response::
 
             {
-                'auto':{
-                    'Free and purchased': 'auto-playlist-promo',
-                    'Thumbs up': 'auto-playlist-thumbs-up',
-                    'Last added': 'auto-playlist-recent'
-                },
+                'auto':{},
 
                 'user':{
                     u'Some Song Mix':[
@@ -285,7 +290,8 @@ class Api():
         playlists = {}
 
         if auto:
-            playlists['auto'] = self._get_auto_playlists()
+            #playlists['auto'] = self._get_auto_playlists()
+            playlists['auto'] = {}
         if user:
             res = self._make_call(webclient.GetPlaylistSongs, 'all')
             playlists['user'] = self._playlist_list_to_dict(res['playlists'])
