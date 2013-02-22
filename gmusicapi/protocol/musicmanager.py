@@ -487,3 +487,26 @@ class UpdateUploadState(MmCall):
         msg.state = state
 
         return msg
+
+
+class CancelUploadJobs(MmCall):
+    """This call will cancel any outstanding upload jobs (ie from GetJobs).
+    The Music Manager only calls it when the user changes the location of their local collection.
+
+    It doesn't actually return anything useful."""
+
+    static_method = 'POST'
+    static_url = _android_url + 'deleteuploadrequested'
+    session_options = {'verify': False}
+
+    @staticmethod
+    @pb
+    def dynamic_data(uploader_id):
+        """
+        :param uploader_id: id
+        """
+
+        msg = upload_pb2.DeleteUploadRequestedRequest()  # what a mouthful!
+        msg.uploader_id = uploader_id
+
+        return msg
