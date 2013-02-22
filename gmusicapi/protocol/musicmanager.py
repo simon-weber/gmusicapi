@@ -146,6 +146,10 @@ class UploadMetadata(MmCall):
             #Trim leading period if it exists (ie extension not empty).
             extension = extension[1:]
 
+        if extension.upper() == 'M4B':
+            #M4B are supported by the music manager, and transcoded like normal.
+            extension = 'M4A'
+
         if not hasattr(locker_pb2.Track, extension):
             raise ValueError("unsupported filetype")
 

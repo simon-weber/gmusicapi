@@ -871,7 +871,7 @@ class Api():
                 external = session['externalFieldTransfers'][0]
 
                 session_url = external['putInfo']['url']
-                content_type = external['content_type']
+                content_type = external.get('content_type', 'audio/mpeg')
 
                 if track.original_content_type != locker_pb2.Track.MP3:
                     try:
