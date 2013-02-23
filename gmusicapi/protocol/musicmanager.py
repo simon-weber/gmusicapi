@@ -372,7 +372,6 @@ class GetUploadSession(MmCall):
             got_session = False
 
             if error_code == 503:
-                #Servers still syncing; retry with no penalty.
                 should_retry = True
                 reason = 'upload servers still syncing'
 

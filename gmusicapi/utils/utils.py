@@ -41,7 +41,7 @@ def configure_debug_logging():
 
     root_logger = logging.getLogger('gmusicapi')
 
-    if not getattr(root_logger, log_already_configured_flag, None):
+    if not getattr(root_logger, 'log_already_configured_flag', None):
         root_logger.setLevel(logging.DEBUG)
 
         fh = logging.FileHandler(log_filename)
@@ -63,7 +63,7 @@ def configure_debug_logging():
         fh.setFormatter(formatter)
         ch.setFormatter(formatter)
 
-        setattr(root_logger, log_already_configured_flag, True)
+        setattr(root_logger, 'log_already_configured_flag', True)
 
 
 def pb_set(msg, field_name, val):
@@ -140,6 +140,7 @@ def transcode_to_mp3(filepath, quality=3, slice_start=None, slice_duration=None)
         audio_out, err_output = proc.communicate()
 
         if proc.returncode != 0:
+            err_output = ("(return code: %r)\n" % proc.returncode) + err_output
             raise IOError  # handle errors in except
 
     except (OSError, IOError) as e:

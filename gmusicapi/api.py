@@ -780,7 +780,8 @@ class Api():
                 if enable_matching:
                     matched[path] = sample_res.server_track_id
                 else:
-                    #Immediately request a reupload session (ie, hit 'fix incorrect match').
+                    # request a reupload session (ie, hit 'fix incorrect match').
+                    time.sleep(10)  # wait for upload servers to sync
                     try:
                         self._make_call(webclient.ReportBadSongMatch, [sample_res.server_track_id])
 
