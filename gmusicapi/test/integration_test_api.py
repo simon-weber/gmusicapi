@@ -30,6 +30,8 @@ os.chdir(os.path.dirname(sys.argv[0]))
 test_filenames = glob(u'audiotest*')
 os.chdir(cwd)
 
+test_art_filename = 'ok_10x10.png'
+
 
 class TestWCApiCalls(test_utils.BaseTest):
 
@@ -43,11 +45,12 @@ class TestWCApiCalls(test_utils.BaseTest):
         path = os.path.realpath(__file__)
         real_path = lambda lp: path[:string.rfind(path, os.sep)] + os.sep + lp
         cls.test_filenames = map(real_path, test_filenames)
+        cls.test_art_filename = real_path(test_art_filename)
 
     #---
     #   Monolithic tests:
-    #   (messy, but less likely to destructively modify the library)
-    #   Modified from http://stackoverflow.com/questions/5387299/python-unittest-testcase-execution-order
+    #   TODO this is awful
+    #   Modified from http://goo.gl/NCrGE
     #---
 
     def pl_1_create(self):
@@ -56,7 +59,6 @@ class TestWCApiCalls(test_utils.BaseTest):
 
         #Need to reload playlists so it appears.
         self.playlists = self.api.get_all_playlist_ids()['user']
-
 
     def pl_2_add_song(self):
         """Add a random song to the playlist."""
@@ -68,7 +70,6 @@ class TestWCApiCalls(test_utils.BaseTest):
         tracks = self.api.get_playlist_songs(p_id)
 
         self.assertEqual(tracks[0]["id"], self.r_song_id)
-
 
     def pl_2a_remove_song(self):
         """Remove a song from the playlist."""
@@ -96,7 +97,6 @@ class TestWCApiCalls(test_utils.BaseTest):
         self.api.delete_playlist(self.playlists['modified playlist'][-1])
 
         self.playlists = self.api.get_all_playlist_ids()['user']
-
 
     def test_playlists(self):
         self.run_steps("pl")
@@ -191,13 +191,12 @@ class TestWCApiCalls(test_utils.BaseTest):
     #   Non-monolithic tests:
     #---
 
-    #Works, but the protocol isn't mature enough to support the call (yet).
     def test_get_song_download_info(self):
-         #The api doesn't expose the actual response here,
-         # instead we expect a tuple with 2 entries.
-         res = self.api.get_song_download_info(self.r_song_id)
-         self.assertEqual(len(res), 2)
-         self.assertIsInstance(res, tuple)
+        #The api doesn't expose the actual response here,
+        # instead we expect a tuple with 2 entries.
+        res = self.api.get_song_download_info(self.r_song_id)
+        self.assertEqual(len(res), 2)
+        self.assertIsInstance(res, tuple)
 
     def test_change_song_metadata(self):
         """Change a song's metadata, then restore it."""
@@ -206,7 +205,10 @@ class TestWCApiCalls(test_utils.BaseTest):
         log.debug("original md: %s", repr(orig_md))
 
         #Generate noticably changed metadata for ones we can change.
-        #Changing immutable ones voids the request (although we get back success:True and our expected values).
+
+        #TODO is this true?
+        #Changing immutable ones voids the request (even though we get back success:True)
+
         new_md = copy.deepcopy(orig_md)
 
         for name, expt in md_expectations.items():
@@ -223,7 +225,6 @@ class TestWCApiCalls(test_utils.BaseTest):
         #The call only fails if you give the wrong datatype.
         self.api.change_song_metadata(new_md)
 
-
         #Recreate the dependent md to what they should be (based on how orig_md was changed)
         correct_dependent_md = {}
         for name, expt in md_expectations.items():
@@ -234,7 +235,8 @@ class TestWCApiCalls(test_utils.BaseTest):
                 # master_key, trans = dependent_md[name]
                 # correct_dependent_md[dep_key] = trans(new_md[master_key])
 
-                log.debug("dependents (%s): %s -> %s", name, new_md[master_name], correct_dependent_md[name])
+                log.debug("dependents (%s): %s -> %s",
+                          name, new_md[master_name], correct_dependent_md[name])
 
         #The library needs to be refreshed to flush the changes.
         #This might not happen right away, so we allow a few retries.
@@ -255,7 +257,6 @@ class TestWCApiCalls(test_utils.BaseTest):
             result_md = [s for s in self.library if s["id"] == orig_md["id"]][0]
             log.debug("result md: %s", repr(result_md))
 
-
             try:
                 #Verify everything went as expected:
                 for name, expt in md_expectations.items():
@@ -263,19 +264,22 @@ class TestWCApiCalls(test_utils.BaseTest):
                         #Check mutability if it's not volatile or dependent.
                         if not expt.volatile and expt.depends_on is None:
                             same, message = test_utils.md_entry_same(name, orig_md, result_md)
-                            self.assertEqual(same, (not expt.mutable), "metadata mutability incorrect: " + message)
+                            self.assertEqual(same, (not expt.mutable),
+                                             "metadata mutability incorrect: " + message)
 
                         #Check dependent md.
                         if expt.depends_on is not None:
-                            same, message = test_utils.md_entry_same(name, correct_dependent_md, result_md)
+                            same, message = test_utils.md_entry_same(
+                                name, correct_dependent_md, result_md
+                            )
                             self.assertTrue(same, "dependent metadata incorrect: " + message)
 
             except AssertionError:
                 log.info("retrying server for changed metadata")
-                if not attempts < max_attempts: raise
+                if not attempts < max_attempts:
+                    raise
             else:
                 success = True
-
 
         #Revert the metadata.
         self.api.change_song_metadata(orig_md)
@@ -302,9 +306,9 @@ class TestWCApiCalls(test_utils.BaseTest):
                         self.assertTrue(same, "failed to revert: " + message)
 
             except AssertionError:
-                log.info("retrying server for reverted metadata")
                 if not attempts < max_attempts:
                     raise
+                log.info("retrying server for reverted metadata")
             else:
                 success = True
 
@@ -317,6 +321,16 @@ class TestWCApiCalls(test_utils.BaseTest):
         url = self.api.get_stream_url(self.r_song_id)
         self.assertTrue(url[:4] == "http")
 
+    def test_art_mutation(self):
+        """Change and revert the art for a single song."""
+        orig_md = [s for s in self.library if s["id"] == self.r_song_id][0]
+
+        self.api.upload_album_art(self.r_song_id, self.test_art_filename)
+        #TODO how to verify?
+
+        time.sleep(5)
+
+        self.api.change_song_metadata(orig_md)
 
 if __name__ == '__main__':
 
