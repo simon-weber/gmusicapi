@@ -29,7 +29,7 @@ Playlist manipulation
 Song manipulation
 -----------------
 .. autoclass:: Api
-    :members: change_song_metadata, delete_songs
+    :members: change_song_metadata, upload_album_art, delete_songs
 
 
 Searching

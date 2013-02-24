@@ -177,12 +177,6 @@ class Api():
         * ``totalTracks``
         * ``track``
         * ``year``
-
-        For up-to-date information on metadata, refer to `the code
-        <https://github.com/simon-weber/Unofficial-Google-Music-API/
-        blob/develop/gmusicapi/protocol/metadata.py>`__.
-        Better docs are in the works; see issue `#73
-        <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/73>`__.
         """
 
         res = self._make_call(webclient.ChangeSongMetadata, songs)
