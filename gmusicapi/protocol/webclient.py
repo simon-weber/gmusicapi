@@ -555,11 +555,8 @@ class UploadImage(WcCall):
     static_method = 'POST'
     static_url = service_url + 'imageupload'
     static_params = {'zx': '',  # ??
-                     'u': 0}  # TODO probably shouldn't hardcode this
+                     'u': 0}
 
-    #TODO this is returning (None, None)
-    #Can't seem to set on the webclient either; maybe it's them?
-    #I don't see the upload call being fired.
     _res_schema = {
         'type': 'object',
         'properties': {
@@ -570,8 +567,11 @@ class UploadImage(WcCall):
     }
 
     @staticmethod
-    def dynamic_data(image):
+    def dynamic_files(image_filepath):
         """
-        :param image: contents of the image as a bytestring.
+        :param image_filepath: path to an image
         """
-        return image
+        with open(image_filepath, 'rb') as f:
+            contents = f.read()
+
+        return {'albumArt': (image_filepath, contents)}
