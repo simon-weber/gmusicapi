@@ -212,9 +212,12 @@ class UploadMetadata(MmCall):
 
         if "date" in audio:
             date_val = str(audio['date'][0])
-            datetime = dateutil.parser.parse(date_val, fuzzy=True)
-
-            track_set('year', datetime.year)
+            try:
+                datetime = dateutil.parser.parse(date_val, fuzzy=True)
+            except ValueError as e:
+                log.warning("could not parse date md for '%s': (%s)", filepath, e)
+            else:
+                track_set('year', datetime.year)
 
         #Mass-populate the rest of the simple fields.
         #Merge shared and unshared fields into {mutagen: Track}.
