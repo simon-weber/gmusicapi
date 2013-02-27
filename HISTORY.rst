@@ -5,8 +5,11 @@ History
 
 As of 2013.02.09, releases with breaking changes will be noted with ``**``.
 
+2013.03.XX
+++++++++++
+
 2013.02.27
-**********
+++++++++++
 
 - add support for uploading album art (`docs
   <https://unofficial-google-music-api.readthedocs.org/en/
@@ -20,7 +23,7 @@ As of 2013.02.09, releases with breaking changes will be noted with ``**``.
 - improved error messages when uploading
 
 2013.02.15
-**********
+++++++++++
 
 - user now controls logging (`docs
   <https://unofficial-google-music-api.readthedocs.org/en/
