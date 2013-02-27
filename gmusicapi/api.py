@@ -724,9 +724,19 @@ class Api():
         for path in filepaths:
             try:
                 track = musicmanager.UploadMetadata.fill_track_info(path)
-            except (IOError, ValueError) as e:
-                log.exception("problem gathering local info of '%s'" % path)
-                not_uploaded[path] = str(e)
+            except BaseException as e:
+                log.exception("problem gathering local info of '%r'", path)
+
+                user_err_msg = str(e)
+
+                if 'Non-ASCII strings must be converted to unicode' in str(e):
+                    #This is a protobuf-specific error; they require either ascii or unicode.
+                    #To keep behavior consistent, make no effort to guess - require users
+                    # to decode first.
+                    user_err_msg = ("nonascii bytestrings must be decoded to unicode"
+                                    " (error: '%s')" % err_msg)
+
+                not_uploaded[path] = user_err_msg
             else:
                 local_info[track.client_id] = (path, track)
 
