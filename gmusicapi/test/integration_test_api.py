@@ -141,6 +141,8 @@ class TestWCApiCalls(test_utils.BaseTest):
 
         self.api.change_playlist(p_id, tracks)
 
+        time.sleep(10) # wait for server to sync
+
         server_tracks = self.api.get_playlist_songs(p_id)
 
         self.assertEqual(len(tracks), len(server_tracks))
