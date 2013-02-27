@@ -7,17 +7,19 @@ import operator
 import re
 import collections
 
+from gmusicapi.compat import Counter
+
 
 def get_id_pairs(track_list):
     """Create a list of (sid, eid) tuples from a list of tracks. Tracks without an eid will have an eid of None."""
 
     return [(t["id"], t.get("playlistEntryId")) for t in track_list]
-    
+
 def find_playlist_changes(orig_tracks, modified_tracks):
     """Finds the changes between two playlists.
-    
+
     Returns a tuple of (deletions, additions, staying). Deletions and additions are both Counters of (sid, eid) tuples; staying is a set of (sid, eid) tuples.
-    
+
     :param old: the original playlist.
     :param modified: the modified playlist."""
 
@@ -30,8 +32,8 @@ def find_playlist_changes(orig_tracks, modified_tracks):
     d_pairs = get_id_pairs(modified_tracks)
 
     #Counters are multisets.
-    s_count = collections.Counter(s_pairs)
-    d_count = collections.Counter(d_pairs)
+    s_count = Counter(s_pairs)
+    d_count = Counter(d_pairs)
 
     to_del = s_count - d_count
     to_add = d_count - s_count
@@ -68,13 +70,13 @@ def build_song_rep(song, md_list=['title', 'artist', 'album'], divider=" - "):
     filtered = filter_song_md(song, md_list, no_singletons=False)
 
     return divider.join(filtered)
-    
+
 
 def reorder_to(l, order):
     """Returns a list, reordered to a specific ordering.
 
     :param l: the list to reorder. It is not modified.
-    :param order: a list containing the new ordering, 
+    :param order: a list containing the new ordering,
                   eg [2,1,0] to reverse a list of length 3
     """
 
@@ -98,11 +100,11 @@ def build_queries_from(f, regex, cap_types, cap_pr, encoding='ascii'):
 
     for line in f:
             matches = regex.match(line)
-            
+
             if matches:
                 #Zip captures to their types and order by priority to build a query.
-                query = reorder_to( 
-                    zip(matches.groups(), cap_types), 
+                query = reorder_to(
+                    zip(matches.groups(), cap_types),
                     cap_pr)
 
                 queries.append(query)
@@ -127,7 +129,7 @@ class SongMatcher(object):
 
     def __init__(self, songs, log_metadata=['title', 'artist', 'album']):
         """Prepares songs for matching and determines logging options.
-        
+
         :param songs: list of GM songs to match against.
         :param log_metadata: list of valid GM metadata types to show in the log.
                              order given will be order outputted.
@@ -141,7 +143,7 @@ class SongMatcher(object):
         self.log_lines = []
 
         self.log_metadata = log_metadata
-    
+
     def build_log(self):
         """Returns a string built from the current log lines."""
 
@@ -150,7 +152,7 @@ class SongMatcher(object):
 
     def build_song_for_log(self, song):
         """Returns a string built from a song using log options.
-        
+
         :param song:
         """
 
@@ -171,11 +173,11 @@ class SongMatcher(object):
             # f(song data, query) -> truthy value
             self.comp = comp
 
-            #Query and song transformers - 
+            #Query and song transformers -
             # manipulate query, song before comparison.
             # f(unicode) -> unicode
             self.q_t = q_t
-            
+
             self.s_t = s_t
 
     #Some modifiers that are useful in my library:
@@ -229,8 +231,8 @@ class SongMatcher(object):
 
         for song in results:
             menu_lines.append(
-                str(key) 
-                + ": " 
+                str(key)
+                + ": "
                 + build_song_rep(song).encode('utf-8'))
 
             key += 1
@@ -277,7 +279,7 @@ class SongMatcher(object):
                 #Auto mode attempts a search with the current modifiers.
                 #If we get 1 result, we return it.
                 #If we get no results, we add the next mod from auto_modifers and try again.
-                #If we get many results, we branch and try with another modifier. 
+                #If we get many results, we branch and try with another modifier.
                 # On no results, we tiebreak our old results. Otherwise, we return the branched results.
 
                 current_mods = modifiers[:]
@@ -329,8 +331,8 @@ class SongMatcher(object):
         #Reverse then append the default modifier for proper compose order.
         mods_to_apply = [sm for sm in reversed(state.mods)]
         mods_to_apply.append(self.SearchModifier(
-                lambda q: q, 
-                lambda sd : sd, 
+                lambda q: q,
+                lambda sd : sd,
                 operator.eq))
 
         #Create the transformers by composing all of them.

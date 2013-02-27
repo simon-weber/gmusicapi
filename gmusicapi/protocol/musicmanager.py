@@ -5,17 +5,20 @@
 
 import base64
 import hashlib
-import json
+import logging
 import os
 
 import dateutil.parser
 from decorator import decorator
 import mutagen
 
+from gmusicapi.compat import json
 from gmusicapi.exceptions import CallFailure
 from gmusicapi.protocol import upload_pb2, locker_pb2
 from gmusicapi.protocol.shared import Call
 from gmusicapi.utils import utils
+
+log = logging.getLogger(__name__)
 
 
 #This url has SSL issues, hence the verify=False for session_options.
@@ -66,10 +69,15 @@ class AuthenticateUploader(MmCall):
     @classmethod
     def check_success(cls, res):
         if res.HasField('auth_status') and res.auth_status != upload_pb2.UploadResponse.OK:
+            enum_desc = upload_pb2._UPLOADRESPONSE.enum_types[1]
+            res_name = enum_desc.values_by_number[res.auth_status].name
+
             raise CallFailure(
-                "Too many uploader ids/machines are registered."
-                " See http://goo.gl/O6xe7 for more information.",
-                cls.__name__)
+                "Upload auth error code %s: %s."
+                " See http://goo.gl/O6xe7 for more information. " % (
+                    res.auth_status, res_name
+                ), cls.__name__
+            )
 
     @classmethod
     @pb
@@ -93,7 +101,7 @@ class UploadMetadata(MmCall):
     static_params = {'version': 1}
 
     @staticmethod
-    def get_track_clientid(file_contents):
+    def get_track_clientid(filepath):
         #The id is a 22 char hash of the file. It is found by:
         # stripping tags
         # getting an md5 sum
@@ -105,9 +113,12 @@ class UploadMetadata(MmCall):
         # so this shouldn't cause problems.
 
         #This will attempt to reupload files if their tags change.
-        cid = hashlib.md5(file_contents).digest()
-        cid = base64.encodestring(cid)[:-3]
-        return cid
+
+        m = hashlib.md5()
+        with open(filepath, 'rb') as f:
+            m.update(f.read())
+
+        return base64.encodestring(m.digest())[:-3]
 
     #these collections define how locker_pb2.Track fields align to mutagen's.
     shared_fields = ('album', 'artist', 'composer', 'genre')
@@ -123,17 +134,21 @@ class UploadMetadata(MmCall):
     }
 
     @classmethod
-    def fill_track_info(cls, filepath, file_contents):
+    def fill_track_info(cls, filepath):
         """Given the path and contents of a track, return a filled locker_pb2.Track.
         On problems, raise ValueError."""
         track = locker_pb2.Track()
 
-        track.client_id = cls.get_track_clientid(file_contents)
+        track.client_id = cls.get_track_clientid(filepath)
 
         extension = os.path.splitext(filepath)[1].upper()
         if extension:
             #Trim leading period if it exists (ie extension not empty).
             extension = extension[1:]
+
+        if extension.upper() == 'M4B':
+            #M4B are supported by the music manager, and transcoded like normal.
+            extension = 'M4A'
 
         if not hasattr(locker_pb2.Track, extension):
             raise ValueError("unsupported filetype")
@@ -156,7 +171,7 @@ class UploadMetadata(MmCall):
         elif isinstance(audio, mutagen.asf.ASF):
             #WMA entries store more info than just the value.
             #Monkeypatch in a dict {key: value} to keep interface the same for all filetypes.
-            asf_dict = {k: [ve.value for ve in v] for (k, v) in audio.tags.as_dict().items()}
+            asf_dict = dict((k, [ve.value for ve in v]) for (k, v) in audio.tags.as_dict().items())
             audio.tags = asf_dict
 
         track.duration_millis = int(audio.info.length * 1000)
@@ -179,8 +194,7 @@ class UploadMetadata(MmCall):
             success = utils.pb_set(msg, field_name, val)
 
             if not success:
-                #TODO log
-                pass
+                log.info("could not pb_set track.%s = %r for '%s'", field_name, val, filepath)
 
             return success
 
@@ -193,24 +207,22 @@ class UploadMetadata(MmCall):
 
             track_set('title', title)
         else:
-            #handle non-ascii path encodings.
-            if not isinstance(filepath, unicode):
-                #not sure if this is possible
-                enc = utils.guess_str_encoding(filepath)[0]
-                filepath = filepath.decode(enc)
-
+            #Assume ascii or unicode.
             track.title = os.path.basename(filepath)
 
         if "date" in audio:
             date_val = str(audio['date'][0])
-            datetime = dateutil.parser.parse(date_val, fuzzy=True)
-
-            track_set('year', datetime.year)
+            try:
+                datetime = dateutil.parser.parse(date_val, fuzzy=True)
+            except ValueError as e:
+                log.warning("could not parse date md for '%s': (%s)", filepath, e)
+            else:
+                track_set('year', datetime.year)
 
         #Mass-populate the rest of the simple fields.
         #Merge shared and unshared fields into {mutagen: Track}.
         fields = dict(
-            {shared: shared for shared in cls.shared_fields}.items() +
+            dict((shared, shared) for shared in cls.shared_fields).items() +
             cls.field_map.items()
         )
 
@@ -363,7 +375,6 @@ class GetUploadSession(MmCall):
             got_session = False
 
             if error_code == 503:
-                #Servers still syncing; retry with no penalty.
                 should_retry = True
                 reason = 'upload servers still syncing'
 
@@ -425,8 +436,8 @@ class ProvideSample(MmCall):
 
     @staticmethod
     @pb
-    def dynamic_data(file_contents, server_challenge, track, uploader_id):
-        """Raise OSError on transcoding problems, or ValueError for invalid input."""
+    def dynamic_data(filepath, server_challenge, track, uploader_id):
+        """Raise IOError on transcoding problems, or ValueError for invalid input."""
         msg = upload_pb2.UploadSampleRequest()
 
         msg.uploader_id = uploader_id
@@ -440,7 +451,7 @@ class ProvideSample(MmCall):
         #The sample is simply a small (usually 15 second) clip of the song,
         # transcoded into 128kbs mp3. The server dictates where the cut should be made.
         sample_msg.sample = utils.transcode_to_mp3(
-            file_contents, quality='128k',
+            filepath, quality='128k',
             slice_start=sample_spec.start_millis / 1000,
             slice_duration=sample_spec.duration_millis / 1000
         )
@@ -480,5 +491,28 @@ class UpdateUploadState(MmCall):
             raise ValueError(str(e))
 
         msg.state = state
+
+        return msg
+
+
+class CancelUploadJobs(MmCall):
+    """This call will cancel any outstanding upload jobs (ie from GetJobs).
+    The Music Manager only calls it when the user changes the location of their local collection.
+
+    It doesn't actually return anything useful."""
+
+    static_method = 'POST'
+    static_url = _android_url + 'deleteuploadrequested'
+    session_options = {'verify': False}
+
+    @staticmethod
+    @pb
+    def dynamic_data(uploader_id):
+        """
+        :param uploader_id: id
+        """
+
+        msg = upload_pb2.DeleteUploadRequestedRequest()  # what a mouthful!
+        msg.uploader_id = uploader_id
 
         return msg

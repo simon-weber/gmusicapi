@@ -5,12 +5,26 @@ History
 
 As of 2013.02.09, releases with breaking changes will be noted with ``**``.
 
+2013.02.27
+**********
+
+- add support for uploading album art (`docs
+  <https://unofficial-google-music-api.readthedocs.org/en/
+  latest/reference/api.html#gmusicapi.api.Api.upload_album_art>`__)
+
+- add support for .m4b files
+- add CancelUploadJobs call (not exposed in api yet)
+- Python 2.6 compatibility
+- reduced peak memory usage when uploading
+- logging improvements
+- improved error messages when uploading
+
 2013.02.15
 **********
 
 - user now controls logging (`docs
-  <https://unofficial-google-music-api.readthedocs.org/en
-  /latest/#gmusicapi.api.Api.__init__>`__)
+  <https://unofficial-google-music-api.readthedocs.org/en/
+  latest/reference/api.html#gmusicapi.api.Api.__init__>`__)
 
 - documentation overhaul
 

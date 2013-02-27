@@ -3,9 +3,8 @@
 Contributing to gmusicapi
 =========================
 
-Contributions of all sizes are appreciated!
-The `issues list <https://github.com/simon-weber/Unofficial-Google-Music-API/issues>`__
-on GitHub always has things to be done.
+The easiest way to start contributing is to help `triage issues 
+<http://www.codetriage.com/simon-weber/unofficial-google-music-api>`__.
 
 Development
 -----------

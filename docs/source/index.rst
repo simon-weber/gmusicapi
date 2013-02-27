@@ -35,15 +35,14 @@ All major functionality is supported:
 
 Other features are on the way:
 
--  album art manipulation (issues `#52
-   <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/52>`__ and `#38
-   <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/38>`__)
 -  Music Manager library downloading (issue `#90
    <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/90>`__)
+-  Full "fix incorrect match" support (issue `#89
+   <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/89>`__)
 
 See `the changelog
 <https://github.com/simon-weber/Unofficial-Google-Music-API/blob/develop/HISTORY.rst>`__
-for version history.
+for changes by version.
 
 Using gmusicapi
 ---------------

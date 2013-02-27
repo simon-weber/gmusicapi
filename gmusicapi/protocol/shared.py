@@ -3,12 +3,12 @@
 
 """Definitions shared by multiple clients."""
 
-import json
 import sys
 
 from google.protobuf.descriptor import FieldDescriptor
 from requests import Request
 
+from gmusicapi.compat import json
 from gmusicapi.exceptions import ParseException
 
 #There's a lot of code here to simplify call definition, but it's not scary - promise.

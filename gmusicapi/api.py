@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 
 
 class Api():
-    def __init__(self, debug_logging=False):
+    def __init__(self, debug_logging=True):
         """Initializes an Api.
 
         :param debug_logging: if ``True``, attach log handlers to logger ``gmusicapi`` to
@@ -177,12 +177,6 @@ class Api():
         * ``totalTracks``
         * ``track``
         * ``year``
-
-        For up-to-date information on metadata, refer to `the code
-        <https://github.com/simon-weber/Unofficial-Google-Music-API/
-        blob/develop/gmusicapi/protocol/metadata.py>`__.
-        Better docs are in the works; see issue `#73
-        <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/73>`__.
         """
 
         res = self._make_call(webclient.ChangeSongMetadata, songs)
@@ -249,10 +243,18 @@ class Api():
     def get_all_playlist_ids(self, auto=True, user=True):
         """Returns a dictionary that maps playlist types to dictionaries.
 
-        :param auto: create an ``'auto'`` subdictionary entry for autoplaylists like
-          'Free and purchased' and 'Last added'.
+        :param auto: create an ``'auto'`` subdictionary entry.
+          Currently, this will just map to ``{}``; support for 'Shared with me' and
+          'Google Play recommends' is on the way (
+          `#102 <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/102>`__).
+
+          Other auto playlists are not stored on the server, but calculated by the client.
+          See `this gist <https://gist.github.com/simon-weber/5007769>`__ for sample code for
+          'Thumbs Up', 'Last Added', and 'Free and Purchased'.
 
         :param user: create a user ``'user'`` subdictionary entry for user-created playlists.
+          This includes anything that appears on the left side 'Playlists' bar (notably, saved
+          instant mixes).
 
         User playlist names will be unicode strings.
 
@@ -260,11 +262,7 @@ class Api():
         will map onto lists of ids. Here's an example response::
 
             {
-                'auto':{
-                    'Free and purchased': 'auto-playlist-promo',
-                    'Thumbs up': 'auto-playlist-thumbs-up',
-                    'Last added': 'auto-playlist-recent'
-                },
+                'auto':{},
 
                 'user':{
                     u'Some Song Mix':[
@@ -286,7 +284,8 @@ class Api():
         playlists = {}
 
         if auto:
-            playlists['auto'] = self._get_auto_playlists()
+            #playlists['auto'] = self._get_auto_playlists()
+            playlists['auto'] = {}
         if user:
             res = self._make_call(webclient.GetPlaylistSongs, 'all')
             playlists['user'] = self._playlist_list_to_dict(res['playlists'])
@@ -634,29 +633,25 @@ class Api():
 
         return song_ids
 
-    #TODO
-    #@utils.accept_singleton(basestring)
-    #@utils.empty_arg_shortcircuit()
-    #def change_album_art(self, song_ids, image_filepath):
-    #    """Change the album art of songs.
+    @utils.accept_singleton(basestring)
+    @utils.empty_arg_shortcircuit()
+    def upload_album_art(self, song_ids, image_filepath):
+        """Uploads an image and sets it as the album art for songs.
 
-    #    :param song_ids: a list of song ids, or a single song id.
-    #    :param image_filepath: filepath of the art to use. jpg and png are known to work.
+        :param song_ids: a list of song ids, or a single song id.
+        :param image_filepath: filepath of the art to use. jpg and png are known to work.
 
-    #    Note that this always uploads the given art. If you already have the art uploaded and set
-    #    for another song, you can just copy over the the 'albumArtUrl' key, then set the change
-    #    with :func:`change_song_metadata`.
-    #    """
+        This function will *always* upload the provided image, even if it's already uploaded.
+        If the art is already uploaded and set for another song, copy over the
+        value of the ``'albumArtUrl'`` key using :func:`change_song_metadata` instead.
+        """
 
-    #    with open(image_filepath) as f:
-    #        image = f.read()
+        res = self._make_call(webclient.UploadImage, image_filepath)
+        url = res['imageUrl']
 
-    #    res = self._make_call(webclient.UploadImage, image)
-    #    url = res['imageUrl']
+        song_dicts = [dict((('id', id), ('albumArtUrl', url))) for id in song_ids]
 
-    #    song_dicts = [{'id': id, 'albumArtUrl': url} for id in song_ids]
-
-    #    return self.change_song_metadata(song_dicts)
+        return self.change_song_metadata(song_dicts)
 
     #---
     #   Api features supported by the Music Manager interface:
@@ -725,17 +720,25 @@ class Api():
         not_uploaded = {}
 
         #Gather local information on the files.
-        local_info = {}  # {clientid: (path, contents, Track)}
+        local_info = {}  # {clientid: (path, Track)}
         for path in filepaths:
             try:
-                with open(path, 'rb') as f:
-                    contents = f.read()
-                track = musicmanager.UploadMetadata.fill_track_info(path, contents)
-            except (IOError, ValueError) as e:
-                log.exception("problem gathering local info of '%s'" % path)
-                not_uploaded[path] = str(e)
+                track = musicmanager.UploadMetadata.fill_track_info(path)
+            except BaseException as e:
+                log.exception("problem gathering local info of '%r'", path)
+
+                user_err_msg = str(e)
+
+                if 'Non-ASCII strings must be converted to unicode' in str(e):
+                    #This is a protobuf-specific error; they require either ascii or unicode.
+                    #To keep behavior consistent, make no effort to guess - require users
+                    # to decode first.
+                    user_err_msg = ("nonascii bytestrings must be decoded to unicode"
+                                    " (error: '%s')" % err_msg)
+
+                not_uploaded[path] = user_err_msg
             else:
-                local_info[track.client_id] = (path, contents, track)
+                local_info[track.client_id] = (path, track)
 
         if not local_info:
             return uploaded, matched, not_uploaded
@@ -744,7 +747,7 @@ class Api():
 
         #Upload metadata; the server tells us what to do next.
         res = self._make_call(musicmanager.UploadMetadata,
-                              [track for (path, contents, track) in local_info.values()],
+                              [track for (path, track) in local_info.values()],
                               self.uploader_id)
 
         #TODO checking for proper contents should be handled in verification
@@ -755,21 +758,21 @@ class Api():
 
         #Send scan and match samples if requested.
         for sample_request in sample_requests:
-            path, contents, track = local_info[sample_request.challenge_info.client_track_id]
+            path, track = local_info[sample_request.challenge_info.client_track_id]
 
             try:
                 res = self._make_call(musicmanager.ProvideSample,
-                                      contents, sample_request, track, self.uploader_id)
-            except ValueError as e:
+                                      path, sample_request, track, self.uploader_id)
+            except (IOError, ValueError) as e:
                 log.warning("couldn't create scan and match sample for '%s': %s", path, str(e))
                 not_uploaded[path] = str(e)
             else:
                 responses.extend(res.sample_response.track_sample_response)
 
         #Read sample responses and prep upload requests.
-        to_upload = {}  # {serverid: (path, contents, Track, do_not_rematch?)}
+        to_upload = {}  # {serverid: (path, Track, do_not_rematch?)}
         for sample_res in responses:
-            path, contents, track = local_info[sample_res.client_track_id]
+            path, track = local_info[sample_res.client_track_id]
 
             if sample_res.response_code == upload_pb2.TrackSampleResponse.MATCHED:
                 log.info("matched '%s' to sid %s", path, sample_res.server_track_id)
@@ -777,7 +780,8 @@ class Api():
                 if enable_matching:
                     matched[path] = sample_res.server_track_id
                 else:
-                    #Immediately request a reupload session (ie, hit 'fix incorrect match').
+                    # request a reupload session (ie, hit 'fix incorrect match').
+                    time.sleep(10)  # wait for upload servers to sync
                     try:
                         self._make_call(webclient.ReportBadSongMatch, [sample_res.server_track_id])
 
@@ -807,10 +811,10 @@ class Api():
                     else:
                         log.info("will reupload '%s'", path)
 
-                        to_upload[reup_sid] = (path, contents, track, True)
+                        to_upload[reup_sid] = (path, track, True)
 
             elif sample_res.response_code == upload_pb2.TrackSampleResponse.UPLOAD_REQUESTED:
-                to_upload[sample_res.server_track_id] = (path, contents, track, False)
+                to_upload[sample_res.server_track_id] = (path, track, False)
             else:
                 #Report the symbolic name of the response code enum.
                 enum_desc = upload_pb2._TRACKSAMPLERESPONSE.enum_types[0]
@@ -826,7 +830,7 @@ class Api():
             #TODO reordering requests could avoid wasting time waiting for reup sync
             self._make_call(musicmanager.UpdateUploadState, 'start', self.uploader_id)
 
-            for server_id, (path, contents, track, do_not_rematch) in to_upload.items():
+            for server_id, (path, track, do_not_rematch) in to_upload.items():
                 #It can take a few tries to get an session.
                 should_retry = True
                 attempts = 0
@@ -868,16 +872,19 @@ class Api():
                 external = session['externalFieldTransfers'][0]
 
                 session_url = external['putInfo']['url']
-                content_type = external['content_type']
+                content_type = external.get('content_type', 'audio/mpeg')
 
                 if track.original_content_type != locker_pb2.Track.MP3:
                     try:
                         log.info("transcoding '%s' to mp3", path)
-                        contents = utils.transcode_to_mp3(contents, quality=transcode_quality)
-                    except (OSError, ValueError) as e:
+                        contents = utils.transcode_to_mp3(path, quality=transcode_quality)
+                    except (IOError, ValueError) as e:
                         log.warning("error transcoding %s: %s", path, e)
                         not_uploaded[path] = "transcoding error: %s" % e
                         continue
+                else:
+                    with open(path, 'rb') as f:
+                        contents = f.read()
 
                 upload_response = self._make_call(musicmanager.UploadFile,
                                                   session_url, content_type, contents)
@@ -905,7 +912,8 @@ class Api():
         log.debug("%s(args=%s, kwargs=%s)",
                   call_name,
                   [utils.truncate(a) for a in args],
-                  {k: utils.truncate(v) for (k, v) in kwargs.items()})
+                  dict((k, utils.truncate(v)) for (k, v) in kwargs.items())
+                  )
 
         request = protocol.build_request(*args, **kwargs)
 

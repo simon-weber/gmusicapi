@@ -21,11 +21,11 @@ _python_to_cpp_types = {
     str: ('string',),
 }
 
-cpp_type_to_python = {
-    getattr(FieldDescriptor, 'CPPTYPE_' + cpp.upper()): python
-    for python, cpplist in _python_to_cpp_types.items()
+cpp_type_to_python = dict(
+    (getattr(FieldDescriptor, 'CPPTYPE_' + cpp.upper()), python)
+    for (python, cpplist) in _python_to_cpp_types.items()
     for cpp in cpplist
-}
+)
 
 root_logger_name = "gmusicapi"
 log_filename = "gmusicapi.log"
@@ -41,7 +41,7 @@ def configure_debug_logging():
 
     root_logger = logging.getLogger('gmusicapi')
 
-    if not getattr(root_logger, log_already_configured_flag, None):
+    if not getattr(root_logger, 'log_already_configured_flag', None):
         root_logger.setLevel(logging.DEBUG)
 
         fh = logging.FileHandler(log_filename)
@@ -63,7 +63,7 @@ def configure_debug_logging():
         fh.setFormatter(formatter)
         ch.setFormatter(formatter)
 
-        setattr(root_logger, log_already_configured_flag, True)
+        setattr(root_logger, 'log_already_configured_flag', True)
 
 
 def pb_set(msg, field_name, val):
@@ -99,21 +99,21 @@ def pb_set(msg, field_name, val):
     return True
 
 
-def transcode_to_mp3(audio_in, quality=3, slice_start=None, slice_duration=None):
-    """Return the bytestring result of transcoding audio_in to mp3.
+def transcode_to_mp3(filepath, quality=3, slice_start=None, slice_duration=None):
+    """Return the bytestring result of transcoding the file at *filepath* to mp3.
     An ID3 header is not included in the result.
 
-    :param audio_in: bytestring of input
+    :param filepath: location of file
     :param quality: if int, pass to avconv -qscale. if string, pass to avconv -ab
                     -qscale roughly corresponds to libmp3lame -V0, -V1...
     :param slice_start: (optional) transcode a slice, starting at this many seconds
     :param slice_duration: (optional) when used with slice_start, the number of seconds in the slice
 
-    Raise OSError on transcoding problems, or ValueError on param problems.
+    Raise IOError on transcoding problems, or ValueError on param problems.
     """
 
     err_output = None
-    cmd = ['avconv', '-i', 'pipe:0']
+    cmd = ['avconv', '-i', filepath]
 
     if slice_duration is not None:
         cmd.extend(['-t', str(slice_duration)])
@@ -127,29 +127,33 @@ def transcode_to_mp3(audio_in, quality=3, slice_start=None, slice_duration=None)
     else:
         raise ValueError("quality must be int or string, but received %r" % quality)
 
-    cmd.extend(['-f', 's16be',  # don't output id3 headers
+    cmd.extend(['-f', 's16le',  # don't output id3 headers
                 '-c', 'libmp3lame',
                 'pipe:1'])
 
-    #TODO might be good to log the final command
+    log.debug('running transcode command %r', cmd)
 
     try:
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+                                stderr=subprocess.PIPE)
 
-        audio_out, err_output = proc.communicate(input=audio_in)
+        audio_out, err_output = proc.communicate()
 
         if proc.returncode != 0:
-            raise OSError  # handle errors in except
+            err_output = ("(return code: %r)\n" % proc.returncode) + err_output
+            raise IOError  # handle errors in except
 
-    except OSError as e:
-        #TODO would be better to log.exception here
+    except (OSError, IOError) as e:
+        log.exception('transcoding failure')
+
         err_msg = "transcoding failed: %s. " % e
 
         if err_output is not None:
             err_msg += "stderr: '%s'" % err_output
 
-        raise OSError(err_msg)
+        log.debug('full failure output: %s', err_output)
+
+        raise IOError(err_msg)
 
     else:
         return audio_out
@@ -174,7 +178,7 @@ def truncate(x, max_els=100, recurse_levels=0):
             if isinstance(x, dict):
                 if 'id' in x and 'titleNorm' in x:
                     #assume to be a song dict
-                    trunc = {k: x.get(k) for k in ['title', 'artist', 'album']}
+                    trunc = dict((k, x.get(k)) for k in ['title', 'artist', 'album'])
                     trunc['...'] = '...'
                     return trunc
                 else:
