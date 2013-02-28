@@ -4,12 +4,14 @@
 """Utilities used in testing."""
 
 from getpass import getpass
+from glob import glob
 import inspect
 import logging
 import numbers
 import os
 import random
 import re
+import string
 import sys
 from gmusicapi.compat import unittest
 
@@ -28,6 +30,28 @@ gm_id_regex = re.compile(("{h}{{8}}-" +
 
 travis_id = 'E9:40:01:0E:51:7A'
 travis_name = 'Travis-CI (gmusicapi)'
+
+
+#Test files are located in the same directory as this file.
+cwd = os.getcwd()
+os.chdir(os.path.dirname(sys.argv[0]))
+
+audio_filenames = glob(u'audiotest*')
+mp3_filenames = [fn for fn in audio_filenames if
+                 fn.endswith('.mp3')]
+image_filename = 'ok_10x10.png'
+
+os.chdir(cwd)
+
+#Get the full path of the test files.
+#Can't use abspath since this is relative to where _this_ file is,
+# not necessarily the calling curdir.
+path = os.path.realpath(__file__)
+real_path = lambda lp: path[:string.rfind(path, os.sep)] + os.sep + lp
+
+mp3_filenames = map(real_path, mp3_filenames)
+audio_filenames = map(real_path, audio_filenames)
+image_filename = real_path(image_filename)
 
 
 class NoticeLogging(logging.Handler):
