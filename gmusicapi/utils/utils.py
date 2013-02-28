@@ -5,6 +5,7 @@
 
 import logging
 import subprocess
+import time
 
 from decorator import decorator
 from google.protobuf.descriptor import FieldDescriptor
@@ -64,6 +65,41 @@ def configure_debug_logging():
         ch.setFormatter(formatter)
 
         setattr(root_logger, 'log_already_configured_flag', True)
+
+
+def retry(retry_exception, tries=5, delay=2, backoff=2, logger=None):
+    """Retry calling the decorated function using an exponential backoff.
+
+    An exception from a final attempt will propogate.
+
+    :param retry_exception: exception (or tuple of exceptions) to check for and retry on
+    :param tries: number of times to try (not retry) before giving up
+    :param delay: initial delay between retries in seconds
+    :param backoff: backoff multiplier
+    :param logger: logger to use. If None, use 'gmusicapi.utils' logger
+
+    Modified from
+    http://www.saltycrane.com/blog/2009/11/trying-out-retry-decorator-python.
+    """
+
+    if logger is None:
+        logger = logging.getLogger('gmusicapi.utils')
+
+    @decorator
+    def retry_wrapper(f, *args, **kwargs):
+        mtries, mdelay = tries, delay  # make our own mutable copies
+        while mtries > 1:
+            try:
+                return f(*args, **kwargs)
+            except retry_exception as e:
+                logger.info("%s, retrying in %s seconds...", e, mdelay)
+
+                time.sleep(mdelay)
+                mtries -= 1
+                mdelay *= backoff
+        return f(*args, **kwargs)
+
+    return retry_wrapper
 
 
 def pb_set(msg, field_name, val):
