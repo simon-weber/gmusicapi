@@ -67,12 +67,13 @@ def configure_debug_logging():
         setattr(root_logger, 'log_already_configured_flag', True)
 
 
-def retry(retry_exception, tries=5, delay=2, backoff=2, logger=None):
+def retry(retry_exception=None, tries=5, delay=2, backoff=2, logger=None):
     """Retry calling the decorated function using an exponential backoff.
 
     An exception from a final attempt will propogate.
 
-    :param retry_exception: exception (or tuple of exceptions) to check for and retry on
+    :param retry_exception: exception (or tuple of exceptions) to check for and retry on.
+      If None, use AssertionError.
     :param tries: number of times to try (not retry) before giving up
     :param delay: initial delay between retries in seconds
     :param backoff: backoff multiplier
@@ -84,6 +85,9 @@ def retry(retry_exception, tries=5, delay=2, backoff=2, logger=None):
 
     if logger is None:
         logger = logging.getLogger('gmusicapi.utils')
+
+    if retry_exception is None:
+        retry_exception = AssertionError
 
     @decorator
     def retry_wrapper(f, *args, **kwargs):

@@ -43,11 +43,13 @@ class NoticeLogging(logging.Handler):
         self.seen_message = True
 
 
-def init():
+def init(**kwargs):
     """Makes an instance of the unit-tested api and attempts to login with it.
     Returns the authenticated api.
 
     This also detects if we're running on Travis, and if so, uses the environ for auth.
+
+    kwargs are passed through to api.login().
     """
 
     api = UnitTestedApi(debug_logging=True)
@@ -61,11 +63,11 @@ def init():
             sys.exit(1)
 
         #Travis runs on VMs with no "real" mac - we have to provide one.
-        api.login(user, passwd, uploader_id=travis_id, uploader_name=travis_name)
+        api.login(user, passwd, uploader_id=travis_id, uploader_name=travis_name, **kwargs)
         return api
 
     if user and passwd:
-        api.login(user, passwd)
+        api.login(user, passwd, **kwargs)
         return api
 
     #Prompt user for login.
@@ -78,7 +80,7 @@ def init():
         email = raw_input("Email: ")
         passwd = getpass()
 
-        logged_in = api.login(email, passwd)
+        logged_in = api.login(email, passwd, **kwargs)
         attempts += 1
 
     return api

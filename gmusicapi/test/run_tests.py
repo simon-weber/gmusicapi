@@ -1,6 +1,6 @@
 from proboscis import TestProgram
 
-from gmusicapi.test import local_tests  # flake8: noqa
+from gmusicapi.test import local_tests, server_tests  # flake8: noqa
 
 def main():
     TestProgram().run_and_exit()
