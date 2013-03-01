@@ -37,8 +37,8 @@ cwd = os.getcwd()
 os.chdir(os.path.dirname(sys.argv[0]))
 
 audio_filenames = glob(u'audiotest*')
-mp3_filenames = [fn for fn in audio_filenames if
-                 fn.endswith('.mp3')]
+mp3_filenames = [fn for fn in audio_filenames if fn.endswith('.mp3')]
+small_mp3 = u'quick.mp3'
 image_filename = 'ok_10x10.png'
 
 os.chdir(cwd)
@@ -52,6 +52,7 @@ real_path = lambda lp: path[:string.rfind(path, os.sep)] + os.sep + lp
 mp3_filenames = map(real_path, mp3_filenames)
 audio_filenames = map(real_path, audio_filenames)
 image_filename = real_path(image_filename)
+small_mp3 = real_path(small_mp3)
 
 
 class NoticeLogging(logging.Handler):
