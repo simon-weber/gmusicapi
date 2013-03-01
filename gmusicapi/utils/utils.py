@@ -3,6 +3,7 @@
 
 """Utility functions used across api code."""
 
+import functools
 import logging
 import subprocess
 import time
@@ -34,6 +35,20 @@ log_filename = "gmusicapi.log"
 #set to True after configure_debug_logging is called to prevent
 # setting up more than once
 log_already_configured_flag = '_gmusicapi_debug_logging_setup'
+
+
+def dual_decorator(decorator):
+    """This is a decorator that converts a paramaterized decorator for no-param use.
+
+    source: http://stackoverflow.com/questions/3888158.
+    """
+    @functools.wraps(decorator)
+    def inner(*args, **kw):
+        if len(args) == 1 and not kw and callable(args[0]):
+            return decorator()(args[0])
+        else:
+            return decorator(*args, **kw)
+    return inner
 
 
 def configure_debug_logging():
