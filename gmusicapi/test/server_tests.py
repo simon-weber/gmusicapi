@@ -1,5 +1,12 @@
+"""
+These tests all run against an actual Google Music account.
+
+Destructive modifications are not made, but if things go terrible wrong,
+an extra test playlist or song may result.
+"""
+
 from proboscis.asserts import (
-    assert_raises, assert_true, assert_equal
+    assert_raises, assert_true, assert_equal, assert_is_not_none
 )
 from proboscis import test, before_class, after_class, SkipTest
 
@@ -67,16 +74,24 @@ class UpauthTests(object):
 
     @test(depends_on=[song_create])
     def playlist_create(self):
-        pass  # TODO
+        self.playlist_id = None
 
+        self.playlist_id = self.api.create_playlist('gmusicapi_test_playlist')
+
+    #TODO consider listing/searching if the id isn't there
+    # to ensure cleanup.
     @test(depends_on_groups=['playlist'], always_run=True)
     def playlist_delete(self):
-        pass  # TODO
+        if self.playlist_id is None:
+            raise SkipTest('did not store self.playlist_id')
+
+        res = self.api.delete_playlist(self.playlist_id)
+
+        assert_equal(res, self.playlist_id)
 
     @test(depends_on=[playlist_delete], depends_on_groups=['song'], always_run=True)
     def song_delete(self):
         if self.song_id is None:
-            #TODO consider searching and deleting here?
             raise SkipTest('did not store self.song_id')
 
         res = self.api.delete_songs(self.song_id)
@@ -93,9 +108,15 @@ class UpauthTests(object):
     # Non-wonky tests resume down here.
 
     @song_test
+    def get_download_info(self):
+        url, download_count = self.api.get_song_download_info(self.song_id)
+
+        assert_is_not_none(url)
+
+    @song_test
     def change_metadata(self):
         pass  # TODO
 
     @playlist_test
     def change_name(self):
-        pass  # TODO
+        self.api.change_playlist_name(self.playlist_id, 'gmusicapi_test_playlist_mod')
