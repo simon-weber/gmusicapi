@@ -100,16 +100,12 @@ class UpauthTests(object):
 
         @retry
         def assert_playlist_exists(plid):
-            playlists = self.api.get_all_playlist_ids()
+            playlists = self.api.get_all_playlist_ids(auto=False, user=True)
 
-            with Check() as check:
-                check.equal(sorted(playlists.keys()), ['auto', 'user'])
-                check.equal(playlists['auto'], {})  # see issue 102
+            found = playlists['user'].get(TEST_PLAYLIST_NAME, None)
 
-                found = playlists['user'].get(TEST_PLAYLIST_NAME, None)
-
-                assert_is_not_none(found)
-                check.equal(found[-1], self.playlist_id)
+            assert_is_not_none(found)
+            assert_equal(found[-1], self.playlist_id)
 
         assert_playlist_exists(self.playlist_id)
 
@@ -144,9 +140,11 @@ class UpauthTests(object):
 
     # Non-wonky tests resume down here.
 
-    ##
+    #-----------
     # Song tests
-    ##
+    #-----------
+
+    #TODO album art, search, metadata
 
     @song_test
     def list_songs(self):
@@ -163,13 +161,11 @@ class UpauthTests(object):
 
         assert_is_not_none(url)
 
-    @song_test
-    def change_metadata(self):
-        pass  # TODO
-
-    ##
+    #---------------
     # Playlist tests
-    ##
+    #---------------
+
+    #TODO change, copy
 
     @playlist_test
     def change_name(self):

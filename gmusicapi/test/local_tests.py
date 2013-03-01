@@ -60,3 +60,12 @@ def retry_is_dual_decorator():
         return arg
 
     assert_equal(return_arg(1), 1)
+
+
+@test
+def auto_playlists_are_empty():
+    # this doesn't actually hit the server at the moment.
+    # see issue 102
+    api = Api()
+    assert_equal(api.get_all_playlist_ids(auto=True, user=False),
+                 {'auto': {}})
