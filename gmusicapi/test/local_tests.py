@@ -1,7 +1,7 @@
 import time
 
 from proboscis.asserts import (
-    assert_raises, assert_true, assert_false
+    assert_raises, assert_true, assert_false, assert_equal,
 )
 from proboscis import test
 
@@ -30,7 +30,7 @@ def no_auth_initially():
 ##
 
 @test
-def retry_propogates_on_failure():
+def retry_failure_propogation():
     @utils.retry(tries=1)
     def raise_exception():
         raise AssertionError
@@ -39,7 +39,7 @@ def retry_propogates_on_failure():
 
 
 @test
-def retry_sleeps():
+def retry_sleep_timing():
 
     @utils.retry(tries=3, delay=.05, backoff=2)
     def raise_exception():
@@ -51,3 +51,12 @@ def retry_sleeps():
 
     delta = post - pre
     assert_true(.15 < delta < .2, "delta: %s" % delta)
+
+
+@test
+def retry_is_dual_decorator():
+    @utils.retry
+    def return_arg(arg=None):
+        return arg
+
+    assert_equal(return_arg(1), 1)

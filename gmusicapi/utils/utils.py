@@ -82,6 +82,7 @@ def configure_debug_logging():
         setattr(root_logger, 'log_already_configured_flag', True)
 
 
+@dual_decorator
 def retry(retry_exception=None, tries=5, delay=2, backoff=2, logger=None):
     """Retry calling the decorated function using an exponential backoff.
 

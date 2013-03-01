@@ -6,12 +6,16 @@ an extra test playlist or song may result.
 """
 
 from proboscis.asserts import (
-    assert_raises, assert_true, assert_equal, assert_is_not_none
+    assert_raises, assert_true, assert_equal, assert_is_not_none,
+    Check
 )
 from proboscis import test, before_class, after_class, SkipTest
 
 from gmusicapi.exceptions import NotLoggedIn
+from gmusicapi.utils.utils import retry
 import gmusicapi.test.utils as test_utils
+
+TEST_PLAYLIST_NAME = 'gmusicapi_test_playlist'
 
 
 @test(groups=['server'])
@@ -76,7 +80,7 @@ class UpauthTests(object):
     def playlist_create(self):
         self.playlist_id = None
 
-        self.playlist_id = self.api.create_playlist('gmusicapi_test_playlist')
+        self.playlist_id = self.api.create_playlist(TEST_PLAYLIST_NAME)
 
     #TODO consider listing/searching if the id isn't there
     # to ensure cleanup.
@@ -107,6 +111,19 @@ class UpauthTests(object):
 
     # Non-wonky tests resume down here.
 
+    ##
+    # Song tests
+    ##
+
+    @song_test
+    def list_songs(self):
+        songs = self.api.get_all_songs()
+
+        found = [s for s in songs if s['id'] == self.song_id] or None
+
+        assert_is_not_none(found)
+        assert_equal(len(found), 1)
+
     @song_test
     def get_download_info(self):
         url, download_count = self.api.get_song_download_info(self.song_id)
@@ -117,6 +134,40 @@ class UpauthTests(object):
     def change_metadata(self):
         pass  # TODO
 
+    ##
+    # Playlist tests
+    ##
+
+    @playlist_test
+    @retry
+    def list_playlists(self):
+        playlists = self.api.get_all_playlist_ids()
+
+        with Check() as check:
+            check.equal(sorted(playlists.keys()), ['auto', 'user'])
+            check.equal(playlists['auto'], {})  # see issue 102
+
+            found = playlists['user'].get('gmusicapi_test_playlist', None)
+
+            assert_is_not_none(found)
+            check.equal(found[-1], self.playlist_id)
+
     @playlist_test
     def change_name(self):
-        self.api.change_playlist_name(self.playlist_id, 'gmusicapi_test_playlist_mod')
+        new_name = TEST_PLAYLIST_NAME + '_mod'
+        self.api.change_playlist_name(self.playlist_id, new_name)
+
+        @retry  # change takes time to propogate
+        def assert_name_is(plid, name):
+            playlists = self.api.get_all_playlist_ids()
+
+            found = playlists['user'].get(name, None)
+
+            assert_is_not_none(found)
+            assert_equal(found[-1], self.playlist_id)
+
+        assert_name_is(self.playlist_id, new_name)
+
+        # revert
+        self.api.change_playlist_name(self.playlist_id, TEST_PLAYLIST_NAME)
+        assert_name_is(self.playlist_id, TEST_PLAYLIST_NAME)
