@@ -73,7 +73,6 @@ class UpauthTests(object):
 
     @test
     def song_create(self):
-        """Create a song."""
         uploaded, matched, not_uploaded = self.api.upload(test_utils.small_mp3)
         assert_equal(not_uploaded, {})
         assert_equal(matched, {})
@@ -99,7 +98,6 @@ class UpauthTests(object):
 
     @test(depends_on=[song_create])
     def playlist_create(self):
-        """Create a playlist."""
         self.playlist_id = self.api.create_playlist(TEST_PLAYLIST_NAME)
 
         # same as song_create, retry until the song appears
@@ -119,7 +117,6 @@ class UpauthTests(object):
     # to ensure cleanup.
     @test(depends_on_groups=['playlist'], always_run=True)
     def playlist_delete(self):
-        """Delete the playlist."""
         if self.playlist_id is None:
             raise SkipTest('did not store self.playlist_id')
 
@@ -129,7 +126,6 @@ class UpauthTests(object):
 
     @test(depends_on=[playlist_delete], depends_on_groups=['song'], always_run=True)
     def song_delete(self):
-        """Delete the song."""
         if self.song is None:
             raise SkipTest('did not store self.song')
 
