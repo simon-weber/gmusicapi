@@ -33,8 +33,8 @@ os.chdir(os.path.dirname(sys.argv[0]))
 
 audio_filenames = glob(u'audiotest*')
 mp3_filenames = [fn for fn in audio_filenames if fn.endswith('.mp3')]
-small_mp3 = u'quick.mp3'
-image_filename = 'ok_10x10.png'
+small_mp3 = u'audiotest_small.mp3'
+image_filename = 'imagetest_10x10_check.png'
 
 os.chdir(cwd)
 
