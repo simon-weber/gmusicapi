@@ -24,7 +24,7 @@ If you need to install avconv from source, be sure to use
 ``./configure --enable-gpl --enable-nonfree --enable-libmp3lame``.
 
 To check that everything is set up correctly, you can run the test
-suite: ``python -m gmusicapi.test.integration_test_api``.
+suite: ``python gmusicapi/test/run_tests.py``.
 If something goes horribly wrong there's the chance you'll end up
 with an extra test playlist or song in your library, but you 
 should never lose anything.

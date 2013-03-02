@@ -24,5 +24,5 @@ You can do this however you like, but generally you want to use [virtualenv](htt
 * `pip install -e .` this installs the package as editable; changes to the source are reflected when running 
 * `git checkout develop`
 * hack away
-* `python -m gmusicapi.test.integration_test_api`
+* `python gmusicapi/test/run_tests.py`
 * `deactivate` when you're finished
