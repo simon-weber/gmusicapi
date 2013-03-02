@@ -232,11 +232,28 @@ class UpauthTests(object):
                         check.true(same, "failed to revert: " + message)
         assert_metadata_reverted(self.song.sid, orig_md)
 
+    #TODO verify these better?
+
     @song_test
     def get_download_info(self):
         url, download_count = self.api.get_song_download_info(self.song.sid)
 
         assert_is_not_none(url)
+
+    @song_test
+    def get_stream_url(self):
+        url = self.api.get_stream_url(self.song.sid)
+
+        assert_is_not_none(url)
+
+    @song_test
+    def upload_album_art(self):
+        orig_md = self._assert_get_song(self.song.sid)
+
+        self.api.upload_album_art(self.song.sid, test_utils.image_filename)
+
+        self.api.change_song_metadata(orig_md)
+        #TODO redownload and verify against original?
 
     @staticmethod
     def _assert_search_hit(res, hit_type, hit_key, val):
