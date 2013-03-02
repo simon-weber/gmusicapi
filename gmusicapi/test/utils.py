@@ -3,13 +3,14 @@
 
 """Utilities used in testing."""
 
-from getpass import getpass
+from glob import glob
 import inspect
 import logging
 import numbers
 import os
 import random
 import re
+import string
 import sys
 from gmusicapi.compat import unittest
 
@@ -26,8 +27,27 @@ gm_id_regex = re.compile(("{h}{{8}}-" +
                          ("{h}{{4}}-" * 3) +
                          "{h}{{12}}").format(h=hex_set))
 
-travis_id = 'E9:40:01:0E:51:7A'
-travis_name = 'Travis-CI (gmusicapi)'
+#Test files are located in the same directory as this file.
+cwd = os.getcwd()
+os.chdir(os.path.dirname(sys.argv[0]))
+
+audio_filenames = glob(u'audiotest*')
+mp3_filenames = [fn for fn in audio_filenames if fn.endswith('.mp3')]
+small_mp3 = u'quick.mp3'
+image_filename = 'ok_10x10.png'
+
+os.chdir(cwd)
+
+#Get the full path of the test files.
+#Can't use abspath since this is relative to where _this_ file is,
+# not necessarily the calling curdir.
+path = os.path.realpath(__file__)
+real_path = lambda lp: path[:string.rfind(path, os.sep)] + os.sep + lp
+
+mp3_filenames = map(real_path, mp3_filenames)
+audio_filenames = map(real_path, audio_filenames)
+image_filename = real_path(image_filename)
+small_mp3 = real_path(small_mp3)
 
 
 class NoticeLogging(logging.Handler):
@@ -43,43 +63,14 @@ class NoticeLogging(logging.Handler):
         self.seen_message = True
 
 
-def init():
-    """Makes an instance of the unit-tested api and attempts to login with it.
-    Returns the authenticated api.
+def new_test_api(**kwargs):
+    """Make an instance of a return-verified Api, login and return it.
 
-    This also detects if we're running on Travis, and if so, uses the environ for auth.
+    kwargs are passed through to api.login().
     """
 
     api = UnitTestedApi(debug_logging=True)
-
-    #Attempt to get auth from environ.
-    user, passwd = os.environ.get('GMUSICAPI_TEST_USER'), os.environ.get('GMUSICAPI_TEST_PASSWD')
-
-    if os.environ.get('TRAVIS'):
-        if not (user and passwd):
-            print 'on Travis but could not read auth from environ; quitting.'
-            sys.exit(1)
-
-        #Travis runs on VMs with no "real" mac - we have to provide one.
-        api.login(user, passwd, uploader_id=travis_id, uploader_name=travis_name)
-        return api
-
-    if user and passwd:
-        api.login(user, passwd)
-        return api
-
-    #Prompt user for login.
-    logged_in = False
-    attempts = 0
-
-    print "Warning: this test suite _might_ modify the library it is run on."
-
-    while not logged_in and attempts < 3:
-        email = raw_input("Email: ")
-        passwd = getpass()
-
-        logged_in = api.login(email, passwd)
-        attempts += 1
+    api.login(**kwargs)
 
     return api
 
@@ -187,6 +178,8 @@ for fnames, pred in ((returns_id, is_gm_id),
         fname_to_pred[fname] = pred
 
 
+#TODO this needs to go.
+
 class UnitTestedApi(Api):
     """An Api, with most functions wrapped to assert a proper return."""
 
@@ -206,7 +199,7 @@ class BaseTest(unittest.TestCase):
     def setUpClass(cls):
         """Init and log in to an api, then get the library and playlists."""
 
-        cls.api = init()
+        cls.api = new_test_api()
 
         if not cls.api.is_authenticated():
             raise NotLoggedIn

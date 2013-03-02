@@ -6,10 +6,11 @@ python:
 install:
  - python setup.py sdist --formats=zip -k
  - find ./dist -iname "*.zip" -print0 | xargs -0 pip install
-script: python -m gmusicapi.test.integration_test_api
+script: "python gmusicapi/test/run_tests.py"
 before_install: 
 - sudo apt-get update -qq
 - sudo apt-get install -qq libav-tools libavcodec-extra-53
+after_failure: "cat /home/travis/builds/simon-weber/Unofficial-Google-Music-API/gmusicapi.log"
 branches: 
   only: 
   - develop

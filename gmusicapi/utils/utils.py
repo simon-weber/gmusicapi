@@ -3,8 +3,10 @@
 
 """Utility functions used across api code."""
 
+import functools
 import logging
 import subprocess
+import time
 
 from decorator import decorator
 from google.protobuf.descriptor import FieldDescriptor
@@ -33,6 +35,20 @@ log_filename = "gmusicapi.log"
 #set to True after configure_debug_logging is called to prevent
 # setting up more than once
 log_already_configured_flag = '_gmusicapi_debug_logging_setup'
+
+
+def dual_decorator(decorator):
+    """This is a decorator that converts a paramaterized decorator for no-param use.
+
+    source: http://stackoverflow.com/questions/3888158.
+    """
+    @functools.wraps(decorator)
+    def inner(*args, **kw):
+        if len(args) == 1 and not kw and callable(args[0]):
+            return decorator()(args[0])
+        else:
+            return decorator(*args, **kw)
+    return inner
 
 
 def configure_debug_logging():
@@ -64,6 +80,46 @@ def configure_debug_logging():
         ch.setFormatter(formatter)
 
         setattr(root_logger, 'log_already_configured_flag', True)
+
+
+@dual_decorator
+def retry(retry_exception=None, tries=5, delay=2, backoff=2, logger=None):
+    """Retry calling the decorated function using an exponential backoff.
+
+    An exception from a final attempt will propogate.
+
+    :param retry_exception: exception (or tuple of exceptions) to check for and retry on.
+      If None, use AssertionError.
+    :param tries: number of times to try (not retry) before giving up
+    :param delay: initial delay between retries in seconds
+    :param backoff: backoff multiplier
+    :param logger: logger to use. If None, use 'gmusicapi.utils' logger
+
+    Modified from
+    http://www.saltycrane.com/blog/2009/11/trying-out-retry-decorator-python.
+    """
+
+    if logger is None:
+        logger = logging.getLogger('gmusicapi.utils')
+
+    if retry_exception is None:
+        retry_exception = AssertionError
+
+    @decorator
+    def retry_wrapper(f, *args, **kwargs):
+        mtries, mdelay = tries, delay  # make our own mutable copies
+        while mtries > 1:
+            try:
+                return f(*args, **kwargs)
+            except retry_exception as e:
+                logger.info("%s, retrying in %s seconds...", e, mdelay)
+
+                time.sleep(mdelay)
+                mtries -= 1
+                mdelay *= backoff
+        return f(*args, **kwargs)
+
+    return retry_wrapper
 
 
 def pb_set(msg, field_name, val):

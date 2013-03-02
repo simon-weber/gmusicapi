@@ -235,6 +235,8 @@ class Api():
         which include ``playlistEntryId`` keys for the given playlist.
 
         :param playlist_id: id of the playlist to load.
+
+        This will return ``[]`` if the playlist id does not exist.
         """
 
         res = self._make_call(webclient.GetPlaylistSongs, playlist_id)
