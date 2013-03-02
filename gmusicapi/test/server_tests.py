@@ -62,13 +62,15 @@ class UpauthTests(object):
     # The intuitition: starting from an empty library, you need to have
     #  a song before you can modify a playlist.
 
-    # If x --> y means x runs before y, then the graph looks like:
-
-    #     song_create <-- playlist_create
-    #     song_delete --> playlist_delete
-    #         |                   |
-    #         v                   v
-    #     <song test>     <playlist test>
+    # If x --> y means x runs after y, then the graph looks like:
+    
+    #    song_create <-- playlist_create
+    #        ^                   ^
+    #        |                   |
+    #    song_test       playlist_test
+    #        ^                   ^
+    #        |                   |
+    #    song_delete     playlist_delete
 
     # Singleton groups are used to ease code ordering restraints.
     # Suggestions to improve any of this are welcome!
@@ -102,7 +104,7 @@ class UpauthTests(object):
     def playlist_create(self):
         self.playlist_id = self.api.create_playlist(TEST_PLAYLIST_NAME)
 
-        # same as song_create, retry until the song appears
+        # like song_create, retry until the playlist appears
 
         @retry
         def assert_playlist_exists(plid):
