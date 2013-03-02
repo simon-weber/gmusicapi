@@ -30,7 +30,7 @@ class NoUpauthTests(object):
 
     @before_class
     def login(self):
-        self.api = test_utils.init(perform_upload_auth=False)
+        self.api = test_utils.new_test_api(perform_upload_auth=False)
         assert_true(self.api.is_authenticated())
 
     @after_class(always_run=True)
@@ -50,7 +50,7 @@ class UpauthTests(object):
 
     @before_class
     def login(self):
-        self.api = test_utils.init()
+        self.api = test_utils.new_test_api()
         assert_true(self.api.is_authenticated())
 
     @after_class(always_run=True)
