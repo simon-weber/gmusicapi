@@ -120,15 +120,19 @@ class UpauthTests(object):
     #TODO consider listing/searching if the id isn't there
     # to ensure cleanup.
     @test(groups=['playlist'], depends_on=[playlist_create],
-          runs_after_groups=['playlist.exists'])
+          runs_after_groups=['playlist.exists'],
+          always_run=True)
     def playlist_delete(self):
-        res = self.api.delete_playlist(self.playlist_id)
+        if self.playlist_id is None:
+            raise SkipTest('did not store self.playlist_id')
 
+        res = self.api.delete_playlist(self.playlist_id)
         assert_equal(res, self.playlist_id)
 
     @test(groups=['song'], depends_on=[song_create],
           runs_after=[playlist_delete],
-          runs_after_groups=["song.exists"])
+          runs_after_groups=["song.exists"],
+          always_run=True)
     def song_delete(self):
         if self.song is None:
             raise SkipTest('did not store self.song')
