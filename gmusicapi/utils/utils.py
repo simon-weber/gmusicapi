@@ -37,17 +37,18 @@ log_filename = "gmusicapi.log"
 log_already_configured_flag = '_gmusicapi_debug_logging_setup'
 
 
-def dual_decorator(decorator):
+def dual_decorator(func):
     """This is a decorator that converts a paramaterized decorator for no-param use.
 
     source: http://stackoverflow.com/questions/3888158.
     """
-    @functools.wraps(decorator)
+    @functools.wraps(func)
     def inner(*args, **kw):
-        if len(args) == 1 and not kw and callable(args[0]):
-            return decorator()(args[0])
+        if ((len(args) == 1 and not kw and callable(args[0])
+             and not (type(args[0]) == type and issubclass(args[0], BaseException)))):
+            return func()(args[0])
         else:
-            return decorator(*args, **kw)
+            return func(*args, **kw)
     return inner
 
 
