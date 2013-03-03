@@ -63,7 +63,7 @@ class UpauthTests(object):
     #  a song before you can modify a playlist.
 
     # If x --> y means x runs after y, then the graph looks like:
-    
+
     #    song_create <-- playlist_create
     #        ^                   ^
     #        |                   |
@@ -100,7 +100,7 @@ class UpauthTests(object):
 
         self.song = assert_song_exists(sid)
 
-    @test(depends_on=[song_create])
+    @test(depends_on=[song_create], runs_after_groups=['song.exists'])
     def playlist_create(self):
         self.playlist_id = self.api.create_playlist(TEST_PLAYLIST_NAME)
 
@@ -119,16 +119,16 @@ class UpauthTests(object):
 
     #TODO consider listing/searching if the id isn't there
     # to ensure cleanup.
-    @test(depends_on_groups=['playlist'], always_run=True)
+    @test(groups=['playlist'], depends_on=[playlist_create],
+          runs_after_groups=['playlist.exists'])
     def playlist_delete(self):
-        if self.playlist_id is None:
-            raise SkipTest('did not store self.playlist_id')
-
         res = self.api.delete_playlist(self.playlist_id)
 
         assert_equal(res, self.playlist_id)
 
-    @test(depends_on=[playlist_delete], depends_on_groups=['song'], always_run=True)
+    @test(groups=['song'], depends_on=[song_create],
+          runs_after=[playlist_delete],
+          runs_after_groups=["song.exists"])
     def song_delete(self):
         if self.song is None:
             raise SkipTest('did not store self.song')
@@ -141,8 +141,9 @@ class UpauthTests(object):
     # They won't work right with additional settings; if that's needed this
     #  pattern should be factored out.
 
-    song_test = test(groups=['song'], depends_on=[song_create])
-    playlist_test = test(groups=['playlist'], depends_on=[playlist_create])
+    song_test = test(groups=['song', 'song.exists'], depends_on=[song_create])
+    playlist_test = test(groups=['playlist', 'playlist.exists'],
+                         depends_on=[playlist_create])
 
     # Non-wonky tests resume down here.
 
