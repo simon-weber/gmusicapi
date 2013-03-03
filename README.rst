@@ -32,6 +32,7 @@ That said, it's actively maintained, and used in a bunch of cool projects:
 -  David Dooling's `sync scripts for Banshee <https://github.com/ddgenome/banshee-helper-scripts>`__
 -  Kilian Lackhove's `Google Music support <https://github.com/crabmanX/google-music-resolver>`__
    for http://www.tomahawk-player.org
+-  Tom Graham's `playlist syncing tool <https://github.com/Tyris/m3uGoogleMusicSync>`__
 
 
 Check out the documentation at http://unofficial-google-music-api.readthedocs.org to get started.
