@@ -36,6 +36,8 @@ That said, it's actively maintained, and used in a bunch of cool projects:
 
 Check out the documentation at http://unofficial-google-music-api.readthedocs.org to get started.
 
+If you want to get in touch, either drop by ``#gmusicapi`` on Freenode or shoot me an email.
+
 ------------
 
 Copyright 2013 `Simon Weber <http://www.simonmweber.com>`__.
