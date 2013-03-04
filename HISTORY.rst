@@ -5,8 +5,9 @@ History
 
 As of 2013.02.09, releases with breaking changes will be noted with ``**``.
 
-2013.03.XX
+2013.03.04
 ++++++++++
+
 - add artistMatchedId to metadata
 - tests are no longer a mess
 
