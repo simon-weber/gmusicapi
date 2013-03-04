@@ -235,6 +235,8 @@ class Api():
         which include ``playlistEntryId`` keys for the given playlist.
 
         :param playlist_id: id of the playlist to load.
+
+        This will return ``[]`` if the playlist id does not exist.
         """
 
         res = self._make_call(webclient.GetPlaylistSongs, playlist_id)
@@ -780,37 +782,34 @@ class Api():
                 if enable_matching:
                     matched[path] = sample_res.server_track_id
                 else:
-                    # request a reupload session (ie, hit 'fix incorrect match').
-                    time.sleep(10)  # wait for upload servers to sync
                     try:
-                        self._make_call(webclient.ReportBadSongMatch, [sample_res.server_track_id])
+                        log.info("requesting to reupload '%s'", path)
 
-                        #Wait for server to register our request.
-                        retries = 0
-                        while retries < 5:
+                        @utils.retry(CallFailure)  # upload servers take time to sync
+                        def report_bad_match():
+                            """Hit 'report incorrect match' and return the sid to reupload."""
+
+                            self._make_call(webclient.ReportBadSongMatch,
+                                            [sample_res.server_track_id])
+
                             jobs = self._make_call(musicmanager.GetUploadJobs, self.uploader_id)
                             matching = [job for job in jobs.getjobs_response.tracks_to_upload
                                         if (job.client_id == sample_res.client_track_id and
                                             job.status == upload_pb2.TracksToUpload.FORCE_REUPLOAD)]
                             if matching:
-                                reup_sid = matching[0].server_id
-                                break
-
-                            log.debug("wait for reup job (%s)", retries)
-                            time.sleep(2)
-                            retries += 1
-                        else:
-                            raise CallFailure(
-                                "could not get reupload/rematch job for '%s'" % path,
-                                'GetUploadJobs'
-                            )
+                                return matching[0].server_id
+                            else:
+                                raise CallFailure(
+                                    "could not get reupload/rematch job for '%s'" % path,
+                                    'GetUploadJobs'
+                                )
+                        reup_sid = report_bad_match()
 
                     except CallFailure as e:
                         log.exception("'%s' was matched without matching enabled", path)
                         matched[path] = sample_res.server_track_id
                     else:
                         log.info("will reupload '%s'", path)
-
                         to_upload[reup_sid] = (path, track, True)
 
             elif sample_res.response_code == upload_pb2.TrackSampleResponse.UPLOAD_REQUESTED:
