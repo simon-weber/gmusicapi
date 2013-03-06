@@ -3,13 +3,20 @@
 
 """Definitions shared by multiple clients."""
 
+import logging
 import sys
 
 from google.protobuf.descriptor import FieldDescriptor
 from requests import Request
 
+import gmusicapi
 from gmusicapi.compat import json
-from gmusicapi.exceptions import ParseException
+from gmusicapi.exceptions import (
+    CallFailure, ParseException, ValidationException,
+)
+from gmusicapi.utils import utils
+
+log = logging.getLogger(__name__)
 
 #There's a lot of code here to simplify call definition, but it's not scary - promise.
 #Request objects are currently requests.Request; see http://docs.python-requests.org
@@ -183,6 +190,54 @@ class Call(object):
         """Return a 3-tuple send (xt, clientlogin, sso)."""
         return (cls.send_xt, cls.send_clientlogin, cls.send_sso)
 
+    @classmethod
+    def perform(cls, session, *args, **kwargs):
+        """Send, parse, validate and check success of this call.
+        *args and **kwargs are passed to protocol.build_transaction.
+
+        :param session: a PlaySession used to send this request.
+        """
+        #TODO link up these docs
+
+        call_name = cls.__name__
+
+        log.debug("%s(args=%s, kwargs=%s)",
+                  call_name,
+                  [utils.truncate(a) for a in args],
+                  dict((k, utils.truncate(v)) for (k, v) in kwargs.items())
+                  )
+
+        request = cls.build_request(*args, **kwargs)
+
+        response = session.send(request, cls.get_auth(), cls.session_options)
+
+        #TODO check return code
+
+        try:
+            msg = cls.parse_response(response)
+        except ParseException:
+            log.exception("couldn't parse %s response: %r", call_name, response.content)
+            raise CallFailure("the server's response could not be understood."
+                              " The call may still have succeeded, but it's unlikely.",
+                              call_name)
+
+        log.debug(cls.filter_response(msg))
+
+        try:
+            #order is important; validate only has a schema for a successful response
+            cls.check_success(msg)
+            cls.validate(msg)
+        except CallFailure:
+            raise
+        except ValidationException:
+            #TODO link to some protocol for reporting this
+            log.exception(
+                "please report the following unknown response format for %s: %r",
+                call_name, msg
+            )
+
+        return msg
+
     @staticmethod
     def _parse_json(text):
         try:
@@ -230,3 +285,53 @@ class Call(object):
                                   for f in old_fields])
 
         return filtered
+
+
+class ClientLogin(Call):
+    """Performs `Google ClientLogin
+    <https://developers.google.com/accounts/docs/AuthForInstalledApps#ClientLogin>`__."""
+
+    static_method = 'POST'
+    static_url = 'https://www.google.com/accounts/ClientLogin'
+
+    def dynamic_data(Email, Passwd, accountType='HOSTED_OR_GOOGLE',
+                     service='sj', source=None,
+                     logintoken=None, logincaptcha=None):
+        """Params align with those in the actual request.
+
+        If *source* is ``None``, ``'gmusicapi-<version>'`` is used.
+
+        Captcha requests are not yet implemented.
+        """
+        if logintoken is not None or logincaptcha is not None:
+            raise ValueError('ClientLogin captcha handling is not yet implemented.')
+
+        if source is None:
+            source = 'gmusicapi-' + gmusicapi.__version__
+
+        return locals()  # dict of {'varname': val}
+
+    @classmethod
+    def parse_response(cls, response):
+        """Return a dictionary of response key/vals.
+
+        A successful login will have SID, LSID, and Auth keys.
+        """
+
+        # responses are formatted as, eg:
+        #    SID=DQAAAGgA...7Zg8CTN
+        #    LSID=DQAAAGsA...lk8BBbG
+        #    Auth=DQAAAGgA...dk3fA5N
+        # or:
+        #    Url=http://www.google.com/login/captcha
+        #    Error=CaptchaRequired
+        #    CaptchaToken=DQAAAGgA...dkI1LK9
+        #    CaptchaUrl=Captcha?ctoken=HiteT...
+
+        ret = {}
+        for line in response.split('\n'):
+            if '=' in line:
+                var, val = line.split('=', 1)
+                ret[var] = val
+
+        return ret

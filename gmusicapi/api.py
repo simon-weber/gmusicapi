@@ -15,10 +15,7 @@ from uuid import getnode as getmac
 import requests
 
 from gmusicapi.gmtools import tools
-from gmusicapi.exceptions import (
-    CallFailure, ParseException, ValidationException,
-    AlreadyLoggedIn, NotLoggedIn
-)
+from gmusicapi.exceptions import CallFailure, AlreadyLoggedIn, NotLoggedIn
 from gmusicapi.protocol import webclient, musicmanager, upload_pb2, locker_pb2
 from gmusicapi.utils import utils
 from gmusicapi.utils.clientlogin import ClientLogin
@@ -903,47 +900,12 @@ class Api():
 
     def _make_call(self, protocol, *args, **kwargs):
         """Returns the response of a protocol.Call.
-        Additional kw/args are passed to protocol.build_transaction."""
-        #TODO link up these docs
 
-        call_name = protocol.__name__
+        Additional kw/args are passed to protocol.perform.
 
-        log.debug("%s(args=%s, kwargs=%s)",
-                  call_name,
-                  [utils.truncate(a) for a in args],
-                  dict((k, utils.truncate(v)) for (k, v) in kwargs.items())
-                  )
+        CallFailure may be raised."""
 
-        request = protocol.build_request(*args, **kwargs)
-
-        response = self.session.send(request, protocol.get_auth(), protocol.session_options)
-
-        #TODO check return code
-
-        try:
-            msg = protocol.parse_response(response)
-        except ParseException:
-            log.exception("couldn't parse %s response: %r", call_name, response.content)
-            raise CallFailure("the server's response could not be understood."
-                              " The call may still have succeeded, but it's unlikely.",
-                              call_name)
-
-        log.debug(protocol.filter_response(msg))
-
-        try:
-            #order is important; validate only has a schema for a successful response
-            protocol.check_success(msg)
-            protocol.validate(msg)
-        except CallFailure:
-            raise
-        except ValidationException:
-            #TODO link to some protocol for reporting this
-            log.exception(
-                "please report the following unknown response format for %s: %r",
-                call_name, msg
-            )
-
-        return msg
+        return protocol.perform(self.session, *args, **kwargs)
 
 
 #---
