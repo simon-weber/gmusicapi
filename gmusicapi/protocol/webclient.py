@@ -53,6 +53,14 @@ pl_array = {
 }
 
 
+class Init(Call):
+    """Called after login and once before any other webclient call."""
+    static_method = 'POST'
+    static_url = 'https://play.google.com/music/listen'
+
+    #This call doesn't actually request/return anything useful aside from cookies.
+
+
 class WcCall(Call):
     """Abstract base for web client calls."""
 
