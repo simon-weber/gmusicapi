@@ -107,7 +107,7 @@ class UpauthTests(object):
 
         # we test get_all_songs here so that we can assume the existance
         # of the song for future tests (the servers take time to sync an upload)
-        @retry(tries=1)
+        @retry
         def assert_song_exists(sid):
             songs = self.api.get_all_songs()
 
