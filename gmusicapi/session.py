@@ -13,7 +13,9 @@ class PlaySession(object):
     def __init__(self):
         """Init an unauthenticated session."""
         self.webclient = requests.Session()
+
         self.musicmanager = requests.Session()
+
         self.is_authenticated = False
 
     def login(self, email, password):

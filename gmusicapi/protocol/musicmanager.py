@@ -38,9 +38,7 @@ class MmCall(Call):
     """Abstract base for Music Manager calls."""
 
     static_method = 'POST'
-    static_headers = {'USER-AGENT': 'Music Manager (1, 0, 54, 4672 HTTPS - Windows)'}
-
-    #'headers': {'Content-Type': 'application/x-google-protobuf'},
+    static_headers = {'User-agent': 'Music Manager (1, 0, 24, 7712 - Windows)'}
 
     send_clientlogin = True
 
@@ -298,9 +296,6 @@ class GetUploadSession(MmCall):
     static_method = 'POST'
     static_url = 'http://uploadsj.clients.google.com/uploadsj/rupio'
 
-    #not yet able to intercept newer call, so we use an older version
-    static_headers = {'USER-AGENT': 'Music Manager (1, 0, 24, 7712 - Windows)'}
-
     @classmethod
     def parse_response(cls, response):
         return cls._parse_json(response.text)
@@ -406,7 +401,6 @@ class UploadFile(MmCall):
     #TODO recent protocols use multipart encoding
 
     static_method = 'PUT'
-    static_headers = {'USER-AGENT': 'Music Manager (1, 0, 24, 7712 - Windows)'}
 
     @classmethod
     def parse_response(cls, response):
