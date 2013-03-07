@@ -206,7 +206,7 @@ class Call(object):
                       dict((k, utils.truncate(v)) for (k, v) in kwargs.items())
                       )
         else:
-            log.debug("%s(<does not get logged)", call_name)
+            log.debug("%s(<does not get logged>)", call_name)
 
         req_kwargs = cls.build_request(*args, **kwargs)
 
@@ -233,7 +233,7 @@ class Call(object):
         except CallFailure:
             raise
         except ValidationException:
-            #TODO link to some protocol for reporting this
+            #TODO link to some protocol for reporting this and trim the response if it's huge
             if cls.gets_logged:
                 log.exception(
                     "please report the following unknown response format for %s: %r",

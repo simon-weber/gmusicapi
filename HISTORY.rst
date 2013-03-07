@@ -8,6 +8,8 @@ As of 2013.02.09, releases with breaking changes will be noted with ``**``.
 2013.03.1X
 ++++++++++
 
+- faster login (and simpler auth code)
+
 2013.03.04
 ++++++++++
 
