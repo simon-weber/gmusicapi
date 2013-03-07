@@ -9,18 +9,13 @@ import copy
 import logging
 from socket import gethostname
 import time
-from urllib2 import HTTPCookieProcessor, Request, build_opener
 from uuid import getnode as getmac
 
-import requests
-
 from gmusicapi.gmtools import tools
-from gmusicapi.exceptions import CallFailure, AlreadyLoggedIn, NotLoggedIn
+from gmusicapi.exceptions import CallFailure, NotLoggedIn
 from gmusicapi.protocol import webclient, musicmanager, upload_pb2, locker_pb2
 from gmusicapi.session import PlaySession
 from gmusicapi.utils import utils
-from gmusicapi.utils.clientlogin import ClientLogin
-from gmusicapi.utils.tokenauth import TokenAuth
 
 log = logging.getLogger(__name__)
 
@@ -912,135 +907,3 @@ class Api():
         CallFailure may be raised."""
 
         return protocol.perform(self.session, *args, **kwargs)
-
-
-#---
-#The session layer:
-#---
-
-class OldPlaySession(object):
-    """
-    A Google Play Music session.
-
-    It allows for authentication and the making of authenticated
-    requests through the MusicManager API (protocol buffers), Web client requests,
-    and the Skyjam client API.
-    """
-
-    # The URL for authenticating against Google Play Music
-    PLAY_URL = 'https://play.google.com/music/listen?u=0&hl=en'
-
-    # Common User Agent used for web requests
-    _user_agent = (
-        "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.8.1.6) "
-        "Gecko/20061201 Firefox/2.0.0.6 (Ubuntu-feisty)"
-    )
-
-    def __init__(self):
-        """
-        Initializes a default unauthenticated session.
-        """
-        self.client = None
-        self.web_cookies = None
-        self.logged_in = False
-
-    def _get_cookies(self):
-        """
-        Gets cookies needed for web and media streaming access.
-        Returns ``True`` if the necessary cookies are found, ``False`` otherwise.
-        """
-        if self.logged_in:
-            raise AlreadyLoggedIn
-
-        handler = build_opener(HTTPCookieProcessor(self.web_cookies))
-        req = Request(self.PLAY_URL, None, {})  # header
-        handler.open(req)  # TODO is this necessary?
-
-        return (
-            self.get_web_cookie('sjsaid') is not None and
-            self.get_web_cookie('xt') is not None
-        )
-
-    def get_web_cookie(self, name):
-        """
-        Finds the value of a cookie by name, returning None on failure.
-
-        :param name: The name of the cookie to find.
-        """
-        if self.web_cookies is None:
-            return None
-
-        for cookie in self.web_cookies:
-            if cookie.name == name:
-                return cookie.value
-
-        return None
-
-    def login(self, email, password):
-        """
-        Attempts to create an authenticated session using the email and
-        password provided.
-        Return ``True`` if the login was successful, ``False`` otherwise.
-        Raises AlreadyLoggedIn if the session is already authenticated.
-
-        :param email: The email address of the account to log in.
-        :param password: The password of the account to log in.
-        """
-        if self.logged_in:
-            raise AlreadyLoggedIn
-
-        self.client = ClientLogin(email, password, 'sj')
-        tokenauth = TokenAuth('sj', self.PLAY_URL, 'jumper')
-
-        if self.client.get_auth_token() is None:
-            return False
-
-        tokenauth.authenticate(self.client)
-        self.web_cookies = tokenauth.get_cookies()
-
-        if self._get_cookies():
-            self.logged_in = True
-        else:
-            self.logged_in = False
-
-        return self.logged_in
-
-    def logout(self):
-        """
-        Resets the session to an unauthenticated default state.
-        """
-        self.__init__()
-
-    def send(self, request, auth, session_options):
-        """Send a request from a Call.
-
-        :param request: filled requests.Request.
-        :param auth: result of Call.get_auth().
-        :param session_options: dict of kwargs to pass to requests.Session.send.
-        """
-
-        if any(auth) and not self.logged_in:
-            raise NotLoggedIn
-
-        send_xt, send_clientlogin, send_sso = auth
-
-        if request.cookies is None:
-            request.cookies = {}
-
-        #Attach auth.
-        if send_xt:
-            request.params['u'] = 0
-            request.params['xt'] = self.get_web_cookie('xt')
-
-        if send_clientlogin:
-            request.cookies['SID'] = self.client.get_sid_token()
-
-        if send_sso:
-            #TODO merge this without overwriting
-            request.cookies = self.web_cookies
-
-        prepped = request.prepare()
-        s = requests.Session()
-
-        res = s.send(prepped, **session_options)
-        return res
