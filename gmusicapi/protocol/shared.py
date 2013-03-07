@@ -84,46 +84,27 @@ class Call(object):
     """
     The client Call interface is:
 
-     req_kwargs = SomeCall.build_request(some, params)
-     response = <requests.Session.send(**req_kwargs)>
-
-     try:
-         msg = SomeCall.parse_response(response)
-     except ParseException
-         ...
-
-     try:
-         SomeCall.validate(msg)
-         SomeCall.check_success(msg)
-     except ValidationException:
-         ...
-     except CallFailure:
-         ...
-
-     #msg is python data, the call succeeded, and the response was formatted as expected
-
-
     Calls define how to build their requests through static and dynamic data.
     For example, a request might always send some user-agent: this is static.
     Or, it might need the name of a song to modify: this is dynamic.
 
-    Possible values to use in the request are:
+    The possible values correspond with requests.Request kwargs:
         method: eg 'GET' or 'POST'
         url: string
-        headers (m): dictionary
         files: dictionary of {filename: fileobject} files to multipart upload.
         data: the body of the request
                 If a dictionary is provided, form-encoding will take place.
                 A string will be sent as-is.
+        verify: if True, verify SSL certs
         params (m): dictionary of URL parameters to append to the URL.
+        headers (m): dictionary
 
-    Calls can define them statically:
+    Static data is defined like:
         class SomeCall(Call):
             static_url = 'http://foo.com/thiscall'
 
-    Or dynamically:
+    And dynamic like:
         class SomeCall(Call):
-            #this takes whatever params are needed (ie not necessarily something called endpoint)
             #*args, **kwargs are passed from SomeCall.build_request
             def dynamic_url(endpoint):
                 return 'http://foo.com/' + endpoint
@@ -317,10 +298,11 @@ class ClientLogin(Call):
         if source is None:
             source = 'gmusicapi-' + gmusicapi.__version__
 
-        return {name: val for (name, val) in locals().items()
-                if name in set(('Email', 'Passwd', 'accountType', 'service', 'source',
-                               'logintoken', 'logincaptcha'))
-                }
+        return dict(
+            (name, val) for (name, val) in locals().items()
+            if name in set(('Email', 'Passwd', 'accountType', 'service', 'source',
+                            'logintoken', 'logincaptcha'))
+        )
 
     @classmethod
     def parse_response(cls, response):
