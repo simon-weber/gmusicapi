@@ -3,13 +3,19 @@
 
 """Definitions shared by multiple clients."""
 
+import logging
 import sys
 
 from google.protobuf.descriptor import FieldDescriptor
-from requests import Request
 
+import gmusicapi
 from gmusicapi.compat import json
-from gmusicapi.exceptions import ParseException
+from gmusicapi.exceptions import (
+    CallFailure, ParseException, ValidationException,
+)
+from gmusicapi.utils import utils
+
+log = logging.getLogger(__name__)
 
 #There's a lot of code here to simplify call definition, but it's not scary - promise.
 #Request objects are currently requests.Request; see http://docs.python-requests.org
@@ -23,7 +29,7 @@ class BuildRequestMeta(type):
         new_cls = super(BuildRequestMeta, cls).__new__(cls, name, bases, dct)
 
         merge_keys = ('headers', 'params')
-        all_keys = ('method', 'url', 'files', 'data') + merge_keys
+        all_keys = ('method', 'url', 'files', 'data', 'verify') + merge_keys
 
         config = {}  # stores key: val for static or f(*args, **kwargs) -> val for dyn
         dyn = lambda key: 'dynamic_' + key
@@ -65,7 +71,8 @@ class BuildRequestMeta(type):
 
                     req_kwargs[key] = val
 
-                return Request(**req_kwargs)
+                return req_kwargs
+                #return Request(**req_kwargs)
             return build_request
 
         new_cls.build_request = classmethod(req_closure())
@@ -77,9 +84,8 @@ class Call(object):
     """
     The client Call interface is:
 
-     req = SomeCall.build_request(some, params)
-     prep_req = req.prepare()
-     response = <requests.Session.send(prep_req)>
+     req_kwargs = SomeCall.build_request(some, params)
+     response = <requests.Session.send(**req_kwargs)>
 
      try:
          msg = SomeCall.parse_response(response)
@@ -145,8 +151,6 @@ class Call(object):
      OR
         send_sso: google SSO (authtoken) cookies
 
-    session_options can also be set to a dict of kwargs to pass to requests.Session.send.
-
     Calls must define parse_response.
     Calls can also define filter_response, validate and check_success.
 
@@ -155,10 +159,11 @@ class Call(object):
 
     __metaclass__ = BuildRequestMeta
 
+    gets_logged = True
+
     send_xt = False
     send_clientlogin = False
     send_sso = False
-    session_options = {}
 
     @classmethod
     def parse_response(cls, response):
@@ -166,11 +171,11 @@ class Call(object):
         raise NotImplementedError
 
     @classmethod
-    def validate(cls, msg):
+    def validate(cls, response, msg):
         pass
 
     @classmethod
-    def check_success(cls, msg):
+    def check_success(cls, response, msg):
         pass
 
     @classmethod
@@ -182,6 +187,60 @@ class Call(object):
     def get_auth(cls):
         """Return a 3-tuple send (xt, clientlogin, sso)."""
         return (cls.send_xt, cls.send_clientlogin, cls.send_sso)
+
+    @classmethod
+    def perform(cls, session, *args, **kwargs):
+        """Send, parse, validate and check success of this call.
+        *args and **kwargs are passed to protocol.build_transaction.
+
+        :param session: a PlaySession used to send this request.
+        """
+        #TODO link up these docs
+
+        call_name = cls.__name__
+
+        if cls.gets_logged:
+            log.debug("%s(args=%s, kwargs=%s)",
+                      call_name,
+                      [utils.truncate(a) for a in args],
+                      dict((k, utils.truncate(v)) for (k, v) in kwargs.items())
+                      )
+        else:
+            log.debug("%s(<does not get logged>)", call_name)
+
+        req_kwargs = cls.build_request(*args, **kwargs)
+
+        response = session.send(req_kwargs, cls.get_auth())
+
+        #TODO check return code
+
+        try:
+            msg = cls.parse_response(response)
+        except ParseException:
+            if cls.gets_logged:
+                log.exception("couldn't parse %s response: %r", call_name, response.content)
+            raise CallFailure("the server's response could not be understood."
+                              " The call may still have succeeded, but it's unlikely.",
+                              call_name)
+
+        if cls.gets_logged:
+            log.debug(cls.filter_response(msg))
+
+        try:
+            #order is important; validate only has a schema for a successful response
+            cls.check_success(response, msg)
+            cls.validate(response, msg)
+        except CallFailure:
+            raise
+        except ValidationException:
+            #TODO link to some protocol for reporting this and trim the response if it's huge
+            if cls.gets_logged:
+                log.exception(
+                    "please report the following unknown response format for %s: %r",
+                    call_name, msg
+                )
+
+        return msg
 
     @staticmethod
     def _parse_json(text):
@@ -230,3 +289,65 @@ class Call(object):
                                   for f in old_fields])
 
         return filtered
+
+
+class ClientLogin(Call):
+    """Performs `Google ClientLogin
+    <https://developers.google.com/accounts/docs/AuthForInstalledApps#ClientLogin>`__."""
+
+    gets_logged = False
+
+    static_method = 'POST'
+    #static_headers = {'User-agent': 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1'}
+    static_url = 'https://www.google.com/accounts/ClientLogin'
+
+    @classmethod
+    def dynamic_data(cls, Email, Passwd, accountType='HOSTED_OR_GOOGLE',
+                     service='sj', source=None,
+                     logintoken=None, logincaptcha=None):
+        """Params align with those in the actual request.
+
+        If *source* is ``None``, ``'gmusicapi-<version>'`` is used.
+
+        Captcha requests are not yet implemented.
+        """
+        if logintoken is not None or logincaptcha is not None:
+            raise ValueError('ClientLogin captcha handling is not yet implemented.')
+
+        if source is None:
+            source = 'gmusicapi-' + gmusicapi.__version__
+
+        return {name: val for (name, val) in locals().items()
+                if name in set(('Email', 'Passwd', 'accountType', 'service', 'source',
+                               'logintoken', 'logincaptcha'))
+                }
+
+    @classmethod
+    def parse_response(cls, response):
+        """Return a dictionary of response key/vals.
+
+        A successful login will have SID, LSID, and Auth keys.
+        """
+
+        # responses are formatted as, eg:
+        #    SID=DQAAAGgA...7Zg8CTN
+        #    LSID=DQAAAGsA...lk8BBbG
+        #    Auth=DQAAAGgA...dk3fA5N
+        # or:
+        #    Url=http://www.google.com/login/captcha
+        #    Error=CaptchaRequired
+        #    CaptchaToken=DQAAAGgA...dkI1LK9
+        #    CaptchaUrl=Captcha?ctoken=HiteT...
+
+        ret = {}
+        for line in response.text.split('\n'):
+            if '=' in line:
+                var, val = line.split('=', 1)
+                ret[var] = val
+
+        return ret
+
+    @classmethod
+    def check_succes(cls, response, msg):
+        if response.status_code == 200:
+            raise CallFailure("status code %s != 200" % response.status_code, cls.__name__)

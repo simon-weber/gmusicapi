@@ -9,20 +9,13 @@ import copy
 import logging
 from socket import gethostname
 import time
-from urllib2 import HTTPCookieProcessor, Request, build_opener
 from uuid import getnode as getmac
 
-import requests
-
 from gmusicapi.gmtools import tools
-from gmusicapi.exceptions import (
-    CallFailure, ParseException, ValidationException,
-    AlreadyLoggedIn, NotLoggedIn
-)
+from gmusicapi.exceptions import CallFailure, NotLoggedIn
 from gmusicapi.protocol import webclient, musicmanager, upload_pb2, locker_pb2
+from gmusicapi.session import PlaySession
 from gmusicapi.utils import utils
-from gmusicapi.utils.clientlogin import ClientLogin
-from gmusicapi.utils.tokenauth import TokenAuth
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +45,7 @@ class Api():
 
     def is_authenticated(self):
         """Returns ``True`` if the Api can make an authenticated request."""
-        return self.session.logged_in
+        return self.session.is_authenticated
 
     def login(self, email, password, perform_upload_auth=True,
               uploader_id=None, uploader_name=None):
@@ -90,8 +83,7 @@ class Api():
         more devices than necessary.
         """
 
-        self.session.login(email, password)
-        if not self.is_authenticated():
+        if not self.session.login(email, password):
             log.info("failed to authenticate")
             return False
 
@@ -678,7 +670,7 @@ class Api():
             (
                 {'<filepath>': '<new server id>'},               # uploaded
                 {'<filepath>': '<new server id>'},               # matched
-                {'<filepath>': '<reason, eg ALREADY_UPLOADED>'}  # not uploaded
+                {'<filepath>': '<reason, eg ALREADY_EXISTS>'}    # not uploaded
             )
 
         :param filepaths: a list of filepaths, or a single filepath.
@@ -821,6 +813,12 @@ class Api():
 
                 err_msg = "TrackSampleResponse code %s: %s" % (sample_res.response_code, res_name)
 
+                if res_name == 'ALREADY_EXISTS':
+                    # include the sid, too
+                    # this shouldn't be relied on externally, but I use it in
+                    # tests - being surrounded by parens is how it's matched
+                    err_msg += "(%s)" % sample_res.server_track_id
+
                 log.warning("upload of '%s' rejected: %s", path, err_msg)
                 not_uploaded[path] = err_msg
 
@@ -903,176 +901,9 @@ class Api():
 
     def _make_call(self, protocol, *args, **kwargs):
         """Returns the response of a protocol.Call.
-        Additional kw/args are passed to protocol.build_transaction."""
-        #TODO link up these docs
 
-        call_name = protocol.__name__
+        Additional kw/args are passed to protocol.perform.
 
-        log.debug("%s(args=%s, kwargs=%s)",
-                  call_name,
-                  [utils.truncate(a) for a in args],
-                  dict((k, utils.truncate(v)) for (k, v) in kwargs.items())
-                  )
+        CallFailure may be raised."""
 
-        request = protocol.build_request(*args, **kwargs)
-
-        response = self.session.send(request, protocol.get_auth(), protocol.session_options)
-
-        #TODO check return code
-
-        try:
-            msg = protocol.parse_response(response)
-        except ParseException:
-            log.exception("couldn't parse %s response: %r", call_name, response.content)
-            raise CallFailure("the server's response could not be understood."
-                              " The call may still have succeeded, but it's unlikely.",
-                              call_name)
-
-        log.debug(protocol.filter_response(msg))
-
-        try:
-            #order is important; validate only has a schema for a successful response
-            protocol.check_success(msg)
-            protocol.validate(msg)
-        except CallFailure:
-            raise
-        except ValidationException:
-            #TODO link to some protocol for reporting this
-            log.exception(
-                "please report the following unknown response format for %s: %r",
-                call_name, msg
-            )
-
-        return msg
-
-
-#---
-#The session layer:
-#---
-
-class PlaySession(object):
-    """
-    A Google Play Music session.
-
-    It allows for authentication and the making of authenticated
-    requests through the MusicManager API (protocol buffers), Web client requests,
-    and the Skyjam client API.
-    """
-
-    # The URL for authenticating against Google Play Music
-    PLAY_URL = 'https://play.google.com/music/listen?u=0&hl=en'
-
-    # Common User Agent used for web requests
-    _user_agent = (
-        "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.8.1.6) "
-        "Gecko/20061201 Firefox/2.0.0.6 (Ubuntu-feisty)"
-    )
-
-    def __init__(self):
-        """
-        Initializes a default unauthenticated session.
-        """
-        self.client = None
-        self.web_cookies = None
-        self.logged_in = False
-
-    def _get_cookies(self):
-        """
-        Gets cookies needed for web and media streaming access.
-        Returns ``True`` if the necessary cookies are found, ``False`` otherwise.
-        """
-        if self.logged_in:
-            raise AlreadyLoggedIn
-
-        handler = build_opener(HTTPCookieProcessor(self.web_cookies))
-        req = Request(self.PLAY_URL, None, {})  # header
-        handler.open(req)  # TODO is this necessary?
-
-        return (
-            self.get_web_cookie('sjsaid') is not None and
-            self.get_web_cookie('xt') is not None
-        )
-
-    def get_web_cookie(self, name):
-        """
-        Finds the value of a cookie by name, returning None on failure.
-
-        :param name: The name of the cookie to find.
-        """
-        if self.web_cookies is None:
-            return None
-
-        for cookie in self.web_cookies:
-            if cookie.name == name:
-                return cookie.value
-
-        return None
-
-    def login(self, email, password):
-        """
-        Attempts to create an authenticated session using the email and
-        password provided.
-        Return ``True`` if the login was successful, ``False`` otherwise.
-        Raises AlreadyLoggedIn if the session is already authenticated.
-
-        :param email: The email address of the account to log in.
-        :param password: The password of the account to log in.
-        """
-        if self.logged_in:
-            raise AlreadyLoggedIn
-
-        self.client = ClientLogin(email, password, 'sj')
-        tokenauth = TokenAuth('sj', self.PLAY_URL, 'jumper')
-
-        if self.client.get_auth_token() is None:
-            return False
-
-        tokenauth.authenticate(self.client)
-        self.web_cookies = tokenauth.get_cookies()
-
-        if self._get_cookies():
-            self.logged_in = True
-        else:
-            self.logged_in = False
-
-        return self.logged_in
-
-    def logout(self):
-        """
-        Resets the session to an unauthenticated default state.
-        """
-        self.__init__()
-
-    def send(self, request, auth, session_options):
-        """Send a request from a Call.
-
-        :param request: filled requests.Request.
-        :param auth: result of Call.get_auth().
-        :param session_options: dict of kwargs to pass to requests.Session.send.
-        """
-
-        if any(auth) and not self.logged_in:
-            raise NotLoggedIn
-
-        send_xt, send_clientlogin, send_sso = auth
-
-        if request.cookies is None:
-            request.cookies = {}
-
-        #Attach auth.
-        if send_xt:
-            request.params['u'] = 0
-            request.params['xt'] = self.get_web_cookie('xt')
-
-        if send_clientlogin:
-            request.cookies['SID'] = self.client.get_sid_token()
-
-        if send_sso:
-            #TODO merge this without overwriting
-            request.cookies = self.web_cookies
-
-        prepped = request.prepare()
-        s = requests.Session()
-
-        res = s.send(prepped, **session_options)
-        return res
+        return protocol.perform(self.session, *args, **kwargs)

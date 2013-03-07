@@ -7,6 +7,7 @@ an extra test playlist or song may result.
 
 from copy import copy
 from collections import namedtuple
+import re
 
 from proboscis.asserts import (
     assert_raises, assert_true, assert_equal, assert_is_not_none,
@@ -27,6 +28,7 @@ TestSong = namedtuple('TestSong', 'sid title artist album')
 
 @test(groups=['server'])
 class NoUpauthTests(object):
+    api = None
 
     @before_class
     def login(self):
@@ -35,6 +37,9 @@ class NoUpauthTests(object):
 
     @after_class(always_run=True)
     def logout(self):
+        if self.api is None:
+            raise SkipTest('did not create api')
+
         assert_true(self.api.logout())
 
     @test
@@ -45,6 +50,7 @@ class NoUpauthTests(object):
 @test(groups=['server'])
 class UpauthTests(object):
     #These are set on the instance in create_song/playlist.
+    api = None
     song = None
     playlist_id = None
 
@@ -55,6 +61,9 @@ class UpauthTests(object):
 
     @after_class(always_run=True)
     def logout(self):
+        if self.api is None:
+            raise SkipTest('did not create api')
+
         assert_true(self.api.logout())
 
     # This next section is a bit odd: it nests playlist tests inside song tests.
@@ -77,16 +86,28 @@ class UpauthTests(object):
 
     @test
     def song_create(self):
-        uploaded, matched, not_uploaded = self.api.upload(test_utils.small_mp3)
-        assert_equal(not_uploaded, {})
-        assert_equal(matched, {})
-        assert_equal(uploaded.keys(), [test_utils.small_mp3])
+        fname = test_utils.small_mp3
 
-        sid = uploaded[test_utils.small_mp3]
+        uploaded, matched, not_uploaded = self.api.upload(fname)
+
+        if len(not_uploaded) == 1 and 'ALREADY_EXISTS' in not_uploaded[fname]:
+            # If a previous test went wrong, the track might be there already.
+            #TODO This build will fail because of the warning - is that what we want?
+            assert_equal(matched, {})
+            assert_equal(uploaded, {})
+
+            sid = re.search(r'\(.*\)', not_uploaded[fname]).group().strip('()')
+        else:
+            # Otherwise, it should have been uploaded normally.
+            assert_equal(not_uploaded, {})
+            assert_equal(matched, {})
+            assert_equal(uploaded.keys(), [fname])
+
+            sid = uploaded[fname]
 
         # we test get_all_songs here so that we can assume the existance
         # of the song for future tests (the servers take time to sync an upload)
-        @retry
+        @retry(tries=1)
         def assert_song_exists(sid):
             songs = self.api.get_all_songs()
 

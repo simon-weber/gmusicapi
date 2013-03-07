@@ -31,8 +31,6 @@ def freeze_login_details():
     if the envvars are not present.
     """
 
-    #TODO this will prompt even if we're running just --group=local
-
     #Attempt to get auth from environ.
     user, passwd = os.environ.get('GMUSICAPI_TEST_USER'), os.environ.get('GMUSICAPI_TEST_PASSWD')
     on_travis = os.environ.get('TRAVIS')
@@ -82,7 +80,8 @@ def freeze_login_details():
 
 
 def main():
-    freeze_login_details()
+    if '--group=local' not in sys.argv:
+        freeze_login_details()
 
     # warnings typically signal a change in protocol,
     # so fail the build if anything >= warning are sent,
