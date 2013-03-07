@@ -675,7 +675,7 @@ class Api():
             (
                 {'<filepath>': '<new server id>'},               # uploaded
                 {'<filepath>': '<new server id>'},               # matched
-                {'<filepath>': '<reason, eg ALREADY_UPLOADED>'}  # not uploaded
+                {'<filepath>': '<reason, eg ALREADY_EXISTS>'}    # not uploaded
             )
 
         :param filepaths: a list of filepaths, or a single filepath.
@@ -817,6 +817,12 @@ class Api():
                 res_name = enum_desc.values_by_number[sample_res.response_code].name
 
                 err_msg = "TrackSampleResponse code %s: %s" % (sample_res.response_code, res_name)
+
+                if res_name == 'ALREADY_EXISTS':
+                    # include the sid, too
+                    # this shouldn't be relied on externally, but I use it in
+                    # tests - being surrounded by parens is how it's matched
+                    err_msg += "(%s)" % sample_res.server_track_id
 
                 log.warning("upload of '%s' rejected: %s", path, err_msg)
                 not_uploaded[path] = err_msg

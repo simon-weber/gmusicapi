@@ -73,11 +73,11 @@ class PlaySession(object):
         if send_clientlogin:
             session = self.musicmanager
 
-        # webclient doesn't imply xt
+        # webclient doesn't imply xt, eg /listen
         if send_xt:
             if 'params' not in req_kwargs:
                 req_kwargs['params'] = {}
-            #req_kwargs['params']['u'] = 0  # TODO is this needed?
+            req_kwargs['params']['u'] = 0
             req_kwargs['params']['xt'] = session.cookies.get('xt')
 
         res = session.request(**req_kwargs)

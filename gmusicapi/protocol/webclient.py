@@ -171,7 +171,7 @@ class AddToPlaylist(WcCall):
     @staticmethod
     def filter_response(msg):
         filtered = copy.copy(msg)
-        filtered['songIds'] = ["<%s songs>" % len(filtered['songIds'])]
+        filtered['songIds'] = ["<%s songs>" % len(filtered.get('songIds', []))]
         return filtered
 
 
@@ -251,7 +251,7 @@ class ChangePlaylistOrder(WcCall):
     @staticmethod
     def filter_response(msg):
         filtered = copy.copy(msg)
-        filtered['movedSongIds'] = ["<%s songs>" % len(filtered['movedSongIds'])]
+        filtered['movedSongIds'] = ["<%s songs>" % len(filtered.get('movedSongIds', []))]
         return filtered
 
 
@@ -321,7 +321,7 @@ class DeleteSongs(WcCall):
     @staticmethod
     def filter_response(msg):
         filtered = copy.copy(msg)
-        filtered['deleteIds'] = ["<%s songs>" % len(filtered['deleteIds'])]
+        filtered['deleteIds'] = ["<%s songs>" % len(filtered.get('deleteIds', []))]
         return filtered
 
 
@@ -366,7 +366,7 @@ class GetLibrarySongs(WcCall):
     def filter_response(msg):
         """Only log the number of songs."""
         filtered = copy.copy(msg)
-        filtered['playlist'] = ["<%s songs>" % len(filtered['playlist'])]
+        filtered['playlist'] = ["<%s songs>" % len(filtered.get('playlist', []))]
 
         return filtered
 
@@ -441,7 +441,7 @@ class ChangeSongMetadata(WcCall):
     @staticmethod
     def filter_response(msg):
         filtered = copy.copy(msg)
-        filtered['songs'] = ["<%s songs>" % len(filtered['songs'])]
+        filtered['songs'] = ["<%s songs>" % len(filtered.get('songs', []))]
         return filtered
 
     @staticmethod
