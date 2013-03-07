@@ -17,6 +17,7 @@ import requests
 from gmusicapi.gmtools import tools
 from gmusicapi.exceptions import CallFailure, AlreadyLoggedIn, NotLoggedIn
 from gmusicapi.protocol import webclient, musicmanager, upload_pb2, locker_pb2
+from gmusicapi.session import PlaySession
 from gmusicapi.utils import utils
 from gmusicapi.utils.clientlogin import ClientLogin
 from gmusicapi.utils.tokenauth import TokenAuth
@@ -49,7 +50,7 @@ class Api():
 
     def is_authenticated(self):
         """Returns ``True`` if the Api can make an authenticated request."""
-        return self.session.logged_in
+        return self.session.is_authenticated
 
     def login(self, email, password, perform_upload_auth=True,
               uploader_id=None, uploader_name=None):
@@ -87,8 +88,7 @@ class Api():
         more devices than necessary.
         """
 
-        self.session.login(email, password)
-        if not self.is_authenticated():
+        if not self.session.login(email, password):
             log.info("failed to authenticate")
             return False
 
@@ -912,7 +912,7 @@ class Api():
 #The session layer:
 #---
 
-class PlaySession(object):
+class OldPlaySession(object):
     """
     A Google Play Music session.
 

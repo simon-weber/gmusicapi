@@ -1,7 +1,7 @@
 import requests
 
 from gmusicapi.exceptions import (
-    AlreadyLoggedIn, NotLoggedIn
+    AlreadyLoggedIn, NotLoggedIn, CallFailure
 )
 from gmusicapi.protocol.shared import ClientLogin
 from gmusicapi.protocol import webclient
@@ -33,18 +33,15 @@ class PlaySession(object):
         if 'SID' not in res or 'Auth' not in res:
             return False
 
-        self.webclient.headers.update(
-            {'Authorization': 'GoogleLogin auth=' + res['Auth']}
-        )
-        self.musicmanager.cookies.update(
-            {'SID': res['SID']}
-        )
+        self.webclient.headers['Authorization'] = 'GoogleLogin auth=' + res['Auth']
+        self.musicmanager.cookies['SID'] = res['SID']
 
         # Get webclient cookies.
-        res = webclient.Init(self)
-
-        if res.status_code == 403:
-            # throw away ClientLogin auth
+        # They're stored automatically by requests on the webclient session.
+        try:
+            webclient.Init.perform(self)
+        except CallFailure:
+            # throw away clientlogin credentials
             self.logout()
         else:
             self.is_authenticated = True
@@ -55,14 +52,15 @@ class PlaySession(object):
         """
         Resets the session to an unauthenticated default state.
         """
+        self.webclient.close()
+        self.musicmanager.close()
         self.__init__()
 
-    def send(self, request, auth, session_options):
+    def send(self, req_kwargs, auth):
         """Send a request from a Call using this session's auth.
 
-        :param request: filled requests.Request.
+        :param req_kwargs: filled requests.req_kwargs.
         :param auth: 3-tuple of bools (xt, clientlogin, sso) (ie Call.get_auth()).
-        :param session_options: dict of kwargs to pass to requests.Session.send.
         """
         if any(auth) and not self.is_authenticated:
             raise NotLoggedIn
@@ -77,10 +75,11 @@ class PlaySession(object):
 
         # webclient doesn't imply xt
         if send_xt:
-            #request.params['u'] = 0
-            request.params['xt'] = session.cookies.get('xt')
+            if 'params' not in req_kwargs:
+                req_kwargs['params'] = {}
+            #req_kwargs['params']['u'] = 0  # TODO is this needed?
+            req_kwargs['params']['xt'] = session.cookies.get('xt')
 
-        prepped = request.prepare()
+        res = session.request(**req_kwargs)
 
-        res = session.send(prepped, **session_options)
         return res

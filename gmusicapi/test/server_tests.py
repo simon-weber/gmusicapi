@@ -27,6 +27,7 @@ TestSong = namedtuple('TestSong', 'sid title artist album')
 
 @test(groups=['server'])
 class NoUpauthTests(object):
+    api = None
 
     @before_class
     def login(self):
@@ -35,6 +36,9 @@ class NoUpauthTests(object):
 
     @after_class(always_run=True)
     def logout(self):
+        if self.api is None:
+            raise SkipTest('did not create api')
+
         assert_true(self.api.logout())
 
     @test
@@ -45,6 +49,7 @@ class NoUpauthTests(object):
 @test(groups=['server'])
 class UpauthTests(object):
     #These are set on the instance in create_song/playlist.
+    api = None
     song = None
     playlist_id = None
 
@@ -55,6 +60,9 @@ class UpauthTests(object):
 
     @after_class(always_run=True)
     def logout(self):
+        if self.api is None:
+            raise SkipTest('did not create api')
+
         assert_true(self.api.logout())
 
     # This next section is a bit odd: it nests playlist tests inside song tests.

@@ -7,21 +7,23 @@ import base64
 import hashlib
 import logging
 import os
+import sys
 
 import dateutil.parser
 from decorator import decorator
 import mutagen
+from google.protobuf.message import DecodeError
 
 from gmusicapi.compat import json
 from gmusicapi.exceptions import CallFailure
 from gmusicapi.protocol import upload_pb2, locker_pb2
-from gmusicapi.protocol.shared import Call
+from gmusicapi.protocol.shared import Call, ParseException
 from gmusicapi.utils import utils
 
 log = logging.getLogger(__name__)
 
 
-#This url has SSL issues, hence the verify=False for session_options.
+#This url has SSL issues, hence the static_verify=False.
 _android_url = 'https://android.clients.google.com/upsj/'
 
 
@@ -49,9 +51,12 @@ class MmCall(Call):
     def parse_response(cls, response):
         """Parse the cls.res_msg_type proto msg."""
         res_msg = cls.res_msg_type()
-        res_msg.ParseFromString(response.content)
-
-        #TODO do something with ParseError
+        try:
+            res_msg.ParseFromString(response.content)
+        except DecodeError as e:
+            trace = sys.exc_info()[2]
+            raise ParseException(str(e)), None, trace
+            pass
 
         return res_msg
 
@@ -64,18 +69,18 @@ class AuthenticateUploader(MmCall):
     """Sent to auth, reauth, or register our upload client."""
 
     static_url = _android_url + 'upauth'
-    session_options = {'verify': False}  # the android url has SSL troubles
+    static_verify = False
 
     @classmethod
-    def check_success(cls, res):
-        if res.HasField('auth_status') and res.auth_status != upload_pb2.UploadResponse.OK:
+    def check_success(cls, response, msg):
+        if msg.HasField('auth_status') and msg.auth_status != upload_pb2.UploadResponse.OK:
             enum_desc = upload_pb2._UPLOADRESPONSE.enum_types[1]
-            res_name = enum_desc.values_by_number[res.auth_status].name
+            res_name = enum_desc.values_by_number[msg.auth_status].name
 
             raise CallFailure(
                 "Upload auth error code %s: %s."
                 " See http://goo.gl/O6xe7 for more information. " % (
-                    res.auth_status, res_name
+                    msg.auth_status, res_name
                 ), cls.__name__
             )
 
@@ -96,7 +101,7 @@ class AuthenticateUploader(MmCall):
 
 class UploadMetadata(MmCall):
     static_url = _android_url + 'metadata'
-    session_options = {'verify': False}
+    static_verify = False
 
     static_params = {'version': 1}
 
@@ -264,13 +269,13 @@ class UploadMetadata(MmCall):
 class GetUploadJobs(MmCall):
     #TODO
     static_url = _android_url + 'getjobs'
-    session_options = {'verify': False}
+    static_verify = False
 
     static_params = {'version': 1}
 
     @classmethod
-    def check_success(cls, res):
-        if res.HasField('getjobs_response') and not res.getjobs_response.get_tracks_success:
+    def check_success(cls, response, msg):
+        if msg.HasField('getjobs_response') and not msg.getjobs_response.get_tracks_success:
             raise CallFailure('get_tracks_success == False', cls.__name__)
 
     @classmethod
@@ -432,7 +437,7 @@ class ProvideSample(MmCall):
     static_method = 'POST'
     static_params = {'version': 1}
     static_url = _android_url + 'sample'
-    session_options = {'verify': False}
+    static_verify = False
 
     @staticmethod
     @pb
@@ -472,7 +477,7 @@ class UpdateUploadState(MmCall):
     static_method = 'POST'
     static_params = {'version': 1}
     static_url = _android_url + 'sample'
-    session_options = {'verify': False}
+    static_verify = False
 
     @staticmethod
     @pb
@@ -503,7 +508,7 @@ class CancelUploadJobs(MmCall):
 
     static_method = 'POST'
     static_url = _android_url + 'deleteuploadrequested'
-    session_options = {'verify': False}
+    static_verify = False
 
     @staticmethod
     @pb

@@ -55,10 +55,18 @@ pl_array = {
 
 class Init(Call):
     """Called after login and once before any other webclient call."""
-    static_method = 'POST'
-    static_url = 'https://play.google.com/music/listen'
+    static_method = 'HEAD'
+    static_url = base_url + 'listen'
 
     #This call doesn't actually request/return anything useful aside from cookies.
+    @staticmethod
+    def parse_response(response):
+        return response.text
+
+    @classmethod
+    def check_success(cls, response, msg):
+        if response.status_code != 200:
+            raise CallFailure('status code %s != 200' % response.status_code, cls.__name__)
 
 
 class WcCall(Call):
@@ -71,21 +79,21 @@ class WcCall(Call):
     _res_schema = utils.NotImplementedField
 
     @classmethod
-    def validate(cls, res):
+    def validate(cls, response, msg):
         """Use validictory and a static schema (stored in cls._res_schema)."""
         try:
-            return validictory.validate(res, cls._res_schema)
+            return validictory.validate(msg, cls._res_schema)
         except ValueError as e:
             trace = sys.exc_info()[2]
             raise ValidationException(str(e)), None, trace
 
     @classmethod
-    def check_success(cls, res):
+    def check_success(cls, response, msg):
         #Failed responses always have a success=False key.
         #Some successful responses do not have a success=True key, however.
         #TODO remove utils.call_succeeded
 
-        if 'success' in res and not res['success']:
+        if 'success' in msg and not msg['success']:
             raise CallFailure(
                 "the server reported failure. This is usually"
                 " caused by bad arguments, but can also happen if requests"
@@ -437,7 +445,7 @@ class ChangeSongMetadata(WcCall):
         return filtered
 
     @staticmethod
-    def validate(msg):
+    def validate(response, msg):
         """The data that comes back doesn't follow normal metadata rules,
         and is meaningless anyway; it'll lie about results."""
         pass
@@ -548,8 +556,8 @@ class ReportBadSongMatch(WcCall):
     expected_response = [[0], []]
 
     @classmethod
-    def validate(cls, res):
-        if res != cls.expected_response:
+    def validate(cls, response, msg):
+        if msg != cls.expected_response:
             raise ValidationException("response != %r" % cls.expected_response)
 
     @staticmethod
