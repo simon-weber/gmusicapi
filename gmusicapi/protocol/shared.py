@@ -124,13 +124,15 @@ class Call(object):
 
 
     There's three static bool fields to declare what auth the session should send:
-        send_xt: param/cookie xsrf token
+        send_xt: param/cookie xsrf header/param
 
      AND/OR
 
-        send_clientlogin: google clientlogin cookies
+        send_clientlogin: google clientlogin header
      OR
         send_sso: google SSO (authtoken) cookies
+     OR
+        send_oauth: google oauth header
 
     Calls must define parse_response.
     Calls can also define filter_response, validate and check_success.
@@ -145,6 +147,7 @@ class Call(object):
     send_xt = False
     send_clientlogin = False
     send_sso = False
+    send_oauth = False
 
     @classmethod
     def parse_response(cls, response):

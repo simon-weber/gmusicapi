@@ -1,3 +1,4 @@
+import httplib2  # included with oauth2client
 import requests
 
 from gmusicapi.exceptions import (
@@ -13,9 +14,9 @@ class PlaySession(object):
     def __init__(self):
         """Init an unauthenticated session."""
         self.webclient = requests.Session()
-
         self.musicmanager = requests.Session()
 
+        self.oauth_creds = None
         self.is_authenticated = False
 
     def login(self, email, password):
@@ -67,20 +68,29 @@ class PlaySession(object):
         if any(auth) and not self.is_authenticated:
             raise NotLoggedIn
 
-        send_xt, send_clientlogin, send_sso = auth
+        if auth.send_oauth and self.oauth_creds is None:
+            raise NotLoggedIn('OAuth was requested without providing credentials.')
 
         # webclient is used by default -> SSO sent
         # hopefully nobody is using this to make requests of other places?
         session = self.webclient
-        if send_clientlogin:
+        if auth.send_clientlogin or auth.send_oauth:
             session = self.musicmanager
 
         # webclient doesn't imply xt, eg /listen
-        if send_xt:
+        if auth.send_xt:
             if 'params' not in req_kwargs:
                 req_kwargs['params'] = {}
             req_kwargs['params']['u'] = 0
             req_kwargs['params']['xt'] = session.cookies.get('xt')
+
+        if auth.send_oauth:
+            if self.oauth_creds.access_token_expired():
+                self.oauth_creds.refresh(httplib2.http())
+
+            if 'headers' not in req_kwargs:
+                req_kwargs['headers'] = {}
+            req_kwargs['headers']['Authorization'] = 'Bearer ' + self.oauth_creds.access_token
 
         res = session.request(**req_kwargs)
 

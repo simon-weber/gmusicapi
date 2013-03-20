@@ -11,6 +11,9 @@ from socket import gethostname
 import time
 from uuid import getnode as getmac
 
+from oauth2client.client import OAuth2WebServerFlow
+import oauth2client.file
+
 from gmusicapi.gmtools import tools
 from gmusicapi.exceptions import CallFailure, NotLoggedIn
 from gmusicapi.protocol import webclient, musicmanager, upload_pb2, locker_pb2
@@ -18,9 +21,32 @@ from gmusicapi.session import PlaySession
 from gmusicapi.utils import utils
 
 log = logging.getLogger(__name__)
+OAUTH_FILEPATH = 'gmusicapi.oauth_cred'  # not to be changed at runtime
 
 
 class Api():
+    @staticmethod
+    def perform_oauth(storage_filepath=OAUTH_FILEPATH):
+        """Performs one-time oauth auth for uploading.
+
+        :param storage_filepath: a file to write credentials to.
+        """
+
+        flow = OAuth2WebServerFlow(*musicmanager.oauth)
+
+        auth_uri = flow.step1_get_authorize_url()
+        print
+        print "Visit the following url:\n %s" % auth_uri
+        code = raw_input("Follow the prompts,"
+                         " then paste the auth code here and hit enter: ")
+
+        credentials = flow.step2_exchange(code)
+
+        storage = oauth2client.file.Storage(storage_filepath)
+        storage.put(credentials)
+
+        return credentials.to_json()
+
     def __init__(self, debug_logging=True):
         """Initializes an Api.
 
@@ -48,7 +74,8 @@ class Api():
         return self.session.is_authenticated
 
     def login(self, email, password, perform_upload_auth=True,
-              uploader_id=None, uploader_name=None):
+              uploader_id=None, uploader_name=None,
+              oauth_storage_path=OAUTH_FILEPATH):
         """Authenticates the api.
         Returns ``True`` on success, ``False`` on failure.
 
@@ -74,6 +101,9 @@ class Api():
 
         :param uploader_name: human-readable non-unique id; default is ``"<hostname> (gmusicapi)"``.
 
+        :param oauth_storage_path: a path to oauth2client.file.Storage.
+         Only used when perform_upload_auth is True.
+
         Users of two-factor authentication will need to set an application-specific password
         to log in.
 
@@ -90,6 +120,8 @@ class Api():
         log.info("authenticated")
 
         if perform_upload_auth:
+            self.session.credentials = oauth2client.file.Storage(oauth_storage_path).get()
+
             if uploader_id is None:
                 mac = getmac()
                 if (mac >> 40) % 2:
@@ -106,7 +138,7 @@ class Api():
                 uploader_name = gethostname() + u" (gmusicapi)"
 
             try:
-                #self._mm_pb_call("upload_auth")
+                # note that this is a MM-specific protobuf call authed with oauth;
                 self._make_call(musicmanager.AuthenticateUploader,
                                 uploader_id,
                                 uploader_name)

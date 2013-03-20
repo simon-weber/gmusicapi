@@ -9,6 +9,7 @@ import logging
 import os
 import sys
 
+from collections import namedtuple
 import dateutil.parser
 from decorator import decorator
 import mutagen
@@ -26,6 +27,14 @@ log = logging.getLogger(__name__)
 #This url has SSL issues, hence the static_verify=False.
 _android_url = 'https://android.clients.google.com/upsj/'
 
+OAuthInfo = namedtuple('OAuthInfo', 'client_id client_secret scope redirect')
+oauth = OAuthInfo(
+    '652850857958.apps.googleusercontent.com',
+    'ji1rklciNp2bfsFJnEH_i6al',
+    'https://www.googleapis.com/auth/musicmanager',
+    'urn:ietf:wg:oauth:2.0:oob'
+)
+
 
 @decorator
 def pb(f, *args, **kwargs):
@@ -38,9 +47,10 @@ class MmCall(Call):
     """Abstract base for Music Manager calls."""
 
     static_method = 'POST'
+    # remember that this won't merge in subclasses
     static_headers = {'User-agent': 'Music Manager (1, 0, 24, 7712 - Windows)'}
 
-    send_clientlogin = True
+    send_oauth = True
 
     #this is a shared union class that has all specific upload types
     res_msg_type = upload_pb2.UploadResponse
