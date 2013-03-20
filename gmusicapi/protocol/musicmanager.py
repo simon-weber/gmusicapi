@@ -48,7 +48,7 @@ class MmCall(Call):
 
     static_method = 'POST'
     # remember that this won't merge in subclasses
-    static_headers = {'User-agent': 'Music Manager (1, 0, 24, 7712 - Windows)'}
+    static_headers = {'User-agent': 'Music Manager (1, 0, 55, 7425 HTTPS - Windows)'}
 
     send_oauth = True
 
@@ -304,7 +304,7 @@ class GetUploadSession(MmCall):
     This is a json call, and doesn't share much with the other calls."""
 
     static_method = 'POST'
-    static_url = 'http://uploadsj.clients.google.com/uploadsj/rupio'
+    static_url = 'https://uploadsj.clients.google.com/uploadsj/rupio'
 
     @classmethod
     def parse_response(cls, response):
