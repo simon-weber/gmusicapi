@@ -120,7 +120,7 @@ class Api():
         log.info("authenticated")
 
         if perform_upload_auth:
-            self.session.credentials = oauth2client.file.Storage(oauth_storage_path).get()
+            self.session.oauth_creds = oauth2client.file.Storage(oauth_storage_path).get()
 
             if uploader_id is None:
                 mac = getmac()

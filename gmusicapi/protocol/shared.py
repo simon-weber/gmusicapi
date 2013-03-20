@@ -169,8 +169,8 @@ class Call(object):
 
     @classmethod
     def get_auth(cls):
-        """Return a 3-tuple send (xt, clientlogin, sso)."""
-        return (cls.send_xt, cls.send_clientlogin, cls.send_sso)
+        """Return a 4-tuple send (xt, clientlogin, sso, oauth)."""
+        return (cls.send_xt, cls.send_clientlogin, cls.send_sso, cls.send_oauth)
 
     @classmethod
     def perform(cls, session, *args, **kwargs):

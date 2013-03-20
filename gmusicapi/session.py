@@ -63,30 +63,32 @@ class PlaySession(object):
         """Send a request from a Call using this session's auth.
 
         :param req_kwargs: filled requests.req_kwargs.
-        :param auth: 3-tuple of bools (xt, clientlogin, sso) (ie Call.get_auth()).
+        :param auth: 4-tuple of bools (xt, clientlogin, sso, oauth) (ie Call.get_auth()).
         """
         if any(auth) and not self.is_authenticated:
             raise NotLoggedIn
 
-        if auth.send_oauth and self.oauth_creds is None:
+        send_xt, send_clientlogin, send_sso, send_oauth = auth
+
+        if send_oauth and self.oauth_creds is None:
             raise NotLoggedIn('OAuth was requested without providing credentials.')
 
         # webclient is used by default -> SSO sent
         # hopefully nobody is using this to make requests of other places?
         session = self.webclient
-        if auth.send_clientlogin or auth.send_oauth:
+        if send_clientlogin or send_oauth:
             session = self.musicmanager
 
         # webclient doesn't imply xt, eg /listen
-        if auth.send_xt:
+        if send_xt:
             if 'params' not in req_kwargs:
                 req_kwargs['params'] = {}
             req_kwargs['params']['u'] = 0
             req_kwargs['params']['xt'] = session.cookies.get('xt')
 
-        if auth.send_oauth:
-            if self.oauth_creds.access_token_expired():
-                self.oauth_creds.refresh(httplib2.http())
+        if send_oauth:
+            if self.oauth_creds.access_token_expired:
+                self.oauth_creds.refresh(httplib2.Http())
 
             if 'headers' not in req_kwargs:
                 req_kwargs['headers'] = {}
