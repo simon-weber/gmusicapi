@@ -82,13 +82,13 @@ class BuildRequestMeta(type):
 
 class Call(object):
     """
-    The client Call interface is:
+    Clients should use Call.perform().
 
     Calls define how to build their requests through static and dynamic data.
     For example, a request might always send some user-agent: this is static.
     Or, it might need the name of a song to modify: this is dynamic.
 
-    The possible values correspond with requests.Request kwargs:
+    Specially named fields define the data, and correspond with requests.Request kwargs:
         method: eg 'GET' or 'POST'
         url: string
         files: dictionary of {filename: fileobject} files to multipart upload.
@@ -99,20 +99,21 @@ class Call(object):
         params (m): dictionary of URL parameters to append to the URL.
         headers (m): dictionary
 
-    Static data is defined like:
+    Static data shold prepends static_ to a field:
         class SomeCall(Call):
             static_url = 'http://foo.com/thiscall'
 
-    And dynamic like:
+    And dynamic data prepends dynamic_ to a method:
         class SomeCall(Call):
-            #*args, **kwargs are passed from SomeCall.build_request
+            #*args, **kwargs are passed from SomeCall.build_request (and Call.perform)
             def dynamic_url(endpoint):
                 return 'http://foo.com/' + endpoint
 
     Dynamic data takes precedence over static if both exist,
      except for attributes marked with (m) above. These get merged, with dynamic overriding
-     on key conflicts (though this really shouldn't be relied on).
-    Here's an example that has static and dynamic headers:
+     on key conflicts (though all this really shouldn't be relied on).
+
+    Here's a contrived example that merges static and dynamic headers:
         class SomeCall(Call):
             static_headers = {'user-agent': "I'm totally a Google client!"}
 
@@ -120,7 +121,7 @@ class Call(object):
             def dynamic_headers(cls, keep_alive=False):
                 return {'Connection': keep_alive}
 
-    If neither is defined, the param is not passed to the Request when creating it.
+    If neither a static nor dynamic member is defined, the param is not used to create the requests.Request.
 
 
     There's three static bool fields to declare what auth the session should send:
@@ -156,10 +157,20 @@ class Call(object):
 
     @classmethod
     def validate(cls, response, msg):
+        """Raise ValidationException on problems.
+
+        :param response: a requests.Response
+        :param msg: the result of parse_response on response
+        """
         pass
 
     @classmethod
     def check_success(cls, response, msg):
+        """Raise CallFailure on problems.
+
+        :param response: a requests.Response
+        :param msg: the result of parse_response on response
+        """
         pass
 
     @classmethod

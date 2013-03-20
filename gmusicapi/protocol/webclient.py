@@ -552,13 +552,14 @@ class ReportBadSongMatch(WcCall):
     static_url = service_url + 'fixsongmatch'
     static_params = {'format': 'jsarray'}
 
-    #This response is always the same.
+    #This no longer holds.
     expected_response = [[0], []]
 
     @classmethod
     def validate(cls, response, msg):
-        if msg != cls.expected_response:
-            raise ValidationException("response != %r" % cls.expected_response)
+        pass
+        #if msg != cls.expected_response:
+        #    raise ValidationException("response != %r" % cls.expected_response)
 
     @staticmethod
     def dynamic_data(song_ids):
