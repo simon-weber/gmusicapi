@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+Sessions handle the details of authentication and transporting requests.
+"""
+
 import httplib2  # included with oauth2client
 import requests
 
@@ -8,36 +15,71 @@ from gmusicapi.protocol.shared import ClientLogin
 from gmusicapi.protocol import webclient
 
 
-class PlaySession(object):
-    """A PlaySession handles authentication."""
-
+class _BaseSession(object):
     def __init__(self):
-        """Init an unauthenticated session."""
-        self.webclient = requests.Session()
-        self.musicmanager = requests.Session()
-
-        self.oauth_creds = None
+        self.rsession = requests.Session()
         self.is_authenticated = False
+
+    def _send_with_auth(self, req_kwargs, desired_auth):
+        raise NotImplementedError
+
+    def _send_without_auth(self, req_kwargs):
+        """Send a request using a throwaway session."""
+        # this shouldn't happen often (it loses out on connection-pooling)
+        s = requests.Session()
+        res = s.request(**req_kwargs)
+        s.close()
+
+        return res
+
+    def login(self, *args, **kwargs):
+        if self.is_authenticated:
+            raise AlreadyLoggedIn
+
+    def logout(self):
+        """
+        Reset the session to an unauthenticated, default state.
+        """
+        self.rsession.close()
+        self.__init__()
+
+    def send(self, req_kwargs, desired_auth):
+        """Send a request from a Call using this session's auth.
+
+        :param req_kwargs: kwargs for requests.Session.request
+        :param desired_auth: protocol.shared.AuthTypes to attach
+        """
+        if not any(desired_auth):
+            return self._send_without_auth(req_kwargs)
+
+        else:
+            if not self.is_authenticated:
+                raise NotLoggedIn
+
+            return self._send_with_auth(req_kwargs, desired_auth)
+
+
+class WebclientSession(_BaseSession):
+    def __init__(self):
+        super(WebclientSession, self).__init__()
+        self._authtoken = None
 
     def login(self, email, password):
         """
-        Attempt to login. Return ``True`` if the login was successful.
-        Raise AlreadyLoggedIn if the session is already authenticated.
+        Perform clientlogin then retrieve webclient cookies.
 
         :param email:
         :param password:
         """
-        if self.is_authenticated:
-            raise AlreadyLoggedIn
 
-        # Perform ClientLogin.
+        super(WebclientSession, self).login()
+
         res = ClientLogin.perform(self, email, password)
 
         if 'SID' not in res or 'Auth' not in res:
             return False
 
-        self.webclient.headers['Authorization'] = 'GoogleLogin auth=' + res['Auth']
-        self.musicmanager.cookies['SID'] = res['SID']
+        self._authtoken = res['Auth']
 
         # Get webclient cookies.
         # They're stored automatically by requests on the webclient session.
@@ -51,49 +93,38 @@ class PlaySession(object):
 
         return self.is_authenticated
 
-    def logout(self):
-        """
-        Resets the session to an unauthenticated default state.
-        """
-        self.webclient.close()
-        self.musicmanager.close()
-        self.__init__()
+    def _send_with_auth(self, req_kwargs, desired_auth):
+        if desired_auth.sso:
+            req_kwargs['headers'] = req_kwargs.get('headers', {})
 
-    def send(self, req_kwargs, auth):
-        """Send a request from a Call using this session's auth.
+            # does this ever expire? would we have to perform clientlogin again?
+            req_kwargs['headers']['Authorization'] = \
+                'GoogleLogin auth=' + self._authtoken
 
-        :param req_kwargs: filled requests.req_kwargs.
-        :param auth: 4-tuple of bools (xt, clientlogin, sso, oauth) (ie Call.get_auth()).
-        """
-        if any(auth) and not self.is_authenticated:
-            raise NotLoggedIn
+        if desired_auth.xt:
+            req_kwargs['params'] = req_kwargs.get('params', {})
+            req_kwargs['params'].update({'u': 0, 'xt': self.rsession.cookies['xt']})
 
-        send_xt, send_clientlogin, send_sso, send_oauth = auth
+        return self.rsession.request(**req_kwargs)
 
-        if send_oauth and self.oauth_creds is None:
-            raise NotLoggedIn('OAuth was requested without providing credentials.')
 
-        # webclient is used by default -> SSO sent
-        # hopefully nobody is using this to make requests of other places?
-        session = self.webclient
-        if send_clientlogin or send_oauth:
-            session = self.musicmanager
+class MusicmanagerSession(_BaseSession):
+    def __init__(self):
+        super(MusicmanagerSession, self).__init__()
+        self._oauth_creds = None
 
-        # webclient doesn't imply xt, eg /listen
-        if send_xt:
-            if 'params' not in req_kwargs:
-                req_kwargs['params'] = {}
-            req_kwargs['params']['u'] = 0
-            req_kwargs['params']['xt'] = session.cookies.get('xt')
+    def login(self, oauth_credentials):
+        """Store an alread-acquired oauth2client.Credentials."""
+        self._oauth_creds = oauth_credentials
+        self.is_authenticated = True
 
-        if send_oauth:
-            if self.oauth_creds.access_token_expired:
-                self.oauth_creds.refresh(httplib2.Http())
+    def _send_with_auth(self, req_kwargs, desired_auth):
+        if desired_auth.oauth:
+            if self._oauth_creds.access_token_expired:
+                self._oauth_creds.refresh(httplib2.Http())
 
-            if 'headers' not in req_kwargs:
-                req_kwargs['headers'] = {}
-            req_kwargs['headers']['Authorization'] = 'Bearer ' + self.oauth_creds.access_token
+            req_kwargs['headers'] = req_kwargs.get('headers', {})
+            req_kwargs['headers']['Authorization'] = \
+                'Bearer ' + self._oauth_creds.access_token
 
-        res = session.request(**req_kwargs)
-
-        return res
+        return self.rsession.request(**req_kwargs)
