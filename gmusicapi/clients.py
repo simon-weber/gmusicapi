@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-The api module exposes Api, which is the main user-facing interface.
+The api module exposes the main user-facing interfaces of gmusicapi.
 """
 
 import copy
@@ -24,38 +24,20 @@ log = logging.getLogger(__name__)
 OAUTH_FILEPATH = 'gmusicapi.oauth_cred'  # not to be changed at runtime
 
 
-class Api():
-    @staticmethod
-    def perform_oauth(storage_filepath=OAUTH_FILEPATH):
-        """Performs one-time oauth auth for uploading.
+class _BaseClient(object):
+    """Factors out common client setup."""
 
-        :param storage_filepath: a file to write credentials to.
+    def __init__(self, debug_logging):
         """
-
-        flow = OAuth2WebServerFlow(*musicmanager.oauth)
-
-        auth_uri = flow.step1_get_authorize_url()
-        print
-        print "Visit the following url:\n %s" % auth_uri
-        code = raw_input("Follow the prompts,"
-                         " then paste the auth code here and hit enter: ")
-
-        credentials = flow.step2_exchange(code)
-
-        storage = oauth2client.file.Storage(storage_filepath)
-        storage.put(credentials)
-
-        return credentials.to_json()
-
-    def __init__(self, debug_logging=True):
-        """Initializes an Api.
-
         :param debug_logging: if ``True``, attach log handlers to logger ``gmusicapi`` to
           send all output to ``gmusicapi.log``, and warnings and above to the console.
           if ``False``, the user must set up handlers to see log output.
         """
 
         if debug_logging:
+            #TODO fix this for multiple client loggers, have each client use their own.
+            #expose a .logger property for people to get at
+
             #This operates on the root logger.
             #If more than one Api were instantiated, that behavior might be surprising.
             utils.configure_debug_logging()
@@ -64,6 +46,33 @@ class Api():
 
         self.uploader_id = None
         self.uploader_name = None
+
+    def is_authenticated(self):
+        """Returns ``True`` if the Api can make an authenticated request."""
+        return self.session.is_authenticated
+
+
+class UploadClient(_BaseClient):
+    """Allows uploading by posing as Google's Music Manager."""
+    def __init__(self, debug_logging=True):
+        super(UploadClient, self).__init__(debug_logging)
+
+        self.uploader_id = None
+        self.uploader_name = None
+
+
+class LibraryClient(_BaseClient):
+    """Allows library management and streaming by posing as the
+    music.google.com webclient.
+
+    This client does not handle uploading: use :class:`UploadClient` instead.
+    """
+
+    def __init__(self, debug_logging=True):
+        super(LibraryClient, self).__init__(debug_logging)
+
+
+class Api(object):
 
     #---
     #   Authentication:
@@ -678,6 +687,32 @@ class Api():
         song_dicts = [dict((('id', id), ('albumArtUrl', url))) for id in song_ids]
 
         return self.change_song_metadata(song_dicts)
+    pass
+
+
+class Api():
+    @staticmethod
+    def perform_oauth(storage_filepath=OAUTH_FILEPATH):
+        """Performs one-time oauth auth for uploading.
+
+        :param storage_filepath: a file to write credentials to.
+        """
+
+        flow = OAuth2WebServerFlow(*musicmanager.oauth)
+
+        auth_uri = flow.step1_get_authorize_url()
+        print
+        print "Visit the following url:\n %s" % auth_uri
+        code = raw_input("Follow the prompts,"
+                         " then paste the auth code here and hit enter: ")
+
+        credentials = flow.step2_exchange(code)
+
+        storage = oauth2client.file.Storage(storage_filepath)
+        storage.put(credentials)
+
+        return credentials.to_json()
+
 
     #---
     #   Api features supported by the Music Manager interface:
