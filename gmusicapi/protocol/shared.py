@@ -3,6 +3,7 @@
 
 """Definitions shared by multiple clients."""
 
+from collections import namedtuple
 import logging
 import sys
 
@@ -17,8 +18,24 @@ from gmusicapi.utils import utils
 
 log = logging.getLogger(__name__)
 
-#There's a lot of code here to simplify call definition, but it's not scary - promise.
-#Request objects are currently requests.Request; see http://docs.python-requests.org
+_auth_names = ('xt', 'sso', 'oauth')
+
+"""
+  AuthTypes has fields for each type of auth, each of which store a bool:
+    xt: webclient xsrf param/cookie
+    sso: webclient Authorization header
+    oauth: musicmanager oauth header
+"""
+AuthTypes = namedtuple('AuthTypes', _auth_names)
+
+
+def authtypes(**kwargs):
+    """Convinience factory for AuthTypes that defaults authtypes to False."""
+    for name in _auth_names:
+        if name not in kwargs:
+            kwargs[name] = False
+
+    return AuthTypes(**kwargs)
 
 
 class BuildRequestMeta(type):
@@ -121,19 +138,10 @@ class Call(object):
             def dynamic_headers(cls, keep_alive=False):
                 return {'Connection': keep_alive}
 
-    If neither a static nor dynamic member is defined, the param is not used to create the requests.Request.
+    If neither a static nor dynamic member is defined,
+    the param is not used to create the requests.Request.
 
-
-    There's three static bool fields to declare what auth the session should send:
-        send_xt: param/cookie xsrf header/param
-
-     AND/OR
-
-        send_clientlogin: google clientlogin header
-     OR
-        send_sso: google SSO (authtoken) cookies
-     OR
-        send_oauth: google oauth header
+    Calls declare the kind of auth they require with an AuthTypes object named required_auth.
 
     Calls must define parse_response.
     Calls can also define filter_response, validate and check_success.
@@ -145,10 +153,7 @@ class Call(object):
 
     gets_logged = True
 
-    send_xt = False
-    send_clientlogin = False
-    send_sso = False
-    send_oauth = False
+    required_auth = authtypes()  # all false by default
 
     @classmethod
     def parse_response(cls, response):
@@ -179,11 +184,6 @@ class Call(object):
         return msg  # default to identity
 
     @classmethod
-    def get_auth(cls):
-        """Return a 4-tuple send (xt, clientlogin, sso, oauth)."""
-        return (cls.send_xt, cls.send_clientlogin, cls.send_sso, cls.send_oauth)
-
-    @classmethod
     def perform(cls, session, *args, **kwargs):
         """Send, parse, validate and check success of this call.
         *args and **kwargs are passed to protocol.build_transaction.
@@ -205,7 +205,7 @@ class Call(object):
 
         req_kwargs = cls.build_request(*args, **kwargs)
 
-        response = session.send(req_kwargs, cls.get_auth())
+        response = session.send(req_kwargs, cls.required_auth)
 
         #TODO check return code
 

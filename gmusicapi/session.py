@@ -20,15 +20,12 @@ class _Base(object):
         self._rsession = requests.Session()
         self.is_authenticated = False
 
-    def _send_with_auth(self, req_kwargs, desired_auth):
+    def _send_with_auth(self, req_kwargs, desired_auth, rsession):
         raise NotImplementedError
 
-    def _send_without_auth(self, req_kwargs):
-        """Send a request using a throwaway session."""
-        # this shouldn't happen often (it loses out on connection-pooling)
-        s = requests.Session()
-        res = s.request(**req_kwargs)
-        s.close()
+    def _send_without_auth(self, req_kwargs, rsession):
+        res = rsession.request(**req_kwargs)
+        rsession.close()
 
         return res
 
@@ -43,20 +40,29 @@ class _Base(object):
         self._rsession.close()
         self.__init__()
 
-    def send(self, req_kwargs, desired_auth):
+    def send(self, req_kwargs, desired_auth, rsession=None):
         """Send a request from a Call using this session's auth.
 
         :param req_kwargs: kwargs for requests.Session.request
         :param desired_auth: protocol.shared.AuthTypes to attach
+        :param rsession: (optional) a requests.Session to use
+         (default ``self._rsession`` - this is exposed for test purposes)
         """
         if not any(desired_auth):
-            return self._send_without_auth(req_kwargs)
+            if rsession is None:
+                # use a throwaway session to ensure it's clean
+                rsession = requests.Session()
+
+            return self._send_without_auth(req_kwargs, rsession)
 
         else:
             if not self.is_authenticated:
                 raise NotLoggedIn
 
-            return self._send_with_auth(req_kwargs, desired_auth)
+            if rsession is None:
+                rsession = self._rsession
+
+            return self._send_with_auth(req_kwargs, desired_auth, rsession)
 
 
 class Webclient(_Base):
@@ -93,7 +99,7 @@ class Webclient(_Base):
 
         return self.is_authenticated
 
-    def _send_with_auth(self, req_kwargs, desired_auth):
+    def _send_with_auth(self, req_kwargs, desired_auth, rsession):
         if desired_auth.sso:
             req_kwargs['headers'] = req_kwargs.get('headers', {})
 
@@ -105,7 +111,7 @@ class Webclient(_Base):
             req_kwargs['params'] = req_kwargs.get('params', {})
             req_kwargs['params'].update({'u': 0, 'xt': self._rsession.cookies['xt']})
 
-        return self._rsession.request(**req_kwargs)
+        return rsession.request(**req_kwargs)
 
 
 class Musicmanager(_Base):
@@ -120,7 +126,7 @@ class Musicmanager(_Base):
         self._oauth_creds = oauth_credentials
         self.is_authenticated = True
 
-    def _send_with_auth(self, req_kwargs, desired_auth):
+    def _send_with_auth(self, req_kwargs, desired_auth, rsession):
         if desired_auth.oauth:
             if self._oauth_creds.access_token_expired:
                 self._oauth_creds.refresh(httplib2.Http())
@@ -129,4 +135,4 @@ class Musicmanager(_Base):
             req_kwargs['headers']['Authorization'] = \
                 'Bearer ' + self._oauth_creds.access_token
 
-        return self._rsession.request(**req_kwargs)
+        return rsession.request(**req_kwargs)

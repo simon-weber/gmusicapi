@@ -11,6 +11,7 @@ from proboscis import test
 #from gmusicapi import Api
 import gmusicapi.session
 from gmusicapi.exceptions import AlreadyLoggedIn  # ,NotLoggedIn
+from gmusicapi.protocol.shared import authtypes
 from gmusicapi.utils import utils
 
 
@@ -71,7 +72,7 @@ def session_raises_alreadyloggedin():
 
         def login():
             # hackish: login ignores args so we can test them all here;
-            # this just ensures we have an acceptable amount
+            # this just ensures we have an acceptable amount of args
             s.login(*([None] * 3))
 
         assert_raises(AlreadyLoggedIn, login)
@@ -87,6 +88,44 @@ def session_logout():
         assert_false(s.is_authenticated)
         old_session.close.assert_called_once_with()
         assert_is_not(s._rsession, old_session)
+
+
+@test
+def send_without_auth():
+    for s in create_sessions():
+        s.is_authenticated = True
+
+        mock_session = Mock()
+        mock_req_kwargs = {'fake': 'kwargs'}
+
+        s.send(mock_req_kwargs, authtypes(), mock_session)
+
+        # sending without auth should not use the normal session,
+        # since that might have auth cookies automatically attached
+        assert_false(s._rsession.called)
+
+        mock_session.request.called_once_with(**mock_req_kwargs)
+        mock_session.closed.called_once_with()
+
+
+##
+# protocol
+##
+
+@test
+def authtypes_factory_defaults():
+    auth = authtypes()
+    assert_false(auth.oauth)
+    assert_false(auth.sso)
+    assert_false(auth.xt)
+
+
+@test
+def authtypes_factory_args():
+    auth = authtypes(oauth=True)
+    assert_true(auth.oauth)
+    assert_false(auth.sso)
+    assert_false(auth.xt)
 
 
 ##

@@ -18,7 +18,7 @@ from google.protobuf.message import DecodeError
 from gmusicapi.compat import json
 from gmusicapi.exceptions import CallFailure
 from gmusicapi.protocol import upload_pb2, locker_pb2
-from gmusicapi.protocol.shared import Call, ParseException
+from gmusicapi.protocol.shared import Call, ParseException, authtypes
 from gmusicapi.utils import utils
 
 log = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class MmCall(Call):
     # remember that this won't merge in subclasses
     static_headers = {'User-agent': 'Music Manager (1, 0, 55, 7425 HTTPS - Windows)'}
 
-    send_oauth = True
+    required_auth = authtypes(oauth=True)
 
     #this is a shared union class that has all specific upload types
     res_msg_type = upload_pb2.UploadResponse

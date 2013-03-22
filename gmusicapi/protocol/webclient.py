@@ -11,7 +11,7 @@ import validictory
 from gmusicapi.compat import json
 from gmusicapi.exceptions import CallFailure, ValidationException
 from gmusicapi.protocol.metadata import md_expectations
-from gmusicapi.protocol.shared import Call
+from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
 base_url = 'https://play.google.com/music/'
@@ -72,8 +72,7 @@ class Init(Call):
 class WcCall(Call):
     """Abstract base for web client calls."""
 
-    send_xt = True
-    send_sso = True
+    required_auth = authtypes(xt=True, sso=True)
 
     #validictory schema for the response
     _res_schema = utils.NotImplementedField
@@ -488,7 +487,7 @@ class GetStreamUrl(WcCall):
     static_method = 'GET'
     static_url = base_url + 'play'  # note use of base_url, not service_url
 
-    send_xt = False
+    required_auth = authtypes(sso=True)  # no xt required
 
     _res_schema = {
         "type": "object",
