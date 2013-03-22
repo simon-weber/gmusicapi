@@ -11,7 +11,7 @@ import re
 import string
 import sys
 
-from gmusicapi.api import Api
+#from gmusicapi.api import Api
 from gmusicapi.protocol.metadata import md_expectations
 
 log = logging.getLogger(__name__)

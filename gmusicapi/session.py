@@ -15,9 +15,9 @@ from gmusicapi.protocol.shared import ClientLogin
 from gmusicapi.protocol import webclient
 
 
-class _BaseSession(object):
+class _Base(object):
     def __init__(self):
-        self.rsession = requests.Session()
+        self._rsession = requests.Session()
         self.is_authenticated = False
 
     def _send_with_auth(self, req_kwargs, desired_auth):
@@ -40,7 +40,7 @@ class _BaseSession(object):
         """
         Reset the session to an unauthenticated, default state.
         """
-        self.rsession.close()
+        self._rsession.close()
         self.__init__()
 
     def send(self, req_kwargs, desired_auth):
@@ -59,12 +59,12 @@ class _BaseSession(object):
             return self._send_with_auth(req_kwargs, desired_auth)
 
 
-class WebclientSession(_BaseSession):
+class Webclient(_Base):
     def __init__(self):
-        super(WebclientSession, self).__init__()
+        super(Webclient, self).__init__()
         self._authtoken = None
 
-    def login(self, email, password):
+    def login(self, email, password, *args, **kwargs):
         """
         Perform clientlogin then retrieve webclient cookies.
 
@@ -72,7 +72,7 @@ class WebclientSession(_BaseSession):
         :param password:
         """
 
-        super(WebclientSession, self).login()
+        super(Webclient, self).login()
 
         res = ClientLogin.perform(self, email, password)
 
@@ -103,18 +103,20 @@ class WebclientSession(_BaseSession):
 
         if desired_auth.xt:
             req_kwargs['params'] = req_kwargs.get('params', {})
-            req_kwargs['params'].update({'u': 0, 'xt': self.rsession.cookies['xt']})
+            req_kwargs['params'].update({'u': 0, 'xt': self._rsession.cookies['xt']})
 
-        return self.rsession.request(**req_kwargs)
+        return self._rsession.request(**req_kwargs)
 
 
-class MusicmanagerSession(_BaseSession):
+class Musicmanager(_Base):
     def __init__(self):
-        super(MusicmanagerSession, self).__init__()
+        super(Musicmanager, self).__init__()
         self._oauth_creds = None
 
-    def login(self, oauth_credentials):
-        """Store an alread-acquired oauth2client.Credentials."""
+    def login(self, oauth_credentials, *args, **kwargs):
+        """Store an already-acquired oauth2client.Credentials."""
+        super(Musicmanager, self).login()
+
         self._oauth_creds = oauth_credentials
         self.is_authenticated = True
 
@@ -127,4 +129,4 @@ class MusicmanagerSession(_BaseSession):
             req_kwargs['headers']['Authorization'] = \
                 'Bearer ' + self._oauth_creds.access_token
 
-        return self.rsession.request(**req_kwargs)
+        return self._rsession.request(**req_kwargs)

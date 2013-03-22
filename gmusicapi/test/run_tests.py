@@ -8,7 +8,7 @@ from types import MethodType
 from proboscis import TestProgram
 
 # these need to be imported for proboscis test discovery
-from gmusicapi import Api
+#from gmusicapi import Api
 from gmusicapi.test import local_tests, server_tests
 from gmusicapi.test.utils import NoticeLogging
 
