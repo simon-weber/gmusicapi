@@ -4,18 +4,22 @@
 """Utility functions used across api code."""
 
 import functools
-import json
+import inspect
 import logging
 import subprocess
 import time
+import traceback
 
 from decorator import decorator
 from google.protobuf.descriptor import FieldDescriptor
-from oauth2client.client import OAuth2Credentials
 
 from gmusicapi import __version__
 
-log = logging.getLogger(__name__)
+# this controls the crazy logging setup that checks the callstack;
+#  it should be monkey-patched to False after importing to disable it.
+# when False, static code will simply log in the standard way under the root.
+per_client_logging = True
+
 
 #Map descriptor.CPPTYPE -> python type.
 _python_to_cpp_types = {
@@ -31,35 +35,64 @@ cpp_type_to_python = dict(
     for cpp in cpplist
 )
 
-root_logger_name = "gmusicapi"
 log_filename = "gmusicapi.log"
+printed_log_start_message = False  # global, set in config_debug_logging
+
+# log initialized below next definition
 
 
-def credentials_from_refresh_token(token):
-    # why doesn't Google provide this!?
+class DynamicClientLogger(object):
+    """Dynamically proxies to the logger of a Client higher in the call stack.
 
-    # too lazy to break circular dependency
-    from gmusicapi.protocol import musicmanager
+    This is a ridiculous hack needed because
+    logging is, in the eyes of a user, per-client.
 
-    cred_json = {"_module": "oauth2client.client",
-                 "token_expiry": "2000-01-01T00:13:37Z",  # to refresh now
-                 "access_token": 'bogus',
-                 "token_uri": "https://accounts.google.com/o/oauth2/token",
-                 "invalid": False,
-                 "token_response": {
-                     "access_token": 'bogus',
-                     "token_type": "Bearer",
-                     "expires_in": 3600,
-                     "refresh_token": token},
-                 "client_id": musicmanager.oauth.client_id,
-                 "id_token": None,
-                 "client_secret": musicmanager.oauth.client_secret,
-                 "revoke_uri": "https://accounts.google.com/o/oauth2/revoke",
-                 "_class": "OAuth2Credentials",
-                 "refresh_token": token,
-                 "user_agent": None}
+    So, logging from static code (eg protocol, utils) needs to log using the
+    config of the calling client's logger.
 
-    return OAuth2Credentials.new_from_json(json.dumps(cred_json))
+    There can be multiple clients, so we can't just use a globally-available
+    logger.
+
+    Instead of refactoring every function to receieve a logger, we introspect
+    the callstack at runtime to figure out who's calling us, then use their
+    logger.
+
+    This probably won't work on non-CPython implementations.
+    """
+
+    def __init__(self, caller_name):
+        self.caller_name = caller_name
+
+    def __getattr__(self, name):
+        # this isn't a totally foolproof way to proxy, but it's fine for
+        # the usual logger.debug, etc methods.
+
+        logger = logging.getLogger(self.caller_name)
+
+        if per_client_logging:
+            # search upwards for a client instance
+            for frame_rec in inspect.getouterframes(inspect.currentframe()):
+                frame = frame_rec[0]
+
+                try:
+                    if 'self' in frame.f_locals:
+                        f_self = frame.f_locals['self']
+                        if ((f_self.__module__ == 'gmusicapi.clients' and
+                             type(f_self).__name__ in ('Musicmanager', 'Webclient'))):
+                            logger = f_self.logger
+                            break
+                finally:
+                    del frame  # avoid circular references
+
+            else:
+                stack = traceback.extract_stack()
+                logger.info('could not locate client caller in stack:\n%s',
+                            '\n'.join(traceback.format_list(stack)))
+
+        return getattr(logger, name)
+
+
+log = DynamicClientLogger(__name__)
 
 
 def dual_decorator(func):
@@ -81,6 +114,8 @@ def configure_debug_log_handlers(logger):
     """Warnings and above to terminal, below to gmusicapi.log.
     Output includes line number."""
 
+    global printed_log_start_message
+
     logger.setLevel(logging.DEBUG)
 
     fh = logging.FileHandler(log_filename)
@@ -92,12 +127,14 @@ def configure_debug_log_handlers(logger):
     logger.addHandler(fh)
     logger.addHandler(ch)
 
-    #print out startup message without verbose formatting
-    logger.info("!-- begin debug log --!")
-    logger.info("version: " + __version__)
+    if not printed_log_start_message:
+        #print out startup message without verbose formatting
+        logger.info("!-- begin debug log --!")
+        logger.info("version: " + __version__)
+        printed_log_start_message = True
 
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s (%(lineno)s) [%(levelname)s]: %(message)s'
+        '%(asctime)s - %(name)s (%(module)s:%(lineno)s) [%(levelname)s]: %(message)s'
     )
     fh.setFormatter(formatter)
     ch.setFormatter(formatter)

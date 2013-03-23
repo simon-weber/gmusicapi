@@ -14,8 +14,9 @@ import sys
 
 #from gmusicapi.api import Api
 from gmusicapi.protocol.metadata import md_expectations
+from gmusicapi.utils import utils
 
-log = logging.getLogger(__name__)
+log = utils.DynamicClientLogger(__name__)
 
 
 #A regex for the gm id format, eg:

@@ -4,7 +4,6 @@
 """Definitions shared by multiple clients."""
 
 from collections import namedtuple
-import logging
 import sys
 
 from google.protobuf.descriptor import FieldDescriptor
@@ -16,7 +15,7 @@ from gmusicapi.exceptions import (
 )
 from gmusicapi.utils import utils
 
-log = logging.getLogger(__name__)
+log = utils.DynamicClientLogger(__name__)
 
 _auth_names = ('xt', 'sso', 'oauth')
 
@@ -230,10 +229,9 @@ class Call(object):
         except ValidationException:
             #TODO link to some protocol for reporting this and trim the response if it's huge
             if cls.gets_logged:
-                log.exception(
-                    "please report the following unknown response format for %s: %r",
-                    call_name, msg
-                )
+                msg_fmt = ("please report (at http://goo.gl/qbAW8) the following"
+                           " unknown response format for %s: %r")
+                log.exception(msg_fmt, call_name, msg)
 
         return msg
 

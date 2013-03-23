@@ -10,9 +10,10 @@ from proboscis import TestProgram
 # these need to be imported for proboscis test discovery
 #from gmusicapi import Api
 from gmusicapi.clients import Webclient, Musicmanager
+from gmusicapi.protocol.musicmanager import credentials_from_refresh_token
 from gmusicapi.test import local_tests, server_tests
 from gmusicapi.test.utils import NoticeLogging
-from gmusicapi.utils.utils import credentials_from_refresh_token
+from gmusicapi.utils.utils import configure_debug_log_handlers
 
 travis_id = 'E9:40:01:0E:51:7A'
 travis_name = 'Travis-CI (gmusicapi)'
@@ -103,10 +104,12 @@ def main():
     if '--group=local' not in sys.argv:
         freeze_login_details()
 
+    root_logger = logging.getLogger('gmusicapi')
+    # using DynamicClientLoggers eliminates the need for root handlers
+    # configure_debug_log_handlers(root_logger)
+
     # warnings typically signal a change in protocol,
     # so fail the build if anything >= warning are sent,
-
-    root_logger = logging.getLogger('gmusicapi')
 
     noticer = NoticeLogging()
     noticer.setLevel(logging.WARNING)

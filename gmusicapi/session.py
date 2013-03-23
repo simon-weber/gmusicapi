@@ -109,7 +109,7 @@ class Webclient(_Base):
 
         if desired_auth.xt:
             req_kwargs['params'] = req_kwargs.get('params', {})
-            req_kwargs['params'].update({'u': 0, 'xt': self._rsession.cookies['xt']})
+            req_kwargs['params'].update({'u': 0, 'xt': self._rsession.cookies.get('xt')})
 
         return rsession.request(**req_kwargs)
 
