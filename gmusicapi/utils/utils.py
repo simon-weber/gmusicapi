@@ -4,12 +4,14 @@
 """Utility functions used across api code."""
 
 import functools
+import json
 import logging
 import subprocess
 import time
 
 from decorator import decorator
 from google.protobuf.descriptor import FieldDescriptor
+from oauth2client.client import OAuth2Credentials
 
 from gmusicapi import __version__
 
@@ -32,9 +34,32 @@ cpp_type_to_python = dict(
 root_logger_name = "gmusicapi"
 log_filename = "gmusicapi.log"
 
-#set to True after configure_debug_logging is called to prevent
-# setting up more than once
-log_already_configured_flag = '_gmusicapi_debug_logging_setup'
+
+def credentials_from_refresh_token(token):
+    # why doesn't Google provide this!?
+
+    # too lazy to break circular dependency
+    from gmusicapi.protocol import musicmanager
+
+    cred_json = {"_module": "oauth2client.client",
+                 "token_expiry": "2000-01-01T00:13:37Z",  # to refresh now
+                 "access_token": 'bogus',
+                 "token_uri": "https://accounts.google.com/o/oauth2/token",
+                 "invalid": False,
+                 "token_response": {
+                     "access_token": 'bogus',
+                     "token_type": "Bearer",
+                     "expires_in": 3600,
+                     "refresh_token": token},
+                 "client_id": musicmanager.oauth.client_id,
+                 "id_token": None,
+                 "client_secret": musicmanager.oauth.client_secret,
+                 "revoke_uri": "https://accounts.google.com/o/oauth2/revoke",
+                 "_class": "OAuth2Credentials",
+                 "refresh_token": token,
+                 "user_agent": None}
+
+    return OAuth2Credentials.new_from_json(json.dumps(cred_json))
 
 
 def dual_decorator(func):

@@ -16,7 +16,7 @@ from proboscis.asserts import (
 from proboscis import test
 
 import gmusicapi.session
-import gmusicapi.clients
+from gmusicapi.clients import Webclient, Musicmanager
 from gmusicapi.exceptions import AlreadyLoggedIn  # ,NotLoggedIn
 from gmusicapi.protocol.shared import authtypes
 from gmusicapi.utils import utils
@@ -31,7 +31,7 @@ test = test(groups=['local'])
 # clients
 ##
 # this feels like a dumb pattern, but I can't think of a better way
-names = ('_Base', 'Webclient', 'Musicmanager')
+names = ('Webclient', 'Musicmanager')
 Clients = namedtuple('Clients', [n.lower() for n in names])
 
 
@@ -50,8 +50,11 @@ def create_clients():
 
 @test
 def no_client_auth_initially():
-    for c in create_clients():
-        assert_false(c.is_authenticated)
+    wc = Webclient()
+    assert_false(wc.is_authenticated())
+
+    mm = Musicmanager()
+    assert_false(mm.is_authenticated())
 
 
 # @test

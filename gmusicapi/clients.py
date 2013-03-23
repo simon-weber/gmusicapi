@@ -88,7 +88,7 @@ class Musicmanager(_Base):
     @staticmethod
     def perform_oauth(storage_filepath=OAUTH_FILEPATH):
         """Provides a series of prompts for a user to follow to authenticate.
-        Returns oauth2client.Credentials.
+        Returns ``oauth2client.client.OAuth2Credentials``.
 
         This only needs to be done once -
         these Credentials should be saved and used for all future logins from
@@ -132,8 +132,8 @@ class Musicmanager(_Base):
         Unlike the :class:`Webclient`, OAuth allows authentication without
         providing plaintext credentials to the application.
 
-        :param oauth_credentials: oauth2client.Credentials or the path to a
-          oauth2client.Storage file. By default, the same default path used by
+        :param oauth_credentials: ``oauth2client.client.OAuth2Credentials`` or the path to a
+          oauth2client.file.Storage file. By default, the same default path used by
           :func:`perform_oauth` is used.
 
           Endusers will likely call :func:`perform_oauth` once to write
@@ -477,8 +477,25 @@ class Webclient(_Base):
         super(Webclient, self).__init__(self.__class__.__name__, debug_logging)
         self.logout()
 
-    def login(self):
-        pass  # TODO
+    def login(self, email, password):
+        """Authenticates the webclient.
+        Returns ``True`` on success, ``False`` on failure.
+
+        :param email: eg ``'test@gmail.com'`` or just ``'test'``.
+        :param password: password or app-specific password for 2-factor users.
+          This is not stored locally, and is sent securely over SSL.
+
+        Users of two-factor authentication will need to set an application-specific password
+        to log in.
+        """
+
+        if not self.session.login(email, password):
+            self.logger.info("failed to authenticate")
+            return False
+
+        self.logger.info("authenticated")
+
+        return True
 
     def logout(self):
         self.session = gmusicapi.session.Webclient()

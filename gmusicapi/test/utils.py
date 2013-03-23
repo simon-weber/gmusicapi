@@ -11,10 +11,12 @@ import re
 import string
 import sys
 
+
 #from gmusicapi.api import Api
 from gmusicapi.protocol.metadata import md_expectations
 
 log = logging.getLogger(__name__)
+
 
 #A regex for the gm id format, eg:
 #c293dd5a-9aa9-33c4-8b09-0c865b56ce46
@@ -59,16 +61,16 @@ class NoticeLogging(logging.Handler):
         self.seen_message = True
 
 
-def new_test_api(**kwargs):
-    """Make an instance of an Api, login and return it.
+def new_test_client(cls, **kwargs):
+    """Make an instance of a client, login, and return it.
 
-    kwargs are passed through to api.login().
+    kwargs are passed through to cls.login().
     """
 
-    api = Api(debug_logging=True)
-    api.login(**kwargs)
+    client = cls(debug_logging=True)
+    client.login(**kwargs)
 
-    return api
+    return client
 
 
 def modify_md(md_name, val):
