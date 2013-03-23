@@ -123,8 +123,16 @@ class Musicmanager(_Base):
         """Store an already-acquired oauth2client.Credentials."""
         super(Musicmanager, self).login()
 
+        # refresh the token right away to check auth validity
+        if oauth_credentials.access_token_expired:
+            oauth_credentials.refresh(httplib2.Http())
+
+        if oauth_credentials.access_token_expired:
+            return False
+
         self._oauth_creds = oauth_credentials
         self.is_authenticated = True
+        return True
 
     def _send_with_auth(self, req_kwargs, desired_auth, rsession):
         if desired_auth.oauth:

@@ -1,4 +1,11 @@
 from collections import namedtuple
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+Tests that don't hit the Google Music servers.
+"""
+
 import time
 
 from mock import MagicMock as Mock
@@ -8,8 +15,8 @@ from proboscis.asserts import (
 )
 from proboscis import test
 
-#from gmusicapi import Api
 import gmusicapi.session
+import gmusicapi.clients
 from gmusicapi.exceptions import AlreadyLoggedIn  # ,NotLoggedIn
 from gmusicapi.protocol.shared import authtypes
 from gmusicapi.utils import utils
@@ -22,13 +29,29 @@ test = test(groups=['local'])
 
 ##
 # clients
-##TODO
+##
+# this feels like a dumb pattern, but I can't think of a better way
+names = ('_Base', 'Webclient', 'Musicmanager')
+Clients = namedtuple('Clients', [n.lower() for n in names])
 
 
-# @test
-# def no_client_auth_initially():
-#     api = Api()
-#     assert_false(api.is_authenticated())
+def create_clients():
+    clients = []
+    for name in names:
+        cls = getattr(gmusicapi.clients, name)
+        c = cls()
+
+        # mock out the underlying session
+        c.session = Mock()
+        clients.append(c)
+
+    return Clients(*clients)
+
+
+@test
+def no_client_auth_initially():
+    for c in create_clients():
+        assert_false(c.is_authenticated)
 
 
 # @test
@@ -42,13 +65,12 @@ test = test(groups=['local'])
 ##
 # sessions
 ##
-session_names = ('_Base', 'Webclient', 'Musicmanager')
-Sessions = namedtuple('Sessions', 'base webclient musicmanager')
+Sessions = namedtuple('Sessions', [n.lower() for n in names])
 
 
 def create_sessions():
     sessions = []
-    for name in session_names:
+    for name in names:
         cls = getattr(gmusicapi.session, name)
         s = cls()
 

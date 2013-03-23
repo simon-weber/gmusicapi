@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-The api module exposes the main user-facing interfaces of gmusicapi.
+The clients module exposes the main user-facing interfaces of gmusicapi.
 """
 
 import copy
@@ -11,89 +11,138 @@ from socket import gethostname
 import time
 from uuid import getnode as getmac
 
+from appdirs import AppDirs
 from oauth2client.client import OAuth2WebServerFlow
 import oauth2client.file
 
 from gmusicapi.gmtools import tools
 from gmusicapi.exceptions import CallFailure, NotLoggedIn
 from gmusicapi.protocol import webclient, musicmanager, upload_pb2, locker_pb2
-from gmusicapi.session import PlaySession
 from gmusicapi.utils import utils
+import gmusicapi.session
 
-log = logging.getLogger(__name__)
-OAUTH_FILEPATH = 'gmusicapi.oauth_cred'  # not to be changed at runtime
+# not to be changed at runtime
+mydirs = AppDirs('gmusicapi', 'Simon Weber')
+OAUTH_FILEPATH = mydirs.user_data_dir + 'oauth.cred'
 
 
-class _BaseClient(object):
+class _Base(object):
     """Factors out common client setup."""
 
-    def __init__(self, debug_logging):
+    num_clients = 0  # used to disambiguate loggers
+
+    def __init__(self, logger_basename, debug_logging):
         """
-        :param debug_logging: if ``True``, attach log handlers to logger ``gmusicapi`` to
-          send all output to ``gmusicapi.log``, and warnings and above to the console.
-          if ``False``, the user must set up handlers to see log output.
+        :param debug_logging: each Client has a ``logger`` field.
+          The logger is named ``gmusicapi.<client class><client number>`` and
+          will propogate to the ``gmusicapi`` root logger.
+
+          If this param is ``True``, handlers will be configured to send
+          this client's log output to ``gmusicapi.log``,
+          with warnings and above printed to the console.
+
+          If ``False``, no handlers will be configured;
+          users must create their own handlers.
+
+          Completely ignoring logging is dangerous and not recommended.
+          The Google Music protocol can change at any time; if
+          something were to go wrong, the logs would be necessary for
+          recovery.
         """
+        # this isn't correct if init is called more than once, so we log the
+        # client name below to avoid confusion for people reading logs
+        _Base.num_clients += 1
+
+        logger_name = "gmusicapi.%s%s" % (logger_basename,
+                                          _Base.num_clients)
+        self.logger = logging.getLogger(logger_name)
 
         if debug_logging:
-            #TODO fix this for multiple client loggers, have each client use their own.
-            #expose a .logger property for people to get at
+            utils.configure_debug_log_handlers(self.logger)
 
-            #This operates on the root logger.
-            #If more than one Api were instantiated, that behavior might be surprising.
-            utils.configure_debug_logging()
+        self.logger.info("initialized")
 
-        self.session = PlaySession()
+    def _make_call(self, protocol, *args, **kwargs):
+        """Returns the response of a protocol.Call.
 
-        self.uploader_id = None
-        self.uploader_name = None
+        args/kwargs are passed to protocol.perform.
+
+        CallFailure may be raised."""
+
+        return protocol.perform(self.session, *args, **kwargs)
 
     def is_authenticated(self):
         """Returns ``True`` if the Api can make an authenticated request."""
         return self.session.is_authenticated
 
+    def logout(self):
+        """Forgets local authentication in this Api instance.
+        Returns ``True`` on success."""
+        self.logger.info("logged out")
+        return True
 
-class UploadClient(_BaseClient):
+
+class Musicmanager(_Base):
     """Allows uploading by posing as Google's Music Manager."""
+
+    @staticmethod
+    def perform_oauth(storage_filepath=OAUTH_FILEPATH):
+        """Provides a series of prompts for a user to follow to authenticate.
+        Returns oauth2client.Credentials.
+
+        This only needs to be done once -
+        these Credentials should be saved and used for all future logins from
+        this machine.
+
+        :param storage_filepath: a file to write the credentials to, or None
+          to not write the credentials to disk (which is not recommended).
+
+          `Appdirs <https://pypi.python.org/pypi/appdirs/1.2.0>`__
+          ``user_data_dir`` is used by default. Users can do:
+              import gmusicapi.clients
+              print gmusicapi.clients.OAUTH_FILEPATH
+          to see the exact location on their system.
+        """
+
+        flow = OAuth2WebServerFlow(*musicmanager.oauth)
+
+        auth_uri = flow.step1_get_authorize_url()
+        print
+        print "Visit the following url:\n %s" % auth_uri
+        code = raw_input("Follow the prompts,"
+                         " then paste the auth code here and hit enter: ")
+
+        credentials = flow.step2_exchange(code)
+
+        if storage_filepath is not None:
+            storage = oauth2client.file.Storage(storage_filepath)
+            storage.put(credentials)
+
+        return credentials
+
     def __init__(self, debug_logging=True):
-        super(UploadClient, self).__init__(debug_logging)
+        super(Musicmanager, self).__init__(self.__class__.__name__, debug_logging)
+        self.logout()
 
-        self.uploader_id = None
-        self.uploader_name = None
-
-
-class LibraryClient(_BaseClient):
-    """Allows library management and streaming by posing as the
-    music.google.com webclient.
-
-    This client does not handle uploading: use :class:`UploadClient` instead.
-    """
-
-    def __init__(self, debug_logging=True):
-        super(LibraryClient, self).__init__(debug_logging)
-
-
-class Api(object):
-
-    #---
-    #   Authentication:
-    #---
-
-    def is_authenticated(self):
-        """Returns ``True`` if the Api can make an authenticated request."""
-        return self.session.is_authenticated
-
-    def login(self, email, password, perform_upload_auth=True,
-              uploader_id=None, uploader_name=None,
-              oauth_storage_path=OAUTH_FILEPATH):
-        """Authenticates the api.
+    def login(self, oauth_credentials=OAUTH_FILEPATH,
+              uploader_id=None, uploader_name=None):
+        """Authenticates the Music Manager using OAuth.
         Returns ``True`` on success, ``False`` on failure.
 
-        :param email: eg ``'test@gmail.com'`` or just ``'test'``.
-        :param password: password or app-specific password for 2-factor users.
-          This is not stored locally, and is sent over SSL.
+        Unlike the :class:`Webclient`, OAuth allows authentication without
+        providing plaintext credentials to the application.
 
-        :param perform_upload_auth: if ``True``, register/authenticate as an upload device.
-          This is only required when this Api will be used with :func:`upload`.
+        :param oauth_credentials: oauth2client.Credentials or the path to a
+          oauth2client.Storage file. By default, the same default path used by
+          :func:`perform_oauth` is used.
+
+          Endusers will likely call :func:`perform_oauth` once to write
+          credentials to disk and then ignore this parameter.
+
+          This param
+          is mostly intended to allow flexibility for developers of a
+          3rd party service who intend to perform their own OAuth flow
+          (eg on their website).
 
         :param uploader_id: a unique id as a MAC address, eg ``'01:23:45:67:89:AB'``.
           This should only be provided in cases where the default
@@ -110,67 +159,417 @@ class Api(object):
 
         :param uploader_name: human-readable non-unique id; default is ``"<hostname> (gmusicapi)"``.
 
-        :param oauth_storage_path: a path to oauth2client.file.Storage.
-         Only used when perform_upload_auth is True.
-
-        Users of two-factor authentication will need to set an application-specific password
-        to log in.
-
         There are strict limits on how many upload devices can be registered; refer to `Google's
         docs <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1230356>`__. There
         have been limits on deauthorizing devices in the past, so it's smart not to register
         more devices than necessary.
         """
 
-        if not self.session.login(email, password):
-            log.info("failed to authenticate")
+        if isinstance(oauth_credentials, basestring):
+            storage = oauth2client.file.Storage(oauth_credentials)
+            oauth_credentials = storage.get()
+
+        if not self.session.login(oauth_credentials):
+            self.logger.info("failed to authenticate")
             return False
 
-        log.info("authenticated")
+        self.logger.info("oauth successful")
 
-        if perform_upload_auth:
-            self.session.oauth_creds = oauth2client.file.Storage(oauth_storage_path).get()
+        if uploader_id is None:
+            mac = getmac()
+            if (mac >> 40) % 2:
+                raise OSError('a valid MAC could not be determined.'
+                              ' Provide uploader_id (and be'
+                              ' sure to provide the same one on future runs).')
 
-            if uploader_id is None:
-                mac = getmac()
-                if (mac >> 40) % 2:
-                    raise OSError('uploader_id not provided, and a valid MAC could not be found.')
-                else:
-                    #distinguish us from a Music Manager on this machine
-                    mac = (mac + 1) % (1 << 48)
+            else:
+                #distinguish us from a Music Manager on this machine
+                mac = (mac + 1) % (1 << 48)
 
-                mac = hex(mac)[2:-1]
-                mac = ':'.join([mac[x:x + 2] for x in range(0, 10, 2)])
-                uploader_id = mac.upper()
+            mac = hex(mac)[2:-1]
+            mac = ':'.join([mac[x:x + 2] for x in range(0, 10, 2)])
+            uploader_id = mac.upper()
 
-            if uploader_name is None:
-                uploader_name = gethostname() + u" (gmusicapi)"
+        if uploader_name is None:
+            uploader_name = gethostname() + u" (gmusicapi)"
 
-            try:
-                # note that this is a MM-specific protobuf call authed with oauth;
-                self._make_call(musicmanager.AuthenticateUploader,
-                                uploader_id,
-                                uploader_name)
-                log.info("successful upload auth")
-                self.uploader_id = uploader_id
-                self.uploader_name = uploader_name
+        try:
+            # this is a MM-specific step that might register a new device.
+            self._make_call(musicmanager.AuthenticateUploader,
+                            uploader_id,
+                            uploader_name)
+            self.logger.info("successful upauth")
+            self.uploader_id = uploader_id
+            self.uploader_name = uploader_name
 
-            except CallFailure:
-                log.exception("could not authenticate for uploading")
-                self.session.logout()
-                return False
+        except CallFailure:
+            self.logger.exception("upauth failure")
+            self.session.logout()
+            return False
 
         return True
 
     def logout(self):
-        """Forgets local authentication in this Api instance. Always returns ``True``."""
-        self.session.logout()
+        self.session = gmusicapi.session.Musicmanager()
         self.uploader_id = None
         self.uploader_name = None
 
-        log.info("logged out")
+        return super(Musicmanager, self).logout()
 
-        return True
+    # def get_quota(self):
+    #     """Returns a tuple of (allowed number of tracks, total tracks, available tracks)."""
+    #     quota = self._mm_pb_call("client_state").quota
+    #     #protocol incorrect here...
+    #     return (quota.maximumTracks, quota.totalTracks, quota.availableTracks)
+
+    @utils.accept_singleton(basestring)
+    @utils.empty_arg_shortcircuit(return_code='{}')
+    def upload(self, filepaths, transcode_quality=3, enable_matching=False):
+        """Uploads the given filepaths.
+        Any non-mp3 files will be `transcoded with avconv
+        <https://github.com/simon-weber/Unofficial-Google-Music-API/
+        blob/develop/gmusicapi/utils/utils.py#L18>`__ before being uploaded.
+
+        Return a 3-tuple ``(uploaded, matched, not_uploaded)`` of dictionaries, eg::
+
+            (
+                {'<filepath>': '<new server id>'},               # uploaded
+                {'<filepath>': '<new server id>'},               # matched
+                {'<filepath>': '<reason, eg ALREADY_EXISTS>'}    # not uploaded
+            )
+
+        :param filepaths: a list of filepaths, or a single filepath.
+        :param transcode_quality: if int, pass to avconv ``-qscale`` for libmp3lame
+          (lower-better int, roughly corresponding to `hydrogenaudio -vX settings
+          <http://wiki.hydrogenaudio.org/index.php?title=LAME#Recommended_encoder_settings>`__).
+          If string, pass to avconv ``-ab`` (eg ``'128k'`` for an average bitrate of 128k). The
+          default is ~175kbs vbr.
+
+        :param enable_matching: if ``True``, attempt to use `scan and match
+          <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=2920799&topic=2450455>`__
+          to avoid uploading every song.
+          **WARNING**: currently, mismatched songs can *not* be fixed with the 'Fix Incorrect Match'
+          button or :func:`report_incorrect_match`. They would have to be deleted and reuploaded
+          with the Music Manager.
+          Fixing matches from gmusicapi will be supported in a future release; see issue `#89
+          <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/89>`__.
+
+        All Google-supported filetypes are supported; see `Google's documentation
+        <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1100462>`__.
+
+        Unlike Google's Music Manager, this function will currently allow the same song to
+        be uploaded more than once if its tags are changed. This is subject to change in the future.
+
+        If ``PERMANENT_ERROR`` is given as a not_uploaded reason, attempts to reupload will never
+        succeed. The file will need to be changed before the server will reconsider it; the easiest
+        way is to change metadata tags (it's not important that the tag be uploaded, just that the
+        contents of the file change somehow).
+        """
+
+        if self.uploader_id is None or self.uploader_name is None:
+            raise NotLoggedIn("Not authenticated as an upload device;"
+                              " run Api.login(...perform_upload_auth=True...)"
+                              " first.")
+
+        #TODO there is way too much code in this function.
+
+        #To return.
+        uploaded = {}
+        matched = {}
+        not_uploaded = {}
+
+        #Gather local information on the files.
+        local_info = {}  # {clientid: (path, Track)}
+        for path in filepaths:
+            try:
+                track = musicmanager.UploadMetadata.fill_track_info(path)
+            except BaseException as e:
+                self.logger.exception("problem gathering local info of '%r'", path)
+
+                user_err_msg = str(e)
+
+                if 'Non-ASCII strings must be converted to unicode' in str(e):
+                    #This is a protobuf-specific error; they require either ascii or unicode.
+                    #To keep behavior consistent, make no effort to guess - require users
+                    # to decode first.
+                    user_err_msg = ("nonascii bytestrings must be decoded to unicode"
+                                    " (error: '%s')" % err_msg)
+
+                not_uploaded[path] = user_err_msg
+            else:
+                local_info[track.client_id] = (path, track)
+
+        if not local_info:
+            return uploaded, matched, not_uploaded
+
+        #TODO allow metadata faking
+
+        #Upload metadata; the server tells us what to do next.
+        res = self._make_call(musicmanager.UploadMetadata,
+                              [track for (path, track) in local_info.values()],
+                              self.uploader_id)
+
+        #TODO checking for proper contents should be handled in verification
+        md_res = res.metadata_response
+
+        responses = [r for r in md_res.track_sample_response]
+        sample_requests = [req for req in md_res.signed_challenge_info]
+
+        #Send scan and match samples if requested.
+        for sample_request in sample_requests:
+            path, track = local_info[sample_request.challenge_info.client_track_id]
+
+            try:
+                res = self._make_call(musicmanager.ProvideSample,
+                                      path, sample_request, track, self.uploader_id)
+            except (IOError, ValueError) as e:
+                self.logger.warning("couldn't create scan and match sample for '%s': %s",
+                                    path, str(e))
+                not_uploaded[path] = str(e)
+            else:
+                responses.extend(res.sample_response.track_sample_response)
+
+        #Read sample responses and prep upload requests.
+        to_upload = {}  # {serverid: (path, Track, do_not_rematch?)}
+        for sample_res in responses:
+            path, track = local_info[sample_res.client_track_id]
+
+            if sample_res.response_code == upload_pb2.TrackSampleResponse.MATCHED:
+                self.logger.info("matched '%s' to sid %s", path, sample_res.server_track_id)
+
+                if enable_matching:
+                    matched[path] = sample_res.server_track_id
+                else:
+                    try:
+                        self.logger.info("requesting to reupload '%s'", path)
+
+                        @utils.retry(CallFailure)  # upload servers take time to sync
+                        def report_bad_match():
+                            """Hit 'report incorrect match' and return the sid to reupload."""
+
+                            self._make_call(webclient.ReportBadSongMatch,
+                                            [sample_res.server_track_id])
+
+                            jobs = self._make_call(musicmanager.GetUploadJobs, self.uploader_id)
+                            matching = [job for job in jobs.getjobs_response.tracks_to_upload
+                                        if (job.client_id == sample_res.client_track_id and
+                                            job.status == upload_pb2.TracksToUpload.FORCE_REUPLOAD)]
+                            if matching:
+                                return matching[0].server_id
+                            else:
+                                raise CallFailure(
+                                    "could not get reupload/rematch job for '%s'" % path,
+                                    'GetUploadJobs'
+                                )
+                        reup_sid = report_bad_match()
+
+                    except CallFailure as e:
+                        self.logger.exception("'%s' was matched without matching enabled", path)
+                        matched[path] = sample_res.server_track_id
+                    else:
+                        self.logger.info("will reupload '%s'", path)
+                        to_upload[reup_sid] = (path, track, True)
+
+            elif sample_res.response_code == upload_pb2.TrackSampleResponse.UPLOAD_REQUESTED:
+                to_upload[sample_res.server_track_id] = (path, track, False)
+            else:
+                #Report the symbolic name of the response code enum.
+                enum_desc = upload_pb2._TRACKSAMPLERESPONSE.enum_types[0]
+                res_name = enum_desc.values_by_number[sample_res.response_code].name
+
+                err_msg = "TrackSampleResponse code %s: %s" % (sample_res.response_code, res_name)
+
+                if res_name == 'ALREADY_EXISTS':
+                    # include the sid, too
+                    # this shouldn't be relied on externally, but I use it in
+                    # tests - being surrounded by parens is how it's matched
+                    err_msg += "(%s)" % sample_res.server_track_id
+
+                self.logger.warning("upload of '%s' rejected: %s", path, err_msg)
+                not_uploaded[path] = err_msg
+
+        #Send upload requests.
+        if to_upload:
+            #TODO reordering requests could avoid wasting time waiting for reup sync
+            self._make_call(musicmanager.UpdateUploadState, 'start', self.uploader_id)
+
+            for server_id, (path, track, do_not_rematch) in to_upload.items():
+                #It can take a few tries to get an session.
+                should_retry = True
+                attempts = 0
+
+                while should_retry and attempts < 10:
+                    session = self._make_call(musicmanager.GetUploadSession,
+                                              self.uploader_id, len(uploaded),
+                                              track, path, server_id, do_not_rematch)
+                    attempts += 1
+
+                    got_session, error_details = \
+                        musicmanager.GetUploadSession.process_session(session)
+
+                    if got_session:
+                        self.logger.info("got an upload session for '%s'", path)
+                        break
+
+                    should_retry, reason, error_code = error_details
+                    self.logger.debug("problem getting upload session: %s\ncode=%s retrying=%s",
+                                      reason, error_code, should_retry)
+
+                    if error_code == 200 and do_not_rematch:
+                        #reupload requests need to wait on a server sync
+                        #200 == already uploaded, so force a retry in this case
+                        should_retry = True
+
+                    time.sleep(6)  # wait before retrying
+                else:
+                    err_msg = "GetUploadSession error %s: %s" % (error_code, reason)
+
+                    self.logger.warning("giving up on upload session for '%s': %s", path, err_msg)
+                    not_uploaded[path] = err_msg
+
+                    continue  # to next upload
+
+                #got a session, do the upload
+                #this terribly inconsistent naming isn't my fault: Google--
+                session = session['sessionStatus']
+                external = session['externalFieldTransfers'][0]
+
+                session_url = external['putInfo']['url']
+                content_type = external.get('content_type', 'audio/mpeg')
+
+                if track.original_content_type != locker_pb2.Track.MP3:
+                    try:
+                        self.logger.info("transcoding '%s' to mp3", path)
+                        contents = utils.transcode_to_mp3(path, quality=transcode_quality)
+                    except (IOError, ValueError) as e:
+                        self.logger.warning("error transcoding %s: %s", path, e)
+                        not_uploaded[path] = "transcoding error: %s" % e
+                        continue
+                else:
+                    with open(path, 'rb') as f:
+                        contents = f.read()
+
+                upload_response = self._make_call(musicmanager.UploadFile,
+                                                  session_url, content_type, contents)
+
+                success = upload_response.get('sessionStatus', {}).get('state')
+                if success:
+                    uploaded[path] = server_id
+                else:
+                    #404 == already uploaded? serverside check on clientid?
+                    self.logger.debug("could not finalize upload of '%s'. response: %s",
+                                      path, upload_response)
+                    not_uploaded[path] = 'could not finalize upload; details in log'
+
+            self._make_call(musicmanager.UpdateUploadState, 'stopped', self.uploader_id)
+
+        return uploaded, matched, not_uploaded
+
+
+class Webclient(_Base):
+    """Allows library management and streaming by posing as the
+    music.google.com webclient.
+
+    This client does not handle uploading: use :class:`Musicmanager` instead.
+    """
+
+    def __init__(self, debug_logging=True):
+        super(Webclient, self).__init__(self.__class__.__name__, debug_logging)
+        self.logout()
+
+    def login(self):
+        pass  # TODO
+
+    def logout(self):
+        self.session = gmusicapi.session.Webclient()
+        return super(Webclient, self).logout()
+
+
+class Api(object):
+
+    #---
+    #   Authentication:
+    #---
+
+    # def login(self, email, password, perform_upload_auth=True,
+    #           uploader_id=None, uploader_name=None,
+    #           oauth_storage_path=OAUTH_FILEPATH):
+    #     """Authenticates the api.
+    #     Returns ``True`` on success, ``False`` on failure.
+
+    #     :param email: eg ``'test@gmail.com'`` or just ``'test'``.
+    #     :param password: password or app-specific password for 2-factor users.
+    #       This is not stored locally, and is sent over SSL.
+
+    #     :param perform_upload_auth: if ``True``, register/authenticate as an upload device.
+    #       This is only required when this Api will be used with :func:`upload`.
+
+    #     :param uploader_id: a unique id as a MAC address, eg ``'01:23:45:67:89:AB'``.
+    #       This should only be provided in cases where the default
+    #       (host MAC address incremented by 1) will not work.
+
+    #       Upload behavior is undefined if a Music Manager uses the same id, especially when
+    #       reporting bad matches.
+
+    #       ``OSError`` will be raised if this is not provided and a stable MAC could not be
+    #       determined (eg when running on a VPS).
+
+    #       If provided, it's best to use the same id on all future runs for this machine,
+    #       because of the upload device limit explained below.
+
+    #     :param uploader_name: human-readable non-unique id; default is ``"<hostname> (gmusicapi)"``.
+
+    #     :param oauth_storage_path: a path to oauth2client.file.Storage.
+    #      Only used when perform_upload_auth is True.
+
+    #     Users of two-factor authentication will need to set an application-specific password
+    #     to log in.
+
+    #     There are strict limits on how many upload devices can be registered; refer to `Google's
+    #     docs <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1230356>`__. There
+    #     have been limits on deauthorizing devices in the past, so it's smart not to register
+    #     more devices than necessary.
+    #     """
+
+    #     if not self.session.login(email, password):
+    #         self.logger.info("failed to authenticate")
+    #         return False
+
+    #     self.logger.info("authenticated")
+
+    #     if perform_upload_auth:
+    #         self.session.oauth_creds = oauth2client.file.Storage(oauth_storage_path).get()
+
+    #         if uploader_id is None:
+    #             mac = getmac()
+    #             if (mac >> 40) % 2:
+    #                 raise OSError('uploader_id not provided, and a valid MAC could not be found.')
+    #             else:
+    #                 #distinguish us from a Music Manager on this machine
+    #                 mac = (mac + 1) % (1 << 48)
+
+    #             mac = hex(mac)[2:-1]
+    #             mac = ':'.join([mac[x:x + 2] for x in range(0, 10, 2)])
+    #             uploader_id = mac.upper()
+
+    #         if uploader_name is None:
+    #             uploader_name = gethostname() + u" (gmusicapi)"
+
+    #         try:
+    #             # note that this is a MM-specific protobuf call authed with oauth;
+    #             self._make_call(musicmanager.AuthenticateUploader,
+    #                             uploader_id,
+    #                             uploader_name)
+    #             self.logger.info("successful upload auth")
+    #             self.uploader_id = uploader_id
+    #             self.uploader_name = uploader_name
+
+    #         except CallFailure:
+    #             self.logger.exception("could not authenticate for uploading")
+    #             self.session.logout()
+    #             return False
+
+    #     return True
 
     #---
     #   Api features supported by the web client interface:
@@ -499,25 +898,25 @@ class Api(object):
                 self.delete_playlist(backup_id)
 
         except CallFailure:
-            log.info("a subcall of change_playlist failed - "
-                     "playlist %s is in an inconsistent state", playlist_id)
+            self.logger.info("a subcall of change_playlist failed - "
+                             "playlist %s is in an inconsistent state", playlist_id)
 
             if not safe:
                 raise  # there's nothing we can do
             else:  # try to revert to the backup
-                log.info("attempting to revert changes from playlist "
-                         "'%s_gmusicapi_backup'", playlist_name)
+                self.logger.info("attempting to revert changes from playlist "
+                                 "'%s_gmusicapi_backup'", playlist_name)
 
                 try:
                     self.delete_playlist(playlist_id)
                     self.change_playlist_name(backup_id, playlist_name)
                 except CallFailure:
-                    log.warning("failed to revert failed change_playlist call on '%s'",
-                                playlist_name)
+                    self.logger.warning("failed to revert failed change_playlist call on '%s'",
+                                        playlist_name)
                     raise
                 else:
-                    log.info("reverted changes safely; playlist id of '%s' is now '%s'",
-                             playlist_name, backup_id)
+                    self.logger.info("reverted changes safely; playlist id of '%s' is now '%s'",
+                                     playlist_name, backup_id)
                     playlist_id = backup_id
 
         return playlist_id
@@ -586,8 +985,8 @@ class Api(object):
 
         num_not_found = len(entry_ids_to_remove) - len(e_s_id_pairs)
         if num_not_found > 0:
-            log.warning("when removing, %d entry ids could not be found in playlist id %s",
-                        num_not_found, playlist_id)
+            self.logger.warning("when removing, %d entry ids could not be found in playlist id %s",
+                                num_not_found, playlist_id)
 
         #Unzip the pairs.
         sids, eids = zip(*e_s_id_pairs)
@@ -713,264 +1112,6 @@ class Api():
 
         return credentials.to_json()
 
-
     #---
     #   Api features supported by the Music Manager interface:
     #---
-
-    # def get_quota(self):
-    #     """Returns a tuple of (allowed number of tracks, total tracks, available tracks)."""
-    #     quota = self._mm_pb_call("client_state").quota
-    #     #protocol incorrect here...
-    #     return (quota.maximumTracks, quota.totalTracks, quota.availableTracks)
-
-    @utils.accept_singleton(basestring)
-    @utils.empty_arg_shortcircuit(return_code='{}')
-    def upload(self, filepaths, transcode_quality=3, enable_matching=False):
-        """Uploads the given filepaths.
-        Any non-mp3 files will be `transcoded with avconv
-        <https://github.com/simon-weber/Unofficial-Google-Music-API/
-        blob/develop/gmusicapi/utils/utils.py#L18>`__ before being uploaded.
-
-        Return a 3-tuple ``(uploaded, matched, not_uploaded)`` of dictionaries, eg::
-
-            (
-                {'<filepath>': '<new server id>'},               # uploaded
-                {'<filepath>': '<new server id>'},               # matched
-                {'<filepath>': '<reason, eg ALREADY_EXISTS>'}    # not uploaded
-            )
-
-        :param filepaths: a list of filepaths, or a single filepath.
-        :param transcode_quality: if int, pass to avconv ``-qscale`` for libmp3lame
-          (lower-better int, roughly corresponding to `hydrogenaudio -vX settings
-          <http://wiki.hydrogenaudio.org/index.php?title=LAME#Recommended_encoder_settings>`__).
-          If string, pass to avconv ``-ab`` (eg ``'128k'`` for an average bitrate of 128k). The
-          default is ~175kbs vbr.
-
-        :param enable_matching: if ``True``, attempt to use `scan and match
-          <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=2920799&topic=2450455>`__
-          to avoid uploading every song.
-          **WARNING**: currently, mismatched songs can *not* be fixed with the 'Fix Incorrect Match'
-          button or :func:`report_incorrect_match`. They would have to be deleted and reuploaded
-          with the Music Manager.
-          Fixing matches from gmusicapi will be supported in a future release; see issue `#89
-          <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/89>`__.
-
-        All Google-supported filetypes are supported; see `Google's documentation
-        <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1100462>`__.
-
-        Unlike Google's Music Manager, this function will currently allow the same song to
-        be uploaded more than once if its tags are changed. This is subject to change in the future.
-
-        If ``PERMANENT_ERROR`` is given as a not_uploaded reason, attempts to reupload will never
-        succeed. The file will need to be changed before the server will reconsider it; the easiest
-        way is to change metadata tags (it's not important that the tag be uploaded, just that the
-        contents of the file change somehow).
-        """
-
-        if self.uploader_id is None or self.uploader_name is None:
-            raise NotLoggedIn("Not authenticated as an upload device;"
-                              " run Api.login(...perform_upload_auth=True...)"
-                              " first.")
-
-        #TODO there is way too much code in this function.
-
-        #To return.
-        uploaded = {}
-        matched = {}
-        not_uploaded = {}
-
-        #Gather local information on the files.
-        local_info = {}  # {clientid: (path, Track)}
-        for path in filepaths:
-            try:
-                track = musicmanager.UploadMetadata.fill_track_info(path)
-            except BaseException as e:
-                log.exception("problem gathering local info of '%r'", path)
-
-                user_err_msg = str(e)
-
-                if 'Non-ASCII strings must be converted to unicode' in str(e):
-                    #This is a protobuf-specific error; they require either ascii or unicode.
-                    #To keep behavior consistent, make no effort to guess - require users
-                    # to decode first.
-                    user_err_msg = ("nonascii bytestrings must be decoded to unicode"
-                                    " (error: '%s')" % err_msg)
-
-                not_uploaded[path] = user_err_msg
-            else:
-                local_info[track.client_id] = (path, track)
-
-        if not local_info:
-            return uploaded, matched, not_uploaded
-
-        #TODO allow metadata faking
-
-        #Upload metadata; the server tells us what to do next.
-        res = self._make_call(musicmanager.UploadMetadata,
-                              [track for (path, track) in local_info.values()],
-                              self.uploader_id)
-
-        #TODO checking for proper contents should be handled in verification
-        md_res = res.metadata_response
-
-        responses = [r for r in md_res.track_sample_response]
-        sample_requests = [req for req in md_res.signed_challenge_info]
-
-        #Send scan and match samples if requested.
-        for sample_request in sample_requests:
-            path, track = local_info[sample_request.challenge_info.client_track_id]
-
-            try:
-                res = self._make_call(musicmanager.ProvideSample,
-                                      path, sample_request, track, self.uploader_id)
-            except (IOError, ValueError) as e:
-                log.warning("couldn't create scan and match sample for '%s': %s", path, str(e))
-                not_uploaded[path] = str(e)
-            else:
-                responses.extend(res.sample_response.track_sample_response)
-
-        #Read sample responses and prep upload requests.
-        to_upload = {}  # {serverid: (path, Track, do_not_rematch?)}
-        for sample_res in responses:
-            path, track = local_info[sample_res.client_track_id]
-
-            if sample_res.response_code == upload_pb2.TrackSampleResponse.MATCHED:
-                log.info("matched '%s' to sid %s", path, sample_res.server_track_id)
-
-                if enable_matching:
-                    matched[path] = sample_res.server_track_id
-                else:
-                    try:
-                        log.info("requesting to reupload '%s'", path)
-
-                        @utils.retry(CallFailure)  # upload servers take time to sync
-                        def report_bad_match():
-                            """Hit 'report incorrect match' and return the sid to reupload."""
-
-                            self._make_call(webclient.ReportBadSongMatch,
-                                            [sample_res.server_track_id])
-
-                            jobs = self._make_call(musicmanager.GetUploadJobs, self.uploader_id)
-                            matching = [job for job in jobs.getjobs_response.tracks_to_upload
-                                        if (job.client_id == sample_res.client_track_id and
-                                            job.status == upload_pb2.TracksToUpload.FORCE_REUPLOAD)]
-                            if matching:
-                                return matching[0].server_id
-                            else:
-                                raise CallFailure(
-                                    "could not get reupload/rematch job for '%s'" % path,
-                                    'GetUploadJobs'
-                                )
-                        reup_sid = report_bad_match()
-
-                    except CallFailure as e:
-                        log.exception("'%s' was matched without matching enabled", path)
-                        matched[path] = sample_res.server_track_id
-                    else:
-                        log.info("will reupload '%s'", path)
-                        to_upload[reup_sid] = (path, track, True)
-
-            elif sample_res.response_code == upload_pb2.TrackSampleResponse.UPLOAD_REQUESTED:
-                to_upload[sample_res.server_track_id] = (path, track, False)
-            else:
-                #Report the symbolic name of the response code enum.
-                enum_desc = upload_pb2._TRACKSAMPLERESPONSE.enum_types[0]
-                res_name = enum_desc.values_by_number[sample_res.response_code].name
-
-                err_msg = "TrackSampleResponse code %s: %s" % (sample_res.response_code, res_name)
-
-                if res_name == 'ALREADY_EXISTS':
-                    # include the sid, too
-                    # this shouldn't be relied on externally, but I use it in
-                    # tests - being surrounded by parens is how it's matched
-                    err_msg += "(%s)" % sample_res.server_track_id
-
-                log.warning("upload of '%s' rejected: %s", path, err_msg)
-                not_uploaded[path] = err_msg
-
-        #Send upload requests.
-        if to_upload:
-            #TODO reordering requests could avoid wasting time waiting for reup sync
-            self._make_call(musicmanager.UpdateUploadState, 'start', self.uploader_id)
-
-            for server_id, (path, track, do_not_rematch) in to_upload.items():
-                #It can take a few tries to get an session.
-                should_retry = True
-                attempts = 0
-
-                while should_retry and attempts < 10:
-                    session = self._make_call(musicmanager.GetUploadSession,
-                                              self.uploader_id, len(uploaded),
-                                              track, path, server_id, do_not_rematch)
-                    attempts += 1
-
-                    got_session, error_details = \
-                        musicmanager.GetUploadSession.process_session(session)
-
-                    if got_session:
-                        log.info("got an upload session for '%s'", path)
-                        break
-
-                    should_retry, reason, error_code = error_details
-                    log.debug("problem getting upload session: %s\ncode=%s retrying=%s",
-                              reason, error_code, should_retry)
-
-                    if error_code == 200 and do_not_rematch:
-                        #reupload requests need to wait on a server sync
-                        #200 == already uploaded, so force a retry in this case
-                        should_retry = True
-
-                    time.sleep(6)  # wait before retrying
-                else:
-                    err_msg = "GetUploadSession error %s: %s" % (error_code, reason)
-
-                    log.warning("giving up on upload session for '%s': %s", path, err_msg)
-                    not_uploaded[path] = err_msg
-
-                    continue  # to next upload
-
-                #got a session, do the upload
-                #this terribly inconsistent naming isn't my fault: Google--
-                session = session['sessionStatus']
-                external = session['externalFieldTransfers'][0]
-
-                session_url = external['putInfo']['url']
-                content_type = external.get('content_type', 'audio/mpeg')
-
-                if track.original_content_type != locker_pb2.Track.MP3:
-                    try:
-                        log.info("transcoding '%s' to mp3", path)
-                        contents = utils.transcode_to_mp3(path, quality=transcode_quality)
-                    except (IOError, ValueError) as e:
-                        log.warning("error transcoding %s: %s", path, e)
-                        not_uploaded[path] = "transcoding error: %s" % e
-                        continue
-                else:
-                    with open(path, 'rb') as f:
-                        contents = f.read()
-
-                upload_response = self._make_call(musicmanager.UploadFile,
-                                                  session_url, content_type, contents)
-
-                success = upload_response.get('sessionStatus', {}).get('state')
-                if success:
-                    uploaded[path] = server_id
-                else:
-                    #404 == already uploaded? serverside check on clientid?
-                    log.debug("could not finalize upload of '%s'. response: %s",
-                              path, upload_response)
-                    not_uploaded[path] = 'could not finalize upload; details in log'
-
-            self._make_call(musicmanager.UpdateUploadState, 'stopped', self.uploader_id)
-
-        return uploaded, matched, not_uploaded
-
-    def _make_call(self, protocol, *args, **kwargs):
-        """Returns the response of a protocol.Call.
-
-        Additional kw/args are passed to protocol.perform.
-
-        CallFailure may be raised."""
-
-        return protocol.perform(self.session, *args, **kwargs)

@@ -52,35 +52,30 @@ def dual_decorator(func):
     return inner
 
 
-def configure_debug_logging():
+def configure_debug_log_handlers(logger):
     """Warnings and above to terminal, below to gmusicapi.log.
     Output includes line number."""
 
-    root_logger = logging.getLogger('gmusicapi')
+    logger.setLevel(logging.DEBUG)
 
-    if not getattr(root_logger, 'log_already_configured_flag', None):
-        root_logger.setLevel(logging.DEBUG)
+    fh = logging.FileHandler(log_filename)
+    fh.setLevel(logging.DEBUG)
 
-        fh = logging.FileHandler(log_filename)
-        fh.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.WARNING)
 
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.WARNING)
+    logger.addHandler(fh)
+    logger.addHandler(ch)
 
-        root_logger.addHandler(fh)
-        root_logger.addHandler(ch)
+    #print out startup message without verbose formatting
+    logger.info("!-- begin debug log --!")
+    logger.info("version: " + __version__)
 
-        #print out startup message without verbose formatting
-        root_logger.info("!-- begin debug log --!")
-        root_logger.info("version: " + __version__)
-
-        formatter = logging.Formatter(
-            '%(asctime)s - %(name)s (%(lineno)s) [%(levelname)s]: %(message)s'
-        )
-        fh.setFormatter(formatter)
-        ch.setFormatter(formatter)
-
-        setattr(root_logger, 'log_already_configured_flag', True)
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s (%(lineno)s) [%(levelname)s]: %(message)s'
+    )
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
 
 
 @dual_decorator
