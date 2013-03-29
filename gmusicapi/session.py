@@ -87,6 +87,8 @@ class Webclient(_Base):
 
         self._authtoken = res['Auth']
 
+        self.is_authenticated = True
+
         # Get webclient cookies.
         # They're stored automatically by requests on the webclient session.
         try:
@@ -94,8 +96,6 @@ class Webclient(_Base):
         except CallFailure:
             # throw away clientlogin credentials
             self.logout()
-        else:
-            self.is_authenticated = True
 
         return self.is_authenticated
 
@@ -109,7 +109,7 @@ class Webclient(_Base):
 
         if desired_auth.xt:
             req_kwargs['params'] = req_kwargs.get('params', {})
-            req_kwargs['params'].update({'u': 0, 'xt': self._rsession.cookies.get('xt')})
+            req_kwargs['params'].update({'u': 0, 'xt': rsession.cookies['xt']})
 
         return rsession.request(**req_kwargs)
 
@@ -132,7 +132,8 @@ class Musicmanager(_Base):
 
         self._oauth_creds = oauth_credentials
         self.is_authenticated = True
-        return True
+
+        return self.is_authenticated
 
     def _send_with_auth(self, req_kwargs, desired_auth, rsession):
         if desired_auth.oauth:
