@@ -5,6 +5,7 @@
 Sessions handle the details of authentication and transporting requests.
 """
 
+import oauth2client
 import httplib2  # included with oauth2client
 import requests
 
@@ -13,6 +14,9 @@ from gmusicapi.exceptions import (
 )
 from gmusicapi.protocol.shared import ClientLogin
 from gmusicapi.protocol import webclient
+from gmusicapi.utils import utils
+
+log = utils.DynamicClientLogger(__name__)
 
 
 class _Base(object):
@@ -123,11 +127,14 @@ class Musicmanager(_Base):
         """Store an already-acquired oauth2client.Credentials."""
         super(Musicmanager, self).login()
 
-        # refresh the token right away to check auth validity
-        if oauth_credentials.access_token_expired:
+        try:
+            # refresh the token right away to check auth validity
             oauth_credentials.refresh(httplib2.Http())
+        except oauth2client.client.Error:
+            log.exception("error when refreshing oauth credentials")
 
         if oauth_credentials.access_token_expired:
+            log.info("could not refresh oauth credentials")
             return False
 
         self._oauth_creds = oauth_credentials
