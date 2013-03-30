@@ -38,8 +38,8 @@ Check out the documentation at http://unofficial-google-music-api.readthedocs.or
 If you want to get in touch, either `drop by #gmusicapi on Freenode
 <http://webchat.freenode.net/?channels=gmusicapi>`__ or shoot me an email.
 
-Current status
---------------
+Status and updates
+------------------
 
 .. image:: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API.png?branch=develop
         :target: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API
