@@ -237,9 +237,8 @@ class Musicmanager(_Base):
     def logout(self, revoke_oauth=False):
         """Forgets local authentication in this Client instance.
 
-        :param revoke_oauth: if True, oauth credentials will not be able to be
-        used again. If a storage file was provided on :func:`login`, it will be
-        deleted.
+        :param revoke_oauth: if True, oauth credentials will be permanently
+          revoked. If credentials came from a file, it will be deleted.
 
         Returns ``True`` on success."""
 
