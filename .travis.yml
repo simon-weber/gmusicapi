@@ -17,5 +17,5 @@ branches:
   - master
 env: 
   matrix: 
-  - secure: "G17rG/4vqvYqS2tYHxYgetm7subkI9wVeV7MyjO9VO5SeS5OLmEEZNPfqnSK\njhvwC7yg6DldeLaHzhu1UXN07mcbCoQE0n6Dukzg4RRX+bCTKdX/qwT07mLR\npERKoXLUp3+6sLx4h20VhTtlRX0puFcQWv66ZpM+95o0CxT7rnw="
+  - secure: "UAXrAYzrYRVFWSRldd5o9NrreexCsXdBna/kcKLlAQ8ygRahpqP7qXX8qiNU\nVhz0kdgBxgS84AEE3H/30o9v2IDWqmJCI5OqMfH1o5Pm+CelBt+8FHu3SMjm\nNvNcm/Vmip7WCSx7P2FfOf8HboSH/kVXuF0iPlOdozrTR1wPUq8="
   - secure: "ILJA2Vhh3BRav2xLIMxS7/mE65AF15OA7UmDNdqE22qUoeEBL+ZduBQY8oAz\n+pJwHndP8bdD23Y9PLdC99qm1yZRV1x3yY1JclKzYnuwbeI1zYFHfGXTjtM+\n+rxxwo3ygEzrDnzIqKqP1+xKpKAGNqqLj0Pro8quyLhtKNUImMc="

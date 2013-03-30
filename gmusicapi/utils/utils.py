@@ -3,9 +3,11 @@
 
 """Utility functions used across api code."""
 
+import errno
 import functools
 import inspect
 import logging
+import os
 import subprocess
 import time
 import traceback
@@ -37,6 +39,19 @@ cpp_type_to_python = dict(
 
 log_filename = "gmusicapi.log"
 printed_log_start_message = False  # global, set in config_debug_logging
+
+
+# from http://stackoverflow.com/a/5032238/1231454
+def make_sure_path_exists(path, mode=None):
+    try:
+        if mode is not None:
+            os.makedirs(path, mode)
+        else:
+            os.makedirs(path)
+
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise
 
 
 # from http://stackoverflow.com/a/8101118/1231454

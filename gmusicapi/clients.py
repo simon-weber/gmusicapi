@@ -7,12 +7,14 @@ The clients module exposes the main user-facing interfaces of gmusicapi.
 
 import copy
 import logging
+import os
 from socket import gethostname
 import time
 from uuid import getnode as getmac
 
 from appdirs import AppDirs
-from oauth2client.client import OAuth2WebServerFlow
+import httplib2  # included with oauth2client
+from oauth2client.client import OAuth2WebServerFlow, TokenRevokeError
 import oauth2client.file
 
 from gmusicapi.gmtools import tools
@@ -23,7 +25,10 @@ import gmusicapi.session
 
 # not to be changed at runtime
 mydirs = AppDirs('gmusicapi', 'Simon Weber')
-OAUTH_FILEPATH = mydirs.user_data_dir + 'oauth.cred'
+OAUTH_FILEPATH = os.path.join(mydirs.user_data_dir, 'oauth.cred')
+
+# oauth client breaks if the dir doesn't exist
+utils.make_sure_path_exists(os.path.dirname(OAUTH_FILEPATH), 0o700)
 
 
 class _Base(object):
@@ -81,6 +86,8 @@ class _Base(object):
     def logout(self):
         """Forgets local authentication in this Api instance.
         Returns ``True`` on success."""
+
+        self.session.logout()
         self.logger.info("logged out")
         return True
 
@@ -134,6 +141,8 @@ class Musicmanager(_Base):
         return credentials
 
     def __init__(self, debug_logging=True):
+        self.session = gmusicapi.session.Musicmanager()
+
         super(Musicmanager, self).__init__(self.__class__.__name__, debug_logging)
         self.logout()
 
@@ -225,12 +234,31 @@ class Musicmanager(_Base):
 
         return True
 
-    def logout(self):
-        self.session = gmusicapi.session.Musicmanager()
+    def logout(self, revoke_oauth=False):
+        """Forgets local authentication in this Client instance.
+
+        :param revoke_oauth: if True, oauth credentials will not be able to be
+        used again. If a storage file was provided on :func:`login`, it will be
+        deleted.
+
+        Returns ``True`` on success."""
+
+        # TODO the login/logout stuff is all over the place
+
+        success = True
+
+        if revoke_oauth:
+            try:
+                # this automatically deletes a Storage file, if present
+                self.session._oauth_creds.revoke(httplib2.Http())
+            except TokenRevokeError:
+                self.logger.exception("could not revoke oauth credentials")
+                success = False
+
         self.uploader_id = None
         self.uploader_name = None
 
-        return super(Musicmanager, self).logout()
+        return success and super(Musicmanager, self).logout()
 
     # def get_quota(self):
     #     """Returns a tuple of (allowed number of tracks, total tracks, available tracks)."""
@@ -472,6 +500,8 @@ class Webclient(_Base):
     """
 
     def __init__(self, debug_logging=True):
+        self.session = gmusicapi.session.Webclient()
+
         super(Webclient, self).__init__(self.__class__.__name__, debug_logging)
         self.logout()
 
@@ -496,7 +526,6 @@ class Webclient(_Base):
         return True
 
     def logout(self):
-        self.session = gmusicapi.session.Webclient()
         return super(Webclient, self).logout()
 
     def change_playlist_name(self, playlist_id, new_name):
