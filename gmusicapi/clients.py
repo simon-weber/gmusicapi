@@ -191,11 +191,16 @@ class Musicmanager(_Base):
         """
 
         if isinstance(oauth_credentials, basestring):
-            storage = oauth2client.file.Storage(oauth_credentials)
+            oauth_file = oauth_credentials
+            storage = oauth2client.file.Storage(oauth_file)
+
             oauth_credentials = storage.get()
+            if oauth_credentials is None:
+                self.logger.warning("could not retrieve oauth credentials from '%s'", oauth_file)
+                return False
 
         if not self.session.login(oauth_credentials):
-            self.logger.info("failed to authenticate")
+            self.logger.warning("failed to authenticate")
             return False
 
         self.logger.info("oauth successful")
