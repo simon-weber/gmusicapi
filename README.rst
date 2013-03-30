@@ -10,8 +10,9 @@ gmusicapi allows control of
 
 .. code-block:: python
 
-    from gmusicapi import Api
-    api = Api()
+    from gmusicapi import Webclient
+    
+    api = Webclient()
     api.login('user@gmail.com', 'my-password')
     # => True
 

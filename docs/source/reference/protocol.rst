@@ -10,9 +10,10 @@ They are organized by the client that uses them.
 
 The names of these classes are semantic, and may not match their actual endpoint.
 
-Client code will generally use ``api.Api._make_call`` and provide the parameters that
-``dynamic_data`` requires. This can be used to make arbitrary low-level calls
-to Google Music endpoints.
+Most of the time, endusers will want to use one of the :ref:`api`.
+However, any of the definitions listed here can be called by using the
+``_make_call`` member of a Client and providing the parameters needed by
+``dynamic_*`` functions.
 
 It's tough to generate the exact schema of every call in a readable fashion,
 so this information is left out.

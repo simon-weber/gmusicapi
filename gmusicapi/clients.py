@@ -29,11 +29,14 @@ OAUTH_FILEPATH = mydirs.user_data_dir + 'oauth.cred'
 class _Base(object):
     """Factors out common client setup."""
 
+    __metaclass__ = utils.DocstringInheritMeta
+
     num_clients = 0  # used to disambiguate loggers
 
     def __init__(self, logger_basename, debug_logging):
         """
-        :param debug_logging: each Client has a ``logger`` field.
+
+        :param debug_logging: each Client has a ``logger`` member.
           The logger is named ``gmusicapi.<client class><client number>`` and
           will propogate to the ``gmusicapi`` root logger.
 
@@ -83,24 +86,34 @@ class _Base(object):
 
 
 class Musicmanager(_Base):
-    """Allows uploading by posing as Google's Music Manager."""
+    """Allows uploading by posing as Google's Music Manager.
+
+    Musicmanager uses OAuth, so a plaintext email and password are not required
+    when logging in.
+
+    For most users, :func:`perform_oauth` should be run once per machine to
+    store credentials to disk. Future calls to :func:`login` can use
+    use the stored credentials by default.
+    """
 
     @staticmethod
     def perform_oauth(storage_filepath=OAUTH_FILEPATH):
         """Provides a series of prompts for a user to follow to authenticate.
         Returns ``oauth2client.client.OAuth2Credentials``.
 
-        This only needs to be done once -
-        these Credentials should be saved and used for all future logins from
-        this machine.
+        In most cases, this should only be run once per machine to store
+        credentials to disk, then never be needed again.
 
-        :param storage_filepath: a file to write the credentials to, or None
+        :param storage_filepath: a filepath to write the credentials to,
+          or ``None``
           to not write the credentials to disk (which is not recommended).
 
           `Appdirs <https://pypi.python.org/pypi/appdirs/1.2.0>`__
-          ``user_data_dir`` is used by default. Users can do:
+          ``user_data_dir`` is used by default. Users can run::
+
               import gmusicapi.clients
               print gmusicapi.clients.OAUTH_FILEPATH
+
           to see the exact location on their system.
         """
 
@@ -132,8 +145,11 @@ class Musicmanager(_Base):
         Unlike the :class:`Webclient`, OAuth allows authentication without
         providing plaintext credentials to the application.
 
+        In most cases, the default parameters should be acceptable. Users on
+        virtual machines will want to provide `uploader_id`.
+
         :param oauth_credentials: ``oauth2client.client.OAuth2Credentials`` or the path to a
-          oauth2client.file.Storage file. By default, the same default path used by
+          ``oauth2client.file.Storage`` file. By default, the same default path used by
           :func:`perform_oauth` is used.
 
           Endusers will likely call :func:`perform_oauth` once to write
@@ -249,9 +265,11 @@ class Musicmanager(_Base):
           <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=2920799&topic=2450455>`__
           to avoid uploading every song.
           **WARNING**: currently, mismatched songs can *not* be fixed with the 'Fix Incorrect Match'
-          button or :func:`report_incorrect_match`. They would have to be deleted and reuploaded
-          with the Music Manager.
-          Fixing matches from gmusicapi will be supported in a future release; see issue `#89
+          button nor :py:func:`report_incorrect_match
+          <gmusicapi.clients.Webclient.report_incorrect_match>`.
+          They would have to be deleted and reuploaded with matching disabled
+          (or with the Music Manager).
+          Fixing matches from gmusicapi may be supported in a future release; see issue `#89
           <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/89>`__.
 
         All Google-supported filetypes are supported; see `Google's documentation
