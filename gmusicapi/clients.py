@@ -337,9 +337,15 @@ class Musicmanager(_Base):
         for sample_request in sample_requests:
             path, track = local_info[sample_request.challenge_info.client_track_id]
 
+            bogus_sample = None
+            if not enable_matching:
+                bogus_sample = ''  # just send empty bytes
+
             try:
                 res = self._make_call(musicmanager.ProvideSample,
-                                      path, sample_request, track, self.uploader_id)
+                                      path, sample_request, track,
+                                      self.uploader_id, bogus_sample)
+
             except (IOError, ValueError) as e:
                 self.logger.warning("couldn't create scan and match sample for '%s': %s",
                                     path, str(e))
@@ -358,40 +364,14 @@ class Musicmanager(_Base):
                 if enable_matching:
                     matched[path] = sample_res.server_track_id
                 else:
-                    try:
-                        self.logger.info("requesting to reupload '%s'", path)
-
-                        @utils.retry(CallFailure)  # upload servers take time to sync
-                        def report_bad_match():
-                            """Hit 'report incorrect match' and return the sid to reupload."""
-
-                            self._make_call(webclient.ReportBadSongMatch,
-                                            [sample_res.server_track_id])
-
-                            jobs = self._make_call(musicmanager.GetUploadJobs, self.uploader_id)
-                            matching = [job for job in jobs.getjobs_response.tracks_to_upload
-                                        if (job.client_id == sample_res.client_track_id and
-                                            job.status == upload_pb2.TracksToUpload.FORCE_REUPLOAD)]
-                            if matching:
-                                return matching[0].server_id
-                            else:
-                                raise CallFailure(
-                                    "could not get reupload/rematch job for '%s'" % path,
-                                    'GetUploadJobs'
-                                )
-                        reup_sid = report_bad_match()
-
-                    except CallFailure as e:
-                        self.logger.exception("'%s' was matched without matching enabled", path)
-                        matched[path] = sample_res.server_track_id
-                    else:
-                        self.logger.info("will reupload '%s'", path)
-                        to_upload[reup_sid] = (path, track, True)
+                    self.logger.exception("'%s' was matched without matching enabled", path)
 
             elif sample_res.response_code == upload_pb2.TrackSampleResponse.UPLOAD_REQUESTED:
                 to_upload[sample_res.server_track_id] = (path, track, False)
+
             else:
-                #Report the symbolic name of the response code enum.
+                # there was a problem
+                # report the symbolic name of the response code enum for debugging
                 enum_desc = upload_pb2._TRACKSAMPLERESPONSE.enum_types[0]
                 res_name = enum_desc.values_by_number[sample_res.response_code].name
 

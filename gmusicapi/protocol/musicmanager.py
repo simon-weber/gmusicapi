@@ -469,8 +469,12 @@ class ProvideSample(MmCall):
 
     @staticmethod
     @pb
-    def dynamic_data(filepath, server_challenge, track, uploader_id):
-        """Raise IOError on transcoding problems, or ValueError for invalid input."""
+    def dynamic_data(filepath, server_challenge, track, uploader_id, mock_sample=None):
+        """Raise IOError on transcoding problems, or ValueError for invalid input.
+
+        :param mock_sample: if provided, will be sent in place of a proper sample
+
+        """
         msg = upload_pb2.UploadSampleRequest()
 
         msg.uploader_id = uploader_id
@@ -481,13 +485,16 @@ class ProvideSample(MmCall):
 
         sample_spec = server_challenge.challenge_info  # convenience
 
-        #The sample is simply a small (usually 15 second) clip of the song,
-        # transcoded into 128kbs mp3. The server dictates where the cut should be made.
-        sample_msg.sample = utils.transcode_to_mp3(
-            filepath, quality='128k',
-            slice_start=sample_spec.start_millis / 1000,
-            slice_duration=sample_spec.duration_millis / 1000
-        )
+        if mock_sample is None:
+            #The sample is simply a small (usually 15 second) clip of the song,
+            # transcoded into 128kbs mp3. The server dictates where the cut should be made.
+            sample_msg.sample = utils.transcode_to_mp3(
+                filepath, quality='128k',
+                slice_start=sample_spec.start_millis / 1000,
+                slice_duration=sample_spec.duration_millis / 1000
+            )
+        else:
+            sample_msg.sample = mock_sample
 
         #You can provide multiple samples; I just provide one at a time.
         msg.track_sample.extend([sample_msg])
