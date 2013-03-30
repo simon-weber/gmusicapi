@@ -33,9 +33,12 @@ That said, it's actively maintained, and used in a bunch of cool projects:
 -  Tom Graham's `playlist syncing tool <https://github.com/Tyris/m3uGoogleMusicSync>`__
 
 
-Check out the documentation at http://unofficial-google-music-api.readthedocs.org to get started.
+Getting started
+---------------
+Everything you need is at http://unofficial-google-music-api.readthedocs.org.
 
-If you want to get in touch, either `drop by #gmusicapi on Freenode
+If the documentation doesn't answer your questions, or you just want to get
+in touch, either `drop by #gmusicapi on Freenode
 <http://webchat.freenode.net/?channels=gmusicapi>`__ or shoot me an email.
 
 Status and updates
