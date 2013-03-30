@@ -15,7 +15,6 @@ branches:
   only: 
   - develop
   - master
-  - client-separation
 env: 
   matrix: 
   - secure: "G17rG/4vqvYqS2tYHxYgetm7subkI9wVeV7MyjO9VO5SeS5OLmEEZNPfqnSK\njhvwC7yg6DldeLaHzhu1UXN07mcbCoQE0n6Dukzg4RRX+bCTKdX/qwT07mLR\npERKoXLUp3+6sLx4h20VhTtlRX0puFcQWv66ZpM+95o0CxT7rnw="
