@@ -5,10 +5,13 @@ History
 
 As of 2013.02.09, releases with breaking changes will be noted with ``**``.
 
-2013.03.1X
-++++++++++
+``**`` 2013.03.2X
++++++++++++++++++
 
-- faster login (and simpler auth code)
+- breaking: Api has been split into Webclient and Musicmanager
+- Music Manager OAuth support
+- faster uploading when matching is disabled
+- faster login
 
 2013.03.04
 ++++++++++
