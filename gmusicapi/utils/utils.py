@@ -4,16 +4,22 @@
 """Utility functions used across api code."""
 
 import functools
+import inspect
 import logging
 import subprocess
 import time
+import traceback
 
 from decorator import decorator
 from google.protobuf.descriptor import FieldDescriptor
 
 from gmusicapi import __version__
 
-log = logging.getLogger(__name__)
+# this controls the crazy logging setup that checks the callstack;
+#  it should be monkey-patched to False after importing to disable it.
+# when False, static code will simply log in the standard way under the root.
+per_client_logging = True
+
 
 #Map descriptor.CPPTYPE -> python type.
 _python_to_cpp_types = {
@@ -29,12 +35,87 @@ cpp_type_to_python = dict(
     for cpp in cpplist
 )
 
-root_logger_name = "gmusicapi"
 log_filename = "gmusicapi.log"
+printed_log_start_message = False  # global, set in config_debug_logging
 
-#set to True after configure_debug_logging is called to prevent
-# setting up more than once
-log_already_configured_flag = '_gmusicapi_debug_logging_setup'
+
+# from http://stackoverflow.com/a/8101118/1231454
+class DocstringInheritMeta(type):
+    """A variation on
+    http://groups.google.com/group/comp.lang.python/msg/26f7b4fcb4d66c95
+    by Paul McGuire
+    """
+
+    def __new__(meta, name, bases, clsdict):
+        if not('__doc__' in clsdict and clsdict['__doc__']):
+            for mro_cls in (mro_cls for base in bases for mro_cls in base.mro()):
+                doc = mro_cls.__doc__
+                if doc:
+                    clsdict['__doc__'] = doc
+                    break
+        for attr, attribute in clsdict.items():
+            if not attribute.__doc__:
+                for mro_cls in (mro_cls for base in bases for mro_cls in base.mro()
+                                if hasattr(mro_cls, attr)):
+                    doc = getattr(getattr(mro_cls, attr), '__doc__')
+                    if doc:
+                        attribute.__doc__ = doc
+                        break
+        return type.__new__(meta, name, bases, clsdict)
+
+
+class DynamicClientLogger(object):
+    """Dynamically proxies to the logger of a Client higher in the call stack.
+
+    This is a ridiculous hack needed because
+    logging is, in the eyes of a user, per-client.
+
+    So, logging from static code (eg protocol, utils) needs to log using the
+    config of the calling client's logger.
+
+    There can be multiple clients, so we can't just use a globally-available
+    logger.
+
+    Instead of refactoring every function to receieve a logger, we introspect
+    the callstack at runtime to figure out who's calling us, then use their
+    logger.
+
+    This probably won't work on non-CPython implementations.
+    """
+
+    def __init__(self, caller_name):
+        self.caller_name = caller_name
+
+    def __getattr__(self, name):
+        # this isn't a totally foolproof way to proxy, but it's fine for
+        # the usual logger.debug, etc methods.
+
+        logger = logging.getLogger(self.caller_name)
+
+        if per_client_logging:
+            # search upwards for a client instance
+            for frame_rec in inspect.getouterframes(inspect.currentframe()):
+                frame = frame_rec[0]
+
+                try:
+                    if 'self' in frame.f_locals:
+                        f_self = frame.f_locals['self']
+                        if ((f_self.__module__ == 'gmusicapi.clients' and
+                             type(f_self).__name__ in ('Musicmanager', 'Webclient'))):
+                            logger = f_self.logger
+                            break
+                finally:
+                    del frame  # avoid circular references
+
+            else:
+                stack = traceback.extract_stack()
+                logger.info('could not locate client caller in stack:\n%s',
+                            '\n'.join(traceback.format_list(stack)))
+
+        return getattr(logger, name)
+
+
+log = DynamicClientLogger(__name__)
 
 
 def dual_decorator(func):
@@ -52,35 +133,34 @@ def dual_decorator(func):
     return inner
 
 
-def configure_debug_logging():
+def configure_debug_log_handlers(logger):
     """Warnings and above to terminal, below to gmusicapi.log.
     Output includes line number."""
 
-    root_logger = logging.getLogger('gmusicapi')
+    global printed_log_start_message
 
-    if not getattr(root_logger, 'log_already_configured_flag', None):
-        root_logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.DEBUG)
 
-        fh = logging.FileHandler(log_filename)
-        fh.setLevel(logging.DEBUG)
+    fh = logging.FileHandler(log_filename)
+    fh.setLevel(logging.DEBUG)
 
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.WARNING)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.WARNING)
 
-        root_logger.addHandler(fh)
-        root_logger.addHandler(ch)
+    logger.addHandler(fh)
+    logger.addHandler(ch)
 
+    if not printed_log_start_message:
         #print out startup message without verbose formatting
-        root_logger.info("!-- begin debug log --!")
-        root_logger.info("version: " + __version__)
+        logger.info("!-- begin debug log --!")
+        logger.info("version: " + __version__)
+        printed_log_start_message = True
 
-        formatter = logging.Formatter(
-            '%(asctime)s - %(name)s (%(lineno)s) [%(levelname)s]: %(message)s'
-        )
-        fh.setFormatter(formatter)
-        ch.setFormatter(formatter)
-
-        setattr(root_logger, 'log_already_configured_flag', True)
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s (%(module)s:%(lineno)s) [%(levelname)s]: %(message)s'
+    )
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
 
 
 @dual_decorator

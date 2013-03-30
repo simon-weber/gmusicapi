@@ -12,6 +12,9 @@ Here are the ports I'm currently aware of:
    and `Nick Martin <https://github.com/xnickmx/google-play-client>`__
 -  PHP:
    `raydanhk <http://code.google.com/p/unofficial-google-music-api-php/>`__
+-  Javascript: `My Google Music Turntable uploader
+   <https://github.com/simon-weber/Google-Music-Turntable-Uploader>`__
+   (not a full port, just an example)
 
 They're in various states of completion and maintenance because,
 honestly, building a port is tough. If you're really against using Python,

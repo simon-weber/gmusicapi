@@ -6,8 +6,9 @@ This library allows control of
 
 .. code-block:: python
 
-    from gmusicapi import Api
-    api = Api()
+    from gmusicapi import Webclient
+
+    api = Webclient()
     api.login('user@gmail.com', 'my-password')
     # => True
 
@@ -29,7 +30,7 @@ All major functionality is supported:
 
 -  Library management: list, create, delete, and modify songs and playlists
 
--  Web-client streaming and single-song downloading
+-  Webclient streaming and single-song downloading
 
 -  Music Manager uploading/scan-and-match of all Google-supported file formats
 
@@ -54,10 +55,15 @@ Using gmusicapi
    ports
    contributing
 
-For help getting started, check out the :ref:`usage section <usage>`.
+Getting started
++++++++++++++++
+The :ref:`usage section <usage>` has information on installing
+and some simple examples.
 
-The reference has details on specific features, as well as the format of
-the Google Music data you'll see:
+Detailed information
+++++++++++++++++++++
+The reference has details for all classes and functions, as well as 
+information on the Google Music data you'll encounter:
 
 .. toctree::
    :maxdepth: 2
@@ -66,12 +72,25 @@ the Google Music data you'll see:
    reference/metadata
    reference/protocol
 
-If you'd like to help make gmusicapi better, the
-:ref:`contributing section <contributing>` is for you.
-You might also be interested in `the code
-<https://github.com/simon-weber/Unofficial-Google-Music-API>`__.
+Making gmusicapi better
++++++++++++++++++++++++
+Contributions are always welcome! 
+The :ref:`contributing section <contributing>` has more details.
 
-If you don't want to use Python, or you want to create a port, see the
-:ref:`ports section <ports>`.
+`The code
+<https://github.com/simon-weber/Unofficial-Google-Music-API>`__
+might also be useful.
 
-Lastly, feel free to drop by ``#gmusicapi`` on Freenode to ask questions or just hang out.
+Ports and other languages
++++++++++++++++++++++++++
+The :ref:`ports section <ports>` lists known ports and information for making
+ports.
+
+Getting help
+++++++++++++
+Running into bugs? Have questions? Drop by ``#gmusicapi`` on Freenode.
+If you've never used IRC before, it's easy: just fill in a nickname and captcha
+at `this webchat link <http://webchat.freenode.net/?channels=gmusicapi>`__.
+
+If IRC makes you uncomfortable, you can always email me directly:
+`simon@simonmweber.com <mailto:simon@simonmweber.com>`__.

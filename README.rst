@@ -1,17 +1,15 @@
 gmusicapi: an unofficial API for Google Play Music
 ==================================================
 
-.. image:: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API.png?branch=develop
-        :target: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API
-
 gmusicapi allows control of
 `Google Music <http://music.google.com>`__ with Python.
 
 
 .. code-block:: python
 
-    from gmusicapi import Api
-    api = Api()
+    from gmusicapi import Webclient
+    
+    api = Webclient()
     api.login('user@gmail.com', 'my-password')
     # => True
 
@@ -35,9 +33,22 @@ That said, it's actively maintained, and used in a bunch of cool projects:
 -  Tom Graham's `playlist syncing tool <https://github.com/Tyris/m3uGoogleMusicSync>`__
 
 
-Check out the documentation at http://unofficial-google-music-api.readthedocs.org to get started.
+Getting started
+---------------
+Everything you need is at http://unofficial-google-music-api.readthedocs.org.
 
-If you want to get in touch, either drop by ``#gmusicapi`` on Freenode or shoot me an email.
+If the documentation doesn't answer your questions, or you just want to get
+in touch, either `drop by #gmusicapi on Freenode
+<http://webchat.freenode.net/?channels=gmusicapi>`__ or shoot me an email.
+
+Status and updates
+------------------
+
+.. image:: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API.png?branch=develop
+        :target: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API
+
+For realtime updates, follow me on Twitter:
+`@simonmweber <https://twitter.com/simonmweber>`__.
 
 ------------
 

@@ -3,7 +3,7 @@
 
 """Definitions shared by multiple clients."""
 
-import logging
+from collections import namedtuple
 import sys
 
 from google.protobuf.descriptor import FieldDescriptor
@@ -15,10 +15,26 @@ from gmusicapi.exceptions import (
 )
 from gmusicapi.utils import utils
 
-log = logging.getLogger(__name__)
+log = utils.DynamicClientLogger(__name__)
 
-#There's a lot of code here to simplify call definition, but it's not scary - promise.
-#Request objects are currently requests.Request; see http://docs.python-requests.org
+_auth_names = ('xt', 'sso', 'oauth')
+
+"""
+  AuthTypes has fields for each type of auth, each of which store a bool:
+    xt: webclient xsrf param/cookie
+    sso: webclient Authorization header
+    oauth: musicmanager oauth header
+"""
+AuthTypes = namedtuple('AuthTypes', _auth_names)
+
+
+def authtypes(**kwargs):
+    """Convinience factory for AuthTypes that defaults authtypes to False."""
+    for name in _auth_names:
+        if name not in kwargs:
+            kwargs[name] = False
+
+    return AuthTypes(**kwargs)
 
 
 class BuildRequestMeta(type):
@@ -112,7 +128,7 @@ class Call(object):
     Dynamic data takes precedence over static if both exist,
      except for attributes marked with (m) above. These get merged, with dynamic overriding
      on key conflicts (though all this really shouldn't be relied on).
-     
+
     Here's a contrived example that merges static and dynamic headers:
         class SomeCall(Call):
             static_headers = {'user-agent': "I'm totally a Google client!"}
@@ -121,17 +137,10 @@ class Call(object):
             def dynamic_headers(cls, keep_alive=False):
                 return {'Connection': keep_alive}
 
-    If neither a static nor dynamic member is defined, the param is not used to create the requests.Request.
+    If neither a static nor dynamic member is defined,
+    the param is not used to create the requests.Request.
 
-
-    There's also three static bool fields to declare what auth the session should send:
-        send_xt: xsrf token in param/cookie 
-
-     AND/OR
-
-        send_clientlogin: google clientlogin cookies
-     OR
-        send_sso: google SSO (authtoken) cookies
+    Calls declare the kind of auth they require with an AuthTypes object named required_auth.
 
     Calls must define parse_response.
     Calls can also define filter_response, validate and check_success.
@@ -143,9 +152,7 @@ class Call(object):
 
     gets_logged = True
 
-    send_xt = False
-    send_clientlogin = False
-    send_sso = False
+    required_auth = authtypes()  # all false by default
 
     @classmethod
     def parse_response(cls, response):
@@ -155,7 +162,7 @@ class Call(object):
     @classmethod
     def validate(cls, response, msg):
         """Raise ValidationException on problems.
-        
+
         :param response: a requests.Response
         :param msg: the result of parse_response on response
         """
@@ -164,7 +171,7 @@ class Call(object):
     @classmethod
     def check_success(cls, response, msg):
         """Raise CallFailure on problems.
-                
+
         :param response: a requests.Response
         :param msg: the result of parse_response on response
         """
@@ -174,11 +181,6 @@ class Call(object):
     def filter_response(cls, msg):
         """Return a version of a parsed response appropriate for logging."""
         return msg  # default to identity
-
-    @classmethod
-    def get_auth(cls):
-        """Return a 3-tuple send_(xt, clientlogin, sso)."""
-        return (cls.send_xt, cls.send_clientlogin, cls.send_sso)
 
     @classmethod
     def perform(cls, session, *args, **kwargs):
@@ -202,7 +204,7 @@ class Call(object):
 
         req_kwargs = cls.build_request(*args, **kwargs)
 
-        response = session.send(req_kwargs, cls.get_auth())
+        response = session.send(req_kwargs, cls.required_auth)
 
         #TODO check return code
 
@@ -227,10 +229,9 @@ class Call(object):
         except ValidationException:
             #TODO link to some protocol for reporting this and trim the response if it's huge
             if cls.gets_logged:
-                log.exception(
-                    "please report the following unknown response format for %s: %r",
-                    call_name, msg
-                )
+                msg_fmt = ("please report (at http://goo.gl/qbAW8) the following"
+                           " unknown response format for %s: %r")
+                log.exception(msg_fmt, call_name, msg)
 
         return msg
 

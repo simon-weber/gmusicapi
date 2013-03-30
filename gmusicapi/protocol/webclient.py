@@ -11,7 +11,7 @@ import validictory
 from gmusicapi.compat import json
 from gmusicapi.exceptions import CallFailure, ValidationException
 from gmusicapi.protocol.metadata import md_expectations
-from gmusicapi.protocol.shared import Call
+from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
 base_url = 'https://play.google.com/music/'
@@ -54,9 +54,14 @@ pl_array = {
 
 
 class Init(Call):
-    """Called after login and once before any other webclient call."""
+    """Called after login and once before any other webclient call.
+    This gathers the cookies we need (specifically xt); it's the call that
+    creates the webclient DOM."""
+
     static_method = 'HEAD'
     static_url = base_url + 'listen'
+
+    required_auth = authtypes(sso=True)
 
     #This call doesn't actually request/return anything useful aside from cookies.
     @staticmethod
@@ -66,14 +71,15 @@ class Init(Call):
     @classmethod
     def check_success(cls, response, msg):
         if response.status_code != 200:
-            raise CallFailure('status code %s != 200' % response.status_code, cls.__name__)
+            raise CallFailure(('status code %s != 200' % response.status_code), cls.__name__)
+        if 'xt' not in response.cookies:
+            raise CallFailure('did not receieve xt cookies', cls.__name__)
 
 
 class WcCall(Call):
     """Abstract base for web client calls."""
 
-    send_xt = True
-    send_sso = True
+    required_auth = authtypes(xt=True, sso=True)
 
     #validictory schema for the response
     _res_schema = utils.NotImplementedField
@@ -488,7 +494,7 @@ class GetStreamUrl(WcCall):
     static_method = 'GET'
     static_url = base_url + 'play'  # note use of base_url, not service_url
 
-    send_xt = False
+    required_auth = authtypes(sso=True)  # no xt required
 
     _res_schema = {
         "type": "object",

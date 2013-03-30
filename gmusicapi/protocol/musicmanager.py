@@ -4,27 +4,60 @@
 """Calls made by the Music Manager (related to uploading)."""
 
 import base64
+from collections import namedtuple
 import hashlib
-import logging
 import os
 import sys
 
 import dateutil.parser
 from decorator import decorator
-import mutagen
 from google.protobuf.message import DecodeError
+import mutagen
+from oauth2client.client import OAuth2Credentials
 
 from gmusicapi.compat import json
 from gmusicapi.exceptions import CallFailure
 from gmusicapi.protocol import upload_pb2, locker_pb2
-from gmusicapi.protocol.shared import Call, ParseException
+from gmusicapi.protocol.shared import Call, ParseException, authtypes
 from gmusicapi.utils import utils
 
-log = logging.getLogger(__name__)
+log = utils.DynamicClientLogger(__name__)
 
 
 #This url has SSL issues, hence the static_verify=False.
 _android_url = 'https://android.clients.google.com/upsj/'
+
+OAuthInfo = namedtuple('OAuthInfo', 'client_id client_secret scope redirect')
+oauth = OAuthInfo(
+    '652850857958.apps.googleusercontent.com',
+    'ji1rklciNp2bfsFJnEH_i6al',
+    'https://www.googleapis.com/auth/musicmanager',
+    'urn:ietf:wg:oauth:2.0:oob'
+)
+
+
+def credentials_from_refresh_token(token):
+    # why doesn't Google provide this!?
+
+    cred_json = {"_module": "oauth2client.client",
+                 "token_expiry": "2000-01-01T00:13:37Z",  # to refresh now
+                 "access_token": 'bogus',
+                 "token_uri": "https://accounts.google.com/o/oauth2/token",
+                 "invalid": False,
+                 "token_response": {
+                     "access_token": 'bogus',
+                     "token_type": "Bearer",
+                     "expires_in": 3600,
+                     "refresh_token": token},
+                 "client_id": oauth.client_id,
+                 "id_token": None,
+                 "client_secret": oauth.client_secret,
+                 "revoke_uri": "https://accounts.google.com/o/oauth2/revoke",
+                 "_class": "OAuth2Credentials",
+                 "refresh_token": token,
+                 "user_agent": None}
+
+    return OAuth2Credentials.new_from_json(json.dumps(cred_json))
 
 
 @decorator
@@ -38,9 +71,10 @@ class MmCall(Call):
     """Abstract base for Music Manager calls."""
 
     static_method = 'POST'
-    static_headers = {'User-agent': 'Music Manager (1, 0, 24, 7712 - Windows)'}
+    # remember that this won't merge in subclasses
+    static_headers = {'User-agent': 'Music Manager (1, 0, 55, 7425 HTTPS - Windows)'}
 
-    send_clientlogin = True
+    required_auth = authtypes(oauth=True)
 
     #this is a shared union class that has all specific upload types
     res_msg_type = upload_pb2.UploadResponse
@@ -294,7 +328,7 @@ class GetUploadSession(MmCall):
     This is a json call, and doesn't share much with the other calls."""
 
     static_method = 'POST'
-    static_url = 'http://uploadsj.clients.google.com/uploadsj/rupio'
+    static_url = 'https://uploadsj.clients.google.com/uploadsj/rupio'
 
     @classmethod
     def parse_response(cls, response):
