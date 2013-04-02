@@ -959,13 +959,22 @@ class Webclient(_Base):
 
     def search(self, query):
         """Queries the server for songs and albums.
-        Generally, this isn't needed; just get all tracks and locally search over them.
+
+        **WARNING**: Google no longer uses this endpoint in their client;
+        it may stop working or be removed from gmusicapi without warning.
+        In addition, it is known to occasionally return unexpected results.
+        See `#114
+        <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/114>`__
+        for more information.
+
+        Instead of using this call, retrieve all tracks with :func:`get_all_songs`
+        and search them locally.  `This gist
+        <https://gist.github.com/simon-weber/5007769>`__ has some examples of
+        simple linear-time searches.
 
         :param query: a string keyword to search with. Capitalization and punctuation are ignored.
 
-        Search results are organized based on how they were found.
-
-        The responses are returned in a dictionary, arranged by hit type.
+        The results are returned in a dictionary, arranged by how they were found.
         ``artist_hits`` and ``song_hits`` return a list of
         :ref:`song dictionaries <songdict-format>`, while ``album_hits`` entries
         have a different structure.
