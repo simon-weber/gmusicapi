@@ -101,6 +101,9 @@ class Musicmanager(_Base):
     For most users, :func:`perform_oauth` should be run once per machine to
     store credentials to disk. Future calls to :func:`login` can use
     use the stored credentials by default.
+
+    Alternatively, users can implement the OAuth flow themselves, then
+    provide credentials directly to :func:`login`.
     """
 
     @staticmethod
@@ -500,7 +503,8 @@ class Webclient(_Base):
     """Allows library management and streaming by posing as the
     music.google.com webclient.
 
-    This client does not handle uploading: use :class:`Musicmanager` instead.
+    Uploading is not supported by this client (use the :class:`Musicmanager`
+    to upload).
     """
 
     def __init__(self, debug_logging=True):

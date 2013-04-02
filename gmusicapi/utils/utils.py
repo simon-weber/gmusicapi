@@ -179,7 +179,7 @@ def configure_debug_log_handlers(logger):
 
 
 @dual_decorator
-def retry(retry_exception=None, tries=5, delay=2, backoff=2, logger=None):
+def retry(retry_exception=None, tries=6, delay=2, backoff=2, logger=None):
     """Retry calling the decorated function using an exponential backoff.
 
     An exception from a final attempt will propogate.
