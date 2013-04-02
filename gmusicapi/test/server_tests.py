@@ -327,20 +327,21 @@ class UpauthTests(object):
 
     @playlist_test
     def add_remove(self):
-        @retry
-        def assert_song_order(plid, order):
-            songs = self.wc.get_playlist_songs(plid)
-            server_order = [s['id'] for s in songs]
+        with Check() as check:
+            @retry
+            def assert_song_order(plid, order, check=check):
+                songs = self.wc.get_playlist_songs(plid)
+                server_order = [s['id'] for s in songs]
 
-            assert_equal(server_order, order)
+                check.equal(server_order, order)
 
-        # initially empty
-        assert_song_order(self.playlist_id, [])
+            # initially empty
+            assert_song_order(self.playlist_id, [])
 
-        # add two copies
-        self.wc.add_songs_to_playlist(self.playlist_id, [self.song.sid] * 2)
-        assert_song_order(self.playlist_id, [self.song.sid] * 2)
+            # add two copies
+            self.wc.add_songs_to_playlist(self.playlist_id, [self.song.sid] * 2)
+            assert_song_order(self.playlist_id, [self.song.sid] * 2)
 
-        # remove all copies
-        self.wc.remove_songs_from_playlist(self.playlist_id, self.song.sid)
-        assert_song_order(self.playlist_id, [])
+            # remove all copies
+            self.wc.remove_songs_from_playlist(self.playlist_id, self.song.sid)
+            assert_song_order(self.playlist_id, [])
