@@ -5,6 +5,9 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
+1.0.X
++++++
+
 1.0.0
 +++++
 
