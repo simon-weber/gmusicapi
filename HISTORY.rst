@@ -3,7 +3,15 @@
 History
 -------
 
-As of 2013.02.09, releases with breaking changes will be noted with ``**``.
+As of 3.0.0, `semantic versioning <http://semver.org/>`__ is used.
+
+3.0.0
++++++
+
+- breaking: Api has been split into Webclient and Musicmanager
+- Music Manager OAuth support
+- faster uploading when matching is disabled
+- faster login
 
 2013.03.04
 ++++++++++
@@ -50,8 +58,8 @@ As of 2013.02.09, releases with breaking changes will be noted with ``**``.
 - improve handling of strange metadata when uploading
 - add a dependency on `dateutil <http://labix.org/python-dateutil>`__
 
-``**`` 2013.02.09
-+++++++++++++++++
+2013.02.09
+++++++++++
 
 - breaking: upload returns a 3-tuple (`docs
   <https://unofficial-google-music-api.readthedocs.org/en

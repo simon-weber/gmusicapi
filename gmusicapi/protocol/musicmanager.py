@@ -4,25 +4,60 @@
 """Calls made by the Music Manager (related to uploading)."""
 
 import base64
+from collections import namedtuple
 import hashlib
-import logging
 import os
+import sys
 
 import dateutil.parser
 from decorator import decorator
+from google.protobuf.message import DecodeError
 import mutagen
+from oauth2client.client import OAuth2Credentials
 
 from gmusicapi.compat import json
 from gmusicapi.exceptions import CallFailure
 from gmusicapi.protocol import upload_pb2, locker_pb2
-from gmusicapi.protocol.shared import Call
+from gmusicapi.protocol.shared import Call, ParseException, authtypes
 from gmusicapi.utils import utils
 
-log = logging.getLogger(__name__)
+log = utils.DynamicClientLogger(__name__)
 
 
-#This url has SSL issues, hence the verify=False for session_options.
+#This url has SSL issues, hence the static_verify=False.
 _android_url = 'https://android.clients.google.com/upsj/'
+
+OAuthInfo = namedtuple('OAuthInfo', 'client_id client_secret scope redirect')
+oauth = OAuthInfo(
+    '652850857958.apps.googleusercontent.com',
+    'ji1rklciNp2bfsFJnEH_i6al',
+    'https://www.googleapis.com/auth/musicmanager',
+    'urn:ietf:wg:oauth:2.0:oob'
+)
+
+
+def credentials_from_refresh_token(token):
+    # why doesn't Google provide this!?
+
+    cred_json = {"_module": "oauth2client.client",
+                 "token_expiry": "2000-01-01T00:13:37Z",  # to refresh now
+                 "access_token": 'bogus',
+                 "token_uri": "https://accounts.google.com/o/oauth2/token",
+                 "invalid": False,
+                 "token_response": {
+                     "access_token": 'bogus',
+                     "token_type": "Bearer",
+                     "expires_in": 3600,
+                     "refresh_token": token},
+                 "client_id": oauth.client_id,
+                 "id_token": None,
+                 "client_secret": oauth.client_secret,
+                 "revoke_uri": "https://accounts.google.com/o/oauth2/revoke",
+                 "_class": "OAuth2Credentials",
+                 "refresh_token": token,
+                 "user_agent": None}
+
+    return OAuth2Credentials.new_from_json(json.dumps(cred_json))
 
 
 @decorator
@@ -36,11 +71,10 @@ class MmCall(Call):
     """Abstract base for Music Manager calls."""
 
     static_method = 'POST'
-    static_headers = {'USER-AGENT': 'Music Manager (1, 0, 54, 4672 HTTPS - Windows)'}
+    # remember that this won't merge in subclasses
+    static_headers = {'User-agent': 'Music Manager (1, 0, 55, 7425 HTTPS - Windows)'}
 
-    #'headers': {'Content-Type': 'application/x-google-protobuf'},
-
-    send_clientlogin = True
+    required_auth = authtypes(oauth=True)
 
     #this is a shared union class that has all specific upload types
     res_msg_type = upload_pb2.UploadResponse
@@ -49,9 +83,12 @@ class MmCall(Call):
     def parse_response(cls, response):
         """Parse the cls.res_msg_type proto msg."""
         res_msg = cls.res_msg_type()
-        res_msg.ParseFromString(response.content)
-
-        #TODO do something with ParseError
+        try:
+            res_msg.ParseFromString(response.content)
+        except DecodeError as e:
+            trace = sys.exc_info()[2]
+            raise ParseException(str(e)), None, trace
+            pass
 
         return res_msg
 
@@ -64,18 +101,18 @@ class AuthenticateUploader(MmCall):
     """Sent to auth, reauth, or register our upload client."""
 
     static_url = _android_url + 'upauth'
-    session_options = {'verify': False}  # the android url has SSL troubles
+    static_verify = False
 
     @classmethod
-    def check_success(cls, res):
-        if res.HasField('auth_status') and res.auth_status != upload_pb2.UploadResponse.OK:
+    def check_success(cls, response, msg):
+        if msg.HasField('auth_status') and msg.auth_status != upload_pb2.UploadResponse.OK:
             enum_desc = upload_pb2._UPLOADRESPONSE.enum_types[1]
-            res_name = enum_desc.values_by_number[res.auth_status].name
+            res_name = enum_desc.values_by_number[msg.auth_status].name
 
             raise CallFailure(
                 "Upload auth error code %s: %s."
                 " See http://goo.gl/O6xe7 for more information. " % (
-                    res.auth_status, res_name
+                    msg.auth_status, res_name
                 ), cls.__name__
             )
 
@@ -96,7 +133,7 @@ class AuthenticateUploader(MmCall):
 
 class UploadMetadata(MmCall):
     static_url = _android_url + 'metadata'
-    session_options = {'verify': False}
+    static_verify = False
 
     static_params = {'version': 1}
 
@@ -264,13 +301,13 @@ class UploadMetadata(MmCall):
 class GetUploadJobs(MmCall):
     #TODO
     static_url = _android_url + 'getjobs'
-    session_options = {'verify': False}
+    static_verify = False
 
     static_params = {'version': 1}
 
     @classmethod
-    def check_success(cls, res):
-        if res.HasField('getjobs_response') and not res.getjobs_response.get_tracks_success:
+    def check_success(cls, response, msg):
+        if msg.HasField('getjobs_response') and not msg.getjobs_response.get_tracks_success:
             raise CallFailure('get_tracks_success == False', cls.__name__)
 
     @classmethod
@@ -291,10 +328,7 @@ class GetUploadSession(MmCall):
     This is a json call, and doesn't share much with the other calls."""
 
     static_method = 'POST'
-    static_url = 'http://uploadsj.clients.google.com/uploadsj/rupio'
-
-    #not yet able to intercept newer call, so we use an older version
-    static_headers = {'USER-AGENT': 'Music Manager (1, 0, 24, 7712 - Windows)'}
+    static_url = 'https://uploadsj.clients.google.com/uploadsj/rupio'
 
     @classmethod
     def parse_response(cls, response):
@@ -401,7 +435,6 @@ class UploadFile(MmCall):
     #TODO recent protocols use multipart encoding
 
     static_method = 'PUT'
-    static_headers = {'USER-AGENT': 'Music Manager (1, 0, 24, 7712 - Windows)'}
 
     @classmethod
     def parse_response(cls, response):
@@ -432,12 +465,16 @@ class ProvideSample(MmCall):
     static_method = 'POST'
     static_params = {'version': 1}
     static_url = _android_url + 'sample'
-    session_options = {'verify': False}
+    static_verify = False
 
     @staticmethod
     @pb
-    def dynamic_data(filepath, server_challenge, track, uploader_id):
-        """Raise IOError on transcoding problems, or ValueError for invalid input."""
+    def dynamic_data(filepath, server_challenge, track, uploader_id, mock_sample=None):
+        """Raise IOError on transcoding problems, or ValueError for invalid input.
+
+        :param mock_sample: if provided, will be sent in place of a proper sample
+
+        """
         msg = upload_pb2.UploadSampleRequest()
 
         msg.uploader_id = uploader_id
@@ -448,13 +485,16 @@ class ProvideSample(MmCall):
 
         sample_spec = server_challenge.challenge_info  # convenience
 
-        #The sample is simply a small (usually 15 second) clip of the song,
-        # transcoded into 128kbs mp3. The server dictates where the cut should be made.
-        sample_msg.sample = utils.transcode_to_mp3(
-            filepath, quality='128k',
-            slice_start=sample_spec.start_millis / 1000,
-            slice_duration=sample_spec.duration_millis / 1000
-        )
+        if mock_sample is None:
+            #The sample is simply a small (usually 15 second) clip of the song,
+            # transcoded into 128kbs mp3. The server dictates where the cut should be made.
+            sample_msg.sample = utils.transcode_to_mp3(
+                filepath, quality='128k',
+                slice_start=sample_spec.start_millis / 1000,
+                slice_duration=sample_spec.duration_millis / 1000
+            )
+        else:
+            sample_msg.sample = mock_sample
 
         #You can provide multiple samples; I just provide one at a time.
         msg.track_sample.extend([sample_msg])
@@ -472,7 +512,7 @@ class UpdateUploadState(MmCall):
     static_method = 'POST'
     static_params = {'version': 1}
     static_url = _android_url + 'sample'
-    session_options = {'verify': False}
+    static_verify = False
 
     @staticmethod
     @pb
@@ -503,7 +543,7 @@ class CancelUploadJobs(MmCall):
 
     static_method = 'POST'
     static_url = _android_url + 'deleteuploadrequested'
-    session_options = {'verify': False}
+    static_verify = False
 
     @staticmethod
     @pb

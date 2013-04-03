@@ -1,4 +1,5 @@
 .. _usage:
+.. currentmodule:: gmusicapi.clients
 
 Usage
 =====
@@ -35,36 +36,54 @@ so the problem can be fixed.
 Quickstart
 ----------
 
-Generally, your code will start with:
+If you're not going to be uploading music, use the :py:class:`Webclient`.
+This requires plaintext auth, so your code might look something like:
 
 .. code-block:: python
 
-    from gmusicapi import Api
+    from gmusicapi import Webclient
 
-    api = Api()
+    api = Webclient()
     logged_in = api.login('user@gmail.com', 'my-password')
     # logged_in is True if login was successful
 
 Note that 2-factor users will need to setup and provide an app-specific password.
 
-If you're not going to be uploading music, use:
+If you're going to upload Music, you want the :py:class:`Musicmanager`.
+It uses `OAuth2
+<https://developers.google.com/accounts/docs/OAuth2#installed>`__ and
+does not require plaintext credentials.
+
+Instead, you'll need to authorize your account *once* before logging in.
+The easiest way is to follow the prompts from:
 
 .. code-block:: python
 
-    api.login('user@gmail.com', 'my-password', perform_upload_auth=False)
+    from gmusicapi import Musicmanager
 
-instead. This will prevent an upload device from being registered (which is good: you
-only get 10 of these).
+    mm = Musicmanager()
+    mm.perform_oauth()
 
-Next, check out `the provided example
-<https://github.com/simon-weber/Unofficial-Google-Music-API/blob/master/example.py>`__.
+If successful, this will save your credentials to disk.
+Then, future runs will start with:
 
-If you're looking to do something a bit more wild, the reference section has
-all the details:
+.. code-block:: python
+
+    from gmusicapi import Musicmanager
+
+    mm = Musicmanager()
+    mm.login()
+
+    # mm.upload('foo.mp3')
+    # ...
+
+
+If you need both library management and uploading, just create one of each
+type of client.
+
+The reference section has complete information on both clients:
 
 .. toctree::
    :maxdepth: 2
 
    reference/api
-   reference/metadata
-   reference/protocol

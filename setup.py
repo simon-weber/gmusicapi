@@ -49,6 +49,9 @@ setup(
         'requests == 1.1.0',
         'python-dateutil == 2.1',
         'proboscis==1.2.5.3',
+        'oauth2client==1.1',
+        'mock==1.0.1',
+        'appdirs==1.2.0',
         #for testing album art:
         #'hachoir-core == 1.3.3',
         #'hachoir-parser == 1.3.4',

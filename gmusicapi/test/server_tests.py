@@ -7,14 +7,16 @@ an extra test playlist or song may result.
 
 from copy import copy
 from collections import namedtuple
+import re
 
 from proboscis.asserts import (
-    assert_raises, assert_true, assert_equal, assert_is_not_none,
+    assert_true, assert_equal, assert_is_not_none,
     assert_not_equal, Check
 )
 from proboscis import test, before_class, after_class, SkipTest
 
-from gmusicapi.exceptions import NotLoggedIn
+from gmusicapi.clients import Webclient, Musicmanager
+#from gmusicapi.exceptions import NotLoggedIn
 from gmusicapi.protocol.metadata import md_expectations
 from gmusicapi.utils.utils import retry
 import gmusicapi.test.utils as test_utils
@@ -26,36 +28,30 @@ TestSong = namedtuple('TestSong', 'sid title artist album')
 
 
 @test(groups=['server'])
-class NoUpauthTests(object):
-
-    @before_class
-    def login(self):
-        self.api = test_utils.new_test_api(perform_upload_auth=False)
-        assert_true(self.api.is_authenticated())
-
-    @after_class(always_run=True)
-    def logout(self):
-        assert_true(self.api.logout())
-
-    @test
-    def need_upauth_for_upload(self):
-        assert_raises(NotLoggedIn, self.api.upload, 'fake filename')
-
-
-@test(groups=['server'])
 class UpauthTests(object):
     #These are set on the instance in create_song/playlist.
+    wc = None  # webclient
+    mm = None  # musicmanager
     song = None
     playlist_id = None
 
     @before_class
     def login(self):
-        self.api = test_utils.new_test_api()
-        assert_true(self.api.is_authenticated())
+        self.wc = test_utils.new_test_client(Webclient)
+        assert_true(self.wc.is_authenticated())
+
+        self.mm = test_utils.new_test_client(Musicmanager)
+        assert_true(self.mm.is_authenticated())
 
     @after_class(always_run=True)
     def logout(self):
-        assert_true(self.api.logout())
+        if self.wc is None:
+            raise SkipTest('did not create wc')
+        assert_true(self.wc.logout())
+
+        if self.mm is None:
+            raise SkipTest('did not create mm')
+        assert_true(self.mm.logout())
 
     # This next section is a bit odd: it nests playlist tests inside song tests.
 
@@ -77,18 +73,30 @@ class UpauthTests(object):
 
     @test
     def song_create(self):
-        uploaded, matched, not_uploaded = self.api.upload(test_utils.small_mp3)
-        assert_equal(not_uploaded, {})
-        assert_equal(matched, {})
-        assert_equal(uploaded.keys(), [test_utils.small_mp3])
+        fname = test_utils.small_mp3
 
-        sid = uploaded[test_utils.small_mp3]
+        uploaded, matched, not_uploaded = self.mm.upload(fname)
+
+        if len(not_uploaded) == 1 and 'ALREADY_EXISTS' in not_uploaded[fname]:
+            # If a previous test went wrong, the track might be there already.
+            #TODO This build will fail because of the warning - is that what we want?
+            assert_equal(matched, {})
+            assert_equal(uploaded, {})
+
+            sid = re.search(r'\(.*\)', not_uploaded[fname]).group().strip('()')
+        else:
+            # Otherwise, it should have been uploaded normally.
+            assert_equal(not_uploaded, {})
+            assert_equal(matched, {})
+            assert_equal(uploaded.keys(), [fname])
+
+            sid = uploaded[fname]
 
         # we test get_all_songs here so that we can assume the existance
         # of the song for future tests (the servers take time to sync an upload)
         @retry
         def assert_song_exists(sid):
-            songs = self.api.get_all_songs()
+            songs = self.wc.get_all_songs()
 
             found = [s for s in songs if s['id'] == sid] or None
 
@@ -102,13 +110,13 @@ class UpauthTests(object):
 
     @test(depends_on=[song_create], runs_after_groups=['song.exists'])
     def playlist_create(self):
-        self.playlist_id = self.api.create_playlist(TEST_PLAYLIST_NAME)
+        self.playlist_id = self.wc.create_playlist(TEST_PLAYLIST_NAME)
 
         # like song_create, retry until the playlist appears
 
         @retry
         def assert_playlist_exists(plid):
-            playlists = self.api.get_all_playlist_ids(auto=False, user=True)
+            playlists = self.wc.get_all_playlist_ids(auto=False, user=True)
 
             found = playlists['user'].get(TEST_PLAYLIST_NAME, None)
 
@@ -126,7 +134,7 @@ class UpauthTests(object):
         if self.playlist_id is None:
             raise SkipTest('did not store self.playlist_id')
 
-        res = self.api.delete_playlist(self.playlist_id)
+        res = self.wc.delete_playlist(self.playlist_id)
         assert_equal(res, self.playlist_id)
 
     @test(groups=['song'], depends_on=[song_create],
@@ -137,7 +145,7 @@ class UpauthTests(object):
         if self.song is None:
             raise SkipTest('did not store self.song')
 
-        res = self.api.delete_songs(self.song.sid)
+        res = self.wc.delete_songs(self.song.sid)
 
         assert_equal(res, [self.song.sid])
 
@@ -161,7 +169,7 @@ class UpauthTests(object):
         """Return the song dictionary with this sid.
 
         (GM has no native get ability for songs, just list)."""
-        songs = self.api.get_all_songs()
+        songs = self.wc.get_all_songs()
 
         found = [s for s in songs if s['id'] == self.song.sid] or None
 
@@ -191,7 +199,7 @@ class UpauthTests(object):
                 new_md[name] = new_val
 
         #TODO check into attempting to mutate non mutables
-        self.api.change_song_metadata(new_md)
+        self.wc.change_song_metadata(new_md)
 
         #Recreate the dependent md to what they should be (based on how orig_md was changed)
         correct_dependent_md = {}
@@ -225,7 +233,7 @@ class UpauthTests(object):
         assert_metadata_is(self.song.sid, orig_md, correct_dependent_md)
 
         #Revert the metadata.
-        self.api.change_song_metadata(orig_md)
+        self.wc.change_song_metadata(orig_md)
 
         @retry
         def assert_metadata_reverted(sid, orig_md):
@@ -243,13 +251,13 @@ class UpauthTests(object):
 
     @song_test
     def get_download_info(self):
-        url, download_count = self.api.get_song_download_info(self.song.sid)
+        url, download_count = self.wc.get_song_download_info(self.song.sid)
 
         assert_is_not_none(url)
 
     @song_test
     def get_stream_url(self):
-        url = self.api.get_stream_url(self.song.sid)
+        url = self.wc.get_stream_url(self.song.sid)
 
         assert_is_not_none(url)
 
@@ -257,37 +265,42 @@ class UpauthTests(object):
     def upload_album_art(self):
         orig_md = self._assert_get_song(self.song.sid)
 
-        self.api.upload_album_art(self.song.sid, test_utils.image_filename)
+        self.wc.upload_album_art(self.song.sid, test_utils.image_filename)
 
-        self.api.change_song_metadata(orig_md)
+        self.wc.change_song_metadata(orig_md)
         #TODO redownload and verify against original?
+
+    # these search tests are all skipped: see
+    # https://github.com/simon-weber/Unofficial-Google-Music-API/issues/114
 
     @staticmethod
     def _assert_search_hit(res, hit_type, hit_key, val):
-        """Assert that the result (returned from Api.search) has
+        """Assert that the result (returned from wc.search) has
         ``hit[hit_type][hit_key] == val`` for only one result in hit_type."""
 
-        assert_equal(sorted(res.keys()), ['album_hits', 'artist_hits', 'song_hits'])
-        assert_not_equal(res[hit_type], [])
+        raise SkipTest('search is unpredictable (#114)')
 
-        hitmap = (hit[hit_key] == val for hit in res[hit_type])
-        assert_equal(sum(hitmap), 1)  # eg sum(True, False, True) == 2
+        #assert_equal(sorted(res.keys()), ['album_hits', 'artist_hits', 'song_hits'])
+        #assert_not_equal(res[hit_type], [])
+
+        #hitmap = (hit[hit_key] == val for hit in res[hit_type])
+        #assert_equal(sum(hitmap), 1)  # eg sum(True, False, True) == 2
 
     @song_test
     def search_title(self):
-        res = self.api.search(self.song.title)
+        res = self.wc.search(self.song.title)
 
         self._assert_search_hit(res, 'song_hits', 'id', self.song.sid)
 
     @song_test
     def search_artist(self):
-        res = self.api.search(self.song.artist)
+        res = self.wc.search(self.song.artist)
 
         self._assert_search_hit(res, 'artist_hits', 'id', self.song.sid)
 
     @song_test
     def search_album(self):
-        res = self.api.search(self.song.album)
+        res = self.wc.search(self.song.album)
 
         self._assert_search_hit(res, 'album_hits', 'albumName', self.song.album)
 
@@ -300,11 +313,11 @@ class UpauthTests(object):
     @playlist_test
     def change_name(self):
         new_name = TEST_PLAYLIST_NAME + '_mod'
-        self.api.change_playlist_name(self.playlist_id, new_name)
+        self.wc.change_playlist_name(self.playlist_id, new_name)
 
         @retry  # change takes time to propogate
         def assert_name_equal(plid, name):
-            playlists = self.api.get_all_playlist_ids()
+            playlists = self.wc.get_all_playlist_ids()
 
             found = playlists['user'].get(name, None)
 
@@ -314,14 +327,14 @@ class UpauthTests(object):
         assert_name_equal(self.playlist_id, new_name)
 
         # revert
-        self.api.change_playlist_name(self.playlist_id, TEST_PLAYLIST_NAME)
+        self.wc.change_playlist_name(self.playlist_id, TEST_PLAYLIST_NAME)
         assert_name_equal(self.playlist_id, TEST_PLAYLIST_NAME)
 
     @playlist_test
     def add_remove(self):
         @retry
         def assert_song_order(plid, order):
-            songs = self.api.get_playlist_songs(plid)
+            songs = self.wc.get_playlist_songs(plid)
             server_order = [s['id'] for s in songs]
 
             assert_equal(server_order, order)
@@ -330,9 +343,9 @@ class UpauthTests(object):
         assert_song_order(self.playlist_id, [])
 
         # add two copies
-        self.api.add_songs_to_playlist(self.playlist_id, [self.song.sid] * 2)
+        self.wc.add_songs_to_playlist(self.playlist_id, [self.song.sid] * 2)
         assert_song_order(self.playlist_id, [self.song.sid] * 2)
 
         # remove all copies
-        self.api.remove_songs_from_playlist(self.playlist_id, self.song.sid)
+        self.wc.remove_songs_from_playlist(self.playlist_id, self.song.sid)
         assert_song_order(self.playlist_id, [])

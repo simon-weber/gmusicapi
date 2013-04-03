@@ -11,7 +11,7 @@ import validictory
 from gmusicapi.compat import json
 from gmusicapi.exceptions import CallFailure, ValidationException
 from gmusicapi.protocol.metadata import md_expectations
-from gmusicapi.protocol.shared import Call
+from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
 base_url = 'https://play.google.com/music/'
@@ -53,31 +53,53 @@ pl_array = {
 }
 
 
+class Init(Call):
+    """Called after login and once before any other webclient call.
+    This gathers the cookies we need (specifically xt); it's the call that
+    creates the webclient DOM."""
+
+    static_method = 'HEAD'
+    static_url = base_url + 'listen'
+
+    required_auth = authtypes(sso=True)
+
+    #This call doesn't actually request/return anything useful aside from cookies.
+    @staticmethod
+    def parse_response(response):
+        return response.text
+
+    @classmethod
+    def check_success(cls, response, msg):
+        if response.status_code != 200:
+            raise CallFailure(('status code %s != 200' % response.status_code), cls.__name__)
+        if 'xt' not in response.cookies:
+            raise CallFailure('did not receieve xt cookies', cls.__name__)
+
+
 class WcCall(Call):
     """Abstract base for web client calls."""
 
-    send_xt = True
-    send_sso = True
+    required_auth = authtypes(xt=True, sso=True)
 
     #validictory schema for the response
     _res_schema = utils.NotImplementedField
 
     @classmethod
-    def validate(cls, res):
+    def validate(cls, response, msg):
         """Use validictory and a static schema (stored in cls._res_schema)."""
         try:
-            return validictory.validate(res, cls._res_schema)
+            return validictory.validate(msg, cls._res_schema)
         except ValueError as e:
             trace = sys.exc_info()[2]
             raise ValidationException(str(e)), None, trace
 
     @classmethod
-    def check_success(cls, res):
+    def check_success(cls, response, msg):
         #Failed responses always have a success=False key.
         #Some successful responses do not have a success=True key, however.
         #TODO remove utils.call_succeeded
 
-        if 'success' in res and not res['success']:
+        if 'success' in msg and not msg['success']:
             raise CallFailure(
                 "the server reported failure. This is usually"
                 " caused by bad arguments, but can also happen if requests"
@@ -155,7 +177,7 @@ class AddToPlaylist(WcCall):
     @staticmethod
     def filter_response(msg):
         filtered = copy.copy(msg)
-        filtered['songIds'] = ["<%s songs>" % len(filtered['songIds'])]
+        filtered['songIds'] = ["<%s songs>" % len(filtered.get('songIds', []))]
         return filtered
 
 
@@ -235,7 +257,7 @@ class ChangePlaylistOrder(WcCall):
     @staticmethod
     def filter_response(msg):
         filtered = copy.copy(msg)
-        filtered['movedSongIds'] = ["<%s songs>" % len(filtered['movedSongIds'])]
+        filtered['movedSongIds'] = ["<%s songs>" % len(filtered.get('movedSongIds', []))]
         return filtered
 
 
@@ -305,7 +327,7 @@ class DeleteSongs(WcCall):
     @staticmethod
     def filter_response(msg):
         filtered = copy.copy(msg)
-        filtered['deleteIds'] = ["<%s songs>" % len(filtered['deleteIds'])]
+        filtered['deleteIds'] = ["<%s songs>" % len(filtered.get('deleteIds', []))]
         return filtered
 
 
@@ -350,7 +372,7 @@ class GetLibrarySongs(WcCall):
     def filter_response(msg):
         """Only log the number of songs."""
         filtered = copy.copy(msg)
-        filtered['playlist'] = ["<%s songs>" % len(filtered['playlist'])]
+        filtered['playlist'] = ["<%s songs>" % len(filtered.get('playlist', []))]
 
         return filtered
 
@@ -425,11 +447,11 @@ class ChangeSongMetadata(WcCall):
     @staticmethod
     def filter_response(msg):
         filtered = copy.copy(msg)
-        filtered['songs'] = ["<%s songs>" % len(filtered['songs'])]
+        filtered['songs'] = ["<%s songs>" % len(filtered.get('songs', []))]
         return filtered
 
     @staticmethod
-    def validate(msg):
+    def validate(response, msg):
         """The data that comes back doesn't follow normal metadata rules,
         and is meaningless anyway; it'll lie about results."""
         pass
@@ -472,7 +494,7 @@ class GetStreamUrl(WcCall):
     static_method = 'GET'
     static_url = base_url + 'play'  # note use of base_url, not service_url
 
-    send_xt = False
+    required_auth = authtypes(sso=True)  # no xt required
 
     _res_schema = {
         "type": "object",
@@ -536,13 +558,14 @@ class ReportBadSongMatch(WcCall):
     static_url = service_url + 'fixsongmatch'
     static_params = {'format': 'jsarray'}
 
-    #This response is always the same.
+    #This no longer holds.
     expected_response = [[0], []]
 
     @classmethod
-    def validate(cls, res):
-        if res != cls.expected_response:
-            raise ValidationException("response != %r" % cls.expected_response)
+    def validate(cls, response, msg):
+        pass
+        #if msg != cls.expected_response:
+        #    raise ValidationException("response != %r" % cls.expected_response)
 
     @staticmethod
     def dynamic_data(song_ids):
