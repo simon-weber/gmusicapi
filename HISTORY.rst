@@ -3,12 +3,13 @@
 History
 -------
 
-As of 3.0.0, `semantic versioning <http://semver.org/>`__ is used.
+As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-3.0.0
+1.0.0
 +++++
 
 - breaking: Api has been split into Webclient and Musicmanager
+- breaking: semantic versioning (previously versions removed from PyPi)
 - Music Manager OAuth support
 - faster uploading when matching is disabled
 - faster login

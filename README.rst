@@ -47,8 +47,8 @@ Status and updates
 .. image:: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API.png?branch=develop
         :target: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API
 
-Version 3.0.0 splits the previous Api interface 
-in two: Webclient and Musicmanager. See
+Version 1.0.0 splits the previous Api interface 
+into Webclient and Musicmanager. See
 https://unofficial-google-music-api.readthedocs.org/en/latest/usage.html#quickstart
 for help with the new interfaces.
 
