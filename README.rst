@@ -52,6 +52,10 @@ into Webclient and Musicmanager. See
 https://unofficial-google-music-api.readthedocs.org/en/latest/usage.html#quickstart
 for help with the new interfaces.
 
+If you're upgrading from a date-versioned release, 
+you'll need to force the install:
+``pip uninstall gmusicapi; pip install gmusicapi``.
+
 For updates, follow me on Twitter:
 `@simonmweber <https://twitter.com/simonmweber>`__.
 
