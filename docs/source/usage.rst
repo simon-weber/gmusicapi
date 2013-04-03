@@ -11,7 +11,7 @@ Use `pip <http://www.pip-installer.org/en/latest/index.html>`__:
 This will grab all the source dependencies.
 Don't use ``easy_install`` unless you really have to.
 
-If you're uploading from a date-versioned release (eg ``2013.03.04``),
+If you're upgrading from a date-versioned release (eg ``2013.03.04``),
 do ``pip uninstall gmusicapi; pip install gmusicapi`` instead.
 
 To upload anything other than mp3s, you're going to need
