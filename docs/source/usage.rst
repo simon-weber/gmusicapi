@@ -7,28 +7,28 @@ Usage
 Installation
 ------------
 Use `pip <http://www.pip-installer.org/en/latest/index.html>`__:
-``pip install gmusicapi``.
+``$ pip install gmusicapi``.
 This will grab all the source dependencies.
-Don't use ``easy_install`` unless you really have to.
+Avoid using ``easy_install``.
 
 If you're upgrading from a date-versioned release (eg ``2013.03.04``),
-do ``pip uninstall gmusicapi; pip install gmusicapi`` instead.
+do ``$ pip uninstall gmusicapi; pip install gmusicapi`` instead.
 
 To upload anything other than mp3s, you're going to need
 `Libav's avconv <http://libav.org/avconv.html>`__
 installed and in your system path, along with at least libmp3lame.
 
  - Ubuntu/Debian users:
-   ``sudo apt-get install libav-tools libavcodec-extra-53``.
+   ``$ sudo apt-get install libav-tools libavcodec-extra-53``.
  - Windows users, get `the most recent static binaries <http://win32.libav.org/releases/>`__
    and then `edit your path <http://www.computerhope.com/issues/ch000549.htm>`__
    to include the directory that contains avconv.exe.
    
 If you need to install avconv from source, be sure to use
-``./configure --enable-gpl --enable-nonfree --enable-libmp3lame``.
+``$ ./configure --enable-gpl --enable-nonfree --enable-libmp3lame``.
 
 To check that everything is set up correctly, you can run the test
-suite: ``python gmusicapi/test/run_tests.py``.
+suite: ``$ python gmusicapi/test/run_tests.py``.
 If something goes horribly wrong there's the chance you'll end up
 with an extra test playlist or song in your library, but you 
 should never lose anything.
