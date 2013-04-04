@@ -46,7 +46,7 @@ setup(
         'decorator == 3.3.2',
         'mutagen == 1.21',
         'protobuf == 2.4.1',
-        'requests == 1.1.0',
+        'requests == 1.2.0',
         'python-dateutil == 2.1',
         'proboscis==1.2.5.3',
         'oauth2client==1.1',
