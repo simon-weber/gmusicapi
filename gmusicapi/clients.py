@@ -11,6 +11,7 @@ import os
 from socket import gethostname
 import time
 from uuid import getnode as getmac
+import webbrowser
 
 from appdirs import AppDirs
 import httplib2  # included with oauth2client
@@ -107,12 +108,15 @@ class Musicmanager(_Base):
     """
 
     @staticmethod
-    def perform_oauth(storage_filepath=OAUTH_FILEPATH):
+    def perform_oauth(storage_filepath=OAUTH_FILEPATH, open_browser=False):
         """Provides a series of prompts for a user to follow to authenticate.
-        Returns ``oauth2client.client.OAuth2Credentials``.
+        Returns ``oauth2client.client.OAuth2Credentials`` when successful.
 
         In most cases, this should only be run once per machine to store
         credentials to disk, then never be needed again.
+
+        If the user refuses to give access,
+        ``oauth2client.client.FlowExchangeError`` is raised.
 
         :param storage_filepath: a filepath to write the credentials to,
           or ``None``
@@ -125,6 +129,10 @@ class Musicmanager(_Base):
               print gmusicapi.clients.OAUTH_FILEPATH
 
           to see the exact location on their system.
+
+        :param open_browser: if True, attempt to open the auth url
+          in the system default web browser. The url will be printed
+          Regardless of this param's setting.
         """
 
         flow = OAuth2WebServerFlow(*musicmanager.oauth)
@@ -132,6 +140,15 @@ class Musicmanager(_Base):
         auth_uri = flow.step1_get_authorize_url()
         print
         print "Visit the following url:\n %s" % auth_uri
+
+        if open_browser:
+            print
+            print 'Opening your browser to it now...',
+            webbrowser.open(auth_uri)
+            print 'done.'
+            print "If you don't see your browser, you can just copy and paste the url."
+            print
+
         code = raw_input("Follow the prompts,"
                          " then paste the auth code here and hit enter: ")
 
