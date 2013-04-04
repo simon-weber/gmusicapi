@@ -12,6 +12,7 @@ import subprocess
 import time
 import traceback
 
+from appdirs import AppDirs
 from decorator import decorator
 from google.protobuf.descriptor import FieldDescriptor
 
@@ -22,6 +23,7 @@ from gmusicapi import __version__
 # when False, static code will simply log in the standard way under the root.
 per_client_logging = True
 
+my_appdirs = AppDirs('gmusicapi', 'Simon Weber')
 
 #Map descriptor.CPPTYPE -> python type.
 _python_to_cpp_types = {
@@ -37,7 +39,7 @@ cpp_type_to_python = dict(
     for cpp in cpplist
 )
 
-log_filename = "gmusicapi.log"
+log_filepath = os.path.join(my_appdirs.user_log_dir, 'gmusicapi.log')
 printed_log_start_message = False  # global, set in config_debug_logging
 
 
@@ -156,7 +158,8 @@ def configure_debug_log_handlers(logger):
 
     logger.setLevel(logging.DEBUG)
 
-    fh = logging.FileHandler(log_filename)
+    make_sure_path_exists(os.path.dirname(log_filepath), 0o700)
+    fh = logging.FileHandler(log_filepath)
     fh.setLevel(logging.DEBUG)
 
     ch = logging.StreamHandler()
@@ -169,6 +172,7 @@ def configure_debug_log_handlers(logger):
         #print out startup message without verbose formatting
         logger.info("!-- begin debug log --!")
         logger.info("version: " + __version__)
+        logger.info("logging to: " + log_filepath)
         printed_log_start_message = True
 
     formatter = logging.Formatter(

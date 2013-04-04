@@ -13,7 +13,6 @@ import time
 from uuid import getnode as getmac
 import webbrowser
 
-from appdirs import AppDirs
 import httplib2  # included with oauth2client
 from oauth2client.client import OAuth2WebServerFlow, TokenRevokeError
 import oauth2client.file
@@ -24,9 +23,7 @@ from gmusicapi.protocol import webclient, musicmanager, upload_pb2, locker_pb2
 from gmusicapi.utils import utils
 import gmusicapi.session
 
-# not to be changed at runtime
-mydirs = AppDirs('gmusicapi', 'Simon Weber')
-OAUTH_FILEPATH = os.path.join(mydirs.user_data_dir, 'oauth.cred')
+OAUTH_FILEPATH = os.path.join(utils.my_appdirs.user_data_dir, 'oauth.cred')
 
 # oauth client breaks if the dir doesn't exist
 utils.make_sure_path_exists(os.path.dirname(OAUTH_FILEPATH), 0o700)
@@ -47,8 +44,15 @@ class _Base(object):
           will propogate to the ``gmusicapi`` root logger.
 
           If this param is ``True``, handlers will be configured to send
-          this client's log output to ``gmusicapi.log``,
+          this client's log output to disk,
           with warnings and above printed to the console.
+          `Appdirs <https://pypi.python.org/pypi/appdirs/1.2.0>`__
+          ``user_log_dir`` is used by default. Users can run::
+
+              from gmusicapi.utils import utils
+              print utils.log_filepath
+
+          to see the exact location on their system.
 
           If ``False``, no handlers will be configured;
           users must create their own handlers.
