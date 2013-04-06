@@ -8,6 +8,7 @@ an extra test playlist or song may result.
 from copy import copy
 from collections import namedtuple
 import re
+import types
 
 from proboscis.asserts import (
     assert_true, assert_equal, assert_is_not_none,
@@ -181,6 +182,14 @@ class UpauthTests(object):
     @song_test
     def list_songs(self):
         self._assert_get_song(self.song.sid)
+
+    @song_test
+    def list_songs_incrementally(self):
+        lib_chunk_gen = self.wc.get_all_songs(incremental=True)
+        assert_true(isinstance(lib_chunk_gen, types.GeneratorType))
+
+        assert_equal([s for chunk in lib_chunk_gen for s in chunk],
+                     self.wc.get_all_songs(incremental=False))
 
     @song_test
     def change_metadata(self):

@@ -628,22 +628,35 @@ class Webclient(_Base):
 
         return res['deleteIds']
 
-    def get_all_songs(self):
-        #TODO support an iterator; see #88
-        """Returns a list of :ref:`song dictionaries <songdict-format>`."""
+    def get_all_songs(self, incremental=False):
+        """Returns a list of :ref:`song dictionaries <songdict-format>`.
 
-        library = []
+        :param incremental: if True, return a generator that yields lists
+          of at most 2500 :ref:`song dictionaries <songdict-format>`
+          as they are retrieved from the server. This can be useful for
+          presenting a loading bar to a user.
+        """
 
-        lib_chunk = self._make_call(webclient.GetLibrarySongs)
+        to_return = self._get_all_songs()
 
-        while 'continuationToken' in lib_chunk:
-            library += lib_chunk['playlist']  # 'playlist' is misleading; this is the entire chunk
+        if not incremental:
+            to_return = [song for chunk in to_return for song in chunk]
 
-            lib_chunk = self._make_call(webclient.GetLibrarySongs, lib_chunk['continuationToken'])
+        return to_return
 
-        library += lib_chunk['playlist']
+    def _get_all_songs(self):
+        """Return a generator of song chunks."""
 
-        return library
+        get_next_chunk = True
+        lib_chunk = {'continuationToken': None}
+
+        while get_next_chunk:
+            lib_chunk = self._make_call(webclient.GetLibrarySongs,
+                                        lib_chunk['continuationToken'])
+
+            yield lib_chunk['playlist']  # list of songs of the chunk
+
+            get_next_chunk = 'continuationToken' in lib_chunk
 
     def get_playlist_songs(self, playlist_id):
         """Returns a list of :ref:`song dictionaries <songdict-format>`,
