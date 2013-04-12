@@ -766,8 +766,14 @@ class Webclient(_Base):
 
         :param song_id: a single song id.
 
-        While this call requires authentication, retrieving the returned url does not.
-        However, the url expires after about a minute.
+        While acquiring the url requires authentication, retreiving the
+        url contents does not.
+
+        However, there are limitation as to how the stream url can be used:
+            * the url expires after about a minute
+            * only one IP can be streaming music at once.
+              Other attempts will get an http 403 with
+              ``X-Rejected-Reason: ANOTHER_STREAM_BEING_PLAYED``.
 
         *This is only intended for streaming*. The streamed audio does not contain metadata.
         Use :func:`get_song_download_info` to download complete files with metadata.
