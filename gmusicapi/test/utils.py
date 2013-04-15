@@ -8,8 +8,6 @@ import logging
 import numbers
 import os
 import re
-import string
-import sys
 
 
 #from gmusicapi.api import Api
@@ -26,27 +24,18 @@ gm_id_regex = re.compile(("{h}{{8}}-" +
                          ("{h}{{4}}-" * 3) +
                          "{h}{{12}}").format(h=hex_set))
 
-#Test files are located in the same directory as this file.
+#Get the absolute paths of the test files, which are located in the same
+# directory as this file.
 cwd = os.getcwd()
-os.chdir(os.path.dirname(sys.argv[0]))
+test_file_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(test_file_dir)
 
-audio_filenames = glob(u'audiotest*')
-mp3_filenames = [fn for fn in audio_filenames if fn.endswith('.mp3')]
-small_mp3 = u'audiotest_small.mp3'
-image_filename = 'imagetest_10x10_check.png'
+_audio_filenames = glob(u'audiotest*')
+mp3_filenames = [os.path.abspath(fn) for fn in _audio_filenames if fn.endswith('.mp3')]
+small_mp3 = os.path.abspath(u'audiotest_small.mp3')
+image_filename = os.path.abspath(u'imagetest_10x10_check.png')
 
 os.chdir(cwd)
-
-#Get the full path of the test files.
-#Can't use abspath since this is relative to where _this_ file is,
-# not necessarily the calling curdir.
-path = os.path.realpath(__file__)
-real_path = lambda lp: path[:string.rfind(path, os.sep)] + os.sep + lp
-
-mp3_filenames = map(real_path, mp3_filenames)
-audio_filenames = map(real_path, audio_filenames)
-image_filename = real_path(image_filename)
-small_mp3 = real_path(small_mp3)
 
 
 class NoticeLogging(logging.Handler):
