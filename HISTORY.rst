@@ -8,7 +8,7 @@ As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 1.0.X
 +++++
 - get_all_songs can optionally return a generator
-- compatibility update for AddPlaylist call
+- compatibility updates for AddPlaylist call
 
 1.0.0
 +++++
