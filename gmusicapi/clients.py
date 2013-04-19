@@ -136,7 +136,7 @@ class Musicmanager(_Base):
 
         :param open_browser: if True, attempt to open the auth url
           in the system default web browser. The url will be printed
-          Regardless of this param's setting.
+          regardless of this param's setting.
         """
 
         flow = OAuth2WebServerFlow(*musicmanager.oauth)

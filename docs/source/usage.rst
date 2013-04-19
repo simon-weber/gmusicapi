@@ -27,15 +27,6 @@ installed and in your system path, along with at least libmp3lame.
 If you need to install avconv from source, be sure to use
 ``$ ./configure --enable-gpl --enable-nonfree --enable-libmp3lame``.
 
-To check that everything is set up correctly, you can run the test
-suite: ``$ python -m gmusicapi.test.run_tests``.
-If something goes horribly wrong there's the chance you'll end up
-with an extra test playlist or song in your library, but you 
-should never lose anything.
-If the tests fail, please
-`open an issue <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/new>`__
-so the problem can be fixed.
-
 Quickstart
 ----------
 
