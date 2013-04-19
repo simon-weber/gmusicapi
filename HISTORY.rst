@@ -9,12 +9,15 @@ As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 +++++
 - get_all_songs can optionally return a generator
 - compatibility updates for AddPlaylist call
+- log to appdirs.user_log_dir by default
+- add open_browser param to perform_oauth
 
 1.0.0
 +++++
+released 2013-04-02
 
 - breaking: Api has been split into Webclient and Musicmanager
-- breaking: semantic versioning (previously versions removed from PyPi)
+- breaking: semantic versioning (previous versions removed from PyPi)
 - Music Manager OAuth support
 - faster uploading when matching is disabled
 - faster login
