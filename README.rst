@@ -56,7 +56,7 @@ If you're upgrading from a date-versioned release,
 you'll need to force the install:
 ``pip uninstall gmusicapi; pip install gmusicapi``.
 
-For updates, follow me on Twitter:
+For development updates, follow me on Twitter:
 `@simonmweber <https://twitter.com/simonmweber>`__.
 
 ------------

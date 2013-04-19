@@ -5,8 +5,10 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-1.0.X
+1.1.0
 +++++
+released 2013-04-19
+
 - get_all_songs can optionally return a generator
 - compatibility updates for AddPlaylist call
 - log to appdirs.user_log_dir by default
