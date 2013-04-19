@@ -125,6 +125,7 @@ class AddPlaylist(WcCall):
             "title": {"type": "string"},
             "success": {"type": "boolean"},
             "timestamp": {"type": "integer"},
+            "token": {"type": "string", "blank": True},
         },
         "additionalProperties": False
     }
