@@ -17,12 +17,12 @@ One exception: the docs are built dynamically against the current state of `mast
 
 ### Checking out a dev environment
 You can do this however you like, but generally you want to use [virtualenv](http://www.virtualenv.org/en/latest/):
-* `git clone https://github.com/simon-weber/Unofficial-Google-Music-API.git`
-* `cd Unofficial-Google-Music-API/`
-* `virtualenv --no-site-packages venv-gmapi`
-* `source venv-gmapi/bin/activate`
-* `pip install -e .` this installs the package as editable; changes to the source are reflected when running 
-* `git checkout develop`
-* hack away
-* `python gmusicapi/test/run_tests.py`
-* `deactivate` when you're finished
+* `$ git clone https://github.com/simon-weber/Unofficial-Google-Music-API.git`
+* `$ cd Unofficial-Google-Music-API/`
+* `$ virtualenv --no-site-packages venv-gmapi`
+* `$ source venv-gmapi/bin/activate`
+* `$ pip install -e .` # this installs the package as editable; changes to the source are reflected when running 
+* `$ git checkout develop`
+*  # hack away
+* `$ python -m gmusicapi.test.run_tests`
+* `$ deactivate` # when you're finished

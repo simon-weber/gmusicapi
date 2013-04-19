@@ -227,10 +227,14 @@ class Call(object):
         except CallFailure:
             raise
         except ValidationException:
-            #TODO link to some protocol for reporting this and trim the response if it's huge
+            #TODO trim the response if it's huge
             if cls.gets_logged:
-                msg_fmt = ("please report (at http://goo.gl/qbAW8) the following"
-                           " unknown response format for %s: %r")
+                msg_fmt = ("the following response format for %s was not recognized."
+                           "\nIf there has not been a compatibility update reported"
+                           "[here](http://goo.gl/jTKNb),"
+                           " please [create an issue](http://goo.gl/qbAW8) that includes"
+                           " the following raw response:\n%r\n"
+                           "\nA traceback follows:\n")
                 log.exception(msg_fmt, call_name, msg)
 
         return msg

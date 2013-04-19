@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 import sys
 
 #Only 2.6-2.7 are supported.
-if not ((2, 6, 0) <= sys.version_info[:3] <= (2, 7, 3)):
+if not ((2, 6, 0) <= sys.version_info[:3] <= (2, 7, 4)):
     sys.stderr.write('gmusicapi does not officially support this Python version.\n')
     #try to continue anyway
 
@@ -46,16 +46,12 @@ setup(
         'decorator == 3.3.2',
         'mutagen == 1.21',
         'protobuf == 2.4.1',
-        'requests == 1.1.0',
+        'requests == 1.2.0',
         'python-dateutil == 2.1',
         'proboscis==1.2.5.3',
         'oauth2client==1.1',
         'mock==1.0.1',
         'appdirs==1.2.0',
-        #for testing album art:
-        #'hachoir-core == 1.3.3',
-        #'hachoir-parser == 1.3.4',
-        #'hachoir-metadata == 1.3.3',
     ] + dynamic_requires,
     classifiers=[
         'Programming Language :: Python',

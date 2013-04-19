@@ -11,8 +11,8 @@ import os
 from socket import gethostname
 import time
 from uuid import getnode as getmac
+import webbrowser
 
-from appdirs import AppDirs
 import httplib2  # included with oauth2client
 from oauth2client.client import OAuth2WebServerFlow, TokenRevokeError
 import oauth2client.file
@@ -23,9 +23,7 @@ from gmusicapi.protocol import webclient, musicmanager, upload_pb2, locker_pb2
 from gmusicapi.utils import utils
 import gmusicapi.session
 
-# not to be changed at runtime
-mydirs = AppDirs('gmusicapi', 'Simon Weber')
-OAUTH_FILEPATH = os.path.join(mydirs.user_data_dir, 'oauth.cred')
+OAUTH_FILEPATH = os.path.join(utils.my_appdirs.user_data_dir, 'oauth.cred')
 
 # oauth client breaks if the dir doesn't exist
 utils.make_sure_path_exists(os.path.dirname(OAUTH_FILEPATH), 0o700)
@@ -46,8 +44,15 @@ class _Base(object):
           will propogate to the ``gmusicapi`` root logger.
 
           If this param is ``True``, handlers will be configured to send
-          this client's log output to ``gmusicapi.log``,
+          this client's log output to disk,
           with warnings and above printed to the console.
+          `Appdirs <https://pypi.python.org/pypi/appdirs/1.2.0>`__
+          ``user_log_dir`` is used by default. Users can run::
+
+              from gmusicapi.utils import utils
+              print utils.log_filepath
+
+          to see the exact location on their system.
 
           If ``False``, no handlers will be configured;
           users must create their own handlers.
@@ -107,12 +112,15 @@ class Musicmanager(_Base):
     """
 
     @staticmethod
-    def perform_oauth(storage_filepath=OAUTH_FILEPATH):
+    def perform_oauth(storage_filepath=OAUTH_FILEPATH, open_browser=False):
         """Provides a series of prompts for a user to follow to authenticate.
-        Returns ``oauth2client.client.OAuth2Credentials``.
+        Returns ``oauth2client.client.OAuth2Credentials`` when successful.
 
         In most cases, this should only be run once per machine to store
         credentials to disk, then never be needed again.
+
+        If the user refuses to give access,
+        ``oauth2client.client.FlowExchangeError`` is raised.
 
         :param storage_filepath: a filepath to write the credentials to,
           or ``None``
@@ -125,6 +133,10 @@ class Musicmanager(_Base):
               print gmusicapi.clients.OAUTH_FILEPATH
 
           to see the exact location on their system.
+
+        :param open_browser: if True, attempt to open the auth url
+          in the system default web browser. The url will be printed
+          regardless of this param's setting.
         """
 
         flow = OAuth2WebServerFlow(*musicmanager.oauth)
@@ -132,6 +144,15 @@ class Musicmanager(_Base):
         auth_uri = flow.step1_get_authorize_url()
         print
         print "Visit the following url:\n %s" % auth_uri
+
+        if open_browser:
+            print
+            print 'Opening your browser to it now...',
+            webbrowser.open(auth_uri)
+            print 'done.'
+            print "If you don't see your browser, you can just copy and paste the url."
+            print
+
         code = raw_input("Follow the prompts,"
                          " then paste the auth code here and hit enter: ")
 
@@ -607,22 +628,35 @@ class Webclient(_Base):
 
         return res['deleteIds']
 
-    def get_all_songs(self):
-        #TODO support an iterator; see #88
-        """Returns a list of :ref:`song dictionaries <songdict-format>`."""
+    def get_all_songs(self, incremental=False):
+        """Returns a list of :ref:`song dictionaries <songdict-format>`.
 
-        library = []
+        :param incremental: if True, return a generator that yields lists
+          of at most 2500 :ref:`song dictionaries <songdict-format>`
+          as they are retrieved from the server. This can be useful for
+          presenting a loading bar to a user.
+        """
 
-        lib_chunk = self._make_call(webclient.GetLibrarySongs)
+        to_return = self._get_all_songs()
 
-        while 'continuationToken' in lib_chunk:
-            library += lib_chunk['playlist']  # 'playlist' is misleading; this is the entire chunk
+        if not incremental:
+            to_return = [song for chunk in to_return for song in chunk]
 
-            lib_chunk = self._make_call(webclient.GetLibrarySongs, lib_chunk['continuationToken'])
+        return to_return
 
-        library += lib_chunk['playlist']
+    def _get_all_songs(self):
+        """Return a generator of song chunks."""
 
-        return library
+        get_next_chunk = True
+        lib_chunk = {'continuationToken': None}
+
+        while get_next_chunk:
+            lib_chunk = self._make_call(webclient.GetLibrarySongs,
+                                        lib_chunk['continuationToken'])
+
+            yield lib_chunk['playlist']  # list of songs of the chunk
+
+            get_next_chunk = 'continuationToken' in lib_chunk
 
     def get_playlist_songs(self, playlist_id):
         """Returns a list of :ref:`song dictionaries <songdict-format>`,
@@ -732,8 +766,14 @@ class Webclient(_Base):
 
         :param song_id: a single song id.
 
-        While this call requires authentication, retrieving the returned url does not.
-        However, the url expires after about a minute.
+        While acquiring the url requires authentication, retreiving the
+        url contents does not.
+
+        However, there are limitation as to how the stream url can be used:
+            * the url expires after about a minute
+            * only one IP can be streaming music at once.
+              Other attempts will get an http 403 with
+              ``X-Rejected-Reason: ANOTHER_STREAM_BEING_PLAYED``.
 
         *This is only intended for streaming*. The streamed audio does not contain metadata.
         Use :func:`get_song_download_info` to download complete files with metadata.
