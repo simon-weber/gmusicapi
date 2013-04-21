@@ -288,6 +288,57 @@ class Musicmanager(_Base):
 
         return success and super(Musicmanager, self).logout()
 
+    # mostly copy-paste from Webclient.get_all_songs.
+    # not worried about overlap in this case; the logic of either could change.
+    def get_all_songs(self, incremental=False):
+        """Returns a list of dictionaries, each with the following keys:
+        ``('id', 'title', 'album', 'album_artist', 'artist', 'track_number',
+        'track_size')``.
+
+        :param incremental: if True, return a generator that yields lists
+          of at most 1000 dictionaries
+          as they are retrieved from the server. This can be useful for
+          presenting a loading bar to a user.
+        """
+
+        to_return = self._get_all_songs()
+
+        if not incremental:
+            to_return = [song for chunk in to_return for song in chunk]
+
+        return to_return
+
+    @staticmethod
+    def _track_info_to_dict(track_info):
+        """Given a download_pb2.DownloadTrackInfo, return a dictionary."""
+        # figure it's better to hardcode keys here than use introspection
+        # and risk returning a new field all of a sudden.
+
+        return dict((field, getattr(track_info, field)) for field in
+                    ('id', 'title', 'album', 'album_artist', 'artist',
+                     'track_number', 'track_size'))
+
+    def _get_all_songs(self):
+        """Return a generator of song chunks."""
+
+        get_next_chunk = True
+
+        # need to spoof .continuation_token access, and
+        # can't add attrs to object(). Can with functions.
+
+        lib_chunk = lambda: 0
+        lib_chunk.continuation_token = None
+
+        while get_next_chunk:
+            lib_chunk = self._make_call(musicmanager.ListTracks,
+                                        self.uploader_id,
+                                        lib_chunk.continuation_token)
+
+            yield [self._track_info_to_dict(info)
+                   for info in lib_chunk.download_track_info]
+
+            get_next_chunk = lib_chunk.HasField('continuation_token')
+
     # def get_quota(self):
     #     """Returns a tuple of (allowed number of tracks, total tracks, available tracks)."""
     #     quota = self._mm_pb_call("client_state").quota

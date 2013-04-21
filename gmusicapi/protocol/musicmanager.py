@@ -17,7 +17,7 @@ from oauth2client.client import OAuth2Credentials
 
 from gmusicapi.compat import json
 from gmusicapi.exceptions import CallFailure
-from gmusicapi.protocol import upload_pb2, locker_pb2
+from gmusicapi.protocol import upload_pb2, locker_pb2, download_pb2
 from gmusicapi.protocol.shared import Call, ParseException, authtypes
 from gmusicapi.utils import utils
 
@@ -556,3 +556,82 @@ class CancelUploadJobs(MmCall):
         msg.uploader_id = uploader_id
 
         return msg
+
+
+class ListTracks(MmCall):
+    """List all tracks. Returns a subset of all available metadata.
+    Can optionally filter for only free/purchased tracks."""
+
+    res_msg_type = download_pb2.GetTracksToExportResponse
+
+    static_method = 'POST'
+    static_url = 'https://music.google.com/music/exportids'
+
+    # example response:
+    # download_track_info {
+    #   id: "970d9e51-b392-3857-897a-170e456cba60"
+    #   title: "Temporary Trip"
+    #   album: "Pay Attention"
+    #   album_artist: "The Mighty Mighty Bosstones"
+    #   artist: "The Mighty Mighty Bosstones"
+    #   track_number: 14
+    #   track_size: 3577382
+    # }
+
+    @staticmethod
+    def dynamic_headers(client_id, *args, **kwargs):
+        return {'X-Device-ID': client_id}
+
+    @staticmethod
+    @pb
+    def dynamic_data(client_id, cont_token=None, export_type=1, updated_min=0):
+        """Works similarly to the webclient method.
+        Chunks are up to 1000 tracks.
+
+
+        :param client_id: an authorized uploader_id
+        :param cont_token: (optional) token to get the next library chunk.
+        :param export_type: 1='ALL', 2='PURCHASED_AND_PROMOTIONAL'
+        :param updated_min: likely a timestamp; never seen an example of this != 0
+        """
+
+        msg = download_pb2.GetTracksToExportRequest()
+        msg.client_id = client_id
+        msg.export_type = export_type
+
+        if cont_token is not None:
+            msg.continuation_token = cont_token
+
+        msg.updated_min = updated_min
+
+        return msg
+
+    @classmethod
+    def check_success(cls, response, msg):
+        if msg.status != download_pb2.GetTracksToExportResponse.OK:
+            enum_desc = download_pb2._GETTRACKSTOEXPORTRESPONSE.enum_types[0]
+            res_name = enum_desc.values_by_number[msg.status].name
+
+            raise CallFailure(
+                "Track export (list) error code %s: %s." % (
+                    msg.status, res_name
+                ), cls.__name__
+            )
+
+    #TODO
+    @staticmethod
+    def filter_response(msg):
+        """Only log a summary."""
+
+        cont_token = None
+        if msg.HasField('continuation_token'):
+            cont_token = msg.continuation_token
+
+        updated_min = None
+        if msg.HasField('updated_min'):
+            updated_min = msg.updated_min
+
+        return "<%s songs>, updated_min: %r, continuation_token: %r" % (
+            len(msg.download_track_info),
+            updated_min,
+            cont_token)

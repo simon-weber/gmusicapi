@@ -64,7 +64,7 @@ class BuildRequestMeta(type):
 
         for key in merge_keys:
             #merge case: dyn took precedence above, but stat also exists
-            if dyn(key) in config and has_key(stat(key)):
+            if has_key(dyn(key)) and has_key(stat(key)):
                 def key_closure(stat_val=get_key(stat(key)), dyn_func=get_key(dyn(key))):
                     def build_key(*args, **kwargs):
                         dyn_val = dyn_func(*args, **kwargs)
