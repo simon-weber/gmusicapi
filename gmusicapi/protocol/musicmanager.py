@@ -71,12 +71,14 @@ class MmCall(Call):
     """Abstract base for Music Manager calls."""
 
     static_method = 'POST'
-    # remember that this won't merge in subclasses
+    # remember that setting this in a subclass overrides, not merges
+    # static + dynamic does merge, though
     static_headers = {'User-agent': 'Music Manager (1, 0, 55, 7425 HTTPS - Windows)'}
 
     required_auth = authtypes(oauth=True)
 
-    #this is a shared union class that has all specific upload types
+    # this is a shared union class that has all specific upload types
+    # nearly all of the proto calls return a message of this form
     res_msg_type = upload_pb2.UploadResponse
 
     @classmethod
@@ -635,3 +637,57 @@ class ListTracks(MmCall):
             len(msg.download_track_info),
             updated_min,
             cont_token)
+
+
+class GetDownloadLink(MmCall):
+    """Get a url where a track can be downloaded.
+
+    Auth is not needed to retrieve the resulting url."""
+
+    static_method = 'GET'
+    static_headers = {}
+    static_params = {'version': 2}
+    static_url = 'https://music.google.com/music/export'
+
+    @staticmethod
+    def dynamic_headers(sid, client_id):
+        return {'X-Device-ID': client_id}
+
+    @staticmethod
+    def dynamic_params(sid, client_id):
+        return {'songid': sid}
+
+    @classmethod
+    def parse_response(cls, response):
+        return cls._parse_json(response.text)
+
+    @staticmethod
+    def filter_response(res):
+        return res
+
+
+class DownloadTrack(MmCall):
+    """Given a url, retrieve a track. Unlike the Webclient, this
+    requires authentication.
+
+    The entire Requests.Response is returned."""
+
+    static_method = 'GET'
+
+    @staticmethod
+    def dynamic_url(url):
+        """
+        :param url: result of a call to GetDownloadLink
+        """
+        return url
+
+    @classmethod
+    def parse_response(cls, response):
+        return response
+
+    @staticmethod
+    def filter_response(res):
+        return "code: %s; size: %s bytes; disposition: %r" % (
+            res.status_code,
+            res.headers['Content-Length'],
+            res.headers['Content-Disposition'])

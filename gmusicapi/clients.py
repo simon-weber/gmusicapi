@@ -10,6 +10,7 @@ import logging
 import os
 from socket import gethostname
 import time
+import urllib
 from uuid import getnode as getmac
 import webbrowser
 
@@ -338,6 +339,42 @@ class Musicmanager(_Base):
                    for info in lib_chunk.download_track_info]
 
             get_next_chunk = lib_chunk.HasField('continuation_token')
+
+    def download_song(self, song_id):
+        """Returns a function that takes no arguments and returns
+        a tuple ``(suggested_filename, audio_bytestring)``. The filename
+        will be a unicode string with the proper file extension.
+
+        :param song_id: a single song id.
+
+        To write the song to disk, use something like::
+
+            filename, audio = mm.download_song(an_id)
+
+            with open(filename, 'wb') as f:
+                f.write(audio)
+
+        Unlike with :py:func:`Webclient.get_song_download_info
+         <gmusicapi.clients.Webclient.get_song_download_info>`,
+        there is no download limit when using this interface.
+
+        Also unlike the Webclient, downloading a track requires authentication.
+        Returning a url does not suffice, since retrieving a track without auth
+        will produce an http 500.
+        """
+
+        url = self._make_call(musicmanager.GetDownloadLink,
+                              song_id,
+                              self.uploader_id)['url']
+
+        response = self._make_call(musicmanager.DownloadTrack, url)
+
+        cd_header = response.headers['content-disposition']
+
+        filename = urllib.unquote(cd_header.split("filename*=UTF-8''")[-1])
+        filename = unicode(filename, 'utf-8')
+
+        return (filename, response.content)
 
     # def get_quota(self):
     #     """Returns a tuple of (allowed number of tracks, total tracks, available tracks)."""

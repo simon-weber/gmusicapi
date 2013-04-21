@@ -283,6 +283,15 @@ class UpauthTests(object):
         assert_is_not_none(url)
 
     @song_test
+    def download_song_mm(self):
+        filename, audio = self.mm.download_song(self.song.sid)
+
+        #TODO could use original filename to verify this
+        # when manually checking, got modified title occasionally
+        assert_true(filename.endswith('.mp3'))  # depends on specific file
+        assert_is_not_none(audio)
+
+    @song_test
     def get_stream_url(self):
         url = self.wc.get_stream_url(self.song.sid)
 
