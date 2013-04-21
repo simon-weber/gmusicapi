@@ -213,8 +213,7 @@ class Call(object):
             response.raise_for_status()
         except requests.HTTPError as e:
             log.exception("http error on %s response: %r", call_name, response.content)
-            trace = sys.exc_info()[2]
-            raise CallFailure(str(e), call_name), None, trace
+            raise CallFailure(str(e), call_name)
 
         try:
             msg = cls.parse_response(response)
