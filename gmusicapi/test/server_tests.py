@@ -284,12 +284,19 @@ class UpauthTests(object):
 
     @song_test
     def download_song_mm(self):
-        filename, audio = self.mm.download_song(self.song.sid)
 
-        #TODO could use original filename to verify this
-        # when manually checking, got modified title occasionally
-        assert_true(filename.endswith('.mp3'))  # depends on specific file
-        assert_is_not_none(audio)
+        @retry
+        def assert_download(sid=self.song.sid):
+            filename, audio = self.mm.download_song(sid)
+
+            # there's some kind of a weird race happening here with CI;
+            # usually one will succeed and one will fail
+
+            #TODO could use original filename to verify this
+            # but, when manually checking, got modified title occasionally
+            assert_true(filename.endswith('.mp3'))  # depends on specific file
+            assert_is_not_none(audio)
+        assert_download()
 
     @song_test
     def get_stream_url(self):
