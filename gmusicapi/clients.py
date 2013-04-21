@@ -341,8 +341,8 @@ class Musicmanager(_Base):
             get_next_chunk = lib_chunk.HasField('continuation_token')
 
     def download_song(self, song_id):
-        """Returns a function that takes no arguments and returns
-        a tuple ``(suggested_filename, audio_bytestring)``. The filename
+        """Returns a tuple ``(u'suggested_filename', 'audio_bytestring')``.
+        The filename
         will be a unicode string with the proper file extension.
 
         :param song_id: a single song id.
