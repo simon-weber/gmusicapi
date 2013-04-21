@@ -15,6 +15,8 @@ from gmusicapi.exceptions import (
 )
 from gmusicapi.utils import utils
 
+import requests
+
 log = utils.DynamicClientLogger(__name__)
 
 _auth_names = ('xt', 'sso', 'oauth')
@@ -206,7 +208,13 @@ class Call(object):
 
         response = session.send(req_kwargs, cls.required_auth)
 
-        #TODO check return code
+        # check response code
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as e:
+            log.exception("http error on %s response: %r", call_name, response.content)
+            trace = sys.exc_info()[2]
+            raise CallFailure(str(e), call_name), None, trace
 
         try:
             msg = cls.parse_response(response)
