@@ -202,49 +202,59 @@ class Call(object):
                       dict((k, utils.truncate(v)) for (k, v) in kwargs.items())
                       )
         else:
-            log.debug("%s(<does not get logged>)", call_name)
+            log.debug("%s(<omitted>)", call_name)
 
         req_kwargs = cls.build_request(*args, **kwargs)
 
         response = session.send(req_kwargs, cls.required_auth)
+        #TODO trim the logged response if it's huge?
 
         # check response code
         try:
             response.raise_for_status()
         except requests.HTTPError as e:
-            log.exception("http error on %s response: %r", call_name, response.content)
-            raise CallFailure(str(e), call_name)
+            err_msg = str(e)
+
+            if cls.gets_logged:
+                err_msg += "\n(response was: %r)" % response.content
+
+            raise CallFailure(err_msg, call_name)
 
         try:
-            msg = cls.parse_response(response)
+            parsed_response = cls.parse_response(response)
         except ParseException:
+            err_msg = ("the server's response could not be understood."
+                       " The call may still have succeeded, but it's unlikely.")
             if cls.gets_logged:
-                log.exception("couldn't parse %s response: %r", call_name, response.content)
-            raise CallFailure("the server's response could not be understood."
-                              " The call may still have succeeded, but it's unlikely.",
-                              call_name)
+                err_msg += "\n(response was: %r)" % response.content
+                log.exception("could not parse %s response: %r", call_name, response.content)
+            else:
+                log.exception("could not parse %s response: (omitted)", call_name)
+
+            raise CallFailure(err_msg, call_name)
 
         if cls.gets_logged:
-            log.debug(cls.filter_response(msg))
+            log.debug(cls.filter_response(parsed_response))
 
         try:
             #order is important; validate only has a schema for a successful response
-            cls.check_success(response, msg)
-            cls.validate(response, msg)
+            cls.check_success(response, parsed_response)
+            cls.validate(response, parsed_response)
         except CallFailure:
             raise
         except ValidationException:
-            #TODO trim the response if it's huge
+            #TODO shouldn't be using formatting
+            err_msg = "the response format for %s was not recognized." % call_name
             if cls.gets_logged:
-                msg_fmt = ("the following response format for %s was not recognized."
-                           "\nIf there has not been a compatibility update reported"
-                           "[here](http://goo.gl/jTKNb),"
-                           " please [create an issue](http://goo.gl/qbAW8) that includes"
-                           " the following raw response:\n%r\n"
-                           "\nA traceback follows:\n")
-                log.exception(msg_fmt, call_name, msg)
+                err_msg += ("\nIf there has not been a compatibility update reported"
+                            "[here](http://goo.gl/jTKNb),"
+                            " please [create an issue](http://goo.gl/qbAW8) that includes"
+                            " the following raw response:\n%r\n"
+                            "\nA traceback follows:\n") % response.content
 
-        return msg
+            log.exception(err_msg)
+
+        return parsed_response
 
     @staticmethod
     def _parse_json(text):

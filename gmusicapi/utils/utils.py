@@ -17,6 +17,7 @@ from decorator import decorator
 from google.protobuf.descriptor import FieldDescriptor
 
 from gmusicapi import __version__
+from gmusicapi.exceptions import CallFailure
 
 # this controls the crazy logging setup that checks the callstack;
 #  it should be monkey-patched to False after importing to disable it.
@@ -189,7 +190,7 @@ def retry(retry_exception=None, tries=6, delay=2, backoff=2, logger=None):
     An exception from a final attempt will propogate.
 
     :param retry_exception: exception (or tuple of exceptions) to check for and retry on.
-      If None, use AssertionError.
+      If None, use (AssertionError, CallFailure).
     :param tries: number of times to try (not retry) before giving up
     :param delay: initial delay between retries in seconds
     :param backoff: backoff multiplier
@@ -203,7 +204,7 @@ def retry(retry_exception=None, tries=6, delay=2, backoff=2, logger=None):
         logger = logging.getLogger('gmusicapi.utils')
 
     if retry_exception is None:
-        retry_exception = AssertionError
+        retry_exception = (AssertionError, CallFailure)
 
     @decorator
     def retry_wrapper(f, *args, **kwargs):
