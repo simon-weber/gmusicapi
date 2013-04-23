@@ -351,6 +351,9 @@ class Musicmanager(_Base):
 
             filename, audio = mm.download_song(an_id)
 
+            # if open() throws a UnicodeEncodeError, either use
+            #   filename.encode('utf-8')
+            # or change your default encoding to something sane =)
             with open(filename, 'wb') as f:
                 f.write(audio)
 
@@ -372,7 +375,7 @@ class Musicmanager(_Base):
         cd_header = response.headers['content-disposition']
 
         filename = urllib.unquote(cd_header.split("filename*=UTF-8''")[-1])
-        filename = unicode(filename, 'utf-8')
+        filename = filename.decode('utf-8')
 
         return (filename, response.content)
 
