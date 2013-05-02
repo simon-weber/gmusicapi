@@ -8,6 +8,7 @@ import functools
 import inspect
 import logging
 import os
+import re
 import subprocess
 import time
 import traceback
@@ -42,6 +43,35 @@ cpp_type_to_python = dict(
 
 log_filepath = os.path.join(my_appdirs.user_log_dir, 'gmusicapi.log')
 printed_log_start_message = False  # global, set in config_debug_logging
+
+# matches a mac address in GM form, eg
+#   00:11:22:33:AA:BB
+_mac_pattern = re.compile("^({pair}:){{5}}{pair}$".format(pair='[0-9A-F]' * 2))
+
+
+def is_valid_mac(mac_string):
+    """Return True if mac_string is of form
+    eg '00:11:22:33:AA:BB'.
+    """
+    if not _mac_pattern.match(mac_string):
+        return False
+
+    return True
+
+
+def create_mac_string(num):
+    """Return the mac address interpretation of num,
+    in the form eg '00:11:22:33:AA:BB'.
+
+    :param num: a 48-bit integer (eg from uuid.getnode)
+    """
+    mac = hex(num)[2:-1]
+    pad = max(12 - len(mac), 0)
+    mac = '0' * pad + mac
+    mac = ':'.join([mac[x:x + 2] for x in range(0, 12, 2)])
+    mac = mac.upper()
+
+    return mac
 
 
 # from http://stackoverflow.com/a/5032238/1231454

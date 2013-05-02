@@ -8,7 +8,6 @@ The clients module exposes the main user-facing interfaces of gmusicapi.
 import copy
 import logging
 import os
-import re
 from socket import gethostname
 import time
 import urllib
@@ -30,10 +29,6 @@ OAUTH_FILEPATH = os.path.join(utils.my_appdirs.user_data_dir, 'oauth.cred')
 
 # oauth client breaks if the dir doesn't exist
 utils.make_sure_path_exists(os.path.dirname(OAUTH_FILEPATH), 0o700)
-
-# matches a mac address in GM form, eg
-#   00:11:22:33:AA:BB
-_mac_pattern = re.compile("^({pair}:){{5}}{pair}$".format(pair='[0-9A-F]' * 2))
 
 
 class _Base(object):
@@ -262,25 +257,19 @@ class Musicmanager(_Base):
         """
 
         if uploader_id is None:
-            mac = getmac()
-            if (mac >> 40) % 2:
+            mac_int = getmac()
+            if (mac_int >> 40) % 2:
                 raise OSError('a valid MAC could not be determined.'
                               ' Provide uploader_id (and be'
                               ' sure to provide the same one on future runs).')
 
             else:
                 #distinguish us from a Music Manager on this machine
-                mac = (mac + 1) % (1 << 48)
+                mac_int = (mac_int + 1) % (1 << 48)
 
-            # change to proper 6 hex pair format
-            mac = hex(mac)[2:-1]
-            pad = max(12 - len(mac), 0)
-            mac = '0' * pad + mac
-            mac = ':'.join([mac[x:x + 2] for x in range(0, 12, 2)])
+            uploader_id = utils.create_mac_string(mac_int)
 
-            uploader_id = mac.upper()
-
-        if not _mac_pattern.match(uploader_id):
+        if not utils.is_valid_mac(uploader_id):
             raise ValueError('uploader_id is not in a valid form.'
                              '\nProvide 6 pairs of hex digits'
                              ' with capital letters',
