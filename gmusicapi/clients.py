@@ -218,7 +218,12 @@ class Musicmanager(_Base):
         :param uploader_name: human-readable non-unique id; default is
           ``"<hostname> (gmusicapi-{version})"``.
 
-        There are strict limits on how many upload devices can be registered; refer to `Google's
+          This doesn't appear to be a part of authentication at all.
+          Registering with (id, name = X, Y) and logging in with
+          (id, name = X, Z) works, and does not change the server-stored
+          uploader_name.
+
+        There are hard limits on how many upload devices can be registered; refer to `Google's
         docs <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1230356>`__. There
         have been limits on deauthorizing devices in the past, so it's smart not to register
         more devices than necessary.
