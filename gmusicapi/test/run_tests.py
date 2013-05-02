@@ -7,18 +7,16 @@ from types import MethodType
 
 from proboscis import TestProgram
 
-# these need to be imported for proboscis test discovery
-#from gmusicapi import Api
 from gmusicapi.clients import Webclient, Musicmanager
 from gmusicapi.protocol.musicmanager import credentials_from_refresh_token
 from gmusicapi.test import local_tests, server_tests
 from gmusicapi.test.utils import NoticeLogging
-from gmusicapi.utils.utils import configure_debug_log_handlers
 
 travis_id = 'E9:40:01:0E:51:7A'
-travis_name = 'Travis-CI (gmusicapi)'
+travis_name = "Travis-CI (gmusicapi)"
 
 # pretend to use test modules to appease flake8
+# these need to be imported for implicit test discovery
 _, _ = local_tests, server_tests
 
 
