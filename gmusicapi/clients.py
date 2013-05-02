@@ -8,6 +8,7 @@ The clients module exposes the main user-facing interfaces of gmusicapi.
 import copy
 import logging
 import os
+import re
 from socket import gethostname
 import time
 import urllib
@@ -18,6 +19,7 @@ import httplib2  # included with oauth2client
 from oauth2client.client import OAuth2WebServerFlow, TokenRevokeError
 import oauth2client.file
 
+import gmusicapi
 from gmusicapi.gmtools import tools
 from gmusicapi.exceptions import CallFailure, NotLoggedIn
 from gmusicapi.protocol import webclient, musicmanager, upload_pb2, locker_pb2
@@ -28,6 +30,10 @@ OAUTH_FILEPATH = os.path.join(utils.my_appdirs.user_data_dir, 'oauth.cred')
 
 # oauth client breaks if the dir doesn't exist
 utils.make_sure_path_exists(os.path.dirname(OAUTH_FILEPATH), 0o700)
+
+# matches a mac address in GM form, eg
+#   00:11:22:33:AA:BB
+_mac_pattern = re.compile("^({pair}:){{5}}{pair}$".format(pair='[0-9A-F]' * 2))
 
 
 class _Base(object):
@@ -194,25 +200,37 @@ class Musicmanager(_Base):
           3rd party service who intend to perform their own OAuth flow
           (eg on their website).
 
-        :param uploader_id: a unique id as a MAC address, eg ``'01:23:45:67:89:AB'``.
+        :param uploader_id: a unique id as a MAC address, eg ``'00:11:22:33:AA:BB'``.
           This should only be provided in cases where the default
           (host MAC address incremented by 1) will not work.
 
           Upload behavior is undefined if a Music Manager uses the same id, especially when
           reporting bad matches.
 
-          ``OSError`` will be raised if this is not provided and a stable MAC could not be
-          determined (eg when running on a VPS).
+          ``ValueError`` will be raised if this is provided but not in the proper form.
 
-          If provided, it's best to use the same id on all future runs for this machine,
+          ``OSError`` will be raised if this is not provided and a real MAC could not be
+          determined (most common when running on a VPS).
+
+          If provided, use the same id on all future runs for this machine,
           because of the upload device limit explained below.
 
-        :param uploader_name: human-readable non-unique id; default is ``"<hostname> (gmusicapi)"``.
+        :param uploader_name: human-readable non-unique id; default is
+          ``"<hostname> (gmusicapi-{version})"``.
 
         There are strict limits on how many upload devices can be registered; refer to `Google's
         docs <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1230356>`__. There
         have been limits on deauthorizing devices in the past, so it's smart not to register
         more devices than necessary.
+        """
+
+        return (self._oauth_login(oauth_credentials) and
+                self._perform_upauth(uploader_id, uploader_name))
+
+    def _oauth_login(self, oauth_credentials):
+        """Auth ourselves to the MM oauth endpoint.
+
+        Return True on success; see :py:func:`login` for params.
         """
 
         if isinstance(oauth_credentials, basestring):
@@ -230,6 +248,14 @@ class Musicmanager(_Base):
 
         self.logger.info("oauth successful")
 
+        return True
+
+    def _perform_upauth(self, uploader_id, uploader_name):
+        """Auth or register ourselves as an upload client.
+
+        Return True on success; see :py:func:`login` for params.
+        """
+
         if uploader_id is None:
             mac = getmac()
             if (mac >> 40) % 2:
@@ -241,12 +267,22 @@ class Musicmanager(_Base):
                 #distinguish us from a Music Manager on this machine
                 mac = (mac + 1) % (1 << 48)
 
+            # change to proper 6 hex pair format
             mac = hex(mac)[2:-1]
-            mac = ':'.join([mac[x:x + 2] for x in range(0, 10, 2)])
+            pad = max(12 - len(mac), 0)
+            mac = '0' * pad + mac
+            mac = ':'.join([mac[x:x + 2] for x in range(0, 12, 2)])
+
             uploader_id = mac.upper()
 
+        if not _mac_pattern.match(uploader_id):
+            raise ValueError('uploader_id is not in a valid form.'
+                             '\nProvide 6 pairs of hex digits'
+                             ' with capital letters',
+                             ' (eg "00:11:22:33:AA:BB")')
+
         if uploader_name is None:
-            uploader_name = gethostname() + u" (gmusicapi)"
+            uploader_name = gethostname() + u" (gmusicapi-%s)" % gmusicapi.__version__
 
         try:
             # this is a MM-specific step that might register a new device.

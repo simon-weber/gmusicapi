@@ -11,7 +11,7 @@ import time
 from mock import MagicMock as Mock
 from proboscis.asserts import (
     assert_raises, assert_true, assert_false, assert_equal,
-    assert_is_not
+    assert_is_not, Check
 )
 from proboscis import test
 
@@ -55,6 +55,22 @@ def no_client_auth_initially():
 
     mm = Musicmanager()
     assert_false(mm.is_authenticated())
+
+
+@test
+def mm_prevents_bad_mac_format():
+    mm = create_clients().musicmanager
+
+    with Check() as check:
+        for bad_mac in ['bogus',
+                        '11:22:33:44:55:66:',
+                        '11:22:33:44:55:ab',
+                        '11:22:33:44:55']:
+            check.raises(
+                ValueError,
+                mm._perform_upauth,
+                uploader_id=bad_mac,
+                uploader_name='valid')
 
 
 # @test
