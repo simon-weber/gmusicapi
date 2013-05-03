@@ -59,16 +59,18 @@ def is_valid_mac(mac_string):
     return True
 
 
-def create_mac_string(num):
+def create_mac_string(num, splitter=':'):
     """Return the mac address interpretation of num,
     in the form eg '00:11:22:33:AA:BB'.
 
     :param num: a 48-bit integer (eg from uuid.getnode)
+    :param spliiter: a string to join the hex pairs with
     """
-    mac = hex(num)[2:-1]
+
+    mac = hex(int(num))[2:]  # converting to int makes sure we don't have a trailing L
     pad = max(12 - len(mac), 0)
     mac = '0' * pad + mac
-    mac = ':'.join([mac[x:x + 2] for x in range(0, 12, 2)])
+    mac = splitter.join([mac[x:x + 2] for x in range(0, 12, 2)])
     mac = mac.upper()
 
     return mac
