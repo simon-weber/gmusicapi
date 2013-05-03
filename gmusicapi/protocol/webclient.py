@@ -40,6 +40,8 @@ pl_schema = {
         "playlist": song_array,
         "playlistId": {"type": "string"},
         "unavailableTrackCount": {"type": "integer"},
+        # unsure what this field does. sometimes it's not there.
+        "token": {"type": "string", "required": False},
         #only appears when loading multiple playlists
         "title": {"type": "string", "required": False},
         "continuationToken": {"type": "string", "required": False}
