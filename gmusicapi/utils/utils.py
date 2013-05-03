@@ -67,7 +67,12 @@ def create_mac_string(num, splitter=':'):
     :param spliiter: a string to join the hex pairs with
     """
 
-    mac = hex(int(num))[2:]  # converting to int makes sure we don't have a trailing L
+    mac = hex(num)[2:]
+
+    # trim trailing L for long consts
+    if mac[-1] == 'L':
+        mac = mac[:-1]
+
     pad = max(12 - len(mac), 0)
     mac = '0' * pad + mac
     mac = splitter.join([mac[x:x + 2] for x in range(0, 12, 2)])
