@@ -150,6 +150,7 @@ _all_expts = [
         ('playlistEntryId', 'string', 'identifies position in the context of a playlist.'),
         ('albumArtUrl', 'string', "if present, the url of an image for this song's album art."),
         ('artistMatchedId', 'string', "id of a matching artist in the Play Store?"),
+        ('albumPlaybackTimestamp', 'integer', "the last time this album was played?"),
     )
 ] + [
     Expectation(name + 'Norm', 'string', mutable=False, optional=False,
