@@ -46,8 +46,8 @@ class _Base(object):
           will propogate to the ``gmusicapi`` root logger.
 
           If this param is ``True``, handlers will be configured to send
-          this client's log output to disk,
-          with warnings and above printed to the console.
+          this client's debug log output to disk,
+          with warnings and above printed to stderr.
           `Appdirs <https://pypi.python.org/pypi/appdirs/1.2.0>`__
           ``user_log_dir`` is used by default. Users can run::
 
@@ -388,7 +388,7 @@ class Musicmanager(_Base):
                 f.write(audio)
 
         Unlike with :py:func:`Webclient.get_song_download_info
-         <gmusicapi.clients.Webclient.get_song_download_info>`,
+        <gmusicapi.clients.Webclient.get_song_download_info>`,
         there is no download limit when using this interface.
 
         Also unlike the Webclient, downloading a track requires authentication.

@@ -189,7 +189,7 @@ def dual_decorator(func):
 
 
 def configure_debug_log_handlers(logger):
-    """Warnings and above to terminal, below to gmusicapi.log.
+    """Warnings and above to stderr, below to gmusicapi.log.
     Output includes line number."""
 
     global printed_log_start_message
