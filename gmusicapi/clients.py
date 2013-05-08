@@ -373,7 +373,10 @@ class Musicmanager(_Base):
     def download_song(self, song_id):
         """Returns a tuple ``(u'suggested_filename', 'audio_bytestring')``.
         The filename
-        will be a unicode string with the proper file extension.
+        will be what the Music Manager would save the file as,
+        presented as a unicode string with the proper file extension.
+        You don't have to use it if you don't want.
+
 
         :param song_id: a single song id.
 
