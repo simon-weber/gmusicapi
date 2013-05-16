@@ -152,6 +152,7 @@ _all_expts = [
         ('artistMatchedId', 'string', 'id of a matching artist in the Play Store?'),
         ('albumPlaybackTimestamp', 'integer', 'the last time this album was played?'),
         ('origin', 'array', '???'),
+        ('artistImageBaseUrl', 'string', 'like albumArtUrl, but for the artist. May be blank.'),
     )
 ] + [
     Expectation(name + 'Norm', 'string', mutable=False, optional=False,
