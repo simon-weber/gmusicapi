@@ -47,14 +47,9 @@ Status and updates
 .. image:: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API.png?branch=develop
         :target: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API
 
-Version 1.0.0 splits the previous Api interface 
-into Webclient and Musicmanager. See
-https://unofficial-google-music-api.readthedocs.org/en/latest/usage.html#quickstart
-for help with the new interfaces.
-
-If you're upgrading from a date-versioned release, 
-you'll need to force the install:
-``pip uninstall gmusicapi; pip install gmusicapi``.
+Version 1.2.0 fixes a bug that fixes uploader_id formatting from a mac address.
+This change may cause another machine to be registered - you can safely remove the
+old machine (it's the one without the version in the name).
 
 For development updates, follow me on Twitter:
 `@simonmweber <https://twitter.com/simonmweber>`__.

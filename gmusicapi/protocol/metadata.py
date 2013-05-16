@@ -113,7 +113,7 @@ _all_expts = [
 ] + [
     Expectation(name, 'integer', mutable=True, optional=True) for name in
     (
-        'disc', 'year', 'track', 'totalTracks', 'totalDiscs'
+        'disc', 'year', 'track', 'totalTracks', 'totalDiscs', 'explicitType',
     )
 ] + [
     Expectation(name, type_str, mutable=False, optional=False, explanation=explain)
@@ -149,7 +149,10 @@ _all_expts = [
         ('bitrate', 'integer', "bitrate in kilobytes/second (eg 320)."),
         ('playlistEntryId', 'string', 'identifies position in the context of a playlist.'),
         ('albumArtUrl', 'string', "if present, the url of an image for this song's album art."),
-        ('artistMatchedId', 'string', "id of a matching artist in the Play Store?"),
+        ('artistMatchedId', 'string', 'id of a matching artist in the Play Store?'),
+        ('albumPlaybackTimestamp', 'integer', 'the last time this album was played?'),
+        ('origin', 'array', '???'),
+        ('artistImageBaseUrl', 'string', 'like albumArtUrl, but for the artist. May be blank.'),
     )
 ] + [
     Expectation(name + 'Norm', 'string', mutable=False, optional=False,

@@ -166,13 +166,19 @@ class UpauthTests(object):
 
     #TODO album art
 
-    def _assert_get_song(self, sid):
+    def _assert_get_song(self, sid, client=None):
         """Return the song dictionary with this sid.
 
-        (GM has no native get ability for songs, just list)."""
-        songs = self.wc.get_all_songs()
+        (GM has no native get for songs, just list).
 
-        found = [s for s in songs if s['id'] == self.song.sid] or None
+        :param client: a Webclient or Musicmanager
+        """
+        if client is None:
+            client = self.wc
+
+        songs = client.get_all_songs()
+
+        found = [s for s in songs if s['id'] == sid] or None
 
         assert_is_not_none(found)
         assert_equal(len(found), 1)
@@ -180,16 +186,28 @@ class UpauthTests(object):
         return found[0]
 
     @song_test
-    def list_songs(self):
-        self._assert_get_song(self.song.sid)
+    def list_songs_wc(self):
+        self._assert_get_song(self.song.sid, self.wc)
 
     @song_test
-    def list_songs_incrementally(self):
-        lib_chunk_gen = self.wc.get_all_songs(incremental=True)
+    def list_songs_mm(self):
+        self._assert_get_song(self.song.sid, self.mm)
+
+    @staticmethod
+    def _list_songs_incrementally(client):
+        lib_chunk_gen = client.get_all_songs(incremental=True)
         assert_true(isinstance(lib_chunk_gen, types.GeneratorType))
 
         assert_equal([s for chunk in lib_chunk_gen for s in chunk],
-                     self.wc.get_all_songs(incremental=False))
+                     client.get_all_songs(incremental=False))
+
+    @song_test
+    def list_songs_incrementally_wc(self):
+        self._list_songs_incrementally(self.wc)
+
+    @song_test
+    def list_songs_incrementally_mm(self):
+        self._list_songs_incrementally(self.mm)
 
     @song_test
     def change_metadata(self):
@@ -263,6 +281,22 @@ class UpauthTests(object):
         url, download_count = self.wc.get_song_download_info(self.song.sid)
 
         assert_is_not_none(url)
+
+    @song_test
+    def download_song_mm(self):
+
+        @retry
+        def assert_download(sid=self.song.sid):
+            filename, audio = self.mm.download_song(sid)
+
+            # there's some kind of a weird race happening here with CI;
+            # usually one will succeed and one will fail
+
+            #TODO could use original filename to verify this
+            # but, when manually checking, got modified title occasionally
+            assert_true(filename.endswith('.mp3'))  # depends on specific file
+            assert_is_not_none(audio)
+        assert_download()
 
     @song_test
     def get_stream_url(self):

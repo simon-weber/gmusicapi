@@ -5,6 +5,19 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
+1.2.0
++++++
+released 2013-05-16
+
+- add support for listing/downloading songs with the Musicmanager.
+  When possible, this should be preferred to the Webclient's method, since
+  it does not have a download quota.
+- fix a bug where the string representing a machine's mac 
+  was not properly formed for use as an uploader_id.
+  This will cause another machine to be registered for some users;
+  the old device can be identified from its lack of a version number.
+- verify user-provided uploader_ids
+
 1.1.0
 +++++
 released 2013-04-19

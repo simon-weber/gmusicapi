@@ -4,6 +4,7 @@ Thumbs.db
 \#*\#
 .\#*
 .*.swp
+*.un~
 .*.swo
 *.tmproj
 

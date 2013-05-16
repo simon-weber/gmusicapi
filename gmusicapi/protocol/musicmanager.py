@@ -17,7 +17,7 @@ from oauth2client.client import OAuth2Credentials
 
 from gmusicapi.compat import json
 from gmusicapi.exceptions import CallFailure
-from gmusicapi.protocol import upload_pb2, locker_pb2
+from gmusicapi.protocol import upload_pb2, locker_pb2, download_pb2
 from gmusicapi.protocol.shared import Call, ParseException, authtypes
 from gmusicapi.utils import utils
 
@@ -71,12 +71,14 @@ class MmCall(Call):
     """Abstract base for Music Manager calls."""
 
     static_method = 'POST'
-    # remember that this won't merge in subclasses
+    # remember that setting this in a subclass overrides, not merges
+    # static + dynamic does merge, though
     static_headers = {'User-agent': 'Music Manager (1, 0, 55, 7425 HTTPS - Windows)'}
 
     required_auth = authtypes(oauth=True)
 
-    #this is a shared union class that has all specific upload types
+    # this is a shared union class that has all specific upload types
+    # nearly all of the proto calls return a message of this form
     res_msg_type = upload_pb2.UploadResponse
 
     @classmethod
@@ -556,3 +558,136 @@ class CancelUploadJobs(MmCall):
         msg.uploader_id = uploader_id
 
         return msg
+
+
+class ListTracks(MmCall):
+    """List all tracks. Returns a subset of all available metadata.
+    Can optionally filter for only free/purchased tracks."""
+
+    res_msg_type = download_pb2.GetTracksToExportResponse
+
+    static_method = 'POST'
+    static_url = 'https://music.google.com/music/exportids'
+
+    # example response:
+    # download_track_info {
+    #   id: "970d9e51-b392-3857-897a-170e456cba60"
+    #   title: "Temporary Trip"
+    #   album: "Pay Attention"
+    #   album_artist: "The Mighty Mighty Bosstones"
+    #   artist: "The Mighty Mighty Bosstones"
+    #   track_number: 14
+    #   track_size: 3577382
+    # }
+
+    @staticmethod
+    def dynamic_headers(client_id, *args, **kwargs):
+        return {'X-Device-ID': client_id}
+
+    @staticmethod
+    @pb
+    def dynamic_data(client_id, cont_token=None, export_type=1, updated_min=0):
+        """Works similarly to the webclient method.
+        Chunks are up to 1000 tracks.
+
+
+        :param client_id: an authorized uploader_id
+        :param cont_token: (optional) token to get the next library chunk.
+        :param export_type: 1='ALL', 2='PURCHASED_AND_PROMOTIONAL'
+        :param updated_min: likely a timestamp; never seen an example of this != 0
+        """
+
+        msg = download_pb2.GetTracksToExportRequest()
+        msg.client_id = client_id
+        msg.export_type = export_type
+
+        if cont_token is not None:
+            msg.continuation_token = cont_token
+
+        msg.updated_min = updated_min
+
+        return msg
+
+    @classmethod
+    def check_success(cls, response, msg):
+        if msg.status != download_pb2.GetTracksToExportResponse.OK:
+            enum_desc = download_pb2._GETTRACKSTOEXPORTRESPONSE.enum_types[0]
+            res_name = enum_desc.values_by_number[msg.status].name
+
+            raise CallFailure(
+                "Track export (list) error code %s: %s." % (
+                    msg.status, res_name
+                ), cls.__name__
+            )
+
+    #TODO
+    @staticmethod
+    def filter_response(msg):
+        """Only log a summary."""
+
+        cont_token = None
+        if msg.HasField('continuation_token'):
+            cont_token = msg.continuation_token
+
+        updated_min = None
+        if msg.HasField('updated_min'):
+            updated_min = msg.updated_min
+
+        return "<%s songs>, updated_min: %r, continuation_token: %r" % (
+            len(msg.download_track_info),
+            updated_min,
+            cont_token)
+
+
+class GetDownloadLink(MmCall):
+    """Get a url where a track can be downloaded.
+
+    Auth is not needed to retrieve the resulting url."""
+
+    static_method = 'GET'
+    static_headers = {}
+    static_params = {'version': 2}
+    static_url = 'https://music.google.com/music/export'
+
+    @staticmethod
+    def dynamic_headers(sid, client_id):
+        return {'X-Device-ID': client_id}
+
+    @staticmethod
+    def dynamic_params(sid, client_id):
+        return {'songid': sid}
+
+    @classmethod
+    def parse_response(cls, response):
+        return cls._parse_json(response.text)
+
+    @staticmethod
+    def filter_response(res):
+        return res
+
+
+class DownloadTrack(MmCall):
+    """Given a url, retrieve a track. Unlike the Webclient, this
+    requires authentication.
+
+    The entire Requests.Response is returned."""
+
+    static_method = 'GET'
+
+    @staticmethod
+    def dynamic_url(url):
+        """
+        :param url: result of a call to GetDownloadLink
+        """
+        return url
+
+    @classmethod
+    def parse_response(cls, response):
+        return response
+
+    @staticmethod
+    def filter_response(res):
+        return "code: %s; size: %s bytes; disposition: %r" % (
+            res.status_code,
+            res.headers['Content-Length'],
+            res.headers['Content-Disposition'])

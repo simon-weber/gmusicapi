@@ -8,6 +8,7 @@ import functools
 import inspect
 import logging
 import os
+import re
 import subprocess
 import time
 import traceback
@@ -17,6 +18,7 @@ from decorator import decorator
 from google.protobuf.descriptor import FieldDescriptor
 
 from gmusicapi import __version__
+from gmusicapi.exceptions import CallFailure
 
 # this controls the crazy logging setup that checks the callstack;
 #  it should be monkey-patched to False after importing to disable it.
@@ -41,6 +43,42 @@ cpp_type_to_python = dict(
 
 log_filepath = os.path.join(my_appdirs.user_log_dir, 'gmusicapi.log')
 printed_log_start_message = False  # global, set in config_debug_logging
+
+# matches a mac address in GM form, eg
+#   00:11:22:33:AA:BB
+_mac_pattern = re.compile("^({pair}:){{5}}{pair}$".format(pair='[0-9A-F]' * 2))
+
+
+def is_valid_mac(mac_string):
+    """Return True if mac_string is of form
+    eg '00:11:22:33:AA:BB'.
+    """
+    if not _mac_pattern.match(mac_string):
+        return False
+
+    return True
+
+
+def create_mac_string(num, splitter=':'):
+    """Return the mac address interpretation of num,
+    in the form eg '00:11:22:33:AA:BB'.
+
+    :param num: a 48-bit integer (eg from uuid.getnode)
+    :param spliiter: a string to join the hex pairs with
+    """
+
+    mac = hex(num)[2:]
+
+    # trim trailing L for long consts
+    if mac[-1] == 'L':
+        mac = mac[:-1]
+
+    pad = max(12 - len(mac), 0)
+    mac = '0' * pad + mac
+    mac = splitter.join([mac[x:x + 2] for x in range(0, 12, 2)])
+    mac = mac.upper()
+
+    return mac
 
 
 # from http://stackoverflow.com/a/5032238/1231454
@@ -151,7 +189,7 @@ def dual_decorator(func):
 
 
 def configure_debug_log_handlers(logger):
-    """Warnings and above to terminal, below to gmusicapi.log.
+    """Warnings and above to stderr, below to gmusicapi.log.
     Output includes line number."""
 
     global printed_log_start_message
@@ -189,7 +227,7 @@ def retry(retry_exception=None, tries=6, delay=2, backoff=2, logger=None):
     An exception from a final attempt will propogate.
 
     :param retry_exception: exception (or tuple of exceptions) to check for and retry on.
-      If None, use AssertionError.
+      If None, use (AssertionError, CallFailure).
     :param tries: number of times to try (not retry) before giving up
     :param delay: initial delay between retries in seconds
     :param backoff: backoff multiplier
@@ -203,7 +241,7 @@ def retry(retry_exception=None, tries=6, delay=2, backoff=2, logger=None):
         logger = logging.getLogger('gmusicapi.utils')
 
     if retry_exception is None:
-        retry_exception = AssertionError
+        retry_exception = (AssertionError, CallFailure)
 
     @decorator
     def retry_wrapper(f, *args, **kwargs):

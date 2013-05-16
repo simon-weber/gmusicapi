@@ -15,6 +15,8 @@ from gmusicapi.exceptions import (
 )
 from gmusicapi.utils import utils
 
+import requests
+
 log = utils.DynamicClientLogger(__name__)
 
 _auth_names = ('xt', 'sso', 'oauth')
@@ -64,7 +66,7 @@ class BuildRequestMeta(type):
 
         for key in merge_keys:
             #merge case: dyn took precedence above, but stat also exists
-            if dyn(key) in config and has_key(stat(key)):
+            if has_key(dyn(key)) and has_key(stat(key)):
                 def key_closure(stat_val=get_key(stat(key)), dyn_func=get_key(dyn(key))):
                     def build_key(*args, **kwargs):
                         dyn_val = dyn_func(*args, **kwargs)
@@ -200,44 +202,67 @@ class Call(object):
                       dict((k, utils.truncate(v)) for (k, v) in kwargs.items())
                       )
         else:
-            log.debug("%s(<does not get logged>)", call_name)
+            log.debug("%s(<omitted>)", call_name)
 
         req_kwargs = cls.build_request(*args, **kwargs)
 
         response = session.send(req_kwargs, cls.required_auth)
+        #TODO trim the logged response if it's huge?
 
-        #TODO check return code
+        # check response code
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as e:
+            err_msg = str(e)
+
+            if cls.gets_logged:
+                err_msg += "\n(response was: %r)" % response.content
+
+            raise CallFailure(err_msg, call_name)
 
         try:
-            msg = cls.parse_response(response)
+            parsed_response = cls.parse_response(response)
         except ParseException:
+            err_msg = ("the server's response could not be understood."
+                       " The call may still have succeeded, but it's unlikely.")
             if cls.gets_logged:
-                log.exception("couldn't parse %s response: %r", call_name, response.content)
-            raise CallFailure("the server's response could not be understood."
-                              " The call may still have succeeded, but it's unlikely.",
-                              call_name)
+                err_msg += "\n(response was: %r)" % response.content
+                log.exception("could not parse %s response: %r", call_name, response.content)
+            else:
+                log.exception("could not parse %s response: (omitted)", call_name)
+
+            raise CallFailure(err_msg, call_name)
 
         if cls.gets_logged:
-            log.debug(cls.filter_response(msg))
+            log.debug(cls.filter_response(parsed_response))
 
         try:
             #order is important; validate only has a schema for a successful response
-            cls.check_success(response, msg)
-            cls.validate(response, msg)
+            cls.check_success(response, parsed_response)
+            cls.validate(response, parsed_response)
         except CallFailure:
             raise
-        except ValidationException:
-            #TODO trim the response if it's huge
-            if cls.gets_logged:
-                msg_fmt = ("the following response format for %s was not recognized."
-                           "\nIf there has not been a compatibility update reported"
-                           "[here](http://goo.gl/jTKNb),"
-                           " please [create an issue](http://goo.gl/qbAW8) that includes"
-                           " the following raw response:\n%r\n"
-                           "\nA traceback follows:\n")
-                log.exception(msg_fmt, call_name, msg)
+        except ValidationException as e:
+            #TODO shouldn't be using formatting
+            err_msg = "the response format for %s was not recognized." % call_name
+            err_msg += "\n\n%s\n" % e
 
-        return msg
+            if cls.gets_logged:
+                raw_response = response.content
+
+                if len(raw_response) > 1000:
+                    raw_response = raw_response[:1000] + '...'
+
+                err_msg += ("\nFirst, try the develop branch."
+                            " If you can recreate this error with the most recent code"
+                            " please [create an issue](http://goo.gl/qbAW8) that includes"
+                            " the above ValidationException"
+                            " and the following raw response:\n%r\n"
+                            "\nA traceback follows:\n") % raw_response
+
+            log.exception(err_msg)
+
+        return parsed_response
 
     @staticmethod
     def _parse_json(text):

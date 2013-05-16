@@ -16,3 +16,8 @@ Setup and login
 Uploading Songs
 ---------------------------
 .. automethod:: Musicmanager.upload
+
+Downloading Songs
+-----------------
+.. automethod:: Musicmanager.get_all_songs
+.. automethod:: Musicmanager.download_song

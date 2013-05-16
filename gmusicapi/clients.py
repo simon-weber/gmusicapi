@@ -10,6 +10,7 @@ import logging
 import os
 from socket import gethostname
 import time
+import urllib
 from uuid import getnode as getmac
 import webbrowser
 
@@ -17,6 +18,7 @@ import httplib2  # included with oauth2client
 from oauth2client.client import OAuth2WebServerFlow, TokenRevokeError
 import oauth2client.file
 
+import gmusicapi
 from gmusicapi.gmtools import tools
 from gmusicapi.exceptions import CallFailure, NotLoggedIn
 from gmusicapi.protocol import webclient, musicmanager, upload_pb2, locker_pb2
@@ -44,8 +46,8 @@ class _Base(object):
           will propogate to the ``gmusicapi`` root logger.
 
           If this param is ``True``, handlers will be configured to send
-          this client's log output to disk,
-          with warnings and above printed to the console.
+          this client's debug log output to disk,
+          with warnings and above printed to stderr.
           `Appdirs <https://pypi.python.org/pypi/appdirs/1.2.0>`__
           ``user_log_dir`` is used by default. Users can run::
 
@@ -193,25 +195,42 @@ class Musicmanager(_Base):
           3rd party service who intend to perform their own OAuth flow
           (eg on their website).
 
-        :param uploader_id: a unique id as a MAC address, eg ``'01:23:45:67:89:AB'``.
+        :param uploader_id: a unique id as a MAC address, eg ``'00:11:22:33:AA:BB'``.
           This should only be provided in cases where the default
           (host MAC address incremented by 1) will not work.
 
           Upload behavior is undefined if a Music Manager uses the same id, especially when
           reporting bad matches.
 
-          ``OSError`` will be raised if this is not provided and a stable MAC could not be
-          determined (eg when running on a VPS).
+          ``ValueError`` will be raised if this is provided but not in the proper form.
 
-          If provided, it's best to use the same id on all future runs for this machine,
+          ``OSError`` will be raised if this is not provided and a real MAC could not be
+          determined (most common when running on a VPS).
+
+          If provided, use the same id on all future runs for this machine,
           because of the upload device limit explained below.
 
-        :param uploader_name: human-readable non-unique id; default is ``"<hostname> (gmusicapi)"``.
+        :param uploader_name: human-readable non-unique id; default is
+          ``"<hostname> (gmusicapi-{version})"``.
 
-        There are strict limits on how many upload devices can be registered; refer to `Google's
+          This doesn't appear to be a part of authentication at all.
+          Registering with (id, name = X, Y) and logging in with
+          (id, name = X, Z) works, and does not change the server-stored
+          uploader_name.
+
+        There are hard limits on how many upload devices can be registered; refer to `Google's
         docs <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1230356>`__. There
         have been limits on deauthorizing devices in the past, so it's smart not to register
         more devices than necessary.
+        """
+
+        return (self._oauth_login(oauth_credentials) and
+                self._perform_upauth(uploader_id, uploader_name))
+
+    def _oauth_login(self, oauth_credentials):
+        """Auth ourselves to the MM oauth endpoint.
+
+        Return True on success; see :py:func:`login` for params.
         """
 
         if isinstance(oauth_credentials, basestring):
@@ -229,23 +248,35 @@ class Musicmanager(_Base):
 
         self.logger.info("oauth successful")
 
+        return True
+
+    def _perform_upauth(self, uploader_id, uploader_name):
+        """Auth or register ourselves as an upload client.
+
+        Return True on success; see :py:func:`login` for params.
+        """
+
         if uploader_id is None:
-            mac = getmac()
-            if (mac >> 40) % 2:
+            mac_int = getmac()
+            if (mac_int >> 40) % 2:
                 raise OSError('a valid MAC could not be determined.'
                               ' Provide uploader_id (and be'
                               ' sure to provide the same one on future runs).')
 
             else:
                 #distinguish us from a Music Manager on this machine
-                mac = (mac + 1) % (1 << 48)
+                mac_int = (mac_int + 1) % (1 << 48)
 
-            mac = hex(mac)[2:-1]
-            mac = ':'.join([mac[x:x + 2] for x in range(0, 10, 2)])
-            uploader_id = mac.upper()
+            uploader_id = utils.create_mac_string(mac_int)
+
+        if not utils.is_valid_mac(uploader_id):
+            raise ValueError('uploader_id is not in a valid form.'
+                             '\nProvide 6 pairs of hex digits'
+                             ' with capital letters',
+                             ' (eg "00:11:22:33:AA:BB")')
 
         if uploader_name is None:
-            uploader_name = gethostname() + u" (gmusicapi)"
+            uploader_name = gethostname() + u" (gmusicapi-%s)" % gmusicapi.__version__
 
         try:
             # this is a MM-specific step that might register a new device.
@@ -287,6 +318,99 @@ class Musicmanager(_Base):
         self.uploader_name = None
 
         return success and super(Musicmanager, self).logout()
+
+    # mostly copy-paste from Webclient.get_all_songs.
+    # not worried about overlap in this case; the logic of either could change.
+    def get_all_songs(self, incremental=False):
+        """Returns a list of dictionaries, each with the following keys:
+        ``('id', 'title', 'album', 'album_artist', 'artist', 'track_number',
+        'track_size')``.
+
+        :param incremental: if True, return a generator that yields lists
+          of at most 1000 dictionaries
+          as they are retrieved from the server. This can be useful for
+          presenting a loading bar to a user.
+        """
+
+        to_return = self._get_all_songs()
+
+        if not incremental:
+            to_return = [song for chunk in to_return for song in chunk]
+
+        return to_return
+
+    @staticmethod
+    def _track_info_to_dict(track_info):
+        """Given a download_pb2.DownloadTrackInfo, return a dictionary."""
+        # figure it's better to hardcode keys here than use introspection
+        # and risk returning a new field all of a sudden.
+
+        return dict((field, getattr(track_info, field)) for field in
+                    ('id', 'title', 'album', 'album_artist', 'artist',
+                     'track_number', 'track_size'))
+
+    def _get_all_songs(self):
+        """Return a generator of song chunks."""
+
+        get_next_chunk = True
+
+        # need to spoof .continuation_token access, and
+        # can't add attrs to object(). Can with functions.
+
+        lib_chunk = lambda: 0
+        lib_chunk.continuation_token = None
+
+        while get_next_chunk:
+            lib_chunk = self._make_call(musicmanager.ListTracks,
+                                        self.uploader_id,
+                                        lib_chunk.continuation_token)
+
+            yield [self._track_info_to_dict(info)
+                   for info in lib_chunk.download_track_info]
+
+            get_next_chunk = lib_chunk.HasField('continuation_token')
+
+    def download_song(self, song_id):
+        """Returns a tuple ``(u'suggested_filename', 'audio_bytestring')``.
+        The filename
+        will be what the Music Manager would save the file as,
+        presented as a unicode string with the proper file extension.
+        You don't have to use it if you don't want.
+
+
+        :param song_id: a single song id.
+
+        To write the song to disk, use something like::
+
+            filename, audio = mm.download_song(an_id)
+
+            # if open() throws a UnicodeEncodeError, either use
+            #   filename.encode('utf-8')
+            # or change your default encoding to something sane =)
+            with open(filename, 'wb') as f:
+                f.write(audio)
+
+        Unlike with :py:func:`Webclient.get_song_download_info
+        <gmusicapi.clients.Webclient.get_song_download_info>`,
+        there is no download limit when using this interface.
+
+        Also unlike the Webclient, downloading a track requires authentication.
+        Returning a url does not suffice, since retrieving a track without auth
+        will produce an http 500.
+        """
+
+        url = self._make_call(musicmanager.GetDownloadLink,
+                              song_id,
+                              self.uploader_id)['url']
+
+        response = self._make_call(musicmanager.DownloadTrack, url)
+
+        cd_header = response.headers['content-disposition']
+
+        filename = urllib.unquote(cd_header.split("filename*=UTF-8''")[-1])
+        filename = filename.decode('utf-8')
+
+        return (filename, response.content)
 
     # def get_quota(self):
     #     """Returns a tuple of (allowed number of tracks, total tracks, available tracks)."""
