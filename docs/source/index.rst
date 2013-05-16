@@ -32,14 +32,9 @@ All major functionality is supported:
 
 -  Webclient streaming and single-song downloading
 
--  Music Manager uploading/scan-and-match of all Google-supported file formats
+-  Music Manager uploading/scan-and-match and library downloading
 
-Other features are on the way:
-
--  Music Manager library downloading (issue `#90
-   <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/90>`__)
--  Full "fix incorrect match" support (issue `#89
-   <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/89>`__)
+Support for Google Play Music All Access features is currently under consideration.
 
 See `the changelog
 <https://github.com/simon-weber/Unofficial-Google-Music-API/blob/develop/HISTORY.rst>`__
@@ -60,8 +55,8 @@ Getting started
 The :ref:`usage section <usage>` has information on installing
 and some simple examples.
 
-Detailed information
-++++++++++++++++++++
+Api and data reference
+++++++++++++++++++++++
 The reference has details for all classes and functions, as well as 
 information on the Google Music data you'll encounter:
 

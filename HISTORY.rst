@@ -5,9 +5,9 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-1.1.X
+1.2.0
 +++++
-released 2013-XX-XX
+released 2013-05-16
 
 - add support for listing/downloading songs with the Musicmanager.
   When possible, this should be preferred to the Webclient's method, since
