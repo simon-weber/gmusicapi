@@ -242,15 +242,23 @@ class Call(object):
             cls.validate(response, parsed_response)
         except CallFailure:
             raise
-        except ValidationException:
+        except ValidationException as e:
             #TODO shouldn't be using formatting
             err_msg = "the response format for %s was not recognized." % call_name
+            err_msg += "\n\n%s\n" % e
+
             if cls.gets_logged:
-                err_msg += ("\nIf there has not been a compatibility update reported"
-                            "[here](http://goo.gl/jTKNb),"
+                raw_response = response.content
+
+                if len(raw_response) > 1000:
+                    raw_response = raw_response[:1000] + '...'
+
+                err_msg += ("\nFirst, try the develop branch."
+                            " If you can recreate this error with the most recent code"
                             " please [create an issue](http://goo.gl/qbAW8) that includes"
-                            " the following raw response:\n%r\n"
-                            "\nA traceback follows:\n") % response.content
+                            " the above ValidationException"
+                            " and the following raw response:\n%r\n"
+                            "\nA traceback follows:\n") % raw_response
 
             log.exception(err_msg)
 
