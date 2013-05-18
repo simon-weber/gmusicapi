@@ -31,6 +31,7 @@ That said, it's actively maintained, and used in a bunch of cool projects:
 -  Kilian Lackhove's `Google Music support <https://github.com/crabmanX/google-music-resolver>`__
    for http://www.tomahawk-player.org
 -  Tom Graham's `playlist syncing tool <https://github.com/Tyris/m3uGoogleMusicSync>`__
+-  Karl Stoney's `sync tool <https://github.com/Stono/GoogleMusicSync>`__
 
 
 Getting started
