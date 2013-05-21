@@ -503,7 +503,8 @@ class GetStreamUrl(WcCall):
     _res_schema = {
         "type": "object",
         "properties": {
-            "url": {"type": "string"}
+            "url": {"type": "string", "required": False},
+            "urls": {"type": "array", "required": False}
         },
         "additionalProperties": False
     }

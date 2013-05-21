@@ -905,7 +905,10 @@ class Webclient(_Base):
 
         res = self._make_call(webclient.GetStreamUrl, song_id)
 
-        return res['url']
+        try:
+            return res['url']
+        except KeyError:
+            return res['urls']
 
     def copy_playlist(self, playlist_id, copy_name):
         """Copies the contents of a playlist to a new playlist. Returns the id of the new playlist.
