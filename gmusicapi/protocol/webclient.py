@@ -503,18 +503,29 @@ class GetStreamUrl(WcCall):
     _res_schema = {
         "type": "object",
         "properties": {
-            "url": {"type": "string"}
+            "url": {"type": "string", "required": False},
+            "urls": {"type": "array", "required": False}
         },
         "additionalProperties": False
     }
 
     @staticmethod
     def dynamic_params(song_id):
-        return {
-            'u': 0,  # select first user of logged in; probably shouldn't be hardcoded
-            'pt': 'e',  # unknown
-            'songid': song_id,
+        params = {
+            'u': 0,
+            'pt': 'e'
         }
+
+        # all access streams use a different param
+        # https://github.com/simon-weber/Unofficial-Google-Music-API/pull/131#issuecomment-18843993
+        # thanks @lukegb!
+
+        if song_id[0] == 'T':
+            # all access
+            params['mjck'] = song_id
+        else:
+            params['songid'] = song_id
+        return params
 
 
 class Search(WcCall):

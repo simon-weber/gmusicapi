@@ -299,10 +299,22 @@ class UpauthTests(object):
         assert_download()
 
     @song_test
-    def get_stream_url(self):
-        url = self.wc.get_stream_url(self.song.sid)
+    def get_normal_stream_urls(self):
+        urls = self.wc.get_stream_urls(self.song.sid)
+
+        assert_equal(len(urls), 1)
+
+        url = urls[0]
 
         assert_is_not_none(url)
+        assert_equal(url[:7], 'http://')
+
+    @song_test
+    def get_aa_stream_urls(self):
+        # that dumb little intro track on Conspiracy of One
+        urls = self.wc.get_stream_urls('Tqqufr34tuqojlvkolsrwdwx7pe')
+
+        assert_true(len(urls) > 1)
 
     @song_test
     def upload_album_art(self):
