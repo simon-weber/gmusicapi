@@ -22,7 +22,7 @@ Getting songs and playlists
 Song downloading and streaming
 ------------------------------
 .. automethod:: Webclient.get_song_download_info
-.. automethod:: Webclient.get_stream_url
+.. automethod:: Webclient.get_stream_urls
 .. automethod:: Webclient.report_incorrect_match
 
 Song manipulation
