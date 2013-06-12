@@ -310,6 +310,13 @@ class UpauthTests(object):
         assert_equal(url[:7], 'http://')
 
     @song_test
+    def get_aa_stream_urls(self):
+        # that dumb little intro track on Conspiracy of One
+        urls = self.wc.get_stream_urls('Tqqufr34tuqojlvkolsrwdwx7pe')
+
+        assert_true(len(urls) > 1)
+
+    @song_test
     def upload_album_art(self):
         orig_md = self._assert_get_song(self.song.sid)
 
