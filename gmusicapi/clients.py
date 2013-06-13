@@ -370,6 +370,7 @@ class Musicmanager(_Base):
 
             get_next_chunk = lib_chunk.HasField('continuation_token')
 
+    @utils.enforce_id_param
     def download_song(self, song_id):
         """Returns a tuple ``(u'suggested_filename', 'audio_bytestring')``.
         The filename
@@ -693,7 +694,7 @@ class Webclient(_Base):
         return playlist_id  # the call actually doesn't return anything.
 
     @utils.accept_singleton(dict)
-    @utils.empty_arg_shortcircuit()
+    @utils.empty_arg_shortcircuit
     def change_song_metadata(self, songs):
         """Changes the metadata for some :ref:`song dictionaries <songdict-format>`.
         Returns a list of the song ids changed.
@@ -741,7 +742,8 @@ class Webclient(_Base):
         return res['deleteId']
 
     @utils.accept_singleton(basestring)
-    @utils.empty_arg_shortcircuit()
+    @utils.empty_arg_shortcircuit
+    @utils.enforce_ids_param
     def delete_songs(self, song_ids):
         """Deletes songs from the entire library. Returns a list of deleted song ids.
 
@@ -865,6 +867,7 @@ class Webclient(_Base):
                 u'Last added': u'auto-playlist-recent',
                 u'Free and purchased': u'auto-playlist-promo'}
 
+    @utils.enforce_id_param
     def get_song_download_info(self, song_id):
         """Returns a tuple: ``('<url>', <download count>)``.
 
@@ -885,6 +888,7 @@ class Webclient(_Base):
 
         return (url, info["downloadCounts"][song_id])
 
+    @utils.enforce_id_param
     def get_stream_urls(self, song_id):
         """Returns a list of urls that point to a streamable version of this song.
 
@@ -918,6 +922,7 @@ class Webclient(_Base):
         except KeyError:
             return res['urls']
 
+    @utils.enforce_id_param
     def get_stream_audio(self, song_id):
         """Returns a bytestring containing mp3 audio for this song.
 
@@ -1090,6 +1095,7 @@ class Webclient(_Base):
 
     @utils.accept_singleton(basestring, 2)
     @utils.empty_arg_shortcircuit(position=2)
+    @utils.enforce_ids_param(position=2)
     def add_songs_to_playlist(self, playlist_id, song_ids):
         """Appends songs to a playlist.
         Returns a list of (song id, playlistEntryId) tuples that were added.
@@ -1225,7 +1231,8 @@ class Webclient(_Base):
                 "song_hits": res["songs"]}
 
     @utils.accept_singleton(basestring)
-    @utils.empty_arg_shortcircuit()
+    @utils.empty_arg_shortcircuit
+    @utils.enforce_id_param
     def report_incorrect_match(self, song_ids):
         """Equivalent to the 'Fix Incorrect Match' button, this requests re-uploading of songs.
         Returns the song_ids provided.
@@ -1244,7 +1251,8 @@ class Webclient(_Base):
         return song_ids
 
     @utils.accept_singleton(basestring)
-    @utils.empty_arg_shortcircuit()
+    @utils.empty_arg_shortcircuit
+    @utils.enforce_ids_param
     def upload_album_art(self, song_ids, image_filepath):
         """Uploads an image and sets it as the album art for songs.
 
