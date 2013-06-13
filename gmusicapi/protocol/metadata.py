@@ -135,7 +135,7 @@ _all_expts = [
 
         ('subjectToCuration', 'boolean', 'meaning unknown.'),
         ('matchedId', 'string', 'meaning unknown; related to scan and match?'),
-        ('recentTimestamp', 'integer', 'meaning unknown.'),
+        ('recentTimestamp', 'integer', 'UTC/microsecond timestamp: meaning unknown.'),
     )
 ] + [
     Expectation(name, type_str, mutable=False, optional=True, explanation=explain)
@@ -150,7 +150,7 @@ _all_expts = [
         ('playlistEntryId', 'string', 'identifies position in the context of a playlist.'),
         ('albumArtUrl', 'string', "if present, the url of an image for this song's album art."),
         ('artistMatchedId', 'string', 'id of a matching artist in the Play Store?'),
-        ('albumPlaybackTimestamp', 'integer', 'the last time this album was played?'),
+        ('albumPlaybackTimestamp', 'integer', 'UTC/microsecond timestamp: the last time this album was played?'),
         ('origin', 'array', '???'),
         ('artistImageBaseUrl', 'string', 'like albumArtUrl, but for the artist. May be blank.'),
     )
@@ -169,7 +169,9 @@ _all_expts = [
                 optional=False, allowed_values=tuple(range(6)),
                 explanation='0 == no thumb, 1 == down thumb, 5 == up thumb.'),
 
-    Expectation('lastPlayed', 'integer', mutable=False, optional=True, volatile=True),
+    Expectation('lastPlayed', 'integer', mutable=False, optional=True, volatile=True,
+                explanation='UTC/microsecond timestamp'),
+
     Expectation('playCount', 'integer', mutable=True, optional=False),
 
     Expectation('title', 'string', mutable=False, optional=False,
