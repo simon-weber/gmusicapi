@@ -27,9 +27,10 @@ That said, it's actively maintained, and used in a bunch of cool projects:
    (`screenshot <http://i.imgur.com/Mwl0k.png>`__)
 -  Ryan McGuire's `GMusicFS <https://github.com/EnigmaCurry/GMusicFS>`__ - a FUSE
    filesystem linked to your music
--  David Dooling's `sync scripts for Banshee <https://github.com/ddgenome/banshee-helper-scripts>`__
 -  Kilian Lackhove's `Google Music support <https://github.com/crabmanX/google-music-resolver>`__
    for http://www.tomahawk-player.org
+-  `@thebigmunch <https://github.com/thebigmunch>`__'s `syncing scripts <https://github.com/thebigmunch/gmusicapi-scripts>`__
+-  David Dooling's `sync scripts for Banshee <https://github.com/ddgenome/banshee-helper-scripts>`__
 -  Tom Graham's `playlist syncing tool <https://github.com/Tyris/m3uGoogleMusicSync>`__
 -  Karl Stoney's `sync tool <https://github.com/Stono/GoogleMusicSync>`__
 
