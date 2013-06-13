@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from operator import itemgetter
 from heapq import nlargest
 from itertools import repeat, ifilter
@@ -22,7 +25,7 @@ class Counter(dict):
         >>> c = Counter({'a': 4, 'b': 2})           # a new counter from a mapping
         >>> c = Counter(a=4, b=2)                   # a new counter from keyword args
 
-        '''        
+        '''
         self.update(iterable, **kwds)
 
     def __missing__(self, key):
@@ -35,7 +38,7 @@ class Counter(dict):
         >>> Counter('abracadabra').most_common(3)
         [('a', 5), ('r', 2), ('b', 2)]
 
-        '''        
+        '''
         if n is None:
             return sorted(self.iteritems(), key=itemgetter(1), reverse=True)
         return nlargest(n, self.iteritems(), key=itemgetter(1))
@@ -74,7 +77,7 @@ class Counter(dict):
         >>> c['h']                      # four 'h' in which, witch, and watch
         4
 
-        '''        
+        '''
         if iterable is not None:
             if hasattr(iterable, 'iteritems'):
                 if self:

@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from functools import partial, update_wrapper
 from getpass import getpass
 import logging

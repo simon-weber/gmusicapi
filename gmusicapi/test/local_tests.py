@@ -1,11 +1,10 @@
-from collections import namedtuple
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
 Tests that don't hit the Google Music servers.
 """
 
+from collections import namedtuple
 import time
 
 from mock import MagicMock as Mock
