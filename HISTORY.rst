@@ -7,8 +7,10 @@ As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
 1.2.0-dev
 +++++++++
-release 2013-XX-XX
+released 2013-XX-XX
 
+- add support for streaming All Access songs
+- terminate early when a song dictionary is passed instead of an id
 
 1.2.0
 +++++
