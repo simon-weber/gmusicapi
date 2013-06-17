@@ -38,7 +38,7 @@ class _Base(object):
 
     num_clients = 0  # used to disambiguate loggers
 
-    def __init__(self, logger_basename, debug_logging):
+    def __init__(self, logger_basename, debug_logging, validate):
         """
 
         :param debug_logging: each Client has a ``logger`` member.
@@ -63,6 +63,10 @@ class _Base(object):
           The Google Music protocol can change at any time; if
           something were to go wrong, the logs would be necessary for
           recovery.
+
+        :param validate: if False, do not validate server responses against
+          known schemas. This helps to catch protocol changes, but requires
+          significant cpu work.
         """
         # this isn't correct if init is called more than once, so we log the
         # client name below to avoid confusion for people reading logs
@@ -71,6 +75,7 @@ class _Base(object):
         logger_name = "gmusicapi.%s%s" % (logger_basename,
                                           _Base.num_clients)
         self.logger = logging.getLogger(logger_name)
+        self.validate = validate
 
         if debug_logging:
             utils.configure_debug_log_handlers(self.logger)
@@ -84,7 +89,10 @@ class _Base(object):
 
         CallFailure may be raised."""
 
-        return protocol.perform(self.session, *args, **kwargs)
+        print protocol
+        print args, kwargs
+
+        return protocol.perform(self.session, self.validate, *args, **kwargs)
 
     def is_authenticated(self):
         """Returns ``True`` if the Api can make an authenticated request."""
@@ -166,10 +174,10 @@ class Musicmanager(_Base):
 
         return credentials
 
-    def __init__(self, debug_logging=True):
+    def __init__(self, debug_logging=True, validate=True):
         self.session = gmusicapi.session.Musicmanager()
 
-        super(Musicmanager, self).__init__(self.__class__.__name__, debug_logging)
+        super(Musicmanager, self).__init__(self.__class__.__name__, debug_logging, validate)
         self.logout()
 
     def login(self, oauth_credentials=OAUTH_FILEPATH,
@@ -653,10 +661,10 @@ class Webclient(_Base):
     to upload).
     """
 
-    def __init__(self, debug_logging=True):
+    def __init__(self, debug_logging=True, validate=True):
         self.session = gmusicapi.session.Webclient()
 
-        super(Webclient, self).__init__(self.__class__.__name__, debug_logging)
+        super(Webclient, self).__init__(self.__class__.__name__, debug_logging, validate)
         self.logout()
 
     def login(self, email, password):

@@ -83,7 +83,7 @@ class Webclient(_Base):
 
         super(Webclient, self).login()
 
-        res = ClientLogin.perform(self, email, password)
+        res = ClientLogin.perform(self, True, email, password)
 
         if 'SID' not in res or 'Auth' not in res:
             return False
@@ -95,7 +95,7 @@ class Webclient(_Base):
         # Get webclient cookies.
         # They're stored automatically by requests on the webclient session.
         try:
-            webclient.Init.perform(self)
+            webclient.Init.perform(self, True)
         except CallFailure:
             # throw away clientlogin credentials
             self.logout()

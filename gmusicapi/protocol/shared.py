@@ -184,11 +184,12 @@ class Call(object):
         return msg  # default to identity
 
     @classmethod
-    def perform(cls, session, *args, **kwargs):
+    def perform(cls, session, validate, *args, **kwargs):
         """Send, parse, validate and check success of this call.
         *args and **kwargs are passed to protocol.build_transaction.
 
         :param session: a PlaySession used to send this request.
+        :param validate: if False, do not validate
         """
         #TODO link up these docs
 
@@ -238,7 +239,8 @@ class Call(object):
         try:
             #order is important; validate only has a schema for a successful response
             cls.check_success(response, parsed_response)
-            cls.validate(response, parsed_response)
+            if validate:
+                cls.validate(response, parsed_response)
         except CallFailure:
             raise
         except ValidationException as e:
