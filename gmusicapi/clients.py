@@ -67,6 +67,9 @@ class _Base(object):
         :param validate: if False, do not validate server responses against
           known schemas. This helps to catch protocol changes, but requires
           significant cpu work.
+
+          This arg is stored as ``self.validate`` and can be safely
+          modified at runtime.
         """
         # this isn't correct if init is called more than once, so we log the
         # client name below to avoid confusion for people reading logs
@@ -88,9 +91,6 @@ class _Base(object):
         args/kwargs are passed to protocol.perform.
 
         CallFailure may be raised."""
-
-        print protocol
-        print args, kwargs
 
         return protocol.perform(self.session, self.validate, *args, **kwargs)
 
