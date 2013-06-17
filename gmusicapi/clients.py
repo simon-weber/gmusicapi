@@ -27,10 +27,6 @@ import gmusicapi.session
 
 OAUTH_FILEPATH = os.path.join(utils.my_appdirs.user_data_dir, 'oauth.cred')
 
-# oauth client breaks if the dir doesn't exist
-utils.make_sure_path_exists(os.path.dirname(OAUTH_FILEPATH), 0o700)
-
-
 class _Base(object):
     """Factors out common client setup."""
 
@@ -169,6 +165,8 @@ class Musicmanager(_Base):
         credentials = flow.step2_exchange(code)
 
         if storage_filepath is not None:
+            if storage_filepath == OAUTH_FILEPATH:
+                utils.make_sure_path_exists(os.path.dirname(OAUTH_FILEPATH), 0o700)
             storage = oauth2client.file.Storage(storage_filepath)
             storage.put(credentials)
 
@@ -243,6 +241,8 @@ class Musicmanager(_Base):
 
         if isinstance(oauth_credentials, basestring):
             oauth_file = oauth_credentials
+            if oauth_file == OAUTH_FILEPATH:
+                utils.make_sure_path_exists(os.path.dirname(OAUTH_FILEPATH), 0o700)
             storage = oauth2client.file.Storage(oauth_file)
 
             oauth_credentials = storage.get()
