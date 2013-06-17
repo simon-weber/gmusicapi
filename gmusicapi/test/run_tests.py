@@ -58,8 +58,8 @@ def retrieve_auth():
 
     On success, return (wc_kwargs, mm_kwargs). On failure, raise ValueError."""
 
-    get_kwargs = lambda envargs: {arg.kwarg: os.environ.get(arg.envarg)
-                                  for arg in envargs}
+    get_kwargs = lambda envargs: dict([(arg.kwarg, os.environ.get(arg.envarg))
+                                       for arg in envargs])
 
     wc_kwargs = get_kwargs(wc_envargs)
     mm_kwargs = get_kwargs(mm_envargs)
