@@ -10,7 +10,7 @@ from types import MethodType
 
 from proboscis import TestProgram
 
-from gmusicapi.clients import Webclient, Musicmanager
+from gmusicapi.clients import Webclient, Musicmanager, OAUTH_FILEPATH
 from gmusicapi.protocol.musicmanager import credentials_from_refresh_token
 from gmusicapi.test import local_tests, server_tests
 from gmusicapi.test.utils import NoticeLogging
@@ -65,26 +65,31 @@ def freeze_login_details():
 
     else:
         # no travis, no credentials
-
-        # we need to login here to verify their credentials.
-        # the authenticated api is then thrown away.
-
-        wclient = Webclient()
-        valid_auth = False
-
         print ("These tests will never delete or modify your music."
                "\n\n"
                "If the tests fail, you *might* end up with a test"
                " song/playlist in your library, though."
-               "You must have oauth credentials stored at the default"
-               " path by Musicmanager.perform_oauth prior to running.")
+               "\n")
 
-        while not valid_auth:
+        # check for oauth
+        try:
+            with open(OAUTH_FILEPATH) as f:
+                pass  # assume they're valid
+
+        except IOError:
+            print ("You must have oauth credentials stored at the default"
+                   " path by Musicmanager.perform_oauth prior to running.")
+            sys.exit(1)
+
+        wclient = Webclient()
+        valid_wc_auth = False
+
+        while not valid_wc_auth:
             print
             email = raw_input("Email: ")
             passwd = getpass()
 
-            valid_auth = wclient.login(email, passwd)
+            valid_wc_auth = wclient.login(email, passwd)
 
         wc_kwargs.update({'email': email, 'password': passwd})
 
