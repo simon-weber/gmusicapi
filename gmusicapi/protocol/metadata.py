@@ -124,7 +124,6 @@ _all_expts = [
         ('id', 'string',
          'a per-user unique id for this song; sometimes referred to as *server id* or *song id*.'),
 
-        ('deleted', 'boolean', ''),
         ('creationDate', 'integer', ''),
         ('type', 'integer',
          'An enum: 1: free/purchased, 2: uploaded/not matched, 6: uploaded/matched'),
@@ -134,7 +133,6 @@ _all_expts = [
 
         ('subjectToCuration', 'boolean', 'meaning unknown.'),
         ('matchedId', 'string', 'meaning unknown; related to scan and match?'),
-        ('recentTimestamp', 'integer', 'UTC/microsecond timestamp: meaning unknown.'),
     )
 ] + [
     Expectation(name, type_str, mutable=False, optional=True, explanation=explain)
@@ -152,6 +150,8 @@ _all_expts = [
         ('albumPlaybackTimestamp', 'integer', 'UTC/microsecond timestamp: the last time this album was played?'),
         ('origin', 'array', '???'),
         ('artistImageBaseUrl', 'string', 'like albumArtUrl, but for the artist. May be blank.'),
+        ('recentTimestamp', 'integer', 'UTC/microsecond timestamp: meaning unknown.'),
+        ('deleted', 'boolean', ''),
     )
 ] + [
     Expectation(name + 'Norm', 'string', mutable=False, optional=False,
