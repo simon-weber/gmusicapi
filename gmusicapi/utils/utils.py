@@ -12,19 +12,17 @@ import subprocess
 import time
 import traceback
 
-from appdirs import AppDirs
 from decorator import decorator
 from google.protobuf.descriptor import FieldDescriptor
 
 from gmusicapi import __version__
+from gmusicapi.compat import my_appdirs
 from gmusicapi.exceptions import CallFailure
 
 # this controls the crazy logging setup that checks the callstack;
 #  it should be monkey-patched to False after importing to disable it.
 # when False, static code will simply log in the standard way under the root.
 per_client_logging = True
-
-my_appdirs = AppDirs('gmusicapi', 'Simon Weber')
 
 #Map descriptor.CPPTYPE -> python type.
 _python_to_cpp_types = {
@@ -100,6 +98,7 @@ class DynamicClientLogger(object):
 
 
 log = DynamicClientLogger(__name__)
+
 
 def is_valid_mac(mac_string):
     """Return True if mac_string is of form
@@ -205,6 +204,7 @@ def enforce_id_param(position=1):
 
     return wrapper
 
+
 @dual_decorator
 def enforce_ids_param(position=1):
     """Verifies that the caller is passing a list of song ids, and not a
@@ -216,8 +216,8 @@ def enforce_ids_param(position=1):
     @decorator
     def wrapper(function, *args, **kw):
 
-        if (not isinstance(args[position], (list, tuple)) or
-            not all([isinstance(e, basestring) for e in args[position]])):
+        if ((not isinstance(args[position], (list, tuple)) or
+             not all([isinstance(e, basestring) for e in args[position]]))):
             raise ValueError("Invalid param type in position %s;"
                              " expected song ids (did you pass song dictionaries?)" % position)
 

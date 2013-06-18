@@ -19,13 +19,15 @@ from oauth2client.client import OAuth2WebServerFlow, TokenRevokeError
 import oauth2client.file
 
 import gmusicapi
+from gmusicapi.compat import my_appdirs
 from gmusicapi.gmtools import tools
 from gmusicapi.exceptions import CallFailure, NotLoggedIn
 from gmusicapi.protocol import webclient, musicmanager, upload_pb2, locker_pb2
 from gmusicapi.utils import utils
 import gmusicapi.session
 
-OAUTH_FILEPATH = os.path.join(utils.my_appdirs.user_data_dir, 'oauth.cred')
+OAUTH_FILEPATH = os.path.join(my_appdirs.user_data_dir, 'oauth.cred')
+
 
 class _Base(object):
     """Factors out common client setup."""
@@ -500,7 +502,7 @@ class Musicmanager(_Base):
                     #To keep behavior consistent, make no effort to guess - require users
                     # to decode first.
                     user_err_msg = ("nonascii bytestrings must be decoded to unicode"
-                                    " (error: '%s')" % err_msg)
+                                    " (error: '%s')" % user_err_msg)
 
                 not_uploaded[path] = user_err_msg
             else:
