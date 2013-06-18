@@ -29,10 +29,10 @@ except ImportError:
                         ('user_data', 'site_data', 'user_config',
                          'site_config', 'user_cache', 'user_log')])
 
-    def __getattr__(self, name):
-        if name in self.to_spoof:
-            return ''  # current dir
-        else:
-            raise AttributeError
+        def __getattr__(self, name):
+            if name in self.to_spoof:
+                return '.'  # current dir
+            else:
+                raise AttributeError
 
     my_appdirs = FakeAppDirs()
