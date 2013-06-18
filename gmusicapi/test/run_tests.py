@@ -111,7 +111,7 @@ def main():
     # so SystemExit must be caught instead (we need
     # to check the log noticer)
     try:
-        TestProgram().run_and_exit()
+        TestProgram(module=sys.modules[__name__]).run_and_exit()
     except SystemExit as e:
         print
         if noticer.seen_message:

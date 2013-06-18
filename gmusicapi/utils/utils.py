@@ -227,35 +227,43 @@ def enforce_ids_param(position=1):
 
 
 def configure_debug_log_handlers(logger):
-    """Warnings and above to stderr, below to gmusicapi.log.
+    """Warnings and above to stderr, below to gmusicapi.log when possible.
     Output includes line number."""
 
     global printed_log_start_message
 
     logger.setLevel(logging.DEBUG)
 
-    make_sure_path_exists(os.path.dirname(log_filepath), 0o700)
-    fh = logging.FileHandler(log_filepath)
-    fh.setLevel(logging.DEBUG)
+    logging_to_file = True
+    try:
+        make_sure_path_exists(os.path.dirname(log_filepath), 0o700)
+        debug_handler = logging.FileHandler(log_filepath)
+    except OSError:
+        logging_to_file = False
+        debug_handler = logging.StreamHandler()
 
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.WARNING)
+    debug_handler.setLevel(logging.DEBUG)
 
-    logger.addHandler(fh)
-    logger.addHandler(ch)
+    important_handler = logging.StreamHandler()
+    important_handler.setLevel(logging.WARNING)
+
+    logger.addHandler(debug_handler)
+    logger.addHandler(important_handler)
 
     if not printed_log_start_message:
         #print out startup message without verbose formatting
         logger.info("!-- begin debug log --!")
         logger.info("version: " + __version__)
-        logger.info("logging to: " + log_filepath)
+        if logging_to_file:
+            logger.info("logging to: " + log_filepath)
+
         printed_log_start_message = True
 
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s (%(module)s:%(lineno)s) [%(levelname)s]: %(message)s'
     )
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
+    debug_handler.setFormatter(formatter)
+    important_handler.setFormatter(formatter)
 
 
 @dual_decorator
