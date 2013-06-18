@@ -9,6 +9,7 @@ an extra test playlist or song may result.
 
 from copy import copy
 from collections import namedtuple
+import os
 import re
 import types
 
@@ -311,12 +312,14 @@ class UpauthTests(object):
         assert_is_not_none(url)
         assert_equal(url[:7], 'http://')
 
-    @song_test
-    def get_aa_stream_urls(self):
-        # that dumb little intro track on Conspiracy of One
-        urls = self.wc.get_stream_urls('Tqqufr34tuqojlvkolsrwdwx7pe')
+    # TODO there must be a better way
+    if os.environ.get('GM_TEST_ALLACCESS') == 'TRUE':
+        @song_test
+        def get_aa_stream_urls(self):
+            # that dumb little intro track on Conspiracy of One
+            urls = self.wc.get_stream_urls('Tqqufr34tuqojlvkolsrwdwx7pe')
 
-        assert_true(len(urls) > 1)
+            assert_true(len(urls) > 1)
 
     @song_test
     def upload_album_art(self):
