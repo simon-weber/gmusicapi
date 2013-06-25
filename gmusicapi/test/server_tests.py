@@ -346,23 +346,23 @@ class UpauthTests(object):
         #hitmap = (hit[hit_key] == val for hit in res[hit_type])
         #assert_equal(sum(hitmap), 1)  # eg sum(True, False, True) == 2
 
-    @song_test
-    def search_title(self):
-        res = self.wc.search(self.song.title)
+    #@song_test
+    #def search_title(self):
+    #    res = self.wc.search(self.song.title)
 
-        self._assert_search_hit(res, 'song_hits', 'id', self.song.sid)
+    #    self._assert_search_hit(res, 'song_hits', 'id', self.song.sid)
 
-    @song_test
-    def search_artist(self):
-        res = self.wc.search(self.song.artist)
+    #@song_test
+    #def search_artist(self):
+    #    res = self.wc.search(self.song.artist)
 
-        self._assert_search_hit(res, 'artist_hits', 'id', self.song.sid)
+    #    self._assert_search_hit(res, 'artist_hits', 'id', self.song.sid)
 
-    @song_test
-    def search_album(self):
-        res = self.wc.search(self.song.album)
+    #@song_test
+    #def search_album(self):
+    #    res = self.wc.search(self.song.album)
 
-        self._assert_search_hit(res, 'album_hits', 'albumName', self.song.album)
+    #    self._assert_search_hit(res, 'album_hits', 'albumName', self.song.album)
 
     #---------------
     # Playlist tests
