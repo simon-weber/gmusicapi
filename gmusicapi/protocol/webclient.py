@@ -2,8 +2,13 @@
 
 """Calls made by the web client."""
 
+import binascii
 import copy
+import hmac
+import random
+import string
 import sys
+from hashlib import sha1
 
 import validictory
 
@@ -510,9 +515,19 @@ class GetStreamUrl(WcCall):
 
     @staticmethod
     def dynamic_params(song_id):
+
+        # https://github.com/simon-weber/Unofficial-Google-Music-API/issues/137
+        # And technically, slt/sig aren't required for tracks you upload, 
+        # but without the track's type field, we can't tell the difference.
+        key = '27f7313e-f75d-445a-ac99-56386a5fe879'
+        salt = ''.join(random.choice(string.ascii_lowercase + string.digits) for x in range(12))
+        sig = binascii.b2a_base64(hmac.new(key, (song_id + salt), sha1).digest())[:-1].replace('+', '-').replace('/', '_').replace('=', '.')
+
         params = {
             'u': 0,
-            'pt': 'e'
+            'pt': 'e',
+            'slt': salt,
+            'sig': sig
         }
 
         # all access streams use a different param
