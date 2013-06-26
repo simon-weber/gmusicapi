@@ -517,11 +517,19 @@ class GetStreamUrl(WcCall):
     def dynamic_params(song_id):
 
         # https://github.com/simon-weber/Unofficial-Google-Music-API/issues/137
-        # And technically, slt/sig aren't required for tracks you upload, 
-        # but without the track's type field, we can't tell the difference.
+        # there are three cases when streaming:
+        #   | track type              | guid songid? | slt/sig needed? |
+        #    user-uploaded              yes            no
+        #    AA track in library        yes            yes
+        #    AA track not in library    no             yes
+
+        # without the track['type'] field we can't tell between 1 and 2, but
+        # include slt/sig anyway; the server ignores the extra params.
         key = '27f7313e-f75d-445a-ac99-56386a5fe879'
         salt = ''.join(random.choice(string.ascii_lowercase + string.digits) for x in range(12))
-        sig = binascii.b2a_base64(hmac.new(key, (song_id + salt), sha1).digest())[:-1].replace('+', '-').replace('/', '_').replace('=', '.')
+        sig = binascii.b2a_base64(hmac.new(key, (song_id + salt), sha1).digest())[:-1]
+        urlsafe_b64_trans = string.maketrans("+/=", "-_.")
+        sig = sig.translate(urlsafe_b64_trans)
 
         params = {
             'u': 0,
@@ -530,10 +538,7 @@ class GetStreamUrl(WcCall):
             'sig': sig
         }
 
-        # all access streams use a different param
-        # https://github.com/simon-weber/Unofficial-Google-Music-API/pull/131#issuecomment-18843993
-        # thanks @lukegb!
-
+        # TODO match guid instead, should be more robust
         if song_id[0] == 'T':
             # all access
             params['mjck'] = song_id
