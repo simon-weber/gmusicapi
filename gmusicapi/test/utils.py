@@ -24,7 +24,6 @@ gm_id_regex = re.compile(("{h}{{8}}-" +
 
 #Get the absolute paths of the test files, which are located in the same
 # directory as this file.
-cwd = os.getcwd()
 test_file_dir = os.path.dirname(os.path.abspath(__file__))
 
 small_mp3 = os.path.join(test_file_dir, u'audiotest_small.mp3')

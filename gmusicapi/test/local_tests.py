@@ -6,6 +6,7 @@ Tests that don't hit the Google Music servers.
 
 from collections import namedtuple
 import time
+import os
 
 from mock import MagicMock as Mock
 from proboscis.asserts import (
@@ -19,8 +20,15 @@ from gmusicapi.clients import Webclient, Musicmanager
 from gmusicapi.exceptions import AlreadyLoggedIn  # ,NotLoggedIn
 from gmusicapi.protocol.shared import authtypes
 from gmusicapi.protocol import mobileclient
-from gmusicapi.utils import utils
+from gmusicapi.utils import utils, jsarray
 
+jsarray_samples = []
+jsarray_filenames = [base + '.jsarray' for base in ('searchresult', 'fetchartist')]
+
+test_file_dir = os.path.dirname(os.path.abspath(__file__))
+for filepath in [os.path.join(test_file_dir, p) for p in jsarray_filenames]:
+    with open(filepath, 'r') as f:
+        jsarray_samples.append(f.read().decode('utf-8'))
 
 #TODO test gather_local, transcoding
 
@@ -221,3 +229,10 @@ def retry_is_dual_decorator():
         return arg
 
     assert_equal(return_arg(1), 1)
+
+
+@test
+def jsarray_parsing():
+    for raw in jsarray_samples:
+        # should not raise an exception
+        jsarray.loads(raw)
