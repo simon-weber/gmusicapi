@@ -10,6 +10,7 @@ As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 released 2013-XX-XX
 
 - add support for streaming All Access songs
+- add Webclient.get_registered_devices
 - add a toggle to turn off validation per client
 - raise an exception when a song dictionary is passed instead of an id
 

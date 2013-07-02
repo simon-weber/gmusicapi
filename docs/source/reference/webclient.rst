@@ -44,3 +44,7 @@ Playlist content manipulation
 .. automethod:: Webclient.change_playlist
 .. automethod:: Webclient.add_songs_to_playlist
 .. automethod:: Webclient.remove_songs_from_playlist
+
+Other
+-----
+.. automethod:: Webclient.get_registered_devices
