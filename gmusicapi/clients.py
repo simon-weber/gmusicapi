@@ -692,6 +692,31 @@ class Webclient(_Base):
     def logout(self):
         return super(Webclient, self).logout()
 
+    def get_registered_devices(self):
+        """Returns a list of dictionaries, eg::
+            [
+              {
+                u'date': 1367470393588,           # utc-millisecond
+                u'id':   u'AA:BB:CC:11:22:33',
+                u'name': u'my-hostname',
+                u'type': u'DESKTOP_APP'
+               },
+               {
+                u'carrier':      u'Google',
+                u'date':         1344808742774
+                u'id':           u'0x00112233aabbccdd',
+                u'manufacturer': u'Asus',
+                u'model':        u'Nexus 7',
+                u'name':         u'',
+                u'type':         u'PHONE',
+               }
+             ]
+        """
+
+        #TODO sessionid stuff
+        res = self._make_call(webclient.GetSettings, '')
+        return res['settings']['devices']
+
     def change_playlist_name(self, playlist_id, new_name):
         """Changes the name of a playlist. Returns the changed id.
 
