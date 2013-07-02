@@ -163,6 +163,11 @@ class UpauthTests(object):
 
     # Non-wonky tests resume down here.
 
+    @test
+    def get_registered_devices(self):
+        # no logic; schema does verification
+        self.wc.get_registered_devices()
+
     #-----------
     # Song tests
     #-----------

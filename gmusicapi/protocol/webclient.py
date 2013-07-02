@@ -632,3 +632,68 @@ class UploadImage(WcCall):
             contents = f.read()
 
         return {'albumArt': (image_filepath, contents)}
+
+
+class GetSettings(WcCall):
+    """Get data that populates the settings tab: labs and devices."""
+
+    static_method = 'POST'
+    static_url = service_url + 'loadsettings'
+
+    _device_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'date': {'type': 'integer',
+                     'format': 'utc-millisec'},
+            'id': {'type': 'string'},
+            'name': {'type': 'string'},
+            'type': {'type': 'string'},
+            # only for type == PHONE:
+            'model': {'type': 'string', 'required': False},
+            'manufacturer': {'type': 'string', 'required': False},
+            'name': {'type': 'string', 'required': False},
+            'carrier': {'type': 'string', 'required': False},
+        },
+    }
+
+    _lab_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'description': {'type': 'string'},
+            'enabled': {'type': 'boolean'},
+            'name': {'type': 'string'},
+            'title': {'type': 'string'},
+        },
+    }
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'settings': {
+                'type': 'object',
+                'additionalProperties': False,
+                'properties': {
+                    'devices': {'type': 'array', 'items': _device_schema},
+                    'labs': {'type': 'array', 'items': _lab_schema},
+                    'maxTracks': {'type': 'integer'},
+                    'expirationMillis': {
+                        'type': 'integer',
+                        'format': 'utc-millisec',
+                        'required': False,
+                    },
+                    'isSubscription': {'type': 'boolean', 'required': False},
+                    'isTrial': {'type': 'boolean', 'required': False},
+                },
+            },
+        },
+    }
+
+    @staticmethod
+    def dynamic_data(session_id):
+        """
+        :param: session_id
+        """
+        return {'json': json.dumps({'sessionId': session_id})}
