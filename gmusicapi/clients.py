@@ -11,6 +11,7 @@ import os
 from socket import gethostname
 import time
 import urllib
+from urlparse import urlparse, parse_qsl
 from uuid import getnode as getmac
 import webbrowser
 
@@ -701,6 +702,71 @@ class Mobileclient(_Base):
         res = self._make_call(mobileclient.GetArtist, artistid, albums, top_tracks, rel_artist)
         return res
 
+    def get_album(self, albumid, tracks=True):
+        """Retrieve artist data"""
+        res = self._make_call(mobileclient.GetAlbum, albumid, tracks)
+        return res
+
+    def get_track(self, trackid):
+        """Retrieve artist data"""
+        res = self._make_call(mobileclient.GetTrack, trackid)
+        return res
+
+    def get_stream_audio(self, song_id):
+        """Returns a bytestring containing mp3 audio for this song.
+
+            :param song_id: a single song id
+        """
+
+        urls = self.get_stream_urls(song_id)
+
+        if len(urls) == 1:
+            return self.session._rsession.get(urls[0]).content
+
+        # AA tracks are separated into multiple files
+        # the url contains the range of each file to be used
+
+        range_pairs = [[int(s) for s in val.split('-')]
+                       for url in urls
+                       for key, val in parse_qsl(urlparse(url)[4])
+                       if key == 'range']
+
+        stream_pieces = []
+        prev_end = 0
+
+        for url, (start, end) in zip(urls, range_pairs):
+            audio = self.session._rsession.get(url).content
+            stream_pieces.append(audio[prev_end - start:])
+
+            prev_end = end + 1
+
+        return ''.join(stream_pieces)
+
+    def get_stream_urls(self, song_id):
+        """Returns a url that points to a streamable version of this song.
+
+        :param song_id: a single song id.
+
+        While acquiring the url requires authentication, retreiving the
+        url contents does not.
+
+        However, there are limitation as to how the stream url can be used:
+            * the url expires after about a minute
+            * only one IP can be streaming music at once.
+              Other attempts will get an http 403 with
+              ``X-Rejected-Reason: ANOTHER_STREAM_BEING_PLAYED``.
+
+        *This is only intended for streaming*. The streamed audio does not contain metadata.
+        Use :func:`get_song_download_info` to download complete files with metadata.
+        """
+        res = self._make_call(mobileclient.GetStreamUrl, song_id)
+
+        try:
+            return res['url']
+        except KeyError:
+            return res['urls']
+
+
 class Webclient(_Base):
     """Allows library management and streaming by posing as the
     music.google.com webclient.
@@ -942,7 +1008,7 @@ class Webclient(_Base):
 
         return (url, info["downloadCounts"][song_id])
 
-    def get_stream_url(self, song_id):
+    def get_stream_urls(self, song_id):
         """Returns a url that points to a streamable version of this song.
 
         :param song_id: a single song id.
@@ -962,7 +1028,40 @@ class Webclient(_Base):
 
         res = self._make_call(webclient.GetStreamUrl, song_id)
 
-        return res['url']
+        try:
+            return res['url']
+        except KeyError:
+            return res['urls']
+
+    def get_stream_audio(self, song_id):
+        """Returns a bytestring containing mp3 audio for this song.
+
+            :param song_id: a single song id
+        """
+
+        urls = self.get_stream_urls(song_id)
+
+        if len(urls) == 1:
+            return self.session._rsession.get(urls[0]).content
+
+        # AA tracks are separated into multiple files
+        # the url contains the range of each file to be used
+
+        range_pairs = [[int(s) for s in val.split('-')]
+                       for url in urls
+                       for key, val in parse_qsl(urlparse(url)[4])
+                       if key == 'range']
+
+        stream_pieces = []
+        prev_end = 0
+
+        for url, (start, end) in zip(urls, range_pairs):
+            audio = self.session._rsession.get(url).content
+            stream_pieces.append(audio[prev_end - start:])
+
+            prev_end = end + 1
+
+        return ''.join(stream_pieces)
 
     def copy_playlist(self, playlist_id, copy_name):
         """Copies the contents of a playlist to a new playlist. Returns the id of the new playlist.

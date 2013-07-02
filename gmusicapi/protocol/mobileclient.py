@@ -3,7 +3,12 @@
 
 """Calls made by the web client."""
 
+import binascii
+import hmac
+import random
+import string
 import sys
+from hashlib import sha1
 
 import validictory
 
@@ -48,7 +53,8 @@ sj_album = {
                 'albumId':{'type':'string'},
                 'artist':{'type':'string'},
                 'artistId':{'type':'array', 'items':{'type':'string'}},
-                'year': {'type': 'integer'}
+                'year': {'type': 'integer'},
+                'tracks': {'type':'array', 'items':sj_track}
             }
     }
 
@@ -147,4 +153,74 @@ class GetArtist(MCall):
         ret += '&num-related-artists=%d' % rel_artist
         return ret
 
+class GetAlbum(MCall):
+    static_method = 'GET'
+    _res_schema = sj_album
+
+    @staticmethod
+    def dynamic_url(albumid, tracks=True):
+        ret = sj_url + 'fetchalbum?alt=json'
+        ret += '&nid=%s' % albumid
+        ret += '&include-tracks=%r' % tracks
+        return ret
+
+class GetTrack(MCall):
+    static_method = 'GET'
+    _res_schema = sj_track
+
+    @staticmethod
+    def dynamic_url(trackid):
+        ret = sj_url + 'fetchtrack?alt=json'
+        ret += '&nid=%s' % trackid
+        return ret
+
+class GetStreamUrl(MCall):
+    """Used to request a streaming link of a track."""
+
+    static_method = 'GET'
+    static_url =  'https://play.google.com/music/play'  # note use of base_url, not service_url
+
+    required_auth = authtypes(sso=True)  # no xt required
+
+    _res_schema = {
+        "type": "object",
+        "properties": {
+            "url": {"type": "string", "required": False},
+            "urls": {"type": "array", "required": False}
+        },
+        "additionalProperties": False
+    }
+
+    @staticmethod
+    def dynamic_params(song_id):
+
+        # https://github.com/simon-weber/Unofficial-Google-Music-API/issues/137
+        # there are three cases when streaming:
+        #   | track type              | guid songid? | slt/sig needed? |
+        #    user-uploaded              yes            no
+        #    AA track in library        yes            yes
+        #    AA track not in library    no             yes
+
+        # without the track['type'] field we can't tell between 1 and 2, but
+        # include slt/sig anyway; the server ignores the extra params.
+        key = '27f7313e-f75d-445a-ac99-56386a5fe879'
+        salt = ''.join(random.choice(string.ascii_lowercase + string.digits) for x in range(12))
+        sig = binascii.b2a_base64(hmac.new(key, (song_id + salt), sha1).digest())[:-1]
+        urlsafe_b64_trans = string.maketrans("+/=", "-_.")
+        sig = sig.translate(urlsafe_b64_trans)
+
+        params = {
+            'u': 0,
+            'pt': 'e',
+            'slt': salt,
+            'sig': sig
+        }
+
+        # TODO match guid instead, should be more robust
+        if song_id[0] == 'T':
+            # all access
+            params['mjck'] = song_id
+        else:
+            params['songid'] = song_id
+        return params
 
