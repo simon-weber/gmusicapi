@@ -697,3 +697,18 @@ class GetSettings(WcCall):
         :param: session_id
         """
         return {'json': json.dumps({'sessionId': session_id})}
+
+
+class DeauthDevice(WcCall):
+    """Deauthorize a device from GetSettings."""
+    static_method = 'POST'
+    static_url = service_url + 'modifysettings'
+
+    @staticmethod
+    def dynamic_data(device_id, session_id):
+        return {'json': json.dumps({'deauth': device_id, 'sessionId': session_id})}
+
+    @classmethod
+    def validate(cls, response, msg):
+        if msg.text != '{}':
+            raise ValidationException("expected an empty object; received %r" % msg.text)
