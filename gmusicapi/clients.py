@@ -21,7 +21,7 @@ import oauth2client.file
 import gmusicapi
 from gmusicapi.gmtools import tools
 from gmusicapi.exceptions import CallFailure, NotLoggedIn
-from gmusicapi.protocol import webclient, musicmanager, upload_pb2, locker_pb2
+from gmusicapi.protocol import webclient, musicmanager, mobileclient, upload_pb2, locker_pb2
 from gmusicapi.utils import utils
 import gmusicapi.session
 
@@ -491,7 +491,7 @@ class Musicmanager(_Base):
                     #To keep behavior consistent, make no effort to guess - require users
                     # to decode first.
                     user_err_msg = ("nonascii bytestrings must be decoded to unicode"
-                                    " (error: '%s')" % err_msg)
+                                    " (error: '%s')" % user_err_msg)
 
                 not_uploaded[path] = user_err_msg
             else:
@@ -643,6 +643,63 @@ class Musicmanager(_Base):
 
         return uploaded, matched, not_uploaded
 
+class Mobileclient(_Base):
+    """Allows library management and streaming by posing as the
+    googleapis.com mobile clients.
+
+    Uploading is not supported by this client (use the :class:`Musicmanager`
+    to upload).
+    """
+    def __init__(self, debug_logging=True):
+        self.session = gmusicapi.session.Mobileclient()
+
+        super(Mobileclient, self).__init__(self.__class__.__name__, debug_logging)
+        self.logout()
+
+
+    def login(self, email, password):
+        """Authenticates the webclient.
+        Returns ``True`` on success, ``False`` on failure.
+
+        :param email: eg ``'test@gmail.com'`` or just ``'test'``.
+        :param password: password or app-specific password for 2-factor users.
+          This is not stored locally, and is sent securely over SSL.
+
+        Users of two-factor authentication will need to set an application-specific password
+        to log in.
+        """
+
+        if not self.session.login(email, password):
+            self.logger.info("failed to authenticate")
+            return False
+
+        self.logger.info("authenticated")
+
+        return True
+
+
+    def search(self, query, max_results=5):
+        """Queries the server for songs and albums.
+
+        :param query: a string keyword to search with. Capitalization and punctuation are ignored.
+        :param max_results: Maximum number of items to be retrieved
+
+        The results are returned in a dictionary, arranged by how they were found.
+        ``artist_hits`` and ``song_hits`` return a list of
+        :ref:`song dictionaries <songdict-format>`, while ``album_hits`` entries
+        have a different structure.
+        """
+
+        res = self._make_call(mobileclient.Search, query, max_results)['entries']
+
+        return {"album_hits": [hit for hit in res if hit['type']=="3"],
+                "artist_hits": [hit for hit in res if hit['type']=="2"],
+                "song_hits": [hit for hit in res if hit['type']=="1"]}
+
+    def get_artist(self, artistid, albums=True, top_tracks=0, rel_artist=0):
+        """Retrieve artist data"""
+        res = self._make_call(mobileclient.GetArtist, artistid, albums, top_tracks, rel_artist)
+        return res
 
 class Webclient(_Base):
     """Allows library management and streaming by posing as the

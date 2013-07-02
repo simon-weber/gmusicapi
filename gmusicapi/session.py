@@ -118,6 +118,54 @@ class Webclient(_Base):
         return rsession.request(**req_kwargs)
 
 
+class Mobileclient(_Base):
+    """ This class is almost the same as Webclient.
+    Defined for future change purposes"""
+
+    def __init__(self):
+        super(Mobileclient, self).__init__()
+        self._authtoken = None
+
+    def login(self, email, password, *args, **kwargs):
+        """
+        Perform clientlogin then retrieve webclient cookies.
+
+        :param email:
+        :param password:
+        """
+
+        super(Mobileclient, self).login()
+
+        res = ClientLogin.perform(self, email, password)
+
+        if 'SID' not in res or 'Auth' not in res:
+            return False
+
+        self._authtoken = res['Auth']
+
+        self.is_authenticated = True
+
+        # Get mobileclient cookies. This is the same as webclient
+        try:
+            webclient.Init.perform(self)
+        except CallFailure:
+            # throw away clientlogin credentials
+            self.logout()
+
+        return self.is_authenticated
+
+    def _send_with_auth(self, req_kwargs, desired_auth, rsession):
+        req_kwargs['headers'] = req_kwargs.get('headers', {})
+
+        # Only supported authentication/authorization procedure is
+        # ClientLogin, but this will change by After April 20, 2015.
+        # A change must be made before that date.
+
+        req_kwargs['headers']['Authorization'] = \
+                'GoogleLogin auth=' + self._authtoken
+
+        return rsession.request(**req_kwargs)
+
 class Musicmanager(_Base):
     def __init__(self):
         super(Musicmanager, self).__init__()
