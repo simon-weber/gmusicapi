@@ -38,7 +38,7 @@ class Mobileclient(_Base):
 
         return True
 
-    def search_all_access(self, query, max_results=5):
+    def search_all_access(self, query, max_results=50):
         """Queries the server for All Access songs and albums.
         Using this method without an All Access subscription will always result in
         CallFailure being raised.

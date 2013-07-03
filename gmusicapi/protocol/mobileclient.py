@@ -19,72 +19,82 @@ from gmusicapi.utils import utils
 # URL for sj service
 sj_url = 'https://www.googleapis.com/sj/v1/'
 
-# Data schema for sj service. Might be incomplete
+# shared schemas
 sj_track = {
-        'type':'object',
-        'properties':{
-                'kind':{'type':'string'},
-                'title':{'type':'string'},
-                'artist':{'type':'string'},
-                'album':{'type':'string'},
-                'albumArtist':{'type':'string'},
-                'trackNumber':{'type':'integer'},
-                'durationMillis':{'type':'string'},
-                'albumArtRef':{'type':'array', 'items':{'type':'object', 'properties':{'url':{'type':'string'}}}},
-                'discNumber':{'type':'integer'},
-                'estimatedSize':{'type':'string'},
-                'trackType':{'type':'string'},
-                'storeId':{'type':'string'},
-                'albumId':{'type':'string'},
-                'artistId':{'type':'array', 'items':{'type':'string'}},
-                'nid':{'type':'string'},
-                'trackAvailableForPurchase':{'type':'boolean'},
-                'albumAvailableForPurchase':{'type':'boolean'},
-            }
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'kind': {'type': 'string'},
+        'title': {'type': 'string'},
+        'artist': {'type': 'string'},
+        'album': {'type': 'string'},
+        'albumArtist': {'type': 'string'},
+        'trackNumber': {'type': 'integer'},
+        'durationMillis': {'type': 'string'},
+        'albumArtRef': {'type': 'array',
+                        'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}}},
+        'discNumber': {'type': 'integer'},
+        'estimatedSize': {'type': 'string'},
+        'trackType': {'type': 'string'},
+        'storeId': {'type': 'string'},
+        'albumId': {'type': 'string'},
+        'artistId': {'type': 'array', 'items': {'type': 'string'}},
+        'nid': {'type': 'string'},
+        'trackAvailableForPurchase': {'type': 'boolean'},
+        'albumAvailableForPurchase': {'type': 'boolean'},
+        'playCount': {'type': 'integer', 'required': False},
+        'year': {'type': 'integer', 'required': False},
     }
+}
 
 sj_album = {
-        'type':'object',
-        'properties':{
-                'kind':{'type':'string'},
-                'name':{'type':'string'},
-                'albumArtist':{'type':'string'},
-                'albumArtRef':{'type':'string'},
-                'albumId':{'type':'string'},
-                'artist':{'type':'string'},
-                'artistId':{'type':'array', 'items':{'type':'string'}},
-                'year': {'type': 'integer'},
-                'tracks': {'type':'array', 'items':sj_track}
-            }
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'kind': {'type': 'string'},
+        'name': {'type': 'string'},
+        'albumArtist': {'type': 'string'},
+        'albumArtRef': {'type': 'string'},
+        'albumId': {'type': 'string'},
+        'artist': {'type': 'string'},
+        'artistId': {'type': 'array', 'items': {'type': 'string'}},
+        'year': {'type': 'integer'},
+        'tracks': {'type': 'array', 'items': sj_track, 'required': False}
     }
+}
 
 sj_artist = {
-        'type':'object',
-        'properties':{
-                'kind':{'type':'string'},
-                'name':{'type':'string'},
-                'artistArtRef':{'type':'string'},
-                'artistId':{'type':'string'},
-                'albums:':{'type':'array', 'items':sj_album, 'required':False},
-                'topTracks':{'type':'array', 'items':sj_track, 'required':False},
-            }
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'kind': {'type': 'string'},
+        'name': {'type': 'string'},
+        'artistArtRef': {'type': 'string'},
+        'artistId': {'type': 'string'},
+        'albums: ': {'type': 'array', 'items': sj_album, 'required': False},
+        'topTracks': {'type': 'array', 'items': sj_track, 'required': False},
     }
+}
 
-sj_artist['related_artists']= {'type':'array', 'items':sj_artist, 'required':False}
+sj_artist['related_artists'] = {'type': 'array', 'items': sj_artist, 'required': False}
 # Result definition may not contain any item.
 sj_result = {
-        "type":"object",
-        "properties":{
-                'score':{"type":"number"},
-                'artists':sj_artist,
-                'album': sj_album,
-                'track': sj_track
-            }
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'score': {'type': 'number'},
+        'type': {'type': 'string'},
+        'best_result': {'type': 'boolean', 'required': False},
+        'artist': sj_artist.copy(),
+        'album': sj_album.copy(),
+        'track': sj_track.copy(),
     }
+}
 
-sj_result['properties']['artists']['required']=False
-sj_result['properties']['album']['required']=False
-sj_result['properties']['track']['required']=False
+sj_result['properties']['artist']['required'] = False
+sj_result['properties']['album']['required'] = False
+sj_result['properties']['track']['required'] = False
+
 
 class McCall(Call):
     """Abstract base for mobile client calls."""
@@ -128,17 +138,18 @@ class Search(McCall):
     static_method = 'GET'
 
     _res_schema = {
-            "type": "object",
-            "properties": {
-                "kind":{"type":"string"},
-                "entries": {'type':'array', 'items': sj_result}
-            },
-        "additionalProperties": False
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'kind': {'type': 'string'},
+            'entries': {'type': 'array', 'items': sj_result}
+        },
     }
 
     @staticmethod
     def dynamic_url(query, max_ret):
-        return  sj_url + 'query?q=%s&max-results=%d' % (query, max_ret)
+        return sj_url + 'query?q=%s&max-results=%d' % (query, max_ret)
+
 
 class GetArtist(McCall):
     static_method = 'GET'
@@ -153,6 +164,7 @@ class GetArtist(McCall):
         ret += '&num-related-artists=%d' % rel_artist
         return ret
 
+
 class GetAlbum(McCall):
     static_method = 'GET'
     _res_schema = sj_album
@@ -164,6 +176,7 @@ class GetAlbum(McCall):
         ret += '&include-tracks=%r' % tracks
         return ret
 
+
 class GetTrack(McCall):
     static_method = 'GET'
     _res_schema = sj_track
@@ -174,11 +187,12 @@ class GetTrack(McCall):
         ret += '&nid=%s' % trackid
         return ret
 
+
 class GetStreamUrl(McCall):
     """Used to request a streaming link of a track."""
 
     static_method = 'GET'
-    static_url =  'https://play.google.com/music/play'  # note use of base_url, not service_url
+    static_url = 'https://play.google.com/music/play'
 
     required_auth = authtypes(sso=True)  # no xt required
 

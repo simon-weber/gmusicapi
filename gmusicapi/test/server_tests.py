@@ -15,7 +15,7 @@ import types
 
 from proboscis.asserts import (
     assert_true, assert_equal, assert_is_not_none,
-    assert_not_equal, Check
+    assert_not_equal, Check, assert_raises
 )
 from proboscis import test, before_class, after_class, SkipTest
 
@@ -164,6 +164,7 @@ class UpauthTests(object):
     # They won't work right with additional settings; if that's needed this
     #  pattern should be factored out.
 
+    #TODO it'd be nice to have per-client test groups
     song_test = test(groups=['song', 'song.exists'], depends_on=[song_create])
     playlist_test = test(groups=['playlist', 'playlist.exists'],
                          depends_on=[playlist_create])
@@ -177,7 +178,7 @@ class UpauthTests(object):
         self.wc.get_registered_devices()
 
     #---------
-    # MC tests
+    # MC/AA tests
     #---------
     @mc_test
     def mc_search_aa(self):
@@ -187,7 +188,39 @@ class UpauthTests(object):
                 for hits in res.values():
                     check.true(len(hits) > 0)
         else:
-            self.assert_raises(CallFailure, self.mc.search_all_access, 'amorphis')
+            assert_raises(CallFailure, self.mc.search_all_access, 'amorphis')
+
+    @mc_test
+    def mc_search_aa_with_limit(self):
+        if os.environ.get('GM_TEST_ALLACCESS') == 'TRUE':
+            res_unlimited = self.mc.search_all_access('cat empire')
+            res_5 = self.mc.search_all_access('cat empire', max_results=5)
+
+            assert_equal(len(res_5['song_hits']), 5)
+            assert_true(len(res_unlimited['song_hits']) > len(res_5['song_hits']))
+
+        else:
+            raise SkipTest('AA testing not enabled')
+
+    @test
+    def get_aa_stream_urls(self):
+        if os.environ.get('GM_TEST_ALLACCESS') == 'TRUE':
+            # that dumb little intro track on Conspiracy of One
+            urls = self.wc.get_stream_urls('Tqqufr34tuqojlvkolsrwdwx7pe')
+
+            assert_true(len(urls) > 1)
+            #TODO test getting the stream
+        else:
+            raise SkipTest('AA testing not enabled')
+
+    @test
+    def stream_aa_track(self):
+        if os.environ.get('GM_TEST_ALLACCESS') == 'TRUE':
+            # that dumb little intro track on Conspiracy of One
+            audio = self.wc.get_stream_audio('Tqqufr34tuqojlvkolsrwdwx7pe')
+            assert_is_not_none(audio)
+        else:
+            raise SkipTest('AA testing not enabled')
 
     #-----------
     # Song tests
@@ -328,7 +361,7 @@ class UpauthTests(object):
         assert_download()
 
     @song_test
-    def get_normal_stream_urls(self):
+    def get_uploaded_stream_urls(self):
         urls = self.wc.get_stream_urls(self.song.sid)
 
         assert_equal(len(urls), 1)
@@ -337,15 +370,6 @@ class UpauthTests(object):
 
         assert_is_not_none(url)
         assert_equal(url[:7], 'http://')
-
-    # TODO there must be a better way
-    if os.environ.get('GM_TEST_ALLACCESS') == 'TRUE':
-        @song_test
-        def get_aa_stream_urls(self):
-            # that dumb little intro track on Conspiracy of One
-            urls = self.wc.get_stream_urls('Tqqufr34tuqojlvkolsrwdwx7pe')
-
-            assert_true(len(urls) > 1)
 
     @song_test
     def upload_album_art(self):
