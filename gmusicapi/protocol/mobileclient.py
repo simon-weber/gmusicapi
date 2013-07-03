@@ -3,12 +3,7 @@
 
 """Calls made by the web client."""
 
-import binascii
-import hmac
-import random
-import string
 import sys
-from hashlib import sha1
 
 import validictory
 
@@ -194,54 +189,3 @@ class GetTrack(McCall):
         ret = sj_url + 'fetchtrack?alt=json'
         ret += '&nid=%s' % trackid
         return ret
-
-
-class GetStreamUrl(McCall):
-    """Used to request a streaming link of a track."""
-
-    static_method = 'GET'
-    static_url = 'https://play.google.com/music/play'
-
-    required_auth = authtypes(sso=True)  # no xt required
-
-    _res_schema = {
-        "type": "object",
-        "properties": {
-            "url": {"type": "string", "required": False},
-            "urls": {"type": "array", "required": False}
-        },
-        "additionalProperties": False
-    }
-
-    @staticmethod
-    def dynamic_params(song_id):
-
-        # https://github.com/simon-weber/Unofficial-Google-Music-API/issues/137
-        # there are three cases when streaming:
-        #   | track type              | guid songid? | slt/sig needed? |
-        #    user-uploaded              yes            no
-        #    AA track in library        yes            yes
-        #    AA track not in library    no             yes
-
-        # without the track['type'] field we can't tell between 1 and 2, but
-        # include slt/sig anyway; the server ignores the extra params.
-        key = '27f7313e-f75d-445a-ac99-56386a5fe879'
-        salt = ''.join(random.choice(string.ascii_lowercase + string.digits) for x in range(12))
-        sig = binascii.b2a_base64(hmac.new(key, (song_id + salt), sha1).digest())[:-1]
-        urlsafe_b64_trans = string.maketrans("+/=", "-_.")
-        sig = sig.translate(urlsafe_b64_trans)
-
-        params = {
-            'u': 0,
-            'pt': 'e',
-            'slt': salt,
-            'sig': sig
-        }
-
-        # TODO match guid instead, should be more robust
-        if song_id[0] == 'T':
-            # all access
-            params['mjck'] = song_id
-        else:
-            params['songid'] = song_id
-        return params
