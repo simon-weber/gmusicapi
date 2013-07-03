@@ -52,8 +52,8 @@ def demonstrate():
     # this is essentially a random song.
     first_song = library[0]
     print "The first song I see is '{}' by '{}'.".format(
-        first_song["name"],
-        first_song["artist"])
+        first_song["name"].encode('utf-8'),
+        first_song["artist"].encode('utf-8'))
 
     # We're going to create a new playlist and add a song to it.
     # Songs are uniquely identified by 'song ids', so let's get the id:

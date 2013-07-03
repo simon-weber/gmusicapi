@@ -82,8 +82,11 @@ class DynamicClientLogger(object):
                 try:
                     if 'self' in frame.f_locals:
                         f_self = frame.f_locals['self']
-                        if ((f_self.__module__ == 'gmusicapi.clients' and
-                             type(f_self).__name__ in ('Musicmanager', 'Webclient'))):
+
+                        if (f_self is not None and
+                            f_self.__module__ == 'gmusicapi.clients' and
+                            type(f_self).__name__ in ('Musicmanager',
+                                                      'Webclient', 'Mobileclient')):
                             logger = f_self.logger
                             break
                 finally:
