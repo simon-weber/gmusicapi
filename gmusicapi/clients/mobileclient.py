@@ -12,10 +12,10 @@ class Mobileclient(_Base):
     Uploading is not supported by this client (use the :class:`Musicmanager`
     to upload).
     """
-    def __init__(self, debug_logging=True):
-        self.session = session.Webclient()  # TODO change name; now shared
+    def __init__(self, debug_logging=True, validate=True):
+        self.session = session.Webclient()
 
-        super(Mobileclient, self).__init__(self.__class__.__name__, debug_logging)
+        super(Mobileclient, self).__init__(self.__class__.__name__, debug_logging, validate)
         self.logout()
 
     def login(self, email, password):
@@ -38,24 +38,131 @@ class Mobileclient(_Base):
 
         return True
 
-    def search(self, query, max_results=5):
-        """Queries the server for songs and albums.
+    def search_all_access(self, query, max_results=5):
+        """Queries the server for All Access songs and albums.
+        Using this method without an All Access subscription will always result in
+        CallFailure being raised.
 
         :param query: a string keyword to search with. Capitalization and punctuation are ignored.
         :param max_results: Maximum number of items to be retrieved
 
-        The results are returned in a dictionary, arranged by how they were found.
-        ``artist_hits`` and ``song_hits`` return a list of
-        :ref:`song dictionaries <songdict-format>`, while ``album_hits`` entries
-        have a different structure.
+        The results are returned in a dictionary, arranged by how they were found, eg::
+            {
+               'album_hits':[
+                  {
+                     u'album':{
+                        u'albumArtRef':u'http://lh6.ggpht.com/...',
+                        u'albumId':u'Bfr2onjv7g7tm4rzosewnnwxxyy',
+                        u'artist':u'Amorphis',
+                        u'artistId':[
+                           u'Apoecs6off3y6k4h5nvqqos4b5e'
+                        ],
+                        u'kind':u'sj#album',
+                        u'name':u'Circle',
+                        u'year':2013
+                     },
+                     u'best_result':True,
+                     u'score':385.55609130859375,
+                     u'type':u'3'
+                  },
+                  {
+                     u'album':{
+                        u'albumArtRef':u'http://lh3.ggpht.com/...',
+                        u'albumArtist':u'Amorphis',
+                        u'albumId':u'Bqzxfykbqcqmjjtdom7ukegaf2u',
+                        u'artist':u'Amorphis',
+                        u'artistId':[
+                           u'Apoecs6off3y6k4h5nvqqos4b5e'
+                        ],
+                        u'kind':u'sj#album',
+                        u'name':u'Elegy',
+                        u'year':1996
+                     },
+                     u'score':236.33485412597656,
+                     u'type':u'3'
+                  },
+               ],
+               'artist_hits':[
+                  {
+                     u'artist':{
+                        u'artistArtRef':u'http://lh6.ggpht.com/...',
+                        u'artistId':u'Apoecs6off3y6k4h5nvqqos4b5e',
+                        u'kind':u'sj#artist',
+                        u'name':u'Amorphis'
+                     },
+                     u'score':237.86375427246094,
+                     u'type':u'2'
+                  }
+               ],
+               'song_hits':[
+                  {
+                     u'score':105.23198699951172,
+                     u'track':{
+                        u'album':u'Skyforger',
+                        u'albumArtRef':[
+                           {
+                              u'url':u'http://lh4.ggpht.com/...'
+                           }
+                        ],
+                        u'albumArtist':u'Amorphis',
+                        u'albumAvailableForPurchase':True,
+                        u'albumId':u'B5nc22xlcmdwi3zn5htkohstg44',
+                        u'artist':u'Amorphis',
+                        u'artistId':[
+                           u'Apoecs6off3y6k4h5nvqqos4b5e'
+                        ],
+                        u'discNumber':1,
+                        u'durationMillis':u'253000',
+                        u'estimatedSize':u'10137633',
+                        u'kind':u'sj#track',
+                        u'nid':u'Tn2ugrgkeinrrb2a4ji7khungoy',
+                        u'playCount':1,
+                        u'storeId':u'Tn2ugrgkeinrrb2a4ji7khungoy',
+                        u'title':u'Silver Bride',
+                        u'trackAvailableForPurchase':True,
+                        u'trackNumber':2,
+                        u'trackType':u'7'
+                     },
+                     u'type':u'1'
+                  },
+                  {
+                     u'score':96.23717498779297,
+                     u'track':{
+                        u'album':u'Magic And Mayhem - Tales From The Early Years',
+                        u'albumArtRef':[
+                           {
+                              u'url':u'http://lh4.ggpht.com/...'
+                           }
+                        ],
+                        u'albumArtist':u'Amorphis',
+                        u'albumAvailableForPurchase':True,
+                        u'albumId':u'B7dplgr5h2jzzkcyrwhifgwl2v4',
+                        u'artist':u'Amorphis',
+                        u'artistId':[
+                           u'Apoecs6off3y6k4h5nvqqos4b5e'
+                        ],
+                        u'discNumber':1,
+                        u'durationMillis':u'235000',
+                        u'estimatedSize':u'9405159',
+                        u'kind':u'sj#track',
+                        u'nid':u'T4j5jxodzredqklxxhncsua5oba',
+                        u'storeId':u'T4j5jxodzredqklxxhncsua5oba',
+                        u'title':u'Black Winter Day',
+                        u'trackAvailableForPurchase':True,
+                        u'trackNumber':4,
+                        u'trackType':u'7',
+                        u'year':2010
+                     },
+                     u'type':u'1'
+                  },
+               ]
+            }
         """
-
-        #XXX provide an example
         res = self._make_call(mobileclient.Search, query, max_results)['entries']
 
-        return {"album_hits": [hit for hit in res if hit['type'] == "3"],
-                "artist_hits": [hit for hit in res if hit['type'] == "2"],
-                "song_hits": [hit for hit in res if hit['type'] == "1"]}
+        return {'album_hits': [hit for hit in res if hit['type'] == '3'],
+                'artist_hits': [hit for hit in res if hit['type'] == '2'],
+                'song_hits': [hit for hit in res if hit['type'] == '1']}
 
     def get_artist(self, artistid, albums=True, top_tracks=0, rel_artist=0):
         """Retrieve artist data"""

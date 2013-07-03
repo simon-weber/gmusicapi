@@ -19,7 +19,7 @@ from proboscis.asserts import (
 )
 from proboscis import test, before_class, after_class, SkipTest
 
-from gmusicapi.clients import Webclient, Musicmanager
+from gmusicapi import Webclient, Musicmanager, Mobileclient, CallFailure
 #from gmusicapi.exceptions import NotLoggedIn
 from gmusicapi.protocol.metadata import md_expectations
 from gmusicapi.utils.utils import retry
@@ -47,6 +47,9 @@ class UpauthTests(object):
         self.mm = test_utils.new_test_client(Musicmanager)
         assert_true(self.mm.is_authenticated())
 
+        self.mc = test_utils.new_test_client(Mobileclient)
+        assert_true(self.mc.is_authenticated())
+
     @after_class(always_run=True)
     def logout(self):
         if self.wc is None:
@@ -56,6 +59,10 @@ class UpauthTests(object):
         if self.mm is None:
             raise SkipTest('did not create mm')
         assert_true(self.mm.logout())
+
+        if self.mc is None:
+            raise SkipTest('did not create mc')
+        assert_true(self.mc.logout())
 
     # This next section is a bit odd: it nests playlist tests inside song tests.
 
@@ -160,6 +167,7 @@ class UpauthTests(object):
     song_test = test(groups=['song', 'song.exists'], depends_on=[song_create])
     playlist_test = test(groups=['playlist', 'playlist.exists'],
                          depends_on=[playlist_create])
+    mc_test = test(groups=['mobile'])
 
     # Non-wonky tests resume down here.
 
@@ -167,6 +175,19 @@ class UpauthTests(object):
     def get_registered_devices(self):
         # no logic; schema does verification
         self.wc.get_registered_devices()
+
+    #---------
+    # MC tests
+    #---------
+    @mc_test
+    def mc_search_aa(self):
+        if os.environ.get('GM_TEST_ALLACCESS') == 'TRUE':
+            res = self.mc.search_all_access('amorphis')
+            with Check() as check:
+                for hits in res.values():
+                    check.true(len(hits) > 0)
+        else:
+            self.assert_raises(CallFailure, self.mc.search_all_access, 'amorphis')
 
     #-----------
     # Song tests

@@ -67,6 +67,7 @@ class DynamicClientLogger(object):
 
     def __init__(self, caller_name):
         self.caller_name = caller_name
+        print 'dynamic logger created for', self.caller_name
 
     def __getattr__(self, name):
         # this isn't a totally foolproof way to proxy, but it's fine for
@@ -83,16 +84,19 @@ class DynamicClientLogger(object):
                     if 'self' in frame.f_locals:
                         f_self = frame.f_locals['self']
 
-                        if (f_self is not None and
-                            f_self.__module__ == 'gmusicapi.clients' and
-                            type(f_self).__name__ in ('Musicmanager',
-                                                      'Webclient', 'Mobileclient')):
+                        # can't import and check against classes; that causes an import cycle
+                        if ((f_self is not None and
+                             f_self.__module__.startswith('gmusicapi.clients') and
+                             f_self.__class__.__name__ in ('Musicmanager', 'Webclient',
+                                                           'Mobileclient'))):
                             logger = f_self.logger
                             break
                 finally:
                     del frame  # avoid circular references
 
             else:
+                # log to root logger.
+                # should this be stronger? There's no default root logger set up.
                 stack = traceback.extract_stack()
                 logger.info('could not locate client caller in stack:\n%s',
                             '\n'.join(traceback.format_list(stack)))
