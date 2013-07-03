@@ -216,6 +216,7 @@ class Call(object):
             err_msg = str(e)
 
             if cls.gets_logged:
+                err_msg += "\n(request args, kwargs: %r, %r)" % (args, kwargs)
                 err_msg += "\n(response was: %r)" % response.content
 
             raise CallFailure(err_msg, call_name)
@@ -226,6 +227,7 @@ class Call(object):
             err_msg = ("the server's response could not be understood."
                        " The call may still have succeeded, but it's unlikely.")
             if cls.gets_logged:
+                err_msg += "\n(request args, kwargs: %r, %r)" % (args, kwargs)
                 err_msg += "\n(response was: %r)" % response.content
                 log.exception("could not parse %s response: %r", call_name, response.content)
             else:

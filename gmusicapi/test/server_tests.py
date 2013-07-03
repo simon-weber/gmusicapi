@@ -202,6 +202,32 @@ class UpauthTests(object):
         else:
             raise SkipTest('AA testing not enabled')
 
+    @mc_test
+    def mc_artist_info(self):
+        if os.environ.get('GM_TEST_ALLACCESS') == 'TRUE':
+            aid = 'Apoecs6off3y6k4h5nvqqos4b5e'  # amorphis
+            optional_keys = set(('albums', 'topTracks', 'related_artists'))
+
+            include_all_res = self.mc.get_artist_info(aid, include_albums=True,
+                                                      max_top_tracks=1, max_rel_artist=1)
+
+            no_albums_res = self.mc.get_artist_info(aid, include_albums=False)
+            no_rel_res = self.mc.get_artist_info(aid, max_rel_artist=0)
+            no_tracks_res = self.mc.get_artist_info(aid, max_top_tracks=0)
+
+            with Check() as check:
+                check.true(set(include_all_res.keys()) & optional_keys == optional_keys)
+
+                check.true(set(no_albums_res.keys()) & optional_keys ==
+                           optional_keys - set(['albums']))
+                check.true(set(no_rel_res.keys()) & optional_keys ==
+                           optional_keys - set(['related_artists']))
+                check.true(set(no_tracks_res.keys()) & optional_keys ==
+                           optional_keys - set(['topTracks']))
+
+        else:
+            assert_raises(CallFailure, self.mc.search_all_access, 'amorphis')
+
     @test
     def get_aa_stream_urls(self):
         if os.environ.get('GM_TEST_ALLACCESS') == 'TRUE':

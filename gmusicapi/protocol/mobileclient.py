@@ -71,12 +71,18 @@ sj_artist = {
         'name': {'type': 'string'},
         'artistArtRef': {'type': 'string'},
         'artistId': {'type': 'string'},
-        'albums: ': {'type': 'array', 'items': sj_album, 'required': False},
+        'albums': {'type': 'array', 'items': sj_album, 'required': False},
         'topTracks': {'type': 'array', 'items': sj_track, 'required': False},
+        'total_albums': {'type': 'integer', 'required': False},
     }
 }
 
-sj_artist['related_artists'] = {'type': 'array', 'items': sj_artist, 'required': False}
+sj_artist['properties']['related_artists'] = {
+    'type': 'array',
+    'items': sj_artist,  # note the recursion
+    'required': False
+}
+
 # Result definition may not contain any item.
 sj_result = {
     'type': 'object',
@@ -134,8 +140,8 @@ class McCall(Call):
 
 class Search(McCall):
     """Search for All Access tracks."""
-
     static_method = 'GET'
+    static_url = sj_url + 'query'
 
     _res_schema = {
         'type': 'object',
@@ -147,22 +153,24 @@ class Search(McCall):
     }
 
     @staticmethod
-    def dynamic_url(query, max_ret):
-        return sj_url + 'query?q=%s&max-results=%d' % (query, max_ret)
+    def dynamic_params(query, max_results):
+        return {'q': query, 'max-results': max_results}
 
 
 class GetArtist(McCall):
     static_method = 'GET'
+    static_url = sj_url + 'fetchartist'
+    static_params = {'alt': 'json'}
+
     _res_schema = sj_artist
 
     @staticmethod
-    def dynamic_url(artistid, albums=True, top_tracks=0, rel_artist=0):
-        ret = sj_url + 'fetchartist?alt=json'
-        ret += '&nid=%s' % artistid
-        ret += '&include-albums=%r' % albums
-        ret += '&num-top-tracks=%d' % top_tracks
-        ret += '&num-related-artists=%d' % rel_artist
-        return ret
+    def dynamic_params(artist_id, include_albums, num_top_tracks, num_rel_artist):
+        return {'nid': artist_id,
+                'include-albums': include_albums,
+                'num-top-tracks': num_top_tracks,
+                'num-related-artists': num_rel_artist,
+               }
 
 
 class GetAlbum(McCall):

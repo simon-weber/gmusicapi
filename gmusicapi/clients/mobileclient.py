@@ -40,6 +40,7 @@ class Mobileclient(_Base):
 
     def search_all_access(self, query, max_results=50):
         """Queries the server for All Access songs and albums.
+
         Using this method without an All Access subscription will always result in
         CallFailure being raised.
 
@@ -164,9 +165,74 @@ class Mobileclient(_Base):
                 'artist_hits': [hit for hit in res if hit['type'] == '2'],
                 'song_hits': [hit for hit in res if hit['type'] == '1']}
 
-    def get_artist(self, artistid, albums=True, top_tracks=0, rel_artist=0):
-        """Retrieve artist data"""
-        res = self._make_call(mobileclient.GetArtist, artistid, albums, top_tracks, rel_artist)
+    def get_artist_info(self, artist_id, include_albums=True, max_top_tracks=5, max_rel_artist=5):
+        """Retrieve details on an artist.
+
+        Using this method without an All Access subscription will always result in
+        CallFailure being raised.
+
+        Returns a dict, eg::
+            {
+              u'albums':[  # only if include_albums is True
+                {
+                  u'albumArtRef':u'http://lh6.ggpht.com/...',
+                  u'albumArtist':u'Amorphis',
+                  u'albumId':u'Bfr2onjv7g7tm4rzosewnnwxxyy',
+                  u'artist':u'Amorphis',
+                  u'artistId':[
+                    u'Apoecs6off3y6k4h5nvqqos4b5e'
+                  ],
+                  u'kind':u'sj#album',
+                  u'name':u'Circle',
+                  u'year':2013
+                },
+              ],
+              u'artistArtRef':  u'http://lh6.ggpht.com/...',
+              u'artistId':u'Apoecs6off3y6k4h5nvqqos4b5e',
+              u'kind':u'sj#artist',
+              u'name':u'Amorphis',
+              u'related_artists':[  # only if max_rel_artists > 0
+                {
+                  u'artistArtRef':      u'http://lh5.ggpht.com/...',
+                  u'artistId':u'Aheqc7kveljtq7rptd7cy5gvk2q',
+                  u'kind':u'sj#artist',
+                  u'name':u'Dark Tranquillity'
+                }
+              ],
+              u'topTracks':[  # only if max_top_tracks > 0
+                {
+                  u'album':u'Skyforger',
+                  u'albumArtRef':[
+                    {
+                      u'url':          u'http://lh4.ggpht.com/...'
+                    }
+                  ],
+                  u'albumArtist':u'Amorphis',
+                  u'albumAvailableForPurchase':True,
+                  u'albumId':u'B5nc22xlcmdwi3zn5htkohstg44',
+                  u'artist':u'Amorphis',
+                  u'artistId':[
+                    u'Apoecs6off3y6k4h5nvqqos4b5e'
+                  ],
+                  u'discNumber':1,
+                  u'durationMillis':u'253000',
+                  u'estimatedSize':u'10137633',
+                  u'kind':u'sj#track',
+                  u'nid':u'Tn2ugrgkeinrrb2a4ji7khungoy',
+                  u'playCount':1,
+                  u'storeId':u'Tn2ugrgkeinrrb2a4ji7khungoy',
+                  u'title':u'Silver Bride',
+                  u'trackAvailableForPurchase':True,
+                  u'trackNumber':2,
+                  u'trackType':u'7'
+                }
+              ],
+              u'total_albums':21
+            }
+        """
+
+        res = self._make_call(mobileclient.GetArtist,
+                              artist_id, include_albums, max_top_tracks, max_rel_artist)
         return res
 
     def get_album(self, albumid, tracks=True):

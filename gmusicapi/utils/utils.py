@@ -67,7 +67,6 @@ class DynamicClientLogger(object):
 
     def __init__(self, caller_name):
         self.caller_name = caller_name
-        print 'dynamic logger created for', self.caller_name
 
     def __getattr__(self, name):
         # this isn't a totally foolproof way to proxy, but it's fine for
