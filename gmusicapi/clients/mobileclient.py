@@ -36,6 +36,11 @@ class Mobileclient(_Base):
 
         return True
 
+    def get_all_songs(self):
+        """Lists the songs in our library."""
+        res = self._make_call(mobileclient.GetLibraryTracks)
+        return res
+
     def search_all_access(self, query, max_results=50):
         """Queries the server for All Access songs and albums.
 

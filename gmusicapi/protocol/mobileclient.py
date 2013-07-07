@@ -152,6 +152,15 @@ class Search(McCall):
         return {'q': query, 'max-results': max_results}
 
 
+class GetLibraryTracks(McCall):
+    """List tracks in the library."""
+    static_method = 'GET'
+    static_url = sj_url + 'tracks'
+
+    _res_schema = {}
+
+
+#TODO below here
 class GetArtist(McCall):
     static_method = 'GET'
     static_url = sj_url + 'fetchartist'
