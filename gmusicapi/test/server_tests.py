@@ -318,7 +318,7 @@ class UpauthTests(object):
         assert_equal(url[:7], 'http://')
 
     # TODO there must be a better way
-    if os.environ.get('GM_TEST_ALLACCESS') == 'TRUE':
+    if 'GM_A' in os.environ:
         @song_test
         def get_aa_stream_urls(self):
             # that dumb little intro track on Conspiracy of One

@@ -18,15 +18,18 @@ from gmusicapi.test.utils import NoticeLogging
 
 EnvArg = namedtuple('EnvArg', 'envarg kwarg description')
 
+# these names needed to be compressed to fit everything into the travisci key size.
+# there's also GM_A, which when set (to anything) states that we are testing on
+# and All Access account.
 wc_envargs = (
-    EnvArg('GM_USER', 'email', 'WC user. If not present, user will be prompted.'),
-    EnvArg('GM_PASS', 'password', 'WC password. If not present, user will be prompted.'),
+    EnvArg('GM_U', 'email', 'WC user. If not present, user will be prompted.'),
+    EnvArg('GM_P', 'password', 'WC password. If not present, user will be prompted.'),
 )
 
 mm_envargs = (
-    EnvArg('GM_OAUTH', 'oauth_credentials', 'MM refresh token. Defaults to MM.login default.'),
-    EnvArg('GM_UP_ID', 'uploader_id', 'MM uploader id. Defaults to MM.login default.'),
-    EnvArg('GM_UP_NAME', 'uploader_name', 'MM uploader name. Default to MM.login default.'),
+    EnvArg('GM_O', 'oauth_credentials', 'MM refresh token. Defaults to MM.login default.'),
+    EnvArg('GM_I', 'uploader_id', 'MM uploader id. Defaults to MM.login default.'),
+    EnvArg('GM_N', 'uploader_name', 'MM uploader name. Default to MM.login default.'),
 )
 
 
