@@ -64,7 +64,7 @@ sj_artist = {
     'properties': {
         'kind': {'type': 'string'},
         'name': {'type': 'string'},
-        'artistArtRef': {'type': 'string'},
+        'artistArtRef': {'type': 'string', 'required': False},
         'artistId': {'type': 'string'},
         'albums': {'type': 'array', 'items': sj_album, 'required': False},
         'topTracks': {'type': 'array', 'items': sj_track, 'required': False},
