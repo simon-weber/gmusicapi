@@ -182,7 +182,7 @@ class UpauthTests(object):
     #---------
     @mc_test
     def mc_search_aa(self):
-        if os.environ.get('GM_TEST_ALLACCESS') == 'TRUE':
+        if 'GM_A' in os.environ:
             res = self.mc.search_all_access('amorphis')
             with Check() as check:
                 for hits in res.values():
@@ -192,7 +192,7 @@ class UpauthTests(object):
 
     @mc_test
     def mc_search_aa_with_limit(self):
-        if os.environ.get('GM_TEST_ALLACCESS') == 'TRUE':
+        if 'GM_A' in os.environ:
             res_unlimited = self.mc.search_all_access('cat empire')
             res_5 = self.mc.search_all_access('cat empire', max_results=5)
 
@@ -204,7 +204,7 @@ class UpauthTests(object):
 
     @mc_test
     def mc_artist_info(self):
-        if os.environ.get('GM_TEST_ALLACCESS') == 'TRUE':
+        if 'GM_A' in os.environ:
             aid = 'Apoecs6off3y6k4h5nvqqos4b5e'  # amorphis
             optional_keys = set(('albums', 'topTracks', 'related_artists'))
 
@@ -230,7 +230,7 @@ class UpauthTests(object):
 
     @test
     def get_aa_stream_urls(self):
-        if os.environ.get('GM_TEST_ALLACCESS') == 'TRUE':
+        if 'GM_A' in os.environ:
             # that dumb little intro track on Conspiracy of One
             urls = self.wc.get_stream_urls('Tqqufr34tuqojlvkolsrwdwx7pe')
 
@@ -241,7 +241,7 @@ class UpauthTests(object):
 
     @test
     def stream_aa_track(self):
-        if os.environ.get('GM_TEST_ALLACCESS') == 'TRUE':
+        if 'GM_A' in os.environ:
             # that dumb little intro track on Conspiracy of One
             audio = self.wc.get_stream_audio('Tqqufr34tuqojlvkolsrwdwx7pe')
             assert_is_not_none(audio)
