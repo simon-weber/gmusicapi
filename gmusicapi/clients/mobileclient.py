@@ -17,7 +17,7 @@ class Mobileclient(_Base):
         self.logout()
 
     def login(self, email, password):
-        """Authenticates the webclient.
+        """Authenticates the Mobileclient.
         Returns ``True`` on success, ``False`` on failure.
 
         :param email: eg ``'test@gmail.com'`` or just ``'test'``.
@@ -36,10 +36,35 @@ class Mobileclient(_Base):
 
         return True
 
-    def get_all_songs(self):
-        """Lists the songs in our library."""
-        res = self._make_call(mobileclient.GetLibraryTracks)
-        return res
+    def get_all_songs(self, incremental=False):
+        """TODO
+
+        :param incremental: if True, return a generator that yields lists
+          of at most 1000 tracks
+          as they are retrieved from the server. This can be useful for
+          presenting a loading bar to a user.
+        """
+        if not incremental:
+            # slight optimization; can get all tracks at once with mc
+            res = self._make_call(mobileclient.GetLibraryTracks, max_results=20000)
+            return res['data']['items']
+
+        # otherwise, return a generator
+        return self._get_all_songs_incremental()
+
+    def _get_all_songs_incremental(self):
+        """Return a generator of lists of tracks."""
+
+        get_next_chunk = True
+        lib_chunk = {'nextPageToken': None}
+
+        while get_next_chunk:
+            lib_chunk = self._make_call(mobileclient.GetLibraryTracks,
+                                        start_token=lib_chunk['nextPageToken'])
+
+            yield lib_chunk['data']['items']  # list of songs of the chunk
+
+            get_next_chunk = 'nextPageToken' in lib_chunk
 
     def search_all_access(self, query, max_results=50):
         """Queries the server for All Access songs and albums.

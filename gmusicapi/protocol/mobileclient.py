@@ -3,10 +3,12 @@
 
 """Calls made by the web client."""
 
+import copy
 import sys
 
 import validictory
 
+from gmusicapi.compat import json
 from gmusicapi.exceptions import CallFailure, ValidationException
 from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
@@ -102,6 +104,8 @@ class McCall(Call):
 
     required_auth = authtypes(xt=False, sso=True)
 
+    static_headers = {'Content-Type': 'application/json'}
+
     #validictory schema for the response
     _res_schema = utils.NotImplementedField
 
@@ -154,10 +158,42 @@ class Search(McCall):
 
 class GetLibraryTracks(McCall):
     """List tracks in the library."""
-    static_method = 'GET'
-    static_url = sj_url + 'tracks'
+    static_method = 'POST'
+    static_url = sj_url + 'trackfeed'
 
-    _res_schema = {}
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'kind': {'type': 'string'},
+            'nextPageToken': {'type': 'string', 'required': False},
+            'data': {'type': 'object',
+                     'items': {'type': 'array', 'items': sj_track},
+                    },
+        },
+    }
+
+    @staticmethod
+    def dynamic_data(start_token=None, max_results=None):
+        """
+        :param start_token: nextPageToken from a previous response
+        :param max_results: a positive int; if not provided, server defaults to 1000
+        """
+        data = {}
+
+        if start_token is not None:
+            data['start-token'] = start_token
+
+        if max_results is not None:
+            data['max-results'] = str(max_results)
+
+        return json.dumps(data)
+
+    @staticmethod
+    def filter_response(msg):
+        filtered = copy.deepcopy(msg)
+        filtered['data']['items'] = ["<%s songs>" % len(filtered['data'].get('items', []))]
+        return filtered
 
 
 #TODO below here

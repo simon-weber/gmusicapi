@@ -174,12 +174,13 @@ class UpauthTests(object):
 
     @test
     def get_registered_devices(self):
-        # no logic; schema does verification
+        # no logic; just checking schema
         self.wc.get_registered_devices()
 
     #---------
     # MC/AA tests
     #---------
+
     @mc_test
     def mc_search_aa(self):
         if 'GM_A' in os.environ:
@@ -281,6 +282,10 @@ class UpauthTests(object):
     def list_songs_mm(self):
         self._assert_get_song(self.song.sid, self.mm)
 
+    @song_test
+    def list_songs_mc(self):
+        self._assert_get_song(self.song.sid, self.mc)
+
     @staticmethod
     def _list_songs_incrementally(client):
         lib_chunk_gen = client.get_all_songs(incremental=True)
@@ -296,6 +301,10 @@ class UpauthTests(object):
     @song_test
     def list_songs_incrementally_mm(self):
         self._list_songs_incrementally(self.mm)
+
+    @mc_test
+    def list_songs_incrementall_mc(self):
+        self._list_songs_incrementally(self.mc)
 
     @song_test
     def change_metadata(self):
