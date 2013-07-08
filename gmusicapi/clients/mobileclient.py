@@ -37,13 +37,58 @@ class Mobileclient(_Base):
         return True
 
     def get_all_songs(self, incremental=False):
-        """TODO
+        """Returns a list of dictionaries that each represent a song, eg::
 
         :param incremental: if True, return a generator that yields lists
           of at most 1000 tracks
           as they are retrieved from the server. This can be useful for
           presenting a loading bar to a user.
+
+          Here is an example song dictionary::
+             {
+               u'comment':u'',
+               u'rating':u'0',
+               u'albumArtRef':[
+                 {
+                   u'url': u'http://lh6.ggpht.com/...'
+                 }
+               ],
+               u'artistId':[
+                 u'Aod62yyj3u3xsjtooghh2glwsdi'
+               ],
+               u'composer':u'',
+               u'year':2011,
+               u'creationTimestamp':u'1330879409467830',
+               u'id':u'5924d75a-931c-30ed-8790-f7fce8943c85',
+               u'album':u'Heritage ',
+               u'totalDiscCount':0,
+               u'title':u'Haxprocess',
+               u'recentTimestamp':u'1372040508935000',
+               u'albumArtist':u'',
+               u'trackNumber':6,
+               u'discNumber':0,
+               u'deleted':False,
+               u'storeId':u'Txsffypukmmeg3iwl3w5a5s3vzy',
+               u'nid':u'Txsffypukmmeg3iwl3w5a5s3vzy',
+               u'totalTrackCount':10,
+               u'estimatedSize':u'17229205',
+               u'albumId':u'Bdkf6ywxmrhflvtasnayxlkgpcm',
+               u'beatsPerMinute':0,
+               u'genre':u'Progressive Metal',
+               u'playCount':7,
+               u'artistArtRef':[
+                 {
+                   u'url': u'http://lh3.ggpht.com/...'
+                 }
+               ],
+               u'kind':u'sj#track',
+               u'artist':u'Opeth',
+               u'lastModifiedTimestamp':u'1330881158830924',
+               u'clientId':u'+eGFGTbiyMktbPuvB5MfsA',
+               u'durationMillis':u'418000'
+             }
         """
+
         if not incremental:
             # slight optimization; can get all tracks at once with mc
             res = self._make_call(mobileclient.GetLibraryTracks, max_results=20000)
