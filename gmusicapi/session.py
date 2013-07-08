@@ -104,14 +104,15 @@ class Webclient(_Base):
 
     def _send_with_auth(self, req_kwargs, desired_auth, rsession):
         if desired_auth.sso:
-            req_kwargs['headers'] = req_kwargs.get('headers', {})
+            req_kwargs.setdefault('headers', {})
 
             # does this ever expire? would we have to perform clientlogin again?
             req_kwargs['headers']['Authorization'] = \
                 'GoogleLogin auth=' + self._authtoken
 
         if desired_auth.xt:
-            req_kwargs['params'] = req_kwargs.get('params', {})
+            req_kwargs.setdefault('params', {})
+
             req_kwargs['params'].update({'u': 0, 'xt': rsession.cookies['xt']})
 
         return rsession.request(**req_kwargs)

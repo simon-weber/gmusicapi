@@ -18,6 +18,7 @@ import gmusicapi.session
 from gmusicapi.clients import Webclient, Musicmanager
 from gmusicapi.exceptions import AlreadyLoggedIn  # ,NotLoggedIn
 from gmusicapi.protocol.shared import authtypes
+from gmusicapi.protocol import mobileclient
 from gmusicapi.utils import utils
 
 
@@ -166,6 +167,13 @@ def authtypes_factory_args():
     assert_true(auth.oauth)
     assert_false(auth.sso)
     assert_false(auth.xt)
+
+
+@test
+def mc_url_signing():
+    sig, _ = mobileclient.GetStreamUrls.get_signature("Tdr6kq3xznv5kdsphyojox6dtoq",
+                                                      "1373247112519")
+    assert_equal(sig, "gua1gInBdaVo7_dSwF9y0kodua0")
 
 
 ##

@@ -2,7 +2,7 @@
 
 """Calls made by the web client."""
 
-import binascii
+import base64
 import copy
 import hmac
 import random
@@ -527,9 +527,7 @@ class GetStreamUrl(WcCall):
         # include slt/sig anyway; the server ignores the extra params.
         key = '27f7313e-f75d-445a-ac99-56386a5fe879'
         salt = ''.join(random.choice(string.ascii_lowercase + string.digits) for x in range(12))
-        sig = binascii.b2a_base64(hmac.new(key, (song_id + salt), sha1).digest())[:-1]
-        urlsafe_b64_trans = string.maketrans("+/=", "-_.")
-        sig = sig.translate(urlsafe_b64_trans)
+        sig = base64.urlsafe_b64encode(hmac.new(key, (song_id + salt), sha1).digest())[:-1]
 
         params = {
             'u': 0,

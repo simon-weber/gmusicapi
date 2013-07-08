@@ -46,7 +46,7 @@ class BuildRequestMeta(type):
         new_cls = super(BuildRequestMeta, cls).__new__(cls, name, bases, dct)
 
         merge_keys = ('headers', 'params')
-        all_keys = ('method', 'url', 'files', 'data', 'verify') + merge_keys
+        all_keys = ('method', 'url', 'files', 'data', 'verify', 'allow_redirects') + merge_keys
 
         config = {}  # stores key: val for static or f(*args, **kwargs) -> val for dyn
         dyn = lambda key: 'dynamic_' + key
@@ -216,7 +216,7 @@ class Call(object):
             err_msg = str(e)
 
             if cls.gets_logged:
-                err_msg += "\n(request args, kwargs: %r, %r)" % (args, kwargs)
+                err_msg += "\n(requests kwargs: %r)" % (req_kwargs)
                 err_msg += "\n(response was: %r)" % response.content
 
             raise CallFailure(err_msg, call_name)
@@ -227,7 +227,7 @@ class Call(object):
             err_msg = ("the server's response could not be understood."
                        " The call may still have succeeded, but it's unlikely.")
             if cls.gets_logged:
-                err_msg += "\n(request args, kwargs: %r, %r)" % (args, kwargs)
+                err_msg += "\n(requests kwargs: %r)" % (req_kwargs)
                 err_msg += "\n(response was: %r)" % response.content
                 log.exception("could not parse %s response: %r", call_name, response.content)
             else:

@@ -66,6 +66,38 @@ class Mobileclient(_Base):
 
             get_next_chunk = 'nextPageToken' in lib_chunk
 
+    def get_stream_url(self, song_id, device_id):
+        """Returns a url that will point to an mp3 file.
+
+        :param song_id: a single song id
+        :param device_id: a registered Android device id, as a string.
+          If you have already used Google Music on a mobile device,
+          :func:`Webclient.get_registered_devices
+          <gmusicapi.clients.Webclient.get_registered_devices>` will provide
+          at least one working id.
+
+          Note that this id must be from a mobile device; a registered computer
+          id (as a MAC address) will not be accepted.
+
+          Providing an invalid id will result in an http 403.
+
+        When handling the resulting url, keep in mind that:
+            * you will likely need to handle redirects
+            * the url expires after a minute
+            * only one IP can be streaming music at once.
+              This can result in an http 403 with
+              ``X-Rejected-Reason: ANOTHER_STREAM_BEING_PLAYED``.
+
+        The file will not contain metadata.
+        Use :func:`Webclient.get_song_download_info
+        <gmusicapi.clients.Webclient.get_song_download_info>`
+        or :func:`Musicmanager.download_song
+        <gmusicapi.clients.Musicmanager.download_song>`
+        to download files with metadata.
+        """
+
+        return self._make_call(mobileclient.GetStreamUrl, song_id, device_id)
+
     def search_all_access(self, query, max_results=50):
         """Queries the server for All Access songs and albums.
 

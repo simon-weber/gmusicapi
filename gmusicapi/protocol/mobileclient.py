@@ -1,15 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Calls made by the web client."""
+"""Calls made by the mobile client."""
 
+import base64
 import copy
+from hashlib import sha1
+import hmac
 import sys
+import time
+
 
 import validictory
 
 from gmusicapi.compat import json
-from gmusicapi.exceptions import CallFailure, ValidationException
+from gmusicapi.exceptions import ValidationException
 from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
@@ -104,8 +109,6 @@ class McCall(Call):
 
     required_auth = authtypes(xt=False, sso=True)
 
-    static_headers = {'Content-Type': 'application/json'}
-
     #validictory schema for the response
     _res_schema = utils.NotImplementedField
 
@@ -120,17 +123,16 @@ class McCall(Call):
 
     @classmethod
     def check_success(cls, response, msg):
-        #Failed responses always have a success=False key.
-        #Some successful responses do not have a success=True key, however.
-        #TODO remove utils.call_succeeded
+        #TODO not sure if this is still valid for mc
+        pass
 
-        if 'success' in msg and not msg['success']:
-            raise CallFailure(
-                "the server reported failure. This is usually"
-                " caused by bad arguments, but can also happen if requests"
-                " are made too quickly (eg creating a playlist then"
-                " modifying it before the server has created it)",
-                cls.__name__)
+        #if 'success' in msg and not msg['success']:
+        #    raise CallFailure(
+        #        "the server reported failure. This is usually"
+        #        " caused by bad arguments, but can also happen if requests"
+        #        " are made too quickly (eg creating a playlist then"
+        #        " modifying it before the server has created it)",
+        #        cls.__name__)
 
     @classmethod
     def parse_response(cls, response):
@@ -160,6 +162,7 @@ class GetLibraryTracks(McCall):
     """List tracks in the library."""
     static_method = 'POST'
     static_url = sj_url + 'trackfeed'
+    static_headers = {'Content-Type': 'application/json'}
 
     _res_schema = {
         'type': 'object',
@@ -194,6 +197,67 @@ class GetLibraryTracks(McCall):
         filtered = copy.deepcopy(msg)
         filtered['data']['items'] = ["<%s songs>" % len(filtered['data'].get('items', []))]
         return filtered
+
+
+class GetStreamUrl(McCall):
+    static_method = 'GET'
+    static_url = 'https://android.clients.google.com/music/mplay'
+    static_verify = False
+
+    # this call will redirect to the mp3
+    static_allow_redirects = False
+
+    _s1 = base64.b64decode('VzeC4H4h+T2f0VI180nVX8x+Mb5HiTtGnKgH52Otj8ZCGDz9jRW'
+                           'yHb6QXK0JskSiOgzQfwTY5xgLLSdUSreaLVMsVVWfxfa8Rw==')
+    _s2 = base64.b64decode('ZAPnhUkYwQ6y5DdQxWThbvhJHN8msQ1rqJw0ggKdufQjelrKuiG'
+                           'GJI30aswkgCWTDyHkTGK9ynlqTkJ5L4CiGGUabGeo8M6JTQ==')
+
+    # bitwise and of _s1 and _s2 ascii, converted to string
+    _key = ''.join([chr(ord(c1) ^ ord(c2)) for (c1, c2) in zip(_s1, _s2)])
+
+    @classmethod
+    def get_signature(cls, song_id, salt=None):
+        """Return a (sig, salt) pair for url signing."""
+
+        if salt is None:
+            salt = str(int(time.time() * 1000))
+
+        mac = hmac.new(cls._key, song_id, sha1)
+        mac.update(salt)
+        sig = base64.urlsafe_b64encode(mac.digest())[:-1]
+
+        return sig, salt
+
+    @staticmethod
+    def dynamic_headers(song_id, device_id):
+        return {'X-Device-ID': device_id}
+
+    @classmethod
+    def dynamic_params(cls, song_id, device_id):
+        sig, salt = cls.get_signature(song_id)
+
+        #TODO which of these should get exposed?
+        params = {'opt': 'hi',
+                  'net': 'wifi',
+                  'pt': 'e',
+                  'slt': salt,
+                  'sig': sig,
+                 }
+        if song_id[0] == 'T':
+            # all access
+            params['mjck'] = song_id
+        else:
+            params['songid'] = song_id
+
+        return params
+
+    @staticmethod
+    def parse_response(response):
+        return response.headers['location']  # ie where we were redirected
+
+    @classmethod
+    def validate(cls, response, msg):
+        pass
 
 
 #TODO below here
