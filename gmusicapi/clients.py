@@ -796,6 +796,11 @@ class Webclient(_Base):
           of at most 2500 :ref:`song dictionaries <songdict-format>`
           as they are retrieved from the server. This can be useful for
           presenting a loading bar to a user.
+                              
+        All Access tracks that have been added to the library will be included
+        in the list. They can be distinguished by their ``'type'`` key, 
+        which will be 7. Refer to the :ref:`song dictionary <songdict-format>`
+        docs for more information.
         """
 
         to_return = self._get_all_songs()
