@@ -133,6 +133,8 @@ _all_expts = [
 
         ('subjectToCuration', 'boolean', 'meaning unknown.'),
         ('matchedId', 'string', 'meaning unknown; related to scan and match?'),
+        ('curatedByUser', 'boolean', 'meaning unknown'),
+        ('curationSuggested', 'boolean', 'meaning unknown'),
     )
 ] + [
     Expectation(name, type_str, mutable=False, optional=True, explanation=explain)
@@ -142,7 +144,7 @@ _all_expts = [
         ('reuploading', 'boolean', 'scan-and-match reupload in progress.'),
         ('albumMatchedId', 'string', 'id of matching album in the Play Store?'),
         ('pending', 'boolean', 'unsure; server processing (eg for store match) pending?'),
-        ('url', 'string',  'meaning unknown.'),
+        ('url', 'string', 'meaning unknown.'),
         ('bitrate', 'integer', "bitrate in kilobytes/second (eg 320)."),
         ('playlistEntryId', 'string', 'identifies position in the context of a playlist.'),
         ('albumArtUrl', 'string', "if present, the url of an image for this song's album art."),

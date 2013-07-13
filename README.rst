@@ -49,6 +49,11 @@ Status and updates
 .. image:: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API.png?branch=develop
         :target: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API
 
+The Webclient interface has gotten horrible to maintain lately, so I'm currently working on
+switching the the Android app api. This will provide easy All Access support and easier
+maintainability going forward. Expect this release before August -- you can follow along 
+`here <https://github.com/simon-weber/Unofficial-Google-Music-API/pull/142>`__.
+
 Version 1.2.0 fixes a bug that fixes uploader_id formatting from a mac address.
 This change may cause another machine to be registered - you can safely remove the
 old machine (it's the one without the version in the name).
