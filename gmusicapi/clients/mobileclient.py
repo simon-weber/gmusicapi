@@ -36,8 +36,10 @@ class Mobileclient(_Base):
 
         return True
 
+    #TODO expose max-results for get_all_*
+
     def get_all_songs(self, incremental=False):
-        """Returns a list of dictionaries that each represent a song, eg::
+        """Returns a list of dictionaries that each represent a song.
 
         :param incremental: if True, return a generator that yields lists
           of at most 1000 tracks
@@ -89,27 +91,7 @@ class Mobileclient(_Base):
              }
         """
 
-        if not incremental:
-            # slight optimization; can get all tracks at once with mc
-            res = self._make_call(mobileclient.GetLibraryTracks, max_results=20000)
-            return res['data']['items']
-
-        # otherwise, return a generator
-        return self._get_all_songs_incremental()
-
-    def _get_all_songs_incremental(self):
-        """Return a generator of lists of tracks."""
-
-        get_next_chunk = True
-        lib_chunk = {'nextPageToken': None}
-
-        while get_next_chunk:
-            lib_chunk = self._make_call(mobileclient.GetLibraryTracks,
-                                        start_token=lib_chunk['nextPageToken'])
-
-            yield lib_chunk['data']['items']  # list of songs of the chunk
-
-            get_next_chunk = 'nextPageToken' in lib_chunk
+        return self._get_all_items(mobileclient.GetLibraryTracks, incremental)
 
     def get_stream_url(self, song_id, device_id):
         """Returns a url that will point to an mp3 file.
@@ -142,6 +124,33 @@ class Mobileclient(_Base):
         """
 
         return self._make_call(mobileclient.GetStreamUrl, song_id, device_id)
+
+    def get_all_playlists(self, incremental=False):
+        """Returns a list of dictionaries that each represent a playlist.
+
+        :param incremental: if True, return a generator that yields lists
+          of at most 1000 playlists
+          as they are retrieved from the server. This can be useful for
+          presenting a loading bar to a user.
+
+          Here is an example playlist dictionary::
+            {
+                u 'kind': u 'sj#playlist',
+                u 'name': u 'Something Mix',
+                u 'deleted': False,
+                u 'type': u 'MAGIC',  # if not present, playlist is user-created
+                u 'lastModifiedTimestamp': u '1325458766483033',
+                u 'recentTimestamp': u '1325458766479000',
+                u 'shareToken': u '<long string>',
+                u 'ownerProfilePhotoUrl': u 'http://lh3.googleusercontent.com/...',
+                u 'ownerName': u 'Simon Weber',
+                u 'accessControlled': False,  # something to do with shared playlists?
+                u 'creationTimestamp': u '1325285553626172',
+                u 'id': u '3d72c9b5-baad-4ff7-815d-cdef717e5d61'
+            },
+        """
+
+        return self._get_all_items(mobileclient.ListPlaylists, incremental)
 
     def search_all_access(self, query, max_results=50):
         """Queries the server for All Access songs and albums.
@@ -339,6 +348,33 @@ class Mobileclient(_Base):
         res = self._make_call(mobileclient.GetArtist,
                               artist_id, include_albums, max_top_tracks, max_rel_artist)
         return res
+
+    def _get_all_items(self, call, incremental):
+        """
+        :param call: protocol.McCall
+        :param incremental: bool
+        """
+        if not incremental:
+            # slight optimization; can get all items at once
+            res = self._make_call(call, max_results=20000)
+            return res['data']['items']
+
+        # otherwise, return a generator
+        return self._get_all_items_incremental(call)
+
+    def _get_all_items_incremental(self, call):
+        """Return a generator of lists of tracks."""
+
+        get_next_chunk = True
+        lib_chunk = {'nextPageToken': None}
+
+        while get_next_chunk:
+            lib_chunk = self._make_call(call,
+                                        start_token=lib_chunk['nextPageToken'])
+
+            yield lib_chunk['data']['items']  # list of songs of the chunk
+
+            get_next_chunk = 'nextPageToken' in lib_chunk
 
     #TODO below here
     def get_album(self, albumid, tracks=True):

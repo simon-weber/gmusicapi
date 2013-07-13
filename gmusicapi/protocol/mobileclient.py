@@ -49,6 +49,29 @@ sj_track = {
     }
 }
 
+sj_playlist = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'kind': {'type': 'string'},
+        'name': {'type': 'string'},
+        'deleted': {'type': 'boolean'},
+        'type': {'type': 'string', 'required': False},
+        'lastModifiedTimestamp': {'type': 'string'},
+        'recentTimestamp': {'type': 'string'},
+        'shareToken': {'type': 'string'},
+        'ownerProfilePhotoUrl': {'type': 'string'},
+        'ownerName': {'type': 'string'},
+        'accessControlled': {'type': 'boolean'},
+        'creationTimestamp': {'type': 'string'},
+        'id': {'type': 'string'},
+        'albumArtRef': {'type': 'array',
+                        'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}},
+                        'required': False,
+                       },
+    }
+}
+
 sj_album = {
     'type': 'object',
     'additionalProperties': False,
@@ -258,6 +281,47 @@ class GetStreamUrl(McCall):
     @classmethod
     def validate(cls, response, msg):
         pass
+
+
+class ListPlaylists(McCall):
+    """List tracks in the library."""
+    static_method = 'POST'
+    static_url = sj_url + 'playlistfeed'
+    static_headers = {'Content-Type': 'application/json'}
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'kind': {'type': 'string'},
+            'nextPageToken': {'type': 'string', 'required': False},
+            'data': {'type': 'object',
+                     'items': {'type': 'array', 'items': sj_playlist},
+                    },
+        },
+    }
+
+    @staticmethod
+    def dynamic_data(start_token=None, max_results=None):
+        """
+        :param start_token: nextPageToken from a previous response
+        :param max_results: a positive int; if not provided, server defaults to 1000
+        """
+        data = {}
+
+        if start_token is not None:
+            data['start-token'] = start_token
+
+        if max_results is not None:
+            data['max-results'] = str(max_results)
+
+        return json.dumps(data)
+
+    @staticmethod
+    def filter_response(msg):
+        filtered = copy.deepcopy(msg)
+        filtered['data']['items'] = ["<%s playlists>" % len(filtered['data'].get('items', []))]
+        return filtered
 
 
 #TODO below here
