@@ -194,6 +194,76 @@ class McCall(Call):
         return cls._parse_json(response.text)
 
 
+class McListCall(McCall):
+    """Abc for calls that list a resource."""
+    # concrete classes provide:
+    item_schema = utils.NotImplementedField
+    filter_text = utils.NotImplementedField
+
+    static_headers = {'Content-Type': 'application/json'}
+    static_params = {'alt': 'json'}
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'kind': {'type': 'string'},
+            'nextPageToken': {'type': 'string', 'required': False},
+            'data': {'type': 'object',
+                     'items': {'type': 'array', 'items': item_schema},
+                     'required': False,
+                    },
+        },
+    }
+
+    @classmethod
+    def dynamic_params(cls, updated_after=None, start_token=None, max_results=None):
+        """
+        :param updated_after: datetime.datetime; defaults to epoch
+        """
+
+        if updated_after is None:
+            microseconds = 0
+        else:
+            microseconds = utils.datetime_to_microseconds(updated_after)
+
+        return {'updated-min': microseconds}
+
+    @classmethod
+    def dynamic_data(cls, updated_after=None, start_token=None, max_results=None):
+        """
+        :param updated_after: ignored
+        :param start_token: nextPageToken from a previous response
+        :param max_results: a positive int; if not provided, server defaults to 1000
+        """
+        data = {}
+
+        if start_token is not None:
+            data['start-token'] = start_token
+
+        if max_results is not None:
+            data['max-results'] = str(max_results)
+
+        return json.dumps(data)
+
+    @classmethod
+    def parse_response(cls, response):
+        # empty results don't include the data key
+        # make sure it's always there
+        res = cls._parse_json(response.text)
+        if 'data' not in res:
+            res['data'] = {'items': []}
+
+        return res
+
+    @classmethod
+    def filter_response(cls, msg):
+        filtered = copy.deepcopy(msg)
+        filtered['data']['items'] = ["<%s %s>" % (len(filtered['data']['items']),
+                                                  cls.filter_text)]
+        return filtered
+
+
 class Search(McCall):
     """Search for All Access tracks."""
     static_method = 'GET'
@@ -213,45 +283,12 @@ class Search(McCall):
         return {'q': query, 'max-results': max_results}
 
 
-class GetLibraryTracks(McCall):
-    """List tracks in the library."""
+class ListTracks(McListCall):
+    item_schema = sj_track
+    filter_text = 'tracks'
+
     static_method = 'POST'
     static_url = sj_url + 'trackfeed'
-    static_headers = {'Content-Type': 'application/json'}
-
-    _res_schema = {
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {
-            'kind': {'type': 'string'},
-            'nextPageToken': {'type': 'string', 'required': False},
-            'data': {'type': 'object',
-                     'items': {'type': 'array', 'items': sj_track},
-                    },
-        },
-    }
-
-    @staticmethod
-    def dynamic_data(start_token=None, max_results=None):
-        """
-        :param start_token: nextPageToken from a previous response
-        :param max_results: a positive int; if not provided, server defaults to 1000
-        """
-        data = {}
-
-        if start_token is not None:
-            data['start-token'] = start_token
-
-        if max_results is not None:
-            data['max-results'] = str(max_results)
-
-        return json.dumps(data)
-
-    @staticmethod
-    def filter_response(msg):
-        filtered = copy.deepcopy(msg)
-        filtered['data']['items'] = ["<%s songs>" % len(filtered['data'].get('items', []))]
-        return filtered
 
 
 class GetStreamUrl(McCall):
@@ -315,101 +352,20 @@ class GetStreamUrl(McCall):
         pass
 
 
-class ListPlaylists(McCall):
+class ListPlaylists(McListCall):
+    item_schema = sj_playlist
+    filter_text = 'playlists'
+
     static_method = 'POST'
     static_url = sj_url + 'playlistfeed'
-    static_headers = {'Content-Type': 'application/json'}
-
-    _res_schema = {
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {
-            'kind': {'type': 'string'},
-            'nextPageToken': {'type': 'string', 'required': False},
-            'data': {'type': 'object',
-                     'items': {'type': 'array', 'items': sj_playlist},
-                    },
-        },
-    }
-
-    @staticmethod
-    def dynamic_data(start_token=None, max_results=None):
-        """
-        :param start_token: nextPageToken from a previous response
-        :param max_results: a positive int; if not provided, server defaults to 1000
-        """
-        data = {}
-
-        if start_token is not None:
-            data['start-token'] = start_token
-
-        if max_results is not None:
-            data['max-results'] = str(max_results)
-
-        return json.dumps(data)
-
-    @staticmethod
-    def filter_response(msg):
-        filtered = copy.deepcopy(msg)
-        filtered['data']['items'] = ["<%s playlists>" % len(filtered['data'].get('items', []))]
-        return filtered
 
 
-class ListStations(McCall):
+class ListStations(McListCall):
+    item_schema = sj_station
+    filter_text = 'stations'
+
     static_method = 'POST'
     static_url = sj_url + 'radio/station'
-    static_headers = {'Content-Type': 'application/json'}
-    static_params = {'alt': 'json'}
-
-    _res_schema = {
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {
-            'kind': {'type': 'string'},
-            'nextPageToken': {'type': 'string', 'required': False},
-            'data': {'type': 'object',
-                     'items': {'type': 'array', 'items': sj_station},
-                    },
-        },
-    }
-
-    @staticmethod
-    def dynamic_params(updated_after=None, start_token=None, max_results=None):
-        """
-        :param updated_after: datetime.datetime; defaults to epoch
-        """
-
-        if updated_after is None:
-            microseconds = 0
-        else:
-            microseconds = utils.datetime_to_microseconds(updated_after)
-
-        return {'updated-min': microseconds}
-
-    @staticmethod
-    def dynamic_data(updated_after=None, start_token=None, max_results=None):
-        """
-        :param updated_after: ignored
-        :param start_token: nextPageToken from a previous response
-        :param max_results: a positive int; if not provided, server defaults to 1000
-
-        args/kwargs are ignored.
-        """
-        data = {}
-
-        if start_token is not None:
-            data['start-token'] = start_token
-
-        if max_results is not None:
-            data['max-results'] = str(max_results)
-
-        return json.dumps(data)
-
-    @staticmethod
-    def filter_response(msg):
-        filtered = copy.deepcopy(msg)
-        filtered['data']['items'] = ["<%s stations>" % len(filtered['data'].get('items', []))]
-        return filtered
 
 
 #TODO below here

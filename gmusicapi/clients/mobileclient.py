@@ -91,7 +91,7 @@ class Mobileclient(_Base):
              }
         """
 
-        return self._get_all_items(mobileclient.GetLibraryTracks, incremental)
+        return self._get_all_items(mobileclient.ListTracks, incremental)
 
     def get_stream_url(self, song_id, device_id):
         """Returns a url that will point to an mp3 file.
