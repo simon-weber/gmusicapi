@@ -39,13 +39,16 @@ class Mobileclient(_Base):
 
     #TODO expose max-results, updated_after, etc for list operations
 
-    def get_all_songs(self, incremental=False):
+    def get_all_songs(self, incremental=False, include_deleted=False):
         """Returns a list of dictionaries that each represent a song.
 
         :param incremental: if True, return a generator that yields lists
           of at most 1000 tracks
           as they are retrieved from the server. This can be useful for
           presenting a loading bar to a user.
+        :param include_delete: if True, include tracks that have been deleted
+          in the past. If False, ``t['deleted'] is False`` will hold for all
+          tracks.
 
           Here is an example song dictionary::
              {
@@ -92,7 +95,11 @@ class Mobileclient(_Base):
              }
         """
 
-        return self._get_all_items(mobileclient.ListTracks, incremental)
+        tracks = self._get_all_items(mobileclient.ListTracks, incremental)
+        if not include_deleted:
+            tracks = [t for t in tracks if not t['deleted']]
+
+        return tracks
 
     def add_aa_track(self, aa_song_id):
         """Adds an All Access track to the library,

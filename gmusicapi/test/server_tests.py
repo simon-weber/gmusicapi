@@ -109,7 +109,7 @@ class UpauthTests(object):
         :param present: if True verify songs are present; False the opposite
         """
 
-        library = self.wc.get_all_songs()
+        library = self.mc.get_all_songs()
 
         found = [s for s in library if s['id'] in sids]
 
@@ -121,6 +121,38 @@ class UpauthTests(object):
 
         return [TestSong(s['id'], s['title'], s['artist'], s['album'])
                 for s in found]
+
+    @staticmethod
+    @retry
+    def assert_list_inc_equivalence(method):
+        """
+        Assert that some listing method returns the same
+        contents for incremental=True/False.
+
+        :param method: eg self.mc.get_all_songs
+        """
+        lib_chunk_gen = method(incremental=True)
+        assert_true(isinstance(lib_chunk_gen, types.GeneratorType))
+
+        assert_equal([p for chunk in lib_chunk_gen for p in chunk],
+                     method(incremental=False))
+
+    @staticmethod
+    @retry
+    def assert_list_with_deleted(method):
+        """
+        Assert that some listing method includes deleted tracks
+        when requested.
+
+        :param method: eg self.mc.get_all_songs
+        """
+        lib = method(incremental=False, include_deleted=True)
+
+        # how long do deleted tracks get returned for?
+        # will this return tracks I've deleted since...ever?
+
+        num_deleted = [t for t in lib if t['deleted']]
+        assert_true(num_deleted > 0)
 
     @test
     def song_create(self):
@@ -206,6 +238,7 @@ class UpauthTests(object):
                 check.equal(res, [testsong.sid])
 
         self.assert_songs_state([s.sid for s in self.songs], present=False)
+        self.assert_list_with_deleted(self.mc.get_all_songs)
 
     ## These decorators just prevent setting groups and depends_on over and over.
     ## They won't work right with additional settings; if that's needed this
@@ -215,8 +248,8 @@ class UpauthTests(object):
     song_test = test(groups=['song', 'song.exists'], depends_on=[song_create])
     playlist_test = test(groups=['playlist', 'playlist.exists'],
                          depends_on=[playlist_create])
-    #mc_test = test(groups=['mobile'])
 
+    # just to make song_test/playlist_test exist for now
     @song_test
     def st(self):
         raise SkipTest('remove this stub test')
@@ -225,27 +258,24 @@ class UpauthTests(object):
     def pt(self):
         raise SkipTest('remove this stub test')
 
-
     ## Non-wonky tests resume down here.
 
-    #@test
-    #def get_registered_devices(self):
-    #    # no logic; just checking schema
-    #    self.wc.get_registered_devices()
-
     ##---------
-    ## MC/AA tests
+    ## WC tests
     ##---------
 
-    ##TODO clean all this up
+    @test
+    def wc_get_registered_devices(self):
+        # no logic; just checking schema
+        self.wc.get_registered_devices()
 
-    #@mc_test
-    #def list_stations_mc(self):
-    #    lib_chunk_gen = self.mc.get_all_stations(incremental=True)
-    #    assert_true(isinstance(lib_chunk_gen, types.GeneratorType))
+    ##---------
+    ## MC tests
+    ##---------
 
-    #    assert_equal([p for chunk in lib_chunk_gen for p in chunk],
-    #                 self.mc.get_all_stations(incremental=False))
+    @test
+    def mc_list_stations_inc_equal(self):
+        self.assert_list_inc_equivalence(self.mc.get_all_stations)
 
     #@mc_test
     #def list_playlists_mc(self):
