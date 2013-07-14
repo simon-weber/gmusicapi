@@ -106,6 +106,15 @@ class DynamicClientLogger(object):
 log = DynamicClientLogger(__name__)
 
 
+def datetime_to_microseconds(dt):
+    """Return microseconds since epoch, as an int.
+
+    :param dt: a datetime.datetime
+
+    """
+    return int(time.mktime(dt.timetuple()) * 1000000)
+
+
 def is_valid_mac(mac_string):
     """Return True if mac_string is of form
     eg '00:11:22:33:AA:BB'.

@@ -126,6 +126,38 @@ sj_result['properties']['artist']['required'] = False
 sj_result['properties']['album']['required'] = False
 sj_result['properties']['track']['required'] = False
 
+sj_station_seed = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'kind': {'type': 'string'},
+        # one of these will be present
+        'albumId': {'type': 'string', 'required': False},
+        'artistId': {'type': 'string', 'required': False},
+        'genreId': {'type': 'string', 'required': False},
+        'trackId': {'type': 'string', 'required': False},
+        'trackLockerId': {'type': 'string', 'required': False},
+    }
+}
+
+sj_station = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'imageUrl': {'type': 'string'},
+        'kind': {'type': 'string'},
+        'name': {'type': 'string'},
+        'deleted': {'type': 'boolean'},
+        'lastModifiedTimestamp': {'type': 'string'},
+        'recentTimestamp': {'type': 'string'},
+        'clientId': {'type': 'string'},
+        'seed': sj_station_seed,
+        'id': {'type': 'string'},
+        'description': {'type': 'string', 'required': False},
+        'tracks': {'type': 'array', 'required': False, 'items': sj_track},
+    }
+}
+
 
 class McCall(Call):
     """Abstract base for mobile client calls."""
@@ -284,7 +316,6 @@ class GetStreamUrl(McCall):
 
 
 class ListPlaylists(McCall):
-    """List tracks in the library."""
     static_method = 'POST'
     static_url = sj_url + 'playlistfeed'
     static_headers = {'Content-Type': 'application/json'}
@@ -321,6 +352,63 @@ class ListPlaylists(McCall):
     def filter_response(msg):
         filtered = copy.deepcopy(msg)
         filtered['data']['items'] = ["<%s playlists>" % len(filtered['data'].get('items', []))]
+        return filtered
+
+
+class ListStations(McCall):
+    static_method = 'POST'
+    static_url = sj_url + 'radio/station'
+    static_headers = {'Content-Type': 'application/json'}
+    static_params = {'alt': 'json'}
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'kind': {'type': 'string'},
+            'nextPageToken': {'type': 'string', 'required': False},
+            'data': {'type': 'object',
+                     'items': {'type': 'array', 'items': sj_station},
+                    },
+        },
+    }
+
+    @staticmethod
+    def dynamic_params(updated_after=None, start_token=None, max_results=None):
+        """
+        :param updated_after: datetime.datetime; defaults to epoch
+        """
+
+        if updated_after is None:
+            microseconds = 0
+        else:
+            microseconds = utils.datetime_to_microseconds(updated_after)
+
+        return {'updated-min': microseconds}
+
+    @staticmethod
+    def dynamic_data(updated_after=None, start_token=None, max_results=None):
+        """
+        :param updated_after: ignored
+        :param start_token: nextPageToken from a previous response
+        :param max_results: a positive int; if not provided, server defaults to 1000
+
+        args/kwargs are ignored.
+        """
+        data = {}
+
+        if start_token is not None:
+            data['start-token'] = start_token
+
+        if max_results is not None:
+            data['max-results'] = str(max_results)
+
+        return json.dumps(data)
+
+    @staticmethod
+    def filter_response(msg):
+        filtered = copy.deepcopy(msg)
+        filtered['data']['items'] = ["<%s stations>" % len(filtered['data'].get('items', []))]
         return filtered
 
 

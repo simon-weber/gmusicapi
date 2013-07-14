@@ -183,6 +183,16 @@ class UpauthTests(object):
     # MC/AA tests
     #---------
 
+    #TODO clean all this up
+
+    @mc_test
+    def list_stations_mc(self):
+        lib_chunk_gen = self.mc.get_all_stations(incremental=True)
+        assert_true(isinstance(lib_chunk_gen, types.GeneratorType))
+
+        assert_equal([p for chunk in lib_chunk_gen for p in chunk],
+                     self.mc.get_all_stations(incremental=False))
+
     @mc_test
     def list_playlists_mc(self):
         lib_chunk_gen = self.mc.get_all_playlists(incremental=True)

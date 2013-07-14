@@ -147,10 +147,41 @@ class Mobileclient(_Base):
                 u 'accessControlled': False,  # something to do with shared playlists?
                 u 'creationTimestamp': u '1325285553626172',
                 u 'id': u '3d72c9b5-baad-4ff7-815d-cdef717e5d61'
-            },
+            }
         """
 
         return self._get_all_items(mobileclient.ListPlaylists, incremental)
+
+    def get_all_stations(self, updated_after=None, incremental=False):
+        """Returns a list of dictionaries that each represent a radio station.
+
+        :param updated_after: a datetime.datetime; defaults to epoch
+        :param incremental: if True, return a generator that yields lists
+          of at most 1000 stations
+          as they are retrieved from the server. This can be useful for
+          presenting a loading bar to a user.
+
+          Here is an example station dictionary::
+            {
+                u 'imageUrl': u 'http://lh6.ggpht.com/...',
+                u 'kind': u 'sj#radioStation',
+                u 'name': u 'station',
+                u 'deleted': False,
+                u 'lastModifiedTimestamp': u '1370796487455005',
+                u 'recentTimestamp': u '1370796487454000',
+                u 'clientId': u 'c2639bf4-af24-4e4f-ab37-855fc89d15a1',
+                u 'seed':
+                {
+                    u 'kind': u 'sj#radioSeed',
+                    u 'trackLockerId': u '7df3aadd-9a18-3dc1-b92e-a7cf7619da7e'
+                    # possible keys:
+                    #  albumId, artistId, genreId, trackId, trackLockerId
+                },
+                u 'id': u '69f1bfce-308a-313e-9ed2-e50abe33a25d'
+            },
+        """
+        return self._get_all_items(mobileclient.ListStations, incremental,
+                                   updated_after=updated_after)
 
     def search_all_access(self, query, max_results=50):
         """Queries the server for All Access songs and albums.
@@ -349,28 +380,33 @@ class Mobileclient(_Base):
                               artist_id, include_albums, max_top_tracks, max_rel_artist)
         return res
 
-    def _get_all_items(self, call, incremental):
+    def _get_all_items(self, call, incremental, **kwargs):
         """
         :param call: protocol.McCall
         :param incremental: bool
+
+        kwargs are passed to the call.
         """
         if not incremental:
             # slight optimization; can get all items at once
-            res = self._make_call(call, max_results=20000)
+            res = self._make_call(call, max_results=20000, **kwargs)
             return res['data']['items']
 
         # otherwise, return a generator
-        return self._get_all_items_incremental(call)
+        return self._get_all_items_incremental(call, **kwargs)
 
-    def _get_all_items_incremental(self, call):
-        """Return a generator of lists of tracks."""
+    def _get_all_items_incremental(self, call, **kwargs):
+        """Return a generator of lists of tracks.
+
+        kwargs are passed to the call."""
 
         get_next_chunk = True
         lib_chunk = {'nextPageToken': None}
 
         while get_next_chunk:
             lib_chunk = self._make_call(call,
-                                        start_token=lib_chunk['nextPageToken'])
+                                        start_token=lib_chunk['nextPageToken'],
+                                        **kwargs)
 
             yield lib_chunk['data']['items']  # list of songs of the chunk
 
