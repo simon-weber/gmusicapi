@@ -264,6 +264,49 @@ class McListCall(McCall):
         return filtered
 
 
+class McBatchMutateCall(McCall):
+    """Abc for batch mutation calls."""
+
+    static_headers = {'Content-Type': 'application/json'}
+    static_params = {'alt': 'json'}
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'mutate_response': {
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'id': {'type': 'string'},
+                        'client_id': {'type': 'string', 'blank': True,
+                                      'required': False},
+                        'response_code': {'type': 'string'},
+                    },
+                },
+            }
+        },
+    }
+
+    @staticmethod
+    def dynamic_data(mutations):
+        """
+        :param mutations: list of mutation dictionaries
+        """
+
+        return json.dumps({'mutations': mutations})
+
+    @staticmethod
+    def check_success(response, msg):
+        if not all([d.get('response_code', None) == 'OK'
+                    for d in msg.get('mutate_response', [])]):
+            raise ValidationException
+
+        if 'error' in msg:
+            raise ValidationException
+
+
 class Search(McCall):
     """Search for All Access tracks."""
     static_method = 'GET'
@@ -368,6 +411,63 @@ class ListStations(McListCall):
     static_url = sj_url + 'radio/station'
 
 
+class BatchMutateTracks(McBatchMutateCall):
+    static_method = 'POST'
+    static_url = sj_url + 'trackbatch'
+
+    # utility functions to build the mutation dicts
+    @staticmethod
+    def build_track_deletes(track_ids):
+        """
+        :param track_id
+        """
+        return [{'delete': id} for id in track_ids]
+
+    @staticmethod
+    def build_track_add(store_track_info):
+        """
+        :param store_track_info: sj_track
+        """
+        track_dict = copy.deepcopy(store_track_info)
+        for key in ('kind', 'trackAvailableForPurchase',
+                    'albumAvailableForPurchase', 'albumArtRef',
+                    'artistId',
+                   ):
+            del track_dict[key]
+
+        for key, default in {
+            'playCount': 0,
+            'rating': '0',
+            'genre': '',
+            'lastModifiedTimestamp': '0',
+            'deleted': False,
+            'beatsPerMinute': -1,
+            'composer': '',
+            'creationTimestamp': '-1',
+            'totalDiscCount': 0,
+        }.items():
+            track_dict.setdefault(key, default)
+
+        # TODO unsure about this
+        track_dict['trackType'] = 8
+
+        return {'create': track_dict}
+
+
+class GetStoreTrack(McCall):
+    #TODO I think this should accept library ids, too
+    static_method = 'GET'
+    static_url = sj_url + 'fetchtrack'
+    static_headers = {'Content-Type': 'application/json'}
+    static_params = {'alt': 'json'}
+
+    _res_schema = sj_track
+
+    @staticmethod
+    def dynamic_params(track_id):
+        return {'nid': track_id}
+
+
 #TODO below here
 class GetArtist(McCall):
     static_method = 'GET'
@@ -394,15 +494,4 @@ class GetAlbum(McCall):
         ret = sj_url + 'fetchalbum?alt=json'
         ret += '&nid=%s' % albumid
         ret += '&include-tracks=%r' % tracks
-        return ret
-
-
-class GetTrack(McCall):
-    static_method = 'GET'
-    _res_schema = sj_track
-
-    @staticmethod
-    def dynamic_url(trackid):
-        ret = sj_url + 'fetchtrack?alt=json'
-        ret += '&nid=%s' % trackid
         return ret

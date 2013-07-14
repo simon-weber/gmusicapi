@@ -260,8 +260,8 @@ class Call(object):
                             " If you can recreate this error with the most recent code"
                             " please [create an issue](http://goo.gl/qbAW8) that includes"
                             " the above ValidationException"
-                            " and the following raw response:\n%r\n"
-                            "\nA traceback follows:\n") % raw_response
+                            " and the following request/response:\n%r\n\n%r\n"
+                            "\nA traceback follows:\n") % (req_kwargs, raw_response)
 
             log.exception(err_msg)
 

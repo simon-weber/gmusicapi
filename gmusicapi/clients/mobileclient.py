@@ -1,6 +1,7 @@
+from gmusicapi import session
 from gmusicapi.clients.shared import _Base
 from gmusicapi.protocol import mobileclient
-from gmusicapi import session
+from gmusicapi.utils import utils
 
 
 class Mobileclient(_Base):
@@ -36,7 +37,7 @@ class Mobileclient(_Base):
 
         return True
 
-    #TODO expose max-results for get_all_*
+    #TODO expose max-results, updated_after, etc for list operations
 
     def get_all_songs(self, incremental=False):
         """Returns a list of dictionaries that each represent a song.
@@ -92,6 +93,39 @@ class Mobileclient(_Base):
         """
 
         return self._get_all_items(mobileclient.ListTracks, incremental)
+
+    def add_aa_track(self, aa_song_id):
+        """Adds an All Access track to the library,
+        returning the library track id.
+
+        :param aa_song_id: All Access song id
+        """
+        #TODO is there a way to do this on multiple tracks at once?
+        # problem is with gathering aa track info
+
+        aa_track_info = self.get_track(aa_song_id)
+
+        mutate_call = mobileclient.BatchMutateTracks
+        add_mutation = mutate_call.build_track_add(aa_track_info)
+        res = self._make_call(mutate_call, [add_mutation])
+
+        return res['mutate_response'][0]['id']
+
+    @utils.accept_singleton(basestring)
+    @utils.empty_arg_shortcircuit
+    @utils.enforce_ids_param
+    def delete_songs(self, library_song_ids):
+        """Deletes songs from the library.
+        Returns a list of deleted song ids.
+
+        :param song_ids: a list of song ids, or a single song id.
+        """
+
+        mutate_call = mobileclient.BatchMutateTracks
+        del_mutations = mutate_call.build_track_deletes(library_song_ids)
+        res = self._make_call(mutate_call, del_mutations)
+
+        return [d['id'] for d in res['mutate_response']]
 
     def get_stream_url(self, song_id, device_id):
         """Returns a url that will point to an mp3 file.
@@ -419,6 +453,9 @@ class Mobileclient(_Base):
         return res
 
     def get_track(self, trackid):
-        """Retrieve artist data"""
-        res = self._make_call(mobileclient.GetTrack, trackid)
+        """Retrieve information about a store track.
+
+        TODO does this work on library tracks?
+        """
+        res = self._make_call(mobileclient.GetStoreTrack, trackid)
         return res

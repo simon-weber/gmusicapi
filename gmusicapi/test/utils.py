@@ -30,6 +30,9 @@ test_file_dir = os.path.dirname(os.path.abspath(__file__))
 small_mp3 = os.path.join(test_file_dir, u'audiotest_small.mp3')
 image_filename = os.path.join(test_file_dir, u'imagetest_10x10_check.png')
 
+# that dumb intro track on conspiracy of one
+aa_song_id = 'Tqqufr34tuqojlvkolsrwdwx7pe'
+
 
 class NoticeLogging(logging.Handler):
     """A log handler that, if asked to emit, will set
