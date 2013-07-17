@@ -305,23 +305,13 @@ class UpauthTests(object):
     def mc_list_playlists_inc_equal_with_deleted(self):
         self.assert_list_inc_equivalence(self.mc.get_all_playlists, include_deleted=True)
 
-    #@mc_test
-    #def list_playlists_mc(self):
-    #    lib_chunk_gen = self.mc.get_all_playlists(incremental=True)
-    #    assert_true(isinstance(lib_chunk_gen, types.GeneratorType))
-
-    #    assert_equal([p for chunk in lib_chunk_gen for p in chunk],
-    #                 self.mc.get_all_playlists(incremental=False))
-
-    #@mc_test
-    #def mc_search_aa(self):
-    #    if 'GM_A' in os.environ:
-    #        res = self.mc.search_all_access('amorphis')
-    #        with Check() as check:
-    #            for hits in res.values():
-    #                check.true(len(hits) > 0)
-    #    else:
-    #        assert_raises(CallFailure, self.mc.search_all_access, 'amorphis')
+    @test
+    @all_access
+    def mc_search_aa(self):
+        res = self.mc.search_all_access('amorphis')
+        with Check() as check:
+            for hits in res.values():
+                check.true(len(hits) > 0)
 
     #@mc_test
     #def mc_search_aa_with_limit(self):

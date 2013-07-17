@@ -116,6 +116,8 @@ sj_result = {
         'score': {'type': 'number'},
         'type': {'type': 'string'},
         'best_result': {'type': 'boolean', 'required': False},
+        'navigational_result': {'type': 'boolean', 'required': False},
+        'navigational_confidence': {'type': 'number', 'required': False},
         'artist': sj_artist.copy(),
         'album': sj_album.copy(),
         'track': sj_track.copy(),
