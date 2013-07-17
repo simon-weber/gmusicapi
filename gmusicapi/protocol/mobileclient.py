@@ -403,6 +403,33 @@ class ListPlaylists(McListCall):
     static_url = sj_url + 'playlistfeed'
 
 
+class BatchMutatePlaylists(McBatchMutateCall):
+    static_method = 'POST'
+    static_url = sj_url + 'playlistbatch'
+
+    @staticmethod
+    def build_playlist_deletes(playlist_ids):
+        #TODO can probably pull this up one
+        """
+        :param playlist_ids
+        """
+        return [{'delete': id} for id in playlist_ids]
+
+    @staticmethod
+    def build_playlist_adds(names):
+        """
+        :param names
+        """
+
+        return [{'create': {
+            'creationTimestamp': '-1',
+            'deleted': False,
+            'lastModifiedTimestamp': '0',
+            'name': name,
+            'type': 'USER_GENERATED'
+        }} for name in names]
+
+
 class ListStations(McListCall):
     item_schema = sj_station
     filter_text = 'stations'

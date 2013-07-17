@@ -124,25 +124,26 @@ class UpauthTests(object):
 
     @staticmethod
     @retry
-    def assert_list_inc_equivalence(method):
+    def assert_list_inc_equivalence(method, **kwargs):
         """
         Assert that some listing method returns the same
         contents for incremental=True/False.
 
         :param method: eg self.mc.get_all_songs
+        :param **kwargs: passed to method
         """
-        lib_chunk_gen = method(incremental=True)
+
+        lib_chunk_gen = method(incremental=True, **kwargs)
         assert_true(isinstance(lib_chunk_gen, types.GeneratorType))
 
-        assert_equal([p for chunk in lib_chunk_gen for p in chunk],
-                     method(incremental=False))
+        assert_equal([e for chunk in lib_chunk_gen for e in chunk],
+                     method(incremental=False, **kwargs))
 
     @staticmethod
     @retry
     def assert_list_with_deleted(method):
         """
-        Assert that some listing method includes deleted tracks
-        when requested.
+        Assert that some listing method includes deleted tracks.
 
         :param method: eg self.mc.get_all_songs
         """
@@ -188,24 +189,21 @@ class UpauthTests(object):
 
         self.songs = self.assert_songs_state(sids, present=True)
 
+    #TODO pull this out to include song state checking
     @test(depends_on=[song_create], runs_after_groups=['song.exists'])
     def playlist_create(self):
-        raise SkipTest('playlist create broken')
-
-        self.playlist_id = self.wc.create_playlist(TEST_PLAYLIST_NAME)
+        playlist_id = self.mc.create_playlist(TEST_PLAYLIST_NAME)
 
         # like song_create, retry until the playlist appears
-
         @retry
         def assert_playlist_exists(plid):
-            playlists = self.wc.get_all_playlist_ids(auto=False, user=True)
+            found = [p for p in self.mc.get_all_playlists()
+                     if p['id'] == plid]
 
-            found = playlists['user'].get(TEST_PLAYLIST_NAME, None)
+            assert_equal(len(found), 1)
 
-            assert_is_not_none(found)
-            assert_equal(found[-1], self.playlist_id)
-
-        assert_playlist_exists(self.playlist_id)
+        assert_playlist_exists(playlist_id)
+        self.playlist_id = playlist_id
 
     #TODO consider listing/searching if the id isn't there
     # to ensure cleanup.
@@ -216,8 +214,18 @@ class UpauthTests(object):
         if self.playlist_id is None:
             raise SkipTest('did not store self.playlist_id')
 
-        res = self.wc.delete_playlist(self.playlist_id)
+        res = self.mc.delete_playlist(self.playlist_id)
         assert_equal(res, self.playlist_id)
+
+        @retry
+        def assert_playlist_does_not_exist(plid):
+            found = [p for p in self.mc.get_all_playlists(include_deleted=False)
+                     if p['id'] == plid]
+
+            assert_equal(len(found), 0)
+
+        assert_playlist_does_not_exist(self.playlist_id)
+        self.assert_list_with_deleted(self.mc.get_all_playlists)
 
     @test(groups=['song'], depends_on=[song_create],
           runs_after=[playlist_delete],
@@ -276,6 +284,18 @@ class UpauthTests(object):
     @test
     def mc_list_stations_inc_equal(self):
         self.assert_list_inc_equivalence(self.mc.get_all_stations)
+
+    @test
+    def mc_list_songs_inc_equal(self):
+        self.assert_list_inc_equivalence(self.mc.get_all_songs)
+
+    @test
+    def mc_list_songs_inc_equal_with_deleted(self):
+        self.assert_list_inc_equivalence(self.mc.get_all_songs, include_deleted=True)
+
+    @test
+    def mc_list_playlists_inc_equal(self):
+        self.assert_list_inc_equivalence(self.mc.get_all_playlists)
 
     #@mc_test
     #def list_playlists_mc(self):

@@ -96,8 +96,14 @@ class Mobileclient(_Base):
         """
 
         tracks = self._get_all_items(mobileclient.ListTracks, incremental)
+
+        # this should probably go into _get_all_items
         if not include_deleted:
-            tracks = [t for t in tracks if not t['deleted']]
+            if not incremental:
+                tracks = [t for t in tracks if not t['deleted']]
+            else:
+                tracks = ([t for t in chunk if not t['deleted']]
+                          for chunk in tracks)
 
         return tracks
 
@@ -166,13 +172,16 @@ class Mobileclient(_Base):
 
         return self._make_call(mobileclient.GetStreamUrl, song_id, device_id)
 
-    def get_all_playlists(self, incremental=False):
+    def get_all_playlists(self, incremental=False, include_deleted=False):
         """Returns a list of dictionaries that each represent a playlist.
 
         :param incremental: if True, return a generator that yields lists
           of at most 1000 playlists
           as they are retrieved from the server. This can be useful for
           presenting a loading bar to a user.
+        :param include_delete: if True, include playlists that have been deleted
+          in the past. If False, ``p['deleted'] is False`` will hold for all
+          playlists.
 
           Here is an example playlist dictionary::
             {
@@ -191,7 +200,43 @@ class Mobileclient(_Base):
             }
         """
 
-        return self._get_all_items(mobileclient.ListPlaylists, incremental)
+        playlists = self._get_all_items(mobileclient.ListPlaylists, incremental)
+
+        if not include_deleted:
+            if not incremental:
+                playlists = [t for t in playlists if not t['deleted']]
+            else:
+                playlists = ([t for t in chunk if not t['deleted']]
+                             for chunk in playlists)
+
+        return playlists
+
+    # these could trivially support multiple creation/deletion, but
+    # I chose to match the old webclient interface (at least for now).
+    def create_playlist(self, name):
+        """Creates a new empty playlist and returns its id.
+
+        :param name: the desired title.
+          Creating multiple playlists with the same name is allowed.
+        """
+
+        mutate_call = mobileclient.BatchMutatePlaylists
+        add_mutations = mutate_call.build_playlist_adds([name])
+        res = self._make_call(mutate_call, add_mutations)
+
+        return res['mutate_response'][0]['id']
+
+    def delete_playlist(self, playlist_id):
+        """Deletes a playlist and returns its id.
+
+        :param playlist_id: the id to delete.
+        """
+
+        mutate_call = mobileclient.BatchMutatePlaylists
+        del_mutations = mutate_call.build_playlist_deletes([playlist_id])
+        res = self._make_call(mutate_call, del_mutations)
+
+        return res['mutate_response'][0]['id']
 
     def get_all_stations(self, updated_after=None, incremental=False):
         """Returns a list of dictionaries that each represent a radio station.
