@@ -46,11 +46,10 @@ class Mobileclient(_Base):
           of at most 1000 tracks
           as they are retrieved from the server. This can be useful for
           presenting a loading bar to a user.
-        :param include_delete: if True, include tracks that have been deleted
-          in the past. If False, ``t['deleted'] is False`` will hold for all
-          tracks.
+        :param include_deleted: if True, include tracks that have been deleted
+          in the past.
 
-          Here is an example song dictionary::
+        Here is an example song dictionary::
              {
                u'comment':u'',
                u'rating':u'0',
@@ -95,15 +94,7 @@ class Mobileclient(_Base):
              }
         """
 
-        tracks = self._get_all_items(mobileclient.ListTracks, incremental)
-
-        # this should probably go into _get_all_items
-        if not include_deleted:
-            if not incremental:
-                tracks = [t for t in tracks if not t['deleted']]
-            else:
-                tracks = ([t for t in chunk if not t['deleted']]
-                          for chunk in tracks)
+        tracks = self._get_all_items(mobileclient.ListTracks, incremental, include_deleted)
 
         return tracks
 
@@ -179,11 +170,10 @@ class Mobileclient(_Base):
           of at most 1000 playlists
           as they are retrieved from the server. This can be useful for
           presenting a loading bar to a user.
-        :param include_delete: if True, include playlists that have been deleted
-          in the past. If False, ``p['deleted'] is False`` will hold for all
-          playlists.
+        :param include_deleted: if True, include playlists that have been deleted
+          in the past.
 
-          Here is an example playlist dictionary::
+        Here is an example playlist dictionary::
             {
                 u 'kind': u 'sj#playlist',
                 u 'name': u 'Something Mix',
@@ -200,14 +190,7 @@ class Mobileclient(_Base):
             }
         """
 
-        playlists = self._get_all_items(mobileclient.ListPlaylists, incremental)
-
-        if not include_deleted:
-            if not incremental:
-                playlists = [t for t in playlists if not t['deleted']]
-            else:
-                playlists = ([t for t in chunk if not t['deleted']]
-                             for chunk in playlists)
+        playlists = self._get_all_items(mobileclient.ListPlaylists, incremental, include_deleted)
 
         return playlists
 
@@ -238,16 +221,18 @@ class Mobileclient(_Base):
 
         return res['mutate_response'][0]['id']
 
-    def get_all_stations(self, updated_after=None, incremental=False):
+    def get_all_stations(self, incremental=False, include_deleted=False, updated_after=None):
         """Returns a list of dictionaries that each represent a radio station.
 
-        :param updated_after: a datetime.datetime; defaults to epoch
         :param incremental: if True, return a generator that yields lists
           of at most 1000 stations
           as they are retrieved from the server. This can be useful for
           presenting a loading bar to a user.
+        :param include_deleted: if True, include stations that have been deleted
+          in the past.
+        :param updated_after: a datetime.datetime; defaults to epoch
 
-          Here is an example station dictionary::
+        Here is an example station dictionary::
             {
                 u 'imageUrl': u 'http://lh6.ggpht.com/...',
                 u 'kind': u 'sj#radioStation',
@@ -266,7 +251,7 @@ class Mobileclient(_Base):
                 u 'id': u '69f1bfce-308a-313e-9ed2-e50abe33a25d'
             },
         """
-        return self._get_all_items(mobileclient.ListStations, incremental,
+        return self._get_all_items(mobileclient.ListStations, incremental, include_deleted,
                                    updated_after=updated_after)
 
     def search_all_access(self, query, max_results=50):
@@ -466,22 +451,29 @@ class Mobileclient(_Base):
                               artist_id, include_albums, max_top_tracks, max_rel_artist)
         return res
 
-    def _get_all_items(self, call, incremental, **kwargs):
+    def _get_all_items(self, call, incremental, include_deleted, **kwargs):
         """
         :param call: protocol.McCall
         :param incremental: bool
+        :param include_deleted: bool
 
         kwargs are passed to the call.
         """
         if not incremental:
             # slight optimization; can get all items at once
             res = self._make_call(call, max_results=20000, **kwargs)
-            return res['data']['items']
+
+            items = res['data']['items']
+
+            if not include_deleted:
+                items = [t for t in items if not t['deleted']]
+
+            return items
 
         # otherwise, return a generator
-        return self._get_all_items_incremental(call, **kwargs)
+        return self._get_all_items_incremental(call, include_deleted, **kwargs)
 
-    def _get_all_items_incremental(self, call, **kwargs):
+    def _get_all_items_incremental(self, call, include_deleted, **kwargs):
         """Return a generator of lists of tracks.
 
         kwargs are passed to the call."""
@@ -494,7 +486,12 @@ class Mobileclient(_Base):
                                         start_token=lib_chunk['nextPageToken'],
                                         **kwargs)
 
-            yield lib_chunk['data']['items']  # list of songs of the chunk
+            items = lib_chunk['data']['items']
+
+            if not include_deleted:
+                items = [item for item in items if not item['deleted']]
+
+            yield items
 
             get_next_chunk = 'nextPageToken' in lib_chunk
 

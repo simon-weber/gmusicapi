@@ -286,6 +286,10 @@ class UpauthTests(object):
         self.assert_list_inc_equivalence(self.mc.get_all_stations)
 
     @test
+    def mc_list_stations_inc_equal_with_deleted(self):
+        self.assert_list_inc_equivalence(self.mc.get_all_stations, include_deleted=True)
+
+    @test
     def mc_list_songs_inc_equal(self):
         self.assert_list_inc_equivalence(self.mc.get_all_songs)
 
@@ -296,6 +300,10 @@ class UpauthTests(object):
     @test
     def mc_list_playlists_inc_equal(self):
         self.assert_list_inc_equivalence(self.mc.get_all_playlists)
+
+    @test
+    def mc_list_playlists_inc_equal_with_deleted(self):
+        self.assert_list_inc_equivalence(self.mc.get_all_playlists, include_deleted=True)
 
     #@mc_test
     #def list_playlists_mc(self):
