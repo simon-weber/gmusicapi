@@ -684,6 +684,7 @@ class GetSettings(WcCall):
                     },
                     'isSubscription': {'type': 'boolean', 'required': False},
                     'isTrial': {'type': 'boolean', 'required': False},
+                    'hasFreeTrial': {'type': 'boolean'},
                 },
             },
         },
