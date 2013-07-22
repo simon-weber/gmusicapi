@@ -72,6 +72,23 @@ sj_playlist = {
     }
 }
 
+sj_plentry = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'kind': {'type': 'string'},
+        'id': {'type': 'string'},
+        'clientId': {'type': 'string'},
+        'playlistId': {'type': 'string'},
+        'absolutePosition': {'type': 'string'},
+        'trackId': {'type': 'string'},
+        'creationTimestamp': {'type': 'string'},
+        'lastModifiedTimestamp': {'type': 'string'},
+        'deleted': {'type': 'boolean'},
+        'source': {'type': 'string'},
+    },
+}
+
 sj_album = {
     'type': 'object',
     'additionalProperties': False,
@@ -405,9 +422,19 @@ class ListPlaylists(McListCall):
     static_url = sj_url + 'playlistfeed'
 
 
+class ListPlaylistEntries(McListCall):
+    item_schema = sj_plentry
+    filter_text = 'plentries'
+
+    static_method = 'POST'
+    static_url = sj_url + 'plentryfeed'
+
+
 class BatchMutatePlaylists(McBatchMutateCall):
     static_method = 'POST'
     static_url = sj_url + 'playlistbatch'
+
+    #TODO is it possible to mutate name through this?
 
     @staticmethod
     def build_playlist_deletes(playlist_ids):
@@ -432,12 +459,148 @@ class BatchMutatePlaylists(McBatchMutateCall):
         }} for name in names]
 
 
+class BatchMutatePlaylistEntries(McBatchMutateCall):
+    filter_text = 'plentries'
+    item_schema = sj_plentry
+
+    static_method = 'POST'
+    static_url = sj_url + 'plentriesbatch'
+
+    @staticmethod
+    def build_plentry_deletes(entry_ids):
+        """
+        :param entry_ids
+        """
+        return [{'delete': id} for id in entry_ids]
+
+    @staticmethod
+    def build_plentry_adds(playlist_id, song_ids):
+        """
+        :param playlist_id
+        :param song_ids
+        """
+
+        return [{'create': {
+            'clientId': '',  # ??
+            'creationTimestamp': '-1',
+            'deleted': False,
+            'lastModifiedTimestamp': '0',
+            'playlistId': playlist_id,
+            # 'precedingEntryId': '',  # optional
+            'source': 1,
+            'trackId': song_id,
+        }} for song_id in song_ids]
+
+
 class ListStations(McListCall):
     item_schema = sj_station
     filter_text = 'stations'
 
     static_method = 'POST'
     static_url = sj_url + 'radio/station'
+
+
+class BatchMutateStations(McBatchMutateCall):
+    static_method = 'POST'
+    static_url = sj_url + 'radio/editstation'
+
+    @staticmethod
+    def build_deletes(station_ids):
+        """
+        :param station_ids
+        """
+        return [{'delete': id, 'includeFeed': False, 'numEntries': 0}
+                for id in station_ids]
+
+    @staticmethod
+    def build_adds(names):
+        """
+        :param names
+        """
+
+        #TODO
+        # this has a clientId; need to figure out where that comes from
+        pass
+
+
+#TODO
+class ListStationTracks(McListCall):
+    pass
+    #static_headers = {'Content-Type': 'application/json'}
+    #static_params = {'alt': 'json'}
+
+    #_res_schema = {
+    #    'type': 'object',
+    #    'additionalProperties': False,
+    #    'properties': {
+    #        'kind': {'type': 'string'},
+    #        'nextPageToken': {'type': 'string', 'required': False},
+    #        'data': {'type': 'object',
+    #                 'items': {'type': 'array', 'items': item_schema},
+    #                 'required': False,
+    #                },
+    #    },
+    #}
+
+    #@classmethod
+    #def dynamic_params(cls, updated_after=None, start_token=None, max_results=None):
+    #    """
+    #    :param updated_after: datetime.datetime; defaults to epoch
+    #    """
+
+    #    if updated_after is None:
+    #        microseconds = 0
+    #    else:
+    #        microseconds = utils.datetime_to_microseconds(updated_after)
+
+    #    return {'updated-min': microseconds}
+
+    #@classmethod
+    #def dynamic_data(cls, updated_after=None, start_token=None, max_results=None):
+    #    """
+    #    :param updated_after: ignored
+    #    :param start_token: nextPageToken from a previous response
+    #    :param max_results: a positive int; if not provided, server defaults to 1000
+    #    """
+    #    data = {}
+
+    #    if start_token is not None:
+    #        data['start-token'] = start_token
+
+    #    if max_results is not None:
+    #        data['max-results'] = str(max_results)
+
+    #    return json.dumps(data)
+
+    #@classmethod
+    #def parse_response(cls, response):
+    #    # empty results don't include the data key
+    #    # make sure it's always there
+    #    res = cls._parse_json(response.text)
+    #    if 'data' not in res:
+    #        res['data'] = {'items': []}
+
+    #    return res
+
+    #@classmethod
+    #def filter_response(cls, msg):
+    #    filtered = copy.deepcopy(msg)
+    #    filtered['data']['items'] = ["<%s %s>" % (len(filtered['data']['items']),
+    #                                              cls.filter_text)]
+    #    return filtered
+
+    #item_schema = {
+    #    'type': 'object',
+    #    'additionalProperties': False,
+    #    'properties': {
+    #        'radioId': {'type': 'string'},
+    #        'tracks': {'type': 'array', 'items': sj_track},
+    #    }
+    #}
+    #filter_text = 'tracks'
+
+    #static_method = 'POST'
+    #static_url = sj_url + 'radio/stationfeed'
 
 
 class BatchMutateTracks(McBatchMutateCall):

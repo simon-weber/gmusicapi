@@ -221,6 +221,50 @@ class Mobileclient(_Base):
 
         return res['mutate_response'][0]['id']
 
+    def get_playlist_songs(self, playlist_id, incremental=False, include_deleted=False,
+                           updated_after=None):
+        """
+        Returns a list of dictionaries representing playlist entries.
+
+        :param playlist_id: the id of the playlist to read.
+        :param incremental: if True, return a generator that yields lists
+          of at most 1000 entries
+          as they are retrieved from the server. This can be useful for
+          presenting a loading bar to a user.
+        :param include_deleted: if True, include entries that have been deleted
+          in the past.
+        :param updated_after: a datetime.datetime; defaults to unix epoch
+
+        Here is an example playlist entry::
+          {
+              u'kind': u'sj#playlistEntry',
+              u'deleted': False,
+              u'trackId': u'2bb0ab1c-ce1a-3c0f-9217-a06da207b7a7',
+              u'lastModifiedTimestamp': u'1325285553655027',
+              u'playlistId': u'3d72c9b5-baad-4ff7-815d-cdef717e5d61',
+              u'absolutePosition': u'01729382256910287871',  # ??
+              u'source': u'1',  # ??
+              u'creationTimestamp': u'1325285553655027',
+              u'id': u'c9f1aff5-f93d-4b98-b13a-429cc7972fea'
+          }
+        """
+        return self._get_all_items(mobileclient.ListPlaylistEntries,
+                                   incremental, include_deleted,
+                                   updated_after=updated_after)
+
+    @utils.accept_singleton(basestring, 2)
+    @utils.empty_arg_shortcircuit(position=2)
+    @utils.enforce_ids_param(position=2)
+    def add_songs_to_playlist(self, playlist_id, song_ids):
+        """Appends songs to the end of a playlist.
+        Returns a list of (song id, playlistEntryId) pairs that were added.
+
+        :param playlist_id: the id of the playlist to add to.
+        :param song_ids: a list of song ids, or a single song id.
+        """
+
+        pass  # TODO
+
     def get_all_stations(self, incremental=False, include_deleted=False, updated_after=None):
         """Returns a list of dictionaries that each represent a radio station.
 
@@ -230,7 +274,7 @@ class Mobileclient(_Base):
           presenting a loading bar to a user.
         :param include_deleted: if True, include stations that have been deleted
           in the past.
-        :param updated_after: a datetime.datetime; defaults to epoch
+        :param updated_after: a datetime.datetime; defaults to unix epoch
 
         Here is an example station dictionary::
             {

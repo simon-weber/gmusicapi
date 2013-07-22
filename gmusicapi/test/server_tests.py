@@ -7,7 +7,6 @@ Destructive modifications are not made, but if things go terrible wrong,
 an extra test playlist or song may result.
 """
 
-from copy import copy
 from collections import namedtuple
 import os
 import re
@@ -15,14 +14,12 @@ import types
 
 from decorator import decorator
 from proboscis.asserts import (
-    assert_true, assert_equal, assert_is_not_none,
-    assert_not_equal, Check, assert_raises
+    assert_true, assert_equal,
+    Check
 )
 from proboscis import test, before_class, after_class, SkipTest
 
-from gmusicapi import Webclient, Musicmanager, Mobileclient, CallFailure
-#from gmusicapi.exceptions import NotLoggedIn
-from gmusicapi.protocol.metadata import md_expectations
+from gmusicapi import Webclient, Musicmanager, Mobileclient
 from gmusicapi.utils.utils import retry
 import gmusicapi.test.utils as test_utils
 
@@ -257,15 +254,6 @@ class UpauthTests(object):
     playlist_test = test(groups=['playlist', 'playlist.exists'],
                          depends_on=[playlist_create])
 
-    # just to make song_test/playlist_test exist for now
-    @song_test
-    def st(self):
-        raise SkipTest('remove this stub test')
-
-    @playlist_test
-    def pt(self):
-        raise SkipTest('remove this stub test')
-
     ## Non-wonky tests resume down here.
 
     ##---------
@@ -289,21 +277,25 @@ class UpauthTests(object):
     def mc_list_stations_inc_equal_with_deleted(self):
         self.assert_list_inc_equivalence(self.mc.get_all_stations, include_deleted=True)
 
-    @test
+    @song_test
     def mc_list_songs_inc_equal(self):
         self.assert_list_inc_equivalence(self.mc.get_all_songs)
 
-    @test
+    @song_test
     def mc_list_songs_inc_equal_with_deleted(self):
         self.assert_list_inc_equivalence(self.mc.get_all_songs, include_deleted=True)
 
-    @test
+    @playlist_test
     def mc_list_playlists_inc_equal(self):
         self.assert_list_inc_equivalence(self.mc.get_all_playlists)
 
-    @test
+    @playlist_test
     def mc_list_playlists_inc_equal_with_deleted(self):
         self.assert_list_inc_equivalence(self.mc.get_all_playlists, include_deleted=True)
+
+    @playlist_test
+    def mc_list_plentries_inc_equal(self):
+        self.assert_list_inc_equivalence(self.mc.get_playlist_songs, playlist_id=self.playlist_id)
 
     @test
     @all_access
