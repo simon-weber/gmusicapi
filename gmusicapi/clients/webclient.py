@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import copy
 from urlparse import urlparse, parse_qsl
 
 import gmusicapi
 from gmusicapi.clients.shared import _Base
-from gmusicapi.gmtools import tools
-from gmusicapi.exceptions import CallFailure
 from gmusicapi.protocol import webclient
 from gmusicapi.utils import utils
 import gmusicapi.session
@@ -74,17 +71,6 @@ class Webclient(_Base):
         res = self._make_call(webclient.GetSettings, '')
         return res['settings']['devices']
 
-    def change_playlist_name(self, playlist_id, new_name):
-        """Changes the name of a playlist. Returns the changed id.
-
-        :param playlist_id: id of the playlist to rename.
-        :param new_title: desired title.
-        """
-
-        self._make_call(webclient.ChangePlaylistName, playlist_id, new_name)
-
-        return playlist_id  # the call actually doesn't return anything.
-
     @utils.accept_singleton(dict)
     @utils.empty_arg_shortcircuit
     def change_song_metadata(self, songs):
@@ -114,24 +100,6 @@ class Webclient(_Base):
         res = self._make_call(webclient.ChangeSongMetadata, songs)
 
         return [s['id'] for s in res['songs']]
-
-    def create_playlist(self, name):
-        """Creates a new playlist. Returns the new playlist id.
-
-        :param title: the title of the playlist to create.
-        """
-
-        return self._make_call(webclient.AddPlaylist, name)['id']
-
-    def delete_playlist(self, playlist_id):
-        """Deletes a playlist. Returns the deleted id.
-
-        :param playlist_id: id of the playlist to delete.
-        """
-
-        res = self._make_call(webclient.DeletePlaylist, playlist_id)
-
-        return res['deleteId']
 
     @utils.accept_singleton(basestring)
     @utils.empty_arg_shortcircuit
@@ -345,146 +313,6 @@ class Webclient(_Base):
 
         return ''.join(stream_pieces)
 
-    def copy_playlist(self, playlist_id, copy_name):
-        """Copies the contents of a playlist to a new playlist. Returns the id of the new playlist.
-
-        :param playlist_id: id of the playlist to be copied.
-        :param copy_name: the name of the new copied playlist.
-
-        This is useful for making backups of playlists before modifications.
-        """
-
-        orig_tracks = self.get_playlist_songs(playlist_id)
-
-        new_id = self.create_playlist(copy_name)
-        self.add_songs_to_playlist(new_id, [t["id"] for t in orig_tracks])
-
-        return new_id
-
-    def change_playlist(self, playlist_id, desired_playlist, safe=True):
-        """Changes the order and contents of an existing playlist.
-        Returns the id of the playlist when finished -
-        this may be the same as the argument in the case of a failure and recovery.
-
-        :param playlist_id: the id of the playlist being modified.
-        :param desired_playlist: the desired contents and order as a list of
-          :ref:`song dictionaries <songdict-format>`, like is returned
-          from :func:`get_playlist_songs`.
-
-        :param safe: if ``True``, ensure playlists will not be lost if a problem occurs.
-          This may slow down updates.
-
-        The server only provides 3 basic playlist mutations: addition, deletion, and reordering.
-        This function will use these to automagically apply the desired changes.
-
-        However, this might involve multiple calls to the server, and if a call fails,
-        the playlist will be left in an inconsistent state.
-        The ``safe`` option makes a backup of the playlist before doing anything, so it can be
-        rolled back if a problem occurs. This is enabled by default.
-        This might slow down updates of very large playlists.
-
-        There will always be a warning logged if a problem occurs, even if ``safe`` is ``False``.
-        """
-
-        #We'll be modifying the entries in the playlist, and need to copy it.
-        #Copying ensures two things:
-        # 1. the user won't see our changes
-        # 2. changing a key for one entry won't change it for another - which would be the case
-        #     if the user appended the same song twice, for example.
-        desired_playlist = [copy.deepcopy(t) for t in desired_playlist]
-        server_tracks = self.get_playlist_songs(playlist_id)
-
-        if safe:
-            #Make a backup.
-            #The backup is stored on the server as a new playlist with "_gmusicapi_backup"
-            # appended to the backed up name.
-            names_to_ids = self.get_all_playlist_ids()['user']
-            playlist_name = (ni_pair[0]
-                             for ni_pair in names_to_ids.iteritems()
-                             if playlist_id in ni_pair[1]).next()
-
-            backup_id = self.copy_playlist(playlist_id, playlist_name + u"_gmusicapi_backup")
-
-        try:
-            #Counter, Counter, and set of id pairs to delete, add, and keep.
-            to_del, to_add, to_keep = \
-                tools.find_playlist_changes(server_tracks, desired_playlist)
-
-            ##Delete unwanted entries.
-            to_del_eids = [pair[1] for pair in to_del.elements()]
-            if to_del_eids:
-                self._remove_entries_from_playlist(playlist_id, to_del_eids)
-
-            ##Add new entries.
-            to_add_sids = [pair[0] for pair in to_add.elements()]
-            if to_add_sids:
-                new_pairs = self.add_songs_to_playlist(playlist_id, to_add_sids)
-
-                ##Update desired tracks with added tracks server-given eids.
-                #Map new sid -> [eids]
-                new_sid_to_eids = {}
-                for sid, eid in new_pairs:
-                    if not sid in new_sid_to_eids:
-                        new_sid_to_eids[sid] = []
-                    new_sid_to_eids[sid].append(eid)
-
-                for d_t in desired_playlist:
-                    if d_t["id"] in new_sid_to_eids:
-                        #Found a matching sid.
-                        match = d_t
-                        sid = match["id"]
-                        eid = match.get("playlistEntryId")
-                        pair = (sid, eid)
-
-                        if pair in to_keep:
-                            to_keep.remove(pair)  # only keep one of the to_keep eids.
-                        else:
-                            match["playlistEntryId"] = new_sid_to_eids[sid].pop()
-                            if len(new_sid_to_eids[sid]) == 0:
-                                del new_sid_to_eids[sid]
-
-            ##Now, the right eids are in the playlist.
-            ##Set the order of the tracks:
-
-            #The web client has no way to dictate the order without block insertion,
-            # but the api actually supports setting the order to a given list.
-            #For whatever reason, though, it needs to be set backwards; might be
-            # able to get around this by messing with afterEntry and beforeEntry parameters.
-            if desired_playlist:
-                #can't *-unpack an empty list
-                sids, eids = zip(*tools.get_id_pairs(desired_playlist[::-1]))
-
-                if sids:
-                    self._make_call(webclient.ChangePlaylistOrder, playlist_id, sids, eids)
-
-            ##Clean up the backup.
-            if safe:
-                self.delete_playlist(backup_id)
-
-        except CallFailure:
-            self.logger.info("a subcall of change_playlist failed - "
-                             "playlist %s is in an inconsistent state", playlist_id)
-
-            if not safe:
-                raise  # there's nothing we can do
-            else:  # try to revert to the backup
-                self.logger.info("attempting to revert changes from playlist "
-                                 "'%s_gmusicapi_backup'", playlist_name)
-
-                try:
-                    self.delete_playlist(playlist_id)
-                    self.change_playlist_name(backup_id, playlist_name)
-                except CallFailure:
-                    self.logger.warning("failed to revert failed change_playlist call on '%s'",
-                                        playlist_name)
-                    raise
-                else:
-                    self.logger.info("reverted changes safely; playlist id of '%s' is now '%s'",
-                                     playlist_name, backup_id)
-                    playlist_id = backup_id
-
-        return playlist_id
-
     @utils.accept_singleton(basestring, 2)
     @utils.empty_arg_shortcircuit(position=2)
     @utils.enforce_ids_param(position=2)
@@ -511,9 +339,7 @@ class Webclient(_Base):
         :param sids_to_match: a list of song ids to match, or a single song id.
 
         This does *not always* the inverse of a call to :func:`add_songs_to_playlist`,
-        since multiple copies of the same song are removed. For more control in this case,
-        get the playlist tracks with :func:`get_playlist_songs`, modify the list of tracks,
-        then use :func:`change_playlist` to push changes to the server.
+        since multiple copies of the same song are removed.
         """
 
         playlist_tracks = self.get_playlist_songs(playlist_id)
@@ -559,68 +385,6 @@ class Webclient(_Base):
         res = self._make_call(webclient.DeleteSongs, sids, playlist_id, eids)
 
         return res['deleteIds']
-
-    def search(self, query):
-        """Queries the server for songs and albums.
-
-        **WARNING**: Google no longer uses this endpoint in their client;
-        it may stop working or be removed from gmusicapi without warning.
-        In addition, it is known to occasionally return unexpected results.
-        See `#114
-        <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/114>`__
-        for more information.
-
-        Instead of using this call, retrieve all tracks with :func:`get_all_songs`
-        and search them locally.  `This gist
-        <https://gist.github.com/simon-weber/5007769>`__ has some examples of
-        simple linear-time searches.
-
-        :param query: a string keyword to search with. Capitalization and punctuation are ignored.
-
-        The results are returned in a dictionary, arranged by how they were found.
-        ``artist_hits`` and ``song_hits`` return a list of
-        :ref:`song dictionaries <songdict-format>`, while ``album_hits`` entries
-        have a different structure.
-
-        For example, a search on ``'cat'`` could return::
-
-            {
-                "album_hits": [
-                    {
-                        "albumArtist": "The Cat Empire",
-                        "albumName": "Cities: The Cat Empire Project",
-                        "artistName": "The Cat Empire",
-                        "imageUrl": "//ssl.gstatic.com/music/fe/[...].png"
-                        # no more entries
-                    },
-                ],
-                "artist_hits": [
-                    {
-                        "album": "Cinema",
-                        "artist": "The Cat Empire",
-                        "id": "c9214fc1-91fa-3bd2-b25d-693727a5f978",
-                        "title": "Waiting"
-                        # ... normal song dictionary
-                    },
-                ],
-                "song_hits": [
-                    {
-                        "album": "Mandala",
-                        "artist": "RX Bandits",
-                        "id": "a7781438-8ec3-37ab-9c67-0ddb4115f60a",
-                        "title": "Breakfast Cat",
-                        # ... normal song dictionary
-                    },
-                ]
-            }
-
-        """
-
-        res = self._make_call(webclient.Search, query)['results']
-
-        return {"album_hits": res["albums"],
-                "artist_hits": res["artists"],
-                "song_hits": res["songs"]}
 
     @utils.accept_singleton(basestring)
     @utils.empty_arg_shortcircuit

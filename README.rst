@@ -4,20 +4,19 @@ gmusicapi: an unofficial API for Google Play Music
 gmusicapi allows control of
 `Google Music <http://music.google.com>`__ with Python.
 
-
 .. code-block:: python
 
-    from gmusicapi import Webclient
+    from gmusicapi import Mobileclient
     
-    api = Webclient()
+    api = Mobileclient()
     api.login('user@gmail.com', 'my-password')
     # => True
-
+    
     library = api.get_all_songs()
     sweet_tracks = [track for track in library if track['artist'] == 'The Cat Empire']
-
+    
     playlist_id = api.create_playlist('Rad muzak')
-    api.change_playlist(playlist_id, sweet_tracks)
+    api.add_songs_to_playlist(playlist_id, sweet_tracks)
     
 **gmusicapi is not supported nor endorsed by Google.**
 
@@ -49,10 +48,11 @@ Status and updates
 .. image:: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API.png?branch=develop
         :target: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API
 
-The Webclient interface has gotten horrible to maintain lately, so I'm currently working on
+The project is in the middle of a major change at the moment: the Webclient interface has
+gotten horrible to maintain, so I'm working on
 switching the the Android app api. This will provide easy All Access support and easier
-maintainability going forward. Expect this release before August -- you can follow along 
-`here <https://github.com/simon-weber/Unofficial-Google-Music-API/pull/142>`__.
+maintainability going forward. At this point, prefer the Mobileclient to the Webclient
+whenever possible.
 
 Version 1.2.0 fixes a bug that fixes uploader_id formatting from a mac address.
 This change may cause another machine to be registered - you can safely remove the
