@@ -48,11 +48,13 @@ class Mobileclient(_Base):
           of at most 1000 tracks
           as they are retrieved from the server. This can be useful for
           presenting a loading bar to a user.
+
         :param include_deleted: if True, include tracks that have been deleted
           in the past.
 
         Here is an example song dictionary::
-             {
+
+            {
                u'comment':u'',
                u'rating':u'0',
                u'albumArtRef':[
@@ -94,6 +96,7 @@ class Mobileclient(_Base):
                u'clientId':u'+eGFGTbiyMktbPuvB5MfsA',
                u'durationMillis':u'418000'
              }
+
         """
 
         tracks = self._get_all_items(mobileclient.ListTracks, incremental, include_deleted)
@@ -176,19 +179,20 @@ class Mobileclient(_Base):
           in the past.
 
         Here is an example playlist dictionary::
+
             {
-                u 'kind': u 'sj#playlist',
-                u 'name': u 'Something Mix',
-                u 'deleted': False,
-                u 'type': u 'MAGIC',  # if not present, playlist is user-created
-                u 'lastModifiedTimestamp': u '1325458766483033',
-                u 'recentTimestamp': u '1325458766479000',
-                u 'shareToken': u '<long string>',
-                u 'ownerProfilePhotoUrl': u 'http://lh3.googleusercontent.com/...',
-                u 'ownerName': u 'Simon Weber',
-                u 'accessControlled': False,  # something to do with shared playlists?
-                u 'creationTimestamp': u '1325285553626172',
-                u 'id': u '3d72c9b5-baad-4ff7-815d-cdef717e5d61'
+                u'kind': u'sj#playlist',
+                u'name': u'Something Mix',
+                u'deleted': False,
+                u'type': u'MAGIC',  # if not present, playlist is user-created
+                u'lastModifiedTimestamp': u'1325458766483033',
+                u'recentTimestamp': u'1325458766479000',
+                u'shareToken': u'<long string>',
+                u'ownerProfilePhotoUrl': u'http://lh3.googleusercontent.com/...',
+                u'ownerName': u'Simon Weber',
+                u'accessControlled': False,  # something to do with shared playlists?
+                u'creationTimestamp': u'1325285553626172',
+                u'id': u'3d72c9b5-baad-4ff7-815d-cdef717e5d61'
             }
         """
 
@@ -230,11 +234,12 @@ class Mobileclient(_Base):
         only the contents of one
         playlist.
 
-        Returns the same structure as get_all_playlists,
+        Returns the same structure as :func:`get_all_playlists`,
         with the addition of a ``'tracks'`` key in each dict
         set to a list of properly-ordered playlist entry dicts.
 
         Here is an example playlist entry::
+
           {
               u'kind': u'sj#playlistEntry',
               u'deleted': False,
@@ -306,22 +311,23 @@ class Mobileclient(_Base):
         :param updated_after: a datetime.datetime; defaults to unix epoch
 
         Here is an example station dictionary::
+
             {
-                u 'imageUrl': u 'http://lh6.ggpht.com/...',
-                u 'kind': u 'sj#radioStation',
-                u 'name': u 'station',
-                u 'deleted': False,
-                u 'lastModifiedTimestamp': u '1370796487455005',
-                u 'recentTimestamp': u '1370796487454000',
-                u 'clientId': u 'c2639bf4-af24-4e4f-ab37-855fc89d15a1',
-                u 'seed':
+                u'imageUrl': u'http://lh6.ggpht.com/...',
+                u'kind': u'sj#radioStation',
+                u'name': u'station',
+                u'deleted': False,
+                u'lastModifiedTimestamp': u'1370796487455005',
+                u'recentTimestamp': u'1370796487454000',
+                u'clientId': u'c2639bf4-af24-4e4f-ab37-855fc89d15a1',
+                u'seed':
                 {
-                    u 'kind': u 'sj#radioSeed',
-                    u 'trackLockerId': u '7df3aadd-9a18-3dc1-b92e-a7cf7619da7e'
+                    u'kind': u'sj#radioSeed',
+                    u'trackLockerId': u'7df3aadd-9a18-3dc1-b92e-a7cf7619da7e'
                     # possible keys:
                     #  albumId, artistId, genreId, trackId, trackLockerId
                 },
-                u 'id': u '69f1bfce-308a-313e-9ed2-e50abe33a25d'
+                u'id': u'69f1bfce-308a-313e-9ed2-e50abe33a25d'
             },
         """
         return self._get_all_items(mobileclient.ListStations, incremental, include_deleted,
@@ -336,7 +342,9 @@ class Mobileclient(_Base):
         :param query: a string keyword to search with. Capitalization and punctuation are ignored.
         :param max_results: Maximum number of items to be retrieved
 
-        The results are returned in a dictionary, arranged by how they were found, eg::
+        The results are returned in a dictionary, arranged by how they were found.
+        Here are example results for a search on ``'Amorphis'``::
+
             {
                'album_hits':[
                   {
@@ -461,6 +469,7 @@ class Mobileclient(_Base):
         CallFailure being raised.
 
         Returns a dict, eg::
+
             {
               u'albums':[  # only if include_albums is True
                 {
