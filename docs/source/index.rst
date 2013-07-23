@@ -6,17 +6,17 @@ This library allows control of
 
 .. code-block:: python
 
-    from gmusicapi import Webclient
-
-    api = Webclient()
+    from gmusicapi import Mobileclient
+    
+    api = Mobileclient()
     api.login('user@gmail.com', 'my-password')
     # => True
-
+    
     library = api.get_all_songs()
     sweet_tracks = [track for track in library if track['artist'] == 'The Cat Empire']
-
+    
     playlist_id = api.create_playlist('Rad muzak')
-    api.change_playlist(playlist_id, sweet_tracks)
+    api.add_songs_to_playlist(playlist_id, sweet_tracks)
     
 
 **This project is not supported nor endorsed by Google.**
@@ -30,11 +30,11 @@ All major functionality is supported:
 
 -  Library management: list, create, delete, and modify songs and playlists
 
--  Webclient streaming and single-song downloading
+-  Streaming and single-song downloading
 
 -  Music Manager uploading/scan-and-match and library downloading
 
-Support for Google Play Music All Access features is currently under consideration.
+Support for Google Play Music All Access features is in progress.
 
 See `the changelog
 <https://github.com/simon-weber/Unofficial-Google-Music-API/blob/develop/HISTORY.rst>`__
@@ -52,7 +52,7 @@ Using gmusicapi
 
 Getting started
 +++++++++++++++
-The :ref:`usage section <usage>` has information on installing
+The :ref:`usage section <usage>` has installation instructions
 and some simple examples.
 
 Api and data reference

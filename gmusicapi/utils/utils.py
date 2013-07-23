@@ -82,14 +82,20 @@ class DynamicClientLogger(object):
                 try:
                     if 'self' in frame.f_locals:
                         f_self = frame.f_locals['self']
-                        if ((f_self.__module__ == 'gmusicapi.clients' and
-                             type(f_self).__name__ in ('Musicmanager', 'Webclient'))):
+
+                        # can't import and check against classes; that causes an import cycle
+                        if ((f_self is not None and
+                             f_self.__module__.startswith('gmusicapi.clients') and
+                             f_self.__class__.__name__ in ('Musicmanager', 'Webclient',
+                                                           'Mobileclient'))):
                             logger = f_self.logger
                             break
                 finally:
                     del frame  # avoid circular references
 
             else:
+                # log to root logger.
+                # should this be stronger? There's no default root logger set up.
                 stack = traceback.extract_stack()
                 logger.info('could not locate client caller in stack:\n%s',
                             '\n'.join(traceback.format_list(stack)))
@@ -98,6 +104,15 @@ class DynamicClientLogger(object):
 
 
 log = DynamicClientLogger(__name__)
+
+
+def datetime_to_microseconds(dt):
+    """Return microseconds since epoch, as an int.
+
+    :param dt: a datetime.datetime
+
+    """
+    return int(time.mktime(dt.timetuple()) * 1000000)
 
 
 def is_valid_mac(mac_string):

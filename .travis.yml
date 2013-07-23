@@ -15,6 +15,7 @@ branches:
   only: 
   - develop
   - master
+  - mobileclient
 env: 
   global:
   - GM_N="Travis-CI (gmusicapi)"

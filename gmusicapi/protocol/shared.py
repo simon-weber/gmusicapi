@@ -46,7 +46,7 @@ class BuildRequestMeta(type):
         new_cls = super(BuildRequestMeta, cls).__new__(cls, name, bases, dct)
 
         merge_keys = ('headers', 'params')
-        all_keys = ('method', 'url', 'files', 'data', 'verify') + merge_keys
+        all_keys = ('method', 'url', 'files', 'data', 'verify', 'allow_redirects') + merge_keys
 
         config = {}  # stores key: val for static or f(*args, **kwargs) -> val for dyn
         dyn = lambda key: 'dynamic_' + key
@@ -89,7 +89,6 @@ class BuildRequestMeta(type):
                     req_kwargs[key] = val
 
                 return req_kwargs
-                #return Request(**req_kwargs)
             return build_request
 
         new_cls.build_request = classmethod(req_closure())
@@ -209,6 +208,10 @@ class Call(object):
         response = session.send(req_kwargs, cls.required_auth)
         #TODO trim the logged response if it's huge?
 
+        safe_req_kwargs = req_kwargs.copy()
+        if safe_req_kwargs.get('headers', {}).get('Authorization', None) is not None:
+            safe_req_kwargs['headers']['Authorization'] = '<omitted>'
+
         # check response code
         try:
             response.raise_for_status()
@@ -216,6 +219,7 @@ class Call(object):
             err_msg = str(e)
 
             if cls.gets_logged:
+                err_msg += "\n(requests kwargs: %r)" % (safe_req_kwargs)
                 err_msg += "\n(response was: %r)" % response.content
 
             raise CallFailure(err_msg, call_name)
@@ -226,6 +230,7 @@ class Call(object):
             err_msg = ("the server's response could not be understood."
                        " The call may still have succeeded, but it's unlikely.")
             if cls.gets_logged:
+                err_msg += "\n(requests kwargs: %r)" % (safe_req_kwargs)
                 err_msg += "\n(response was: %r)" % response.content
                 log.exception("could not parse %s response: %r", call_name, response.content)
             else:
@@ -258,8 +263,8 @@ class Call(object):
                             " If you can recreate this error with the most recent code"
                             " please [create an issue](http://goo.gl/qbAW8) that includes"
                             " the above ValidationException"
-                            " and the following raw response:\n%r\n"
-                            "\nA traceback follows:\n") % raw_response
+                            " and the following request/response:\n%r\n\n%r\n"
+                            "\nA traceback follows:\n") % (safe_req_kwargs, raw_response)
 
             log.exception(err_msg)
 

@@ -30,14 +30,14 @@ If you need to install avconv from source, be sure to use
 Quickstart
 ----------
 
-If you're not going to be uploading music, use the :py:class:`Webclient`.
+If you're not going to be uploading music, use the :py:class:`Mobileclient`.
 This requires plaintext auth, so your code might look something like:
 
 .. code-block:: python
 
-    from gmusicapi import Webclient
+    from gmusicapi import Mobileclient
 
-    api = Webclient()
+    api = Mobileclient()
     logged_in = api.login('user@gmail.com', 'my-password')
     # logged_in is True if login was successful
 
@@ -49,7 +49,7 @@ It uses `OAuth2
 does not require plaintext credentials.
 
 Instead, you'll need to authorize your account *once* before logging in.
-The easiest way is to follow the prompts from:
+The easiest way is to run:
 
 .. code-block:: python
 
@@ -59,7 +59,7 @@ The easiest way is to follow the prompts from:
     mm.perform_oauth()
 
 If successful, this will save your credentials to disk.
-Then, future runs will start with:
+Then, future runs can start with:
 
 .. code-block:: python
 

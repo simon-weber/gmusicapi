@@ -2,7 +2,7 @@
 
 """Calls made by the web client."""
 
-import binascii
+import base64
 import copy
 import hmac
 import random
@@ -118,32 +118,6 @@ class WcCall(Call):
         return cls._parse_json(response.text)
 
 
-class AddPlaylist(WcCall):
-    """Creates a new playlist."""
-
-    static_method = 'POST'
-    static_url = service_url + 'addplaylist'
-
-    _res_schema = {
-        "type": "object",
-        "properties": {
-            "id": {"type": "string"},
-            "title": {"type": "string"},
-            "success": {"type": "boolean"},
-            "timestamp": {"type": "integer"},
-            "token": {"type": "string", "blank": True},
-        },
-        "additionalProperties": False
-    }
-
-    @staticmethod
-    def dynamic_data(title):
-        """
-        :param title: the title of the playlist to create.
-        """
-        return {'json': json.dumps({"title": title})}
-
-
 class AddToPlaylist(WcCall):
     """Adds songs to a playlist."""
     static_method = 'POST'
@@ -187,31 +161,6 @@ class AddToPlaylist(WcCall):
         filtered = copy.copy(msg)
         filtered['songIds'] = ["<%s songs>" % len(filtered.get('songIds', []))]
         return filtered
-
-
-class ChangePlaylistName(WcCall):
-    """Changes the name of a playlist."""
-
-    static_method = 'POST'
-    static_url = service_url + 'modifyplaylist'
-
-    _res_schema = {
-        "type": "object",
-        "properties": {},
-        "additionalProperties": False
-    }
-
-    @staticmethod
-    def dynamic_data(playlist_id, new_name):
-        """
-        :param playlist_id: id of the playlist to rename.
-        :param new_title: desired title.
-        """
-        return {
-            'json': json.dumps(
-                {"playlistId": playlist_id, "playlistName": new_name}
-            )
-        }
 
 
 class ChangePlaylistOrder(WcCall):
@@ -527,9 +476,7 @@ class GetStreamUrl(WcCall):
         # include slt/sig anyway; the server ignores the extra params.
         key = '27f7313e-f75d-445a-ac99-56386a5fe879'
         salt = ''.join(random.choice(string.ascii_lowercase + string.digits) for x in range(12))
-        sig = binascii.b2a_base64(hmac.new(key, (song_id + salt), sha1).digest())[:-1]
-        urlsafe_b64_trans = string.maketrans("+/=", "-_.")
-        sig = sig.translate(urlsafe_b64_trans)
+        sig = base64.urlsafe_b64encode(hmac.new(key, (song_id + salt), sha1).digest())[:-1]
 
         params = {
             'u': 0,
@@ -545,44 +492,6 @@ class GetStreamUrl(WcCall):
         else:
             params['songid'] = song_id
         return params
-
-
-class Search(WcCall):
-    """Fuzzily search for songs, artists and albums.
-    Not needed for most use-cases; local search is usually faster and more flexible"""
-
-    static_method = 'POST'
-    static_url = service_url + 'search'
-
-    _res_schema = {
-        "type": "object",
-        "properties": {
-            "results": {
-                "type": "object",
-                "properties": {
-                    "artists": song_array,  # hits on artists
-                    "songs": song_array,    # hits on tracks
-                    "albums": {             # hits on albums; no track info returned
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "artistName": {"type": "string", "blank": True},
-                                "imageUrl": {"type": "string", "required": False},
-                                "albumArtist": {"type": "string", "blank": True},
-                                "albumName": {"type": "string"},
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "additionalProperties": False
-    }
-
-    @staticmethod
-    def dynamic_data(query):
-        return {'json': json.dumps({'q': query})}
 
 
 class ReportBadSongMatch(WcCall):

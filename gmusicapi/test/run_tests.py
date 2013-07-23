@@ -11,7 +11,7 @@ from types import MethodType
 
 from proboscis import TestProgram
 
-from gmusicapi.clients import Webclient, Musicmanager, OAUTH_FILEPATH
+from gmusicapi.clients import Webclient, Musicmanager, Mobileclient, OAUTH_FILEPATH
 from gmusicapi.protocol.musicmanager import credentials_from_refresh_token
 from gmusicapi.test import local_tests, server_tests  # noqa
 from gmusicapi.test.utils import NoticeLogging
@@ -90,7 +90,9 @@ def retrieve_auth():
 def freeze_login_details(wc_kwargs, mm_kwargs):
     """Set the given kwargs to be the default for client login methods."""
     for cls, kwargs in ((Musicmanager, mm_kwargs),
-                        (Webclient, wc_kwargs)):
+                        (Webclient, wc_kwargs),
+                        (Mobileclient, wc_kwargs),
+                       ):
         cls.login = MethodType(
             update_wrapper(partial(cls.login, **kwargs), cls.login),
             None, cls)
