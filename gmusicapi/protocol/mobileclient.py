@@ -9,6 +9,7 @@ from hashlib import sha1
 import hmac
 import sys
 import time
+from uuid import uuid1
 
 
 import validictory
@@ -220,7 +221,7 @@ class McListCall(McCall):
     filter_text = utils.NotImplementedField
 
     static_headers = {'Content-Type': 'application/json'}
-    static_params = {'alt': 'json'}
+    static_params = {'alt': 'json', 'include-tracks': 'true'}
 
     _res_schema = {
         'type': 'object',
@@ -480,16 +481,33 @@ class BatchMutatePlaylistEntries(McBatchMutateCall):
         :param song_ids
         """
 
-        return [{'create': {
-            'clientId': '',  # ??
-            'creationTimestamp': '-1',
-            'deleted': False,
-            'lastModifiedTimestamp': '0',
-            'playlistId': playlist_id,
-            # 'precedingEntryId': '',  # optional
-            'source': 1,
-            'trackId': song_id,
-        }} for song_id in song_ids]
+        mutations = []
+
+        prev_id, cur_id, next_id = None, str(uuid1()), str(uuid1())
+
+        for i, song_id in enumerate(song_ids):
+            m_details = {
+                'clientId': cur_id,
+                'creationTimestamp': '-1',
+                'deleted': False,
+                'lastModifiedTimestamp': '0',
+                'playlistId': playlist_id,
+                'source': 1,
+                'trackId': song_id,
+            }
+
+            if song_id.startswith('T'):
+                m_details['source'] = 2  # AA track
+
+            if i > 0:
+                m_details['precedingEntryId'] = prev_id
+            if i < len(song_ids) - 1:
+                m_details['followingEntryId'] = next_id
+
+            mutations.append({'create': m_details})
+            prev_id, cur_id, next_id = cur_id, next_id, str(uuid1())
+
+        return mutations
 
 
 class ListStations(McListCall):

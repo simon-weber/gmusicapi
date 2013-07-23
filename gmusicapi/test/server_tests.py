@@ -52,6 +52,16 @@ class UpauthTests(object):
     #These are set on the instance in create_song/playlist.
     songs = None  # [TestSong]
     playlist_id = None
+    plentry_ids = None
+
+    def mc_get_playlist_songs(self, plid):
+        """For convenience, since mc can only get all playlists at once."""
+        all_contents = self.mc.get_all_playlist_contents()
+        found = [p for p in all_contents if p['id'] == plid]
+
+        assert_true(len(found), 1)
+
+        return found[0]['tracks']
 
     @before_class
     def login(self):
@@ -78,20 +88,21 @@ class UpauthTests(object):
             raise SkipTest('did not create mc')
         assert_true(self.mc.logout())
 
-    # This next section is a bit odd: it nests playlist tests inside song tests.
+    # This next section is a bit odd: it orders tests that create
+    # required resources.
 
-    # The intuitition: starting from an empty library, you need to have
-    #  a song before you can modify a playlist.
+    # The intuitition: starting from an empty library, you need to create
+    #  a song before you can add it to a playlist.
 
     # If x --> y means x runs after y, then the graph looks like:
 
-    #    song_create <-- playlist_create
-    #        ^                   ^
-    #        |                   |
-    #    song_test       playlist_test
-    #        ^                   ^
-    #        |                   |
-    #    song_delete     playlist_delete
+    #    song_create <-- plentry_create --> playlist_create
+    #        ^                  ^                   ^
+    #        |                  |                   |
+    #    song_test       plentry_test       playlist_test
+    #        ^                  ^                   ^
+    #        |                  |                   |
+    #    song_delete     plentry_delete     playlist_delete
 
     # Singleton groups are used to ease code ordering restraints.
     # Suggestions to improve any of this are welcome!
@@ -186,8 +197,7 @@ class UpauthTests(object):
 
         self.songs = self.assert_songs_state(sids, present=True)
 
-    #TODO pull this out to include song state checking
-    @test(depends_on=[song_create], runs_after_groups=['song.exists'])
+    @test
     def playlist_create(self):
         playlist_id = self.mc.create_playlist(TEST_PLAYLIST_NAME)
 
@@ -202,9 +212,49 @@ class UpauthTests(object):
         assert_playlist_exists(playlist_id)
         self.playlist_id = playlist_id
 
-    #TODO consider listing/searching if the id isn't there
-    # to ensure cleanup.
+    @test(depends_on=[playlist_create, song_create],
+          runs_after_groups=['playlist.exists', 'song.exists'])
+    def plentry_create(self):
+        # create 3 entries: the uploaded track and two of the all access track
+        # 3 songs is the minimum to fully test reordering, and also includes the
+        # duplicate song_id case
+
+        song_ids = [self.songs[0].sid] + [test_utils.aa_song_id] * 2
+        plentry_ids = self.mc.add_songs_to_playlist(self.playlist_id, song_ids)
+
+        @retry(tries=2)
+        def assert_plentries_exist(plid, plentry_ids):
+            songs = self.mc_get_playlist_songs(plid)
+            found = [e for e in songs
+                     if e['id'] in plentry_ids]
+
+            assert_equal(len(found), len(plentry_ids))
+
+        assert_plentries_exist(self.playlist_id, plentry_ids)
+        self.plentry_ids = plentry_ids
+
+    @test(groups=['plentry'], depends_on=[plentry_create],
+          runs_after_groups=['plentry.exists'],
+          always_run=True)
+    def plentry_delete(self):
+        if self.plentry_ids is None:
+            raise SkipTest('did not store self.plentry_ids')
+
+        res = self.mc.remove_entries_from_playlist(self.plentry_ids)
+        assert_equal(res, self.plentry_ids)
+
+        @retry
+        def assert_plentries_removed(plid, entry_ids):
+            found = [e for e in self.mc_get_playlist_songs(plid)
+                     if e['id'] in entry_ids]
+
+            assert_equal(len(found), 0)
+
+        assert_plentries_removed(self.playlist_id, self.plentry_ids)
+        #self.assert_list_with_deleted(self.mc_get_playlist_songs)
+
     @test(groups=['playlist'], depends_on=[playlist_create],
+          runs_after=[plentry_delete],
           runs_after_groups=['playlist.exists'],
           always_run=True)
     def playlist_delete(self):
@@ -225,7 +275,7 @@ class UpauthTests(object):
         self.assert_list_with_deleted(self.mc.get_all_playlists)
 
     @test(groups=['song'], depends_on=[song_create],
-          runs_after=[playlist_delete],
+          runs_after=[plentry_delete],
           runs_after_groups=["song.exists"],
           always_run=True)
     def song_delete(self):
@@ -253,6 +303,8 @@ class UpauthTests(object):
     song_test = test(groups=['song', 'song.exists'], depends_on=[song_create])
     playlist_test = test(groups=['playlist', 'playlist.exists'],
                          depends_on=[playlist_create])
+    plentry_test = test(groups=['plentry', 'plentry.exists'],
+                        depends_on=[plentry_create])
 
     ## Non-wonky tests resume down here.
 
@@ -293,9 +345,13 @@ class UpauthTests(object):
     def mc_list_playlists_inc_equal_with_deleted(self):
         self.assert_list_inc_equivalence(self.mc.get_all_playlists, include_deleted=True)
 
-    @playlist_test
-    def mc_list_plentries_inc_equal(self):
-        self.assert_list_inc_equivalence(self.mc.get_playlist_songs, playlist_id=self.playlist_id)
+    @plentry_test
+    def pt(self):
+        raise SkipTest('remove this')
+
+    #@plentry_test
+    #def mc_list_plentries_inc_equal(self):
+    #    self.assert_list_inc_equivalence(self.mc_get_playlist_songs, playlist_id=self.playlist_id)
 
     @test
     @all_access

@@ -1,3 +1,5 @@
+from operator import itemgetter
+
 from gmusicapi import session
 from gmusicapi.clients.shared import _Base
 from gmusicapi.protocol import mobileclient
@@ -221,19 +223,16 @@ class Mobileclient(_Base):
 
         return res['mutate_response'][0]['id']
 
-    def get_playlist_songs(self, playlist_id, incremental=False, include_deleted=False,
-                           updated_after=None):
+    def get_all_playlist_contents(self):
         """
-        Returns a list of dictionaries representing playlist entries.
+        Retrieves the contents of *all* playlists
+        -- the Mobileclient does not support retrieving
+        only the contents of one
+        playlist.
 
-        :param playlist_id: the id of the playlist to read.
-        :param incremental: if True, return a generator that yields lists
-          of at most 1000 entries
-          as they are retrieved from the server. This can be useful for
-          presenting a loading bar to a user.
-        :param include_deleted: if True, include entries that have been deleted
-          in the past.
-        :param updated_after: a datetime.datetime; defaults to unix epoch
+        Returns the same structure as get_all_playlists,
+        with the addition of a ``'tracks'`` key in each dict
+        set to a list of properly-ordered playlist entry dicts.
 
         Here is an example playlist entry::
           {
@@ -248,22 +247,52 @@ class Mobileclient(_Base):
               u'id': u'c9f1aff5-f93d-4b98-b13a-429cc7972fea'
           }
         """
-        return self._get_all_items(mobileclient.ListPlaylistEntries,
-                                   incremental, include_deleted,
-                                   updated_after=updated_after)
+
+        playlists = self.get_all_playlists()
+
+        all_entries = self._get_all_items(mobileclient.ListPlaylistEntries,
+                                          incremental=False, include_deleted=False,
+                                          updated_after=None)
+
+        for playlist in playlists:
+            entries = [e for e in all_entries
+                       if e['playlistId'] == playlist['id']]
+            entries.sort(key=itemgetter('absolutePosition'))
+
+            playlist['tracks'] = entries
+
+        return playlists
 
     @utils.accept_singleton(basestring, 2)
     @utils.empty_arg_shortcircuit(position=2)
     @utils.enforce_ids_param(position=2)
     def add_songs_to_playlist(self, playlist_id, song_ids):
         """Appends songs to the end of a playlist.
-        Returns a list of (song id, playlistEntryId) pairs that were added.
+        Returns a list of playlistEntryIds that were added.
 
         :param playlist_id: the id of the playlist to add to.
         :param song_ids: a list of song ids, or a single song id.
         """
+        mutate_call = mobileclient.BatchMutatePlaylistEntries
+        add_mutations = mutate_call.build_plentry_adds(playlist_id, song_ids)
+        res = self._make_call(mutate_call, add_mutations)
 
-        pass  # TODO
+        return [e['id'] for e in res['mutate_response']]
+
+    @utils.accept_singleton(basestring, 1)
+    @utils.empty_arg_shortcircuit(position=1)
+    @utils.enforce_ids_param(position=1)
+    def remove_entries_from_playlist(self, entry_ids):
+        """Remove specific entries from a playlist.
+        Returns a list of entry ids that were removed.
+
+        :param entry_ids: a list of entry ids, or a single entry id.
+        """
+        mutate_call = mobileclient.BatchMutatePlaylistEntries
+        del_mutations = mutate_call.build_plentry_deletes(entry_ids)
+        res = self._make_call(mutate_call, del_mutations)
+
+        return [e['id'] for e in res['mutate_response']]
 
     def get_all_stations(self, incremental=False, include_deleted=False, updated_after=None):
         """Returns a list of dictionaries that each represent a radio station.
