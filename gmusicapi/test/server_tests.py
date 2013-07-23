@@ -215,11 +215,18 @@ class UpauthTests(object):
     @test(depends_on=[playlist_create, song_create],
           runs_after_groups=['playlist.exists', 'song.exists'])
     def plentry_create(self):
-        # create 3 entries: the uploaded track and two of the all access track
+
+        song_ids = [self.songs[0].sid]
+
+        # create 3 entries
         # 3 songs is the minimum to fully test reordering, and also includes the
         # duplicate song_id case
+        double_id = self.songs[0].sid
+        if test_all_access_features():
+            double_id = test_utils.aa_song_id
 
-        song_ids = [self.songs[0].sid] + [test_utils.aa_song_id] * 2
+        song_ids += [double_id] * 2
+
         plentry_ids = self.mc.add_songs_to_playlist(self.playlist_id, song_ids)
 
         @retry(tries=2)
