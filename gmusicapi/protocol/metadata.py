@@ -132,7 +132,6 @@ _all_expts = [
          "the server does not calculate this - it's just what was in track metadata"),
 
         ('subjectToCuration', 'boolean', 'meaning unknown.'),
-        ('matchedId', 'string', 'meaning unknown; related to scan and match?'),
         ('curatedByUser', 'boolean', 'meaning unknown'),
         ('curationSuggested', 'boolean', 'meaning unknown'),
     )
@@ -154,6 +153,7 @@ _all_expts = [
         ('artistImageBaseUrl', 'string', 'like albumArtUrl, but for the artist. May be blank.'),
         ('recentTimestamp', 'integer', 'UTC/microsecond timestamp: meaning unknown.'),
         ('deleted', 'boolean', ''),
+        ('matchedId', 'string', 'meaning unknown; related to scan and match?'),
     )
 ] + [
     Expectation(name + 'Norm', 'string', mutable=False, optional=False,
