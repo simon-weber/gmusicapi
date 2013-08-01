@@ -83,7 +83,11 @@ class Webclient(_Base):
 
         super(Webclient, self).login()
 
-        res = ClientLogin.perform(self, True, email, password)
+        try:
+            res = ClientLogin.perform(self, True, email, password)
+        except CallFailure:
+            self.logout()
+            return self.is_authenticated
 
         if 'SID' not in res or 'Auth' not in res:
             return False
