@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -84,7 +83,11 @@ class Webclient(_Base):
 
         super(Webclient, self).login()
 
-        res = ClientLogin.perform(self, email, password)
+        try:
+            res = ClientLogin.perform(self, True, email, password)
+        except CallFailure:
+            self.logout()
+            return self.is_authenticated
 
         if 'SID' not in res or 'Auth' not in res:
             return False
@@ -96,7 +99,7 @@ class Webclient(_Base):
         # Get webclient cookies.
         # They're stored automatically by requests on the webclient session.
         try:
-            webclient.Init.perform(self)
+            webclient.Init.perform(self, True)
         except CallFailure:
             # throw away clientlogin credentials
             self.logout()
@@ -105,14 +108,15 @@ class Webclient(_Base):
 
     def _send_with_auth(self, req_kwargs, desired_auth, rsession):
         if desired_auth.sso:
-            req_kwargs['headers'] = req_kwargs.get('headers', {})
+            req_kwargs.setdefault('headers', {})
 
             # does this ever expire? would we have to perform clientlogin again?
             req_kwargs['headers']['Authorization'] = \
                 'GoogleLogin auth=' + self._authtoken
 
         if desired_auth.xt:
-            req_kwargs['params'] = req_kwargs.get('params', {})
+            req_kwargs.setdefault('params', {})
+
             req_kwargs['params'].update({'u': 0, 'xt': rsession.cookies['xt']})
 
         return rsession.request(**req_kwargs)

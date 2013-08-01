@@ -5,6 +5,17 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
+2.0.0
++++++++++
+released 2013-08-01
+
+- remove broken Webclient.{create_playlist, change_playlist, copy_playlist, search, change_playlist_name}
+- add Mobileclient; this will slowly replace most of the Webclient, so prefer it when possible
+- add support for streaming All Access songs
+- add Webclient.get_registered_devices
+- add a toggle to turn off validation per client
+- raise an exception when a song dictionary is passed instead of an id
+
 1.2.0
 +++++
 released 2013-05-16

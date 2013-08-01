@@ -17,12 +17,12 @@ Getting songs and playlists
 .. automethod:: Webclient.get_all_songs
 .. automethod:: Webclient.get_all_playlist_ids
 .. automethod:: Webclient.get_playlist_songs
-.. automethod:: Webclient.search
 
 Song downloading and streaming
 ------------------------------
 .. automethod:: Webclient.get_song_download_info
-.. automethod:: Webclient.get_stream_url
+.. automethod:: Webclient.get_stream_audio
+.. automethod:: Webclient.get_stream_urls
 .. automethod:: Webclient.report_incorrect_match
 
 Song manipulation
@@ -33,13 +33,13 @@ Song manipulation
 
 Playlist manipulation
 ---------------------
-.. automethod:: Webclient.create_playlist
-.. automethod:: Webclient.change_playlist_name
-.. automethod:: Webclient.copy_playlist
 .. automethod:: Webclient.delete_playlist
 
 Playlist content manipulation
 -----------------------------
-.. automethod:: Webclient.change_playlist
 .. automethod:: Webclient.add_songs_to_playlist
 .. automethod:: Webclient.remove_songs_from_playlist
+
+Other
+-----
+.. automethod:: Webclient.get_registered_devices

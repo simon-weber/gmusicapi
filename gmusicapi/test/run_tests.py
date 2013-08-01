@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from collections import namedtuple
 from functools import partial, update_wrapper
 from getpass import getpass
 import logging
@@ -7,117 +11,112 @@ from types import MethodType
 
 from proboscis import TestProgram
 
-from gmusicapi.clients import Webclient, Musicmanager
+from gmusicapi.clients import Webclient, Musicmanager, Mobileclient, OAUTH_FILEPATH
 from gmusicapi.protocol.musicmanager import credentials_from_refresh_token
-from gmusicapi.test import local_tests, server_tests
+from gmusicapi.test import local_tests, server_tests  # noqa
 from gmusicapi.test.utils import NoticeLogging
 
-travis_id = 'E9:40:01:0E:51:7A'
-travis_name = "Travis-CI (gmusicapi)"
+EnvArg = namedtuple('EnvArg', 'envarg kwarg description')
 
-# pretend to use test modules to appease flake8
-# these need to be imported for implicit test discovery
-_, _ = local_tests, server_tests
+# these names needed to be compressed to fit everything into the travisci key size.
+# there's also GM_A, which when set (to anything) states that we are testing on
+# and All Access account.
+wc_envargs = (
+    EnvArg('GM_U', 'email', 'WC user. If not present, user will be prompted.'),
+    EnvArg('GM_P', 'password', 'WC password. If not present, user will be prompted.'),
+)
+
+mm_envargs = (
+    EnvArg('GM_O', 'oauth_credentials', 'MM refresh token. Defaults to MM.login default.'),
+    EnvArg('GM_I', 'uploader_id', 'MM uploader id. Defaults to MM.login default.'),
+    EnvArg('GM_N', 'uploader_name', 'MM uploader name. Default to MM.login default.'),
+)
 
 
-def freeze_login_details():
-    """Searches the environment for credentials, and freezes them to
-    client.login if found.
+def prompt_for_wc_auth():
+    """Return a valid (user, pass) tuple by continually
+    prompting the user."""
 
-    If no auth is present in the env, the user is prompted. OAuth is read from
-    the default path.
+    print ("These tests will never delete or modify your music."
+           "\n\n"
+           "If the tests fail, you *might* end up with a test"
+           " song/playlist in your library, though."
+           "\n")
 
-    If running on Travis, the prompt will never be fired; sys.exit is called
-    if the envvars are not present.
-    """
+    wclient = Webclient()
+    valid_wc_auth = False
 
-    #Attempt to get auth from environ.
-    user, passwd, refresh_tok = [os.environ.get(name) for name in
-                                 ('GM_USER',
-                                  'GM_PASS',
-                                  'GM_OAUTH')]
+    while not valid_wc_auth:
+        print
+        email = raw_input("Email: ")
+        passwd = getpass()
 
-    on_travis = os.environ.get('TRAVIS')
+        valid_wc_auth = wclient.login(email, passwd)
 
-    mm_kwargs = {}
-    wc_kwargs = {}
+    return email, passwd
 
-    has_env_auth = user and passwd and refresh_tok
 
-    if not has_env_auth and on_travis:
-        print 'on Travis but could not read auth from environ; quitting.'
-        sys.exit(1)
+def retrieve_auth():
+    """Searches the env for auth, prompting the user if necessary.
 
-    if os.environ.get('TRAVIS'):
-        #Travis runs on VMs with no "real" mac - we have to provide one.
-        mm_kwargs.update({'uploader_id': travis_id,
-                          'uploader_name': travis_name})
+    On success, return (wc_kwargs, mm_kwargs). On failure, raise ValueError."""
 
-    if has_env_auth:
-        wc_kwargs.update({'email': user, 'password': passwd})
+    get_kwargs = lambda envargs: dict([(arg.kwarg, os.environ.get(arg.envarg))
+                                       for arg in envargs])
 
-        # mm expects a full OAuth2Credentials object
-        credentials = credentials_from_refresh_token(refresh_tok)
-        mm_kwargs.update({'oauth_credentials': credentials})
+    wc_kwargs = get_kwargs(wc_envargs)
+    mm_kwargs = get_kwargs(mm_envargs)
 
+    if not all([wc_kwargs[arg] for arg in ('email', 'password')]):
+        if os.environ.get('TRAVIS'):
+            print 'on Travis but could not read auth from environ; quitting.'
+            sys.exit(1)
+
+        wc_kwargs.update(zip(['email', 'password'], prompt_for_wc_auth()))
+
+    if mm_kwargs['oauth_credentials'] is None:
+        # ignoring race
+        if not os.path.isfile(OAUTH_FILEPATH):
+            raise ValueError("You must have oauth credentials stored at the default"
+                             " path by Musicmanager.perform_oauth prior to running.")
+        del mm_kwargs['oauth_credentials']  # mm default is not None
     else:
-        # no travis, no credentials
+        mm_kwargs['oauth_credentials'] = \
+            credentials_from_refresh_token(mm_kwargs['oauth_credentials'])
 
-        # we need to login here to verify their credentials.
-        # the authenticated api is then thrown away.
+    return (wc_kwargs, mm_kwargs)
 
-        wclient = Webclient()
-        valid_auth = False
 
-        print ("These tests will never delete or modify your music."
-               "\n\n"
-               "If the tests fail, you *might* end up with a test"
-               " song/playlist in your library, though."
-               "You must have oauth credentials stored at the default"
-               " path by Musicmanager.perform_oauth prior to running.")
-
-        while not valid_auth:
-            print
-            email = raw_input("Email: ")
-            passwd = getpass()
-
-            valid_auth = wclient.login(email, passwd)
-
-        wc_kwargs.update({'email': email, 'password': passwd})
-
-    # globally freeze our params in place.
-    # they can still be overridden manually; they're just the defaults now.
-    Musicmanager.login = MethodType(
-        update_wrapper(partial(Musicmanager.login, **mm_kwargs), Musicmanager.login),
-        None, Musicmanager
-    )
-
-    Webclient.login = MethodType(
-        update_wrapper(partial(Webclient.login, **wc_kwargs), Webclient.login),
-        None, Webclient
-    )
+def freeze_login_details(wc_kwargs, mm_kwargs):
+    """Set the given kwargs to be the default for client login methods."""
+    for cls, kwargs in ((Musicmanager, mm_kwargs),
+                        (Webclient, wc_kwargs),
+                        (Mobileclient, wc_kwargs),
+                       ):
+        cls.login = MethodType(
+            update_wrapper(partial(cls.login, **kwargs), cls.login),
+            None, cls)
 
 
 def main():
-    if '--group=local' not in sys.argv:
-        freeze_login_details()
+    """Search env for auth envargs and run tests."""
 
-    root_logger = logging.getLogger('gmusicapi')
-    # using DynamicClientLoggers eliminates the need for root handlers
-    # configure_debug_log_handlers(root_logger)
+    if '--group=local' not in sys.argv:
+        # hack: assume we're just running the proboscis local group
+        freeze_login_details(*retrieve_auth())
 
     # warnings typically signal a change in protocol,
     # so fail the build if anything >= warning are sent,
-
     noticer = NoticeLogging()
     noticer.setLevel(logging.WARNING)
+    root_logger = logging.getLogger('gmusicapi')
     root_logger.addHandler(noticer)
 
     # proboscis does not have an exit=False equivalent,
     # so SystemExit must be caught instead (we need
     # to check the log noticer)
     try:
-        TestProgram().run_and_exit()
+        TestProgram(module=sys.modules[__name__]).run_and_exit()
     except SystemExit as e:
         print
         if noticer.seen_message:

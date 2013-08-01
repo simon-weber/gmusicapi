@@ -15,7 +15,11 @@ branches:
   only: 
   - develop
   - master
+  - mobileclient
 env: 
+  global:
+  - GM_N="Travis-CI (gmusicapi)"
   matrix: 
-  - secure: "UAXrAYzrYRVFWSRldd5o9NrreexCsXdBna/kcKLlAQ8ygRahpqP7qXX8qiNU\nVhz0kdgBxgS84AEE3H/30o9v2IDWqmJCI5OqMfH1o5Pm+CelBt+8FHu3SMjm\nNvNcm/Vmip7WCSx7P2FfOf8HboSH/kVXuF0iPlOdozrTR1wPUq8="
-  - secure: "ILJA2Vhh3BRav2xLIMxS7/mE65AF15OA7UmDNdqE22qUoeEBL+ZduBQY8oAz\n+pJwHndP8bdD23Y9PLdC99qm1yZRV1x3yY1JclKzYnuwbeI1zYFHfGXTjtM+\n+rxxwo3ygEzrDnzIqKqP1+xKpKAGNqqLj0Pro8quyLhtKNUImMc="
+  # first is AA, second is not
+  - secure: "De4nJrP5O5uL0kWPYCDmTdsiDTHv7Vuvkv02XdwPOFoGG6sOL1svrJhL3Z+G\n3eMFy3DE69mybFf1gZEb9XdDY3LoOX0oAgkHigh+memrvgw/QzaJYN553kmF\n31ose52SFNmtFZH95cwQg1qkSZZsMXlmPxRq510MVl6SA7j6Pi4="
+  - secure: "aK3s024vOcybRx+Wq7/9tSd9XGJn0LBAuejTWxIiUul0I8sgt/ry7Pc8r0Gv\nXU3a9P/0LOUAYu1hS3/hH3u2oVIgXoEotrm2wC6r8N2R8xE7ZhYVl1Nf0fOK\ns0jy1ebIU+s/yHQmuboe61FT3lfiFRxQm6yJu5/G/D77O4HGuQQ="

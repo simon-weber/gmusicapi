@@ -1,10 +1,14 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """Calls made by the web client."""
 
+import base64
 import copy
+import hmac
+import random
+import string
 import sys
+from hashlib import sha1
 
 import validictory
 
@@ -114,32 +118,6 @@ class WcCall(Call):
         return cls._parse_json(response.text)
 
 
-class AddPlaylist(WcCall):
-    """Creates a new playlist."""
-
-    static_method = 'POST'
-    static_url = service_url + 'addplaylist'
-
-    _res_schema = {
-        "type": "object",
-        "properties": {
-            "id": {"type": "string"},
-            "title": {"type": "string"},
-            "success": {"type": "boolean"},
-            "timestamp": {"type": "integer"},
-            "token": {"type": "string", "blank": True},
-        },
-        "additionalProperties": False
-    }
-
-    @staticmethod
-    def dynamic_data(title):
-        """
-        :param title: the title of the playlist to create.
-        """
-        return {'json': json.dumps({"title": title})}
-
-
 class AddToPlaylist(WcCall):
     """Adds songs to a playlist."""
     static_method = 'POST'
@@ -183,31 +161,6 @@ class AddToPlaylist(WcCall):
         filtered = copy.copy(msg)
         filtered['songIds'] = ["<%s songs>" % len(filtered.get('songIds', []))]
         return filtered
-
-
-class ChangePlaylistName(WcCall):
-    """Changes the name of a playlist."""
-
-    static_method = 'POST'
-    static_url = service_url + 'modifyplaylist'
-
-    _res_schema = {
-        "type": "object",
-        "properties": {},
-        "additionalProperties": False
-    }
-
-    @staticmethod
-    def dynamic_data(playlist_id, new_name):
-        """
-        :param playlist_id: id of the playlist to rename.
-        :param new_title: desired title.
-        """
-        return {
-            'json': json.dumps(
-                {"playlistId": playlist_id, "playlistName": new_name}
-            )
-        }
 
 
 class ChangePlaylistOrder(WcCall):
@@ -503,56 +456,42 @@ class GetStreamUrl(WcCall):
     _res_schema = {
         "type": "object",
         "properties": {
-            "url": {"type": "string"}
+            "url": {"type": "string", "required": False},
+            "urls": {"type": "array", "required": False}
         },
         "additionalProperties": False
     }
 
     @staticmethod
     def dynamic_params(song_id):
-        return {
-            'u': 0,  # select first user of logged in; probably shouldn't be hardcoded
-            'pt': 'e',  # unknown
-            'songid': song_id,
+
+        # https://github.com/simon-weber/Unofficial-Google-Music-API/issues/137
+        # there are three cases when streaming:
+        #   | track type              | guid songid? | slt/sig needed? |
+        #    user-uploaded              yes            no
+        #    AA track in library        yes            yes
+        #    AA track not in library    no             yes
+
+        # without the track['type'] field we can't tell between 1 and 2, but
+        # include slt/sig anyway; the server ignores the extra params.
+        key = '27f7313e-f75d-445a-ac99-56386a5fe879'
+        salt = ''.join(random.choice(string.ascii_lowercase + string.digits) for x in range(12))
+        sig = base64.urlsafe_b64encode(hmac.new(key, (song_id + salt), sha1).digest())[:-1]
+
+        params = {
+            'u': 0,
+            'pt': 'e',
+            'slt': salt,
+            'sig': sig
         }
 
-
-class Search(WcCall):
-    """Fuzzily search for songs, artists and albums.
-    Not needed for most use-cases; local search is usually faster and more flexible"""
-
-    static_method = 'POST'
-    static_url = service_url + 'search'
-
-    _res_schema = {
-        "type": "object",
-        "properties": {
-            "results": {
-                "type": "object",
-                "properties": {
-                    "artists": song_array,  # hits on artists
-                    "songs": song_array,    # hits on tracks
-                    "albums": {             # hits on albums; no track info returned
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "artistName": {"type": "string", "blank": True},
-                                "imageUrl": {"type": "string", "required": False},
-                                "albumArtist": {"type": "string", "blank": True},
-                                "albumName": {"type": "string"},
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "additionalProperties": False
-    }
-
-    @staticmethod
-    def dynamic_data(query):
-        return {'json': json.dumps({'q': query})}
+        # TODO match guid instead, should be more robust
+        if song_id[0] == 'T':
+            # all access
+            params['mjck'] = song_id
+        else:
+            params['songid'] = song_id
+        return params
 
 
 class ReportBadSongMatch(WcCall):
@@ -602,3 +541,84 @@ class UploadImage(WcCall):
             contents = f.read()
 
         return {'albumArt': (image_filepath, contents)}
+
+
+class GetSettings(WcCall):
+    """Get data that populates the settings tab: labs and devices."""
+
+    static_method = 'POST'
+    static_url = service_url + 'loadsettings'
+
+    _device_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'date': {'type': 'integer',
+                     'format': 'utc-millisec'},
+            'id': {'type': 'string'},
+            'name': {'type': 'string'},
+            'type': {'type': 'string'},
+            # only for type == PHONE:
+            'model': {'type': 'string', 'required': False},
+            'manufacturer': {'type': 'string', 'required': False},
+            'name': {'type': 'string', 'required': False},
+            'carrier': {'type': 'string', 'required': False},
+        },
+    }
+
+    _lab_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'description': {'type': 'string'},
+            'enabled': {'type': 'boolean'},
+            'name': {'type': 'string'},
+            'title': {'type': 'string'},
+        },
+    }
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'settings': {
+                'type': 'object',
+                'additionalProperties': False,
+                'properties': {
+                    'devices': {'type': 'array', 'items': _device_schema},
+                    'labs': {'type': 'array', 'items': _lab_schema},
+                    'maxTracks': {'type': 'integer'},
+                    'expirationMillis': {
+                        'type': 'integer',
+                        'format': 'utc-millisec',
+                        'required': False,
+                    },
+                    'isSubscription': {'type': 'boolean', 'required': False},
+                    'isTrial': {'type': 'boolean', 'required': False},
+                    'hasFreeTrial': {'type': 'boolean'},
+                },
+            },
+        },
+    }
+
+    @staticmethod
+    def dynamic_data(session_id):
+        """
+        :param: session_id
+        """
+        return {'json': json.dumps({'sessionId': session_id})}
+
+
+class DeauthDevice(WcCall):
+    """Deauthorize a device from GetSettings."""
+    static_method = 'POST'
+    static_url = service_url + 'modifysettings'
+
+    @staticmethod
+    def dynamic_data(device_id, session_id):
+        return {'json': json.dumps({'deauth': device_id, 'sessionId': session_id})}
+
+    @classmethod
+    def validate(cls, response, msg):
+        if msg.text != '{}':
+            raise ValidationException("expected an empty object; received %r" % msg.text)

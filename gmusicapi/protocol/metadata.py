@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -125,7 +124,6 @@ _all_expts = [
         ('id', 'string',
          'a per-user unique id for this song; sometimes referred to as *server id* or *song id*.'),
 
-        ('deleted', 'boolean', ''),
         ('creationDate', 'integer', ''),
         ('type', 'integer',
          'An enum: 1: free/purchased, 2: uploaded/not matched, 6: uploaded/matched'),
@@ -134,8 +132,8 @@ _all_expts = [
          "the server does not calculate this - it's just what was in track metadata"),
 
         ('subjectToCuration', 'boolean', 'meaning unknown.'),
-        ('matchedId', 'string', 'meaning unknown; related to scan and match?'),
-        ('recentTimestamp', 'integer', 'meaning unknown.'),
+        ('curatedByUser', 'boolean', 'meaning unknown'),
+        ('curationSuggested', 'boolean', 'meaning unknown'),
     )
 ] + [
     Expectation(name, type_str, mutable=False, optional=True, explanation=explain)
@@ -145,14 +143,17 @@ _all_expts = [
         ('reuploading', 'boolean', 'scan-and-match reupload in progress.'),
         ('albumMatchedId', 'string', 'id of matching album in the Play Store?'),
         ('pending', 'boolean', 'unsure; server processing (eg for store match) pending?'),
-        ('url', 'string',  'meaning unknown.'),
+        ('url', 'string', 'meaning unknown.'),
         ('bitrate', 'integer', "bitrate in kilobytes/second (eg 320)."),
         ('playlistEntryId', 'string', 'identifies position in the context of a playlist.'),
         ('albumArtUrl', 'string', "if present, the url of an image for this song's album art."),
         ('artistMatchedId', 'string', 'id of a matching artist in the Play Store?'),
-        ('albumPlaybackTimestamp', 'integer', 'the last time this album was played?'),
+        ('albumPlaybackTimestamp', 'integer', 'UTC/microsecond timestamp: the last time this album was played?'),
         ('origin', 'array', '???'),
         ('artistImageBaseUrl', 'string', 'like albumArtUrl, but for the artist. May be blank.'),
+        ('recentTimestamp', 'integer', 'UTC/microsecond timestamp: meaning unknown.'),
+        ('deleted', 'boolean', ''),
+        ('matchedId', 'string', 'meaning unknown; related to scan and match?'),
     )
 ] + [
     Expectation(name + 'Norm', 'string', mutable=False, optional=False,
@@ -169,7 +170,9 @@ _all_expts = [
                 optional=False, allowed_values=tuple(range(6)),
                 explanation='0 == no thumb, 1 == down thumb, 5 == up thumb.'),
 
-    Expectation('lastPlayed', 'integer', mutable=False, optional=True, volatile=True),
+    Expectation('lastPlayed', 'integer', mutable=False, optional=True, volatile=True,
+                explanation='UTC/microsecond timestamp'),
+
     Expectation('playCount', 'integer', mutable=True, optional=False),
 
     Expectation('title', 'string', mutable=False, optional=False,

@@ -1,9 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """Utilities used in testing."""
 
-from glob import glob
 import logging
 import numbers
 import os
@@ -28,14 +26,12 @@ gm_id_regex = re.compile(("{h}{{8}}-" +
 # directory as this file.
 cwd = os.getcwd()
 test_file_dir = os.path.dirname(os.path.abspath(__file__))
-os.chdir(test_file_dir)
 
-_audio_filenames = glob(u'audiotest*')
-mp3_filenames = [os.path.abspath(fn) for fn in _audio_filenames if fn.endswith('.mp3')]
-small_mp3 = os.path.abspath(u'audiotest_small.mp3')
-image_filename = os.path.abspath(u'imagetest_10x10_check.png')
+small_mp3 = os.path.join(test_file_dir, u'audiotest_small.mp3')
+image_filename = os.path.join(test_file_dir, u'imagetest_10x10_check.png')
 
-os.chdir(cwd)
+# that dumb intro track on conspiracy of one
+aa_song_id = 'Tqqufr34tuqojlvkolsrwdwx7pe'
 
 
 class NoticeLogging(logging.Handler):
@@ -125,4 +121,4 @@ def is_id_list(lst):
 def is_id_pair_list(lst):
     """Returns True if the given list is made up of all (id, id) pairs."""
     a, b = zip(*lst)
-    return is_id_list(a+b)
+    return is_id_list(a + b)
