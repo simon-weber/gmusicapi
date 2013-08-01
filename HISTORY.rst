@@ -5,9 +5,9 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-1.2.0-dev
+2.0.0
 +++++++++
-released 2013-XX-XX
+released 2013-08-01
 
 - remove broken Webclient.{create_playlist, change_playlist, copy_playlist, search, change_playlist_name}
 - add Mobileclient; this will slowly replace most of the Webclient, so prefer it when possible
