@@ -34,7 +34,12 @@ All major functionality is supported:
 
 -  Music Manager uploading/scan-and-match and library downloading
 
-Support for Google Play Music All Access features is in progress.
+Some features may be temporarily unavailable while the project
+transitions from the Webclient interface to the Mobileclient.
+New code should prefer the Mobileclient when possible, as Webclient
+calls may break unexpectedly.
+
+All Access support is in progress.
 
 See `the changelog
 <https://github.com/simon-weber/Unofficial-Google-Music-API/blob/develop/HISTORY.rst>`__

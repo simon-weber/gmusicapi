@@ -54,10 +54,6 @@ switching the the Android app api. This will provide easy All Access support and
 maintainability going forward. At this point, prefer the Mobileclient to the Webclient
 whenever possible.
 
-Version 1.2.0 fixes a bug that fixes uploader_id formatting from a mac address.
-This change may cause another machine to be registered - you can safely remove the
-old machine (it's the one without the version in the name).
-
 For development updates, follow me on Twitter:
 `@simonmweber <https://twitter.com/simonmweber>`__.
 
