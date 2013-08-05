@@ -337,7 +337,9 @@ class Search(McCall):
         'additionalProperties': False,
         'properties': {
             'kind': {'type': 'string'},
-            'entries': {'type': 'array', 'items': sj_result}
+            'entries': {'type': 'array',
+                        'items': sj_result,
+                        'required': False}
         },
     }
 

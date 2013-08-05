@@ -456,11 +456,13 @@ class Mobileclient(_Base):
                ]
             }
         """
-        res = self._make_call(mobileclient.Search, query, max_results)['entries']
+        res = self._make_call(mobileclient.Search, query, max_results)
 
-        return {'album_hits': [hit for hit in res if hit['type'] == '3'],
-                'artist_hits': [hit for hit in res if hit['type'] == '2'],
-                'song_hits': [hit for hit in res if hit['type'] == '1']}
+        hits = res.get('entries', [])
+
+        return {'album_hits': [hit for hit in hits if hit['type'] == '3'],
+                'artist_hits': [hit for hit in hits if hit['type'] == '2'],
+                'song_hits': [hit for hit in hits if hit['type'] == '1']}
 
     def get_artist_info(self, artist_id, include_albums=True, max_top_tracks=5, max_rel_artist=5):
         """Retrieve details on an artist.
