@@ -41,7 +41,7 @@ sj_track = {
         'trackType': {'type': 'string'},
         'storeId': {'type': 'string'},
         'albumId': {'type': 'string'},
-        'artistId': {'type': 'array', 'items': {'type': 'string'}},
+        'artistId': {'type': 'array', 'items': {'type': 'string', 'blank': True}},
         'nid': {'type': 'string'},
         'trackAvailableForPurchase': {'type': 'boolean'},
         'albumAvailableForPurchase': {'type': 'boolean'},
@@ -100,7 +100,7 @@ sj_album = {
         'albumArtRef': {'type': 'string'},
         'albumId': {'type': 'string'},
         'artist': {'type': 'string'},
-        'artistId': {'type': 'array', 'items': {'type': 'string'}},
+        'artistId': {'type': 'array', 'items': {'type': 'string', 'blank': True}},
         'year': {'type': 'integer'},
         'tracks': {'type': 'array', 'items': sj_track, 'required': False}
     }
@@ -113,7 +113,7 @@ sj_artist = {
         'kind': {'type': 'string'},
         'name': {'type': 'string'},
         'artistArtRef': {'type': 'string', 'required': False},
-        'artistId': {'type': 'string'},
+        'artistId': {'type': 'string', 'blank': True},
         'albums': {'type': 'array', 'items': sj_album, 'required': False},
         'topTracks': {'type': 'array', 'items': sj_track, 'required': False},
         'total_albums': {'type': 'integer', 'required': False},
