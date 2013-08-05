@@ -140,11 +140,11 @@ class Mobileclient(_Base):
         """Returns a url that will point to an mp3 file.
 
         :param song_id: a single song id
-        :param device_id: a registered Android device id, as a string.
+        :param device_id: a registered Android device id, as a 16 digit string.
           If you have already used Google Music on a mobile device,
           :func:`Webclient.get_registered_devices
           <gmusicapi.clients.Webclient.get_registered_devices>` will provide
-          at least one working id.
+          at least one working id. Omit ``'0x'`` from the start of the string.
 
           Note that this id must be from a mobile device; a registered computer
           id (as a MAC address) will not be accepted.
