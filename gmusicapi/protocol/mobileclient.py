@@ -47,6 +47,7 @@ sj_track = {
         'albumAvailableForPurchase': {'type': 'boolean'},
         'playCount': {'type': 'integer', 'required': False},
         'year': {'type': 'integer', 'required': False},
+        'rating': {'type': 'string', 'required': False},
     }
 }
 
@@ -126,7 +127,6 @@ sj_artist['properties']['related_artists'] = {
     'required': False
 }
 
-# Result definition may not contain any item.
 sj_result = {
     'type': 'object',
     'additionalProperties': False,
