@@ -302,6 +302,8 @@ class UpauthTests(object):
         self.assert_songs_state([s.sid for s in self.songs], present=False)
         self.assert_list_with_deleted(self.mc.get_all_songs)
 
+    #TODO station testing
+
     ## These decorators just prevent setting groups and depends_on over and over.
     ## They won't work right with additional settings; if that's needed this
     ##  pattern should be factored out.

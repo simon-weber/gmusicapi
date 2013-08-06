@@ -346,6 +346,28 @@ class Mobileclient(_Base):
         return self._get_all_items(mobileclient.ListStations, incremental, include_deleted,
                                    updated_after=updated_after)
 
+    def get_station_tracks(self, station_id, num_tracks=25):
+        """Returns a list of dictionaries that each represent a track.
+
+        Each call performs a separate sampling (with replacement?)
+        from all possible tracks for the station.
+
+        :param station_id: the id of a radio station to retrieve tracks from
+        :param num_tracks: the number of tracks to retrieve
+
+        See :func:`get_all_songs` for the format of a track dictionary.
+        """
+
+        #TODO recently played?
+
+        res = self._make_call(mobileclient.ListStationTracks,
+                              station_id, num_tracks, recently_played=[])
+
+        if not res['data']['items']:
+            return []
+
+        return res['data']['items'][0].get('tracks', [])
+
     def search_all_access(self, query, max_results=50):
         """Queries the server for All Access songs and albums.
 
