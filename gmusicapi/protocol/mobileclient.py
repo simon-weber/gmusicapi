@@ -448,6 +448,14 @@ class BatchMutatePlaylists(McBatchMutateCall):
         return [{'delete': id} for id in playlist_ids]
 
     @staticmethod
+    def build_playlist_updates(pl_id_name_pairs):
+        """
+        :param pl_id_name_pairs: [(playlist_id, new_name)]
+        """
+        return [{'update': {'id': pl_id, 'name': new_name}} for
+                (pl_id, new_name) in pl_id_name_pairs]
+
+    @staticmethod
     def build_playlist_adds(names):
         """
         :param names

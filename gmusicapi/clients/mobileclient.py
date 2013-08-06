@@ -215,6 +215,19 @@ class Mobileclient(_Base):
 
         return res['mutate_response'][0]['id']
 
+    def change_playlist_name(self, playlist_id, new_name):
+        """Changes the name of a playlist and returns its id.
+
+        :param playlist_id: the id of the playlist
+        :param new_name: desired title
+        """
+
+        mutate_call = mobileclient.BatchMutatePlaylists
+        update_mutations = mutate_call.build_playlist_updates([(playlist_id, new_name)])
+        res = self._make_call(mutate_call, update_mutations)
+
+        return res['mutate_response'][0]['id']
+
     def delete_playlist(self, playlist_id):
         """Deletes a playlist and returns its id.
 
