@@ -47,7 +47,9 @@ class Webclient(_Base):
         return super(Webclient, self).logout()
 
     def get_registered_devices(self):
-        """Returns a list of dictionaries, eg::
+        """
+        Returns a list of dictionaries, eg::
+
             [
               {
                 u'date': 1367470393588,           # utc-millisecond
@@ -64,7 +66,8 @@ class Webclient(_Base):
                 u'name':         u'',
                 u'type':         u'PHONE',
                }
-             ]
+            ]
+
         """
 
         #TODO sessionid stuff
@@ -255,6 +258,7 @@ class Webclient(_Base):
         If you just need the audio and are ok with gmusicapi doing the download,
         consider using :func:`get_stream_audio` instead.
         This abstracts away the differences between different kinds of tracks:
+
             * normal tracks return a single url
             * All Access tracks return multiple urls, which must be combined
 
@@ -264,6 +268,7 @@ class Webclient(_Base):
         contents does not.
 
         However, there are limitations on how the stream urls can be used:
+
             * the urls expire after a minute
             * only one IP can be streaming music at once.
               Other attempts will get an http 403 with
