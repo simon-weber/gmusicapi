@@ -228,6 +228,7 @@ class Mobileclient(_Base):
 
         return res['mutate_response'][0]['id']
 
+    #TODO accept multiple?
     def delete_playlist(self, playlist_id):
         """Deletes a playlist and returns its id.
 
@@ -311,6 +312,53 @@ class Mobileclient(_Base):
         res = self._make_call(mutate_call, del_mutations)
 
         return [e['id'] for e in res['mutate_response']]
+
+    def create_station(self, name,
+                       track_id=None, artist_id=None, album_id=None,
+                       genre_id=None):
+        """Creates an All Access radio station and returns its id.
+                            #  albumId, artistId, genreId, trackId, trackLockerId
+
+
+        :param name: the name of the station to create
+        :param
+        """
+        seed = {}
+        if track_id is not None:
+            if track_id[0] == 'T':
+                seed['trackLockerId'] = track_id
+            else:
+                seed['trackId'] = track_id
+        elif artist_id is not None:
+            seed['artistId'] = artist_id
+        elif album_id is not None:
+            seed['albumId'] = album_id
+        elif genre_id is not None:
+            seed['genreId'] = genre_id
+
+        if len(seed) != 1:
+            raise ValueError('only one of {track,artist,album,genre}_id may be provided')
+
+        mutate_call = mobileclient.BatchMutateStations
+        add_mutation = mutate_call.build_add(name, seed, include_tracks=False, num_tracks=0)
+        res = self._make_call(mutate_call, [add_mutation])
+
+        return res['mutate_response'][0]['id']
+
+    @utils.accept_singleton(basestring)
+    @utils.empty_arg_shortcircuit
+    @utils.enforce_ids_param
+    def delete_stations(self, station_ids):
+        """Deletes All Access radio stations and returns their ids.
+
+        :param station_ids: a single id, or a list of ids to delete
+        """
+
+        mutate_call = mobileclient.BatchMutateStations
+        delete_mutations = mutate_call.build_deletes(station_ids)
+        res = self._make_call(mutate_call, delete_mutations)
+
+        return [s['id'] for s in res['mutate_response']]
 
     def get_all_stations(self, incremental=False, include_deleted=False, updated_after=None):
         """Returns a list of dictionaries that each represent a radio station.

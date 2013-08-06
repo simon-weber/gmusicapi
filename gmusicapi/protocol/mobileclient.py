@@ -5,12 +5,12 @@
 
 import base64
 import copy
+from datetime import datetime
 from hashlib import sha1
 import hmac
 import sys
 import time
 from uuid import uuid1
-
 
 import validictory
 
@@ -601,14 +601,38 @@ class BatchMutateStations(McBatchMutateCall):
                 for id in station_ids]
 
     @staticmethod
-    def build_adds(names):
+    def build_add(name, seed, include_tracks, num_tracks, recent_datetime=None):
         """
-        :param names
+        :param name: the title
+        :param seed: a dict with a single pair, {'itemId': id}
+        :param include_tracks: if True, return `num_tracks` tracks in the response
+        :param num_tracks:
+        :param recent_datetime: purpose unknown. defaults to now.
         """
 
-        #TODO
-        # this has a clientId; need to figure out where that comes from
-        pass
+        if recent_datetime is None:
+            recent_datetime = datetime.now()
+
+        recent_timestamp = utils.datetime_to_microseconds(recent_datetime)
+
+        return {
+            "create": {
+                "clientId": uuid1(),
+                "deleted": False,
+                "imageType": 1,
+                "lastModifiedTimestamp": "-1",
+                "name": name,
+                "recentTimestamp": str(recent_timestamp),
+                "seed": seed,
+                "tracks": []
+            },
+            "includeFeed": include_tracks,
+            "numEntries": num_tracks,
+            "params":
+            {
+                "contentFilter": 1
+            }
+        }
 
 
 class BatchMutateTracks(McBatchMutateCall):
