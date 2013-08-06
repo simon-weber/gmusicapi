@@ -352,13 +352,30 @@ class UpauthTests(object):
     def mc_list_playlists_inc_equal_with_deleted(self):
         self.assert_list_inc_equivalence(self.mc.get_all_playlists, include_deleted=True)
 
+    @playlist_test
+    def mc_change_playlist_name(self):
+        new_name = TEST_PLAYLIST_NAME + '_mod'
+        plid = self.mc.change_playlist_name(self.playlist_id, new_name)
+        assert_equal(self.playlist_id, plid)
+
+        @retry  # change takes time to propogate
+        def assert_name_equal(plid, name):
+            playlists = self.mc.get_all_playlists()
+
+            found = [p for p in playlists if p['id'] == plid]
+
+            assert_equal(len(found), 1)
+            assert_equal(found[0]['name'], name)
+
+        assert_name_equal(self.playlist_id, new_name)
+
+        # revert
+        self.mc.change_playlist_name(self.playlist_id, TEST_PLAYLIST_NAME)
+        assert_name_equal(self.playlist_id, TEST_PLAYLIST_NAME)
+
     @plentry_test
     def pt(self):
         raise SkipTest('remove this')
-
-    #@plentry_test
-    #def mc_list_plentries_inc_equal(self):
-    #    self.assert_list_inc_equivalence(self.mc_get_playlist_songs, playlist_id=self.playlist_id)
 
     @test
     @all_access
