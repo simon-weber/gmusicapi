@@ -15,7 +15,6 @@ branches:
   only: 
   - develop
   - master
-  - mc-radio
 env: 
   global:
   - GM_N="Travis-CI (gmusicapi)"
