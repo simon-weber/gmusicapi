@@ -5,17 +5,17 @@
 
 import base64
 import copy
+from datetime import datetime
 from hashlib import sha1
 import hmac
 import sys
 import time
 from uuid import uuid1
 
-
 import validictory
 
 from gmusicapi.compat import json
-from gmusicapi.exceptions import ValidationException
+from gmusicapi.exceptions import ValidationException, CallFailure
 from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
@@ -317,14 +317,17 @@ class McBatchMutateCall(McCall):
 
         return json.dumps({'mutations': mutations})
 
-    @staticmethod
-    def check_success(response, msg):
-        if not all([d.get('response_code', None) == 'OK'
-                    for d in msg.get('mutate_response', [])]):
-            raise ValidationException
-
-        if 'error' in msg:
-            raise ValidationException
+    @classmethod
+    def check_success(cls, response, msg):
+        if ('error' in msg or
+            not all([d.get('response_code', None) in ('OK', 'CONFLICT')
+                     for d in msg.get('mutate_response', [])])):
+            raise CallFailure('The server reported failure while'
+                              ' changing the requested resource.'
+                              " If this wasn't caused by invalid arguments"
+                              ' or server flakiness,'
+                              ' please open an issue.',
+                              cls.__name__)
 
 
 class Search(McCall):
@@ -528,6 +531,66 @@ class ListStations(McListCall):
     static_url = sj_url + 'radio/station'
 
 
+class ListStationTracks(McListCall):
+    # this isn't really proper usage of the abc:
+    #  * there is no paging (assumed, not proven)
+    #  * the query interface is totally different
+
+    # clients.Mobileclient will
+    # just have to wire up the call itself
+
+    item_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'radioId': {'type': 'string'},
+            'tracks': {'type': 'array', 'required': False, 'items': sj_track},
+        }
+    }
+    # assert lack of paging in schema
+    _res_schema = McListCall._res_schema.copy()
+    del _res_schema['properties']['nextPageToken']
+
+    filter_text = 'stations'
+
+    static_method = 'POST'
+    static_url = sj_url + 'radio/stationfeed'
+
+    @staticmethod
+    def dynamic_params(*args, **kwargs):
+        # override the parent (which has params for paging support)
+        return {}
+
+    @staticmethod
+    def dynamic_data(station_id, num_entries, recently_played):
+        """
+        :param station_id
+        :param num_entries: maximum number of tracks to return
+        :param recently_played: a list of...song ids? never seen an example
+        """
+        #TODO
+        # clearly, this supports more than one at a time,
+        # but then that might introduce paging?
+        # I'll leave it for someone else
+
+        return json.dumps({'contentFilter': 1,
+                           'stations': [
+                               {
+                                   'numEntries': num_entries,
+                                   'radioId': station_id,
+                                   'recentlyPlayed': recently_played
+                               }
+                           ]})
+
+    @staticmethod
+    def filter_response(msg):
+        filtered = copy.deepcopy(msg)
+        if 'tracks' in filtered['data']['items']:
+            filtered['data']['items']['tracks'] = \
+                    ["<%s tracks>" % len(filtered['data']['items']['tracks'])]
+        return filtered
+
+
 class BatchMutateStations(McBatchMutateCall):
     static_method = 'POST'
     static_url = sj_url + 'radio/editstation'
@@ -541,94 +604,38 @@ class BatchMutateStations(McBatchMutateCall):
                 for id in station_ids]
 
     @staticmethod
-    def build_adds(names):
+    def build_add(name, seed, include_tracks, num_tracks, recent_datetime=None):
         """
-        :param names
+        :param name: the title
+        :param seed: a dict with a single pair, {'itemId': id}
+        :param include_tracks: if True, return `num_tracks` tracks in the response
+        :param num_tracks:
+        :param recent_datetime: purpose unknown. defaults to now.
         """
 
-        #TODO
-        # this has a clientId; need to figure out where that comes from
-        pass
+        if recent_datetime is None:
+            recent_datetime = datetime.now()
 
+        recent_timestamp = utils.datetime_to_microseconds(recent_datetime)
 
-#TODO
-class ListStationTracks(McListCall):
-    pass
-    #static_headers = {'Content-Type': 'application/json'}
-    #static_params = {'alt': 'json'}
-
-    #_res_schema = {
-    #    'type': 'object',
-    #    'additionalProperties': False,
-    #    'properties': {
-    #        'kind': {'type': 'string'},
-    #        'nextPageToken': {'type': 'string', 'required': False},
-    #        'data': {'type': 'object',
-    #                 'items': {'type': 'array', 'items': item_schema},
-    #                 'required': False,
-    #                },
-    #    },
-    #}
-
-    #@classmethod
-    #def dynamic_params(cls, updated_after=None, start_token=None, max_results=None):
-    #    """
-    #    :param updated_after: datetime.datetime; defaults to epoch
-    #    """
-
-    #    if updated_after is None:
-    #        microseconds = 0
-    #    else:
-    #        microseconds = utils.datetime_to_microseconds(updated_after)
-
-    #    return {'updated-min': microseconds}
-
-    #@classmethod
-    #def dynamic_data(cls, updated_after=None, start_token=None, max_results=None):
-    #    """
-    #    :param updated_after: ignored
-    #    :param start_token: nextPageToken from a previous response
-    #    :param max_results: a positive int; if not provided, server defaults to 1000
-    #    """
-    #    data = {}
-
-    #    if start_token is not None:
-    #        data['start-token'] = start_token
-
-    #    if max_results is not None:
-    #        data['max-results'] = str(max_results)
-
-    #    return json.dumps(data)
-
-    #@classmethod
-    #def parse_response(cls, response):
-    #    # empty results don't include the data key
-    #    # make sure it's always there
-    #    res = cls._parse_json(response.text)
-    #    if 'data' not in res:
-    #        res['data'] = {'items': []}
-
-    #    return res
-
-    #@classmethod
-    #def filter_response(cls, msg):
-    #    filtered = copy.deepcopy(msg)
-    #    filtered['data']['items'] = ["<%s %s>" % (len(filtered['data']['items']),
-    #                                              cls.filter_text)]
-    #    return filtered
-
-    #item_schema = {
-    #    'type': 'object',
-    #    'additionalProperties': False,
-    #    'properties': {
-    #        'radioId': {'type': 'string'},
-    #        'tracks': {'type': 'array', 'items': sj_track},
-    #    }
-    #}
-    #filter_text = 'tracks'
-
-    #static_method = 'POST'
-    #static_url = sj_url + 'radio/stationfeed'
+        return {
+            "create": {
+                "clientId": str(uuid1()),
+                "deleted": False,
+                "imageType": 1,
+                "lastModifiedTimestamp": "-1",
+                "name": name,
+                "recentTimestamp": str(recent_timestamp),
+                "seed": seed,
+                "tracks": []
+            },
+            "includeFeed": include_tracks,
+            "numEntries": num_tracks,
+            "params":
+            {
+                "contentFilter": 1
+            }
+        }
 
 
 class BatchMutateTracks(McBatchMutateCall):
