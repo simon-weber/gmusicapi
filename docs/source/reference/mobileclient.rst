@@ -37,7 +37,14 @@ entire library (not just their containing playlist).
 .. automethod:: Mobileclient.add_songs_to_playlist
 .. automethod:: Mobileclient.remove_entries_from_playlist
 
-All Access features
+All Access Radio
+----------------
+.. automethod:: Mobileclient.get_all_stations
+.. automethod:: Mobileclient.get_station_tracks
+.. automethod:: Mobileclient.create_station
+.. automethod:: Mobileclient.delete_stations
+
+Other All Access features
 -------------------
 All Access/store tracks also have track ids, but they are in a different
 form from normal track ids.
@@ -51,5 +58,4 @@ All Access track ids can be used in most places that normal song ids can
 
 .. automethod:: Mobileclient.search_all_access
 .. automethod:: Mobileclient.add_aa_track
-.. automethod:: Mobileclient.get_all_stations
 .. automethod:: Mobileclient.get_artist_info
