@@ -24,6 +24,7 @@ from gmusicapi.utils.utils import retry
 import gmusicapi.test.utils as test_utils
 
 TEST_PLAYLIST_NAME = 'gmusicapi_test_playlist'
+TEST_STATION_NAME = 'gmusicapi_test_station'
 
 # this is a little data class for the songs we upload
 TestSong = namedtuple('TestSong', 'sid title artist album')
@@ -53,6 +54,7 @@ class UpauthTests(object):
     songs = None  # [TestSong]
     playlist_id = None
     plentry_ids = None
+    station_id = None
 
     def mc_get_playlist_songs(self, plid):
         """For convenience, since mc can only get all playlists at once."""
@@ -229,7 +231,7 @@ class UpauthTests(object):
 
         plentry_ids = self.mc.add_songs_to_playlist(self.playlist_id, song_ids)
 
-        @retry(tries=2)
+        @retry
         def assert_plentries_exist(plid, plentry_ids):
             songs = self.mc_get_playlist_songs(plid)
             found = [e for e in songs
@@ -302,7 +304,48 @@ class UpauthTests(object):
         self.assert_songs_state([s.sid for s in self.songs], present=False)
         self.assert_list_with_deleted(self.mc.get_all_songs)
 
-    #TODO station testing
+    @test
+    def station_create(self):
+        if not test_all_access_features():
+            raise SkipTest('AA testing not enabled')
+
+        # seed from Amorphis
+        station_id = self.mc.create_station(TEST_STATION_NAME,
+                                            artist_id='Apoecs6off3y6k4h5nvqqos4b5e')
+
+        @retry
+        def assert_station_exists(station_id):
+            stations = self.mc.get_all_stations()
+
+            found = [s for s in stations
+                     if s['id'] == station_id]
+
+            assert_equal(len(found), 1)
+
+        assert_station_exists(station_id)
+        self.station_id = station_id
+
+    @test(groups=['station'], depends_on=[station_create],
+          runs_after_groups=['station.exists'],
+          always_run=True)
+    def station_delete(self):
+        if self.station_id is None:
+            raise SkipTest('did not store self.station_id')
+
+        res = self.mc.delete_stations([self.station_id])
+        assert_equal(res, [self.station_id])
+
+        @retry
+        def assert_station_deleted(station_id):
+            stations = self.mc.get_all_stations()
+
+            found = [s for s in stations
+                     if s['id'] == station_id]
+
+            assert_equal(len(found), 0)
+
+        assert_station_deleted(self.station_id)
+        self.assert_list_with_deleted(self.mc.get_all_stations)
 
     ## These decorators just prevent setting groups and depends_on over and over.
     ## They won't work right with additional settings; if that's needed this
@@ -314,6 +357,7 @@ class UpauthTests(object):
                          depends_on=[playlist_create])
     plentry_test = test(groups=['plentry', 'plentry.exists'],
                         depends_on=[plentry_create])
+    station_test = test(groups=['station', 'station.exists'], depends_on=[station_create])
 
     ## Non-wonky tests resume down here.
 
@@ -377,7 +421,13 @@ class UpauthTests(object):
 
     @plentry_test
     def pt(self):
-        raise SkipTest('remove this')
+        raise SkipTest('plentry placeholder')
+
+    @station_test
+    @all_access
+    def list_station_tracks(self):
+        res = self.mc.get_station_tracks(self.station_id, num_tracks=1)
+        assert_equal(len(res), 1)
 
     @test
     @all_access

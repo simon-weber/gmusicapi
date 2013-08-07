@@ -15,7 +15,7 @@ from uuid import uuid1
 import validictory
 
 from gmusicapi.compat import json
-from gmusicapi.exceptions import ValidationException
+from gmusicapi.exceptions import ValidationException, CallFailure
 from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
@@ -317,14 +317,17 @@ class McBatchMutateCall(McCall):
 
         return json.dumps({'mutations': mutations})
 
-    @staticmethod
-    def check_success(response, msg):
-        if not all([d.get('response_code', None) == 'OK'
-                    for d in msg.get('mutate_response', [])]):
-            raise ValidationException
-
-        if 'error' in msg:
-            raise ValidationException
+    @classmethod
+    def check_success(cls, response, msg):
+        if ('error' in msg or
+            not all([d.get('response_code', None) in ('OK', 'CONFLICT')
+                     for d in msg.get('mutate_response', [])])):
+            raise CallFailure('The server reported failure while'
+                              ' changing the requested resource.'
+                              " If this wasn't caused by invalid arguments"
+                              ' or server flakiness,'
+                              ' please open an issue.',
+                              cls.__name__)
 
 
 class Search(McCall):
@@ -617,7 +620,7 @@ class BatchMutateStations(McBatchMutateCall):
 
         return {
             "create": {
-                "clientId": uuid1(),
+                "clientId": str(uuid1()),
                 "deleted": False,
                 "imageType": 1,
                 "lastModifiedTimestamp": "-1",

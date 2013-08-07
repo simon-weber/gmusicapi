@@ -246,8 +246,20 @@ class Call(object):
             cls.check_success(response, parsed_response)
             if validate:
                 cls.validate(response, parsed_response)
-        except CallFailure:
-            raise
+        except CallFailure as e:
+            if not cls.gets_logged:
+                raise
+
+            # otherwise, reraise a new exception with our req/res context
+            trace = sys.exc_info()[2]
+            err_msg = ("{e_message}\n"
+                       "(requests kwargs: {req_kwargs!r})\n"
+                       "(response was: {content!r})").format(
+                           e_message=e.message,
+                           req_kwargs=safe_req_kwargs,
+                           content=response.content)
+            raise CallFailure(err_msg, e.callname), None, trace
+
         except ValidationException as e:
             #TODO shouldn't be using formatting
             err_msg = "the response format for %s was not recognized." % call_name

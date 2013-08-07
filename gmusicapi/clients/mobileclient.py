@@ -317,23 +317,25 @@ class Mobileclient(_Base):
                        track_id=None, artist_id=None, album_id=None,
                        genre_id=None):
         """Creates an All Access radio station and returns its id.
-                            #  albumId, artistId, genreId, trackId, trackLockerId
-
 
         :param name: the name of the station to create
-        :param
+        :param \*_id: the id of an item to seed the station from.
+          Exactly one of these params must be provided, or ValueError
+          will be raised.
         """
+        #TODO could expose include_tracks
+
         seed = {}
         if track_id is not None:
             if track_id[0] == 'T':
                 seed['trackLockerId'] = track_id
             else:
                 seed['trackId'] = track_id
-        elif artist_id is not None:
+        if artist_id is not None:
             seed['artistId'] = artist_id
-        elif album_id is not None:
+        if album_id is not None:
             seed['albumId'] = album_id
-        elif genre_id is not None:
+        if genre_id is not None:
             seed['genreId'] = genre_id
 
         if len(seed) != 1:
