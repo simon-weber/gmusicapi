@@ -365,9 +365,10 @@ class UpauthTests(object):
     ## MM tests
     ##---------
 
-    @song_test
-    def mm_list_new_songs(self):
-        self.assert_songs_state(self.mm.get_all_songs, [s.sid for s in self.songs], present=True)
+    # disabled for now -- see #152
+    #@song_test
+    #def mm_list_new_songs(self):
+    #    self.assert_songs_state(self.mm.get_all_songs, [s.sid for s in self.songs], present=True)
 
     @test
     def mm_list_songs_inc_equal(self):
