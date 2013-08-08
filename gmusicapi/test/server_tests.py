@@ -107,17 +107,19 @@ class UpauthTests(object):
     #
     # Suggestions to improve any of this are welcome!
 
+    @staticmethod
     @retry
-    def assert_songs_state(self, sids, present):
+    def assert_songs_state(method, sids, present):
         """
         Assert presence/absence of sids and return a list of
         TestSongs found.
 
+        :param method: eg self.mc.get_all_songs
         :param sids: list of song ids
         :param present: if True verify songs are present; False the opposite
         """
 
-        library = self.mc.get_all_songs()
+        library = method()
 
         found = [s for s in library if s['id'] in sids]
 
@@ -137,7 +139,7 @@ class UpauthTests(object):
         Assert that some listing method returns the same
         contents for incremental=True/False.
 
-        :param method: eg self.mc.get_all_songs
+        :param method: eg self.mc.get_all_songs, must support `incremental` kwarg
         :param **kwargs: passed to method
         """
 
@@ -195,7 +197,7 @@ class UpauthTests(object):
         # we test get_all_songs here so that we can assume the existance
         # of the song for future tests (the servers take time to sync an upload)
 
-        self.songs = self.assert_songs_state(sids, present=True)
+        self.songs = self.assert_songs_state(self.mc.get_all_songs, sids, present=True)
 
     @test
     def playlist_create(self):
@@ -299,7 +301,7 @@ class UpauthTests(object):
                     res = self.wc.delete_songs(testsong.sid)
                 check.equal(res, [testsong.sid])
 
-        self.assert_songs_state([s.sid for s in self.songs], present=False)
+        self.assert_songs_state(self.mc.get_all_songs, [s.sid for s in self.songs], present=False)
         self.assert_list_with_deleted(self.mc.get_all_songs)
 
     @test
@@ -360,8 +362,28 @@ class UpauthTests(object):
     ## Non-wonky tests resume down here.
 
     ##---------
+    ## MM tests
+    ##---------
+
+    @song_test
+    def mm_list_new_songs(self):
+        self.assert_songs_state(self.mm.get_all_songs, [s.sid for s in self.songs], present=True)
+
+    @test
+    def mm_list_songs_inc_equal(self):
+        self.assert_list_inc_equivalence(self.mm.get_all_songs)
+
+    ##---------
     ## WC tests
     ##---------
+
+    @song_test
+    def wc_list_new_songs(self):
+        self.assert_songs_state(self.wc.get_all_songs, [s.sid for s in self.songs], present=True)
+
+    @test
+    def wc_list_songs_inc_equal(self):
+        self.assert_list_inc_equivalence(self.wc.get_all_songs)
 
     @test
     def wc_get_registered_devices(self):
@@ -472,63 +494,7 @@ class UpauthTests(object):
                        optional_keys - set(['related_artists']))
             check.true(set(no_tracks_res.keys()) & optional_keys ==
                        optional_keys - set(['topTracks']))
-
-    ##-----------
-    ## Song tests
-    ##-----------
-
     ##TODO album art
-
-    #def _assert_get_song(self, sid, client=None):
-    #    """Return the song dictionary with this sid.
-
-    #    (GM has no native get for songs, just list).
-
-    #    :param client: a Webclient or Musicmanager
-    #    """
-    #    if client is None:
-    #        client = self.wc
-
-    #    songs = client.get_all_songs()
-
-    #    found = [s for s in songs if s['id'] == sid] or None
-
-    #    assert_is_not_none(found)
-    #    assert_equal(len(found), 1)
-
-    #    return found[0]
-
-    #@song_test
-    #def list_songs_wc(self):
-    #    self._assert_get_song(self.song.sid, self.wc)
-
-    #@song_test
-    #def list_songs_mm(self):
-    #    self._assert_get_song(self.song.sid, self.mm)
-
-    #@song_test
-    #def list_songs_mc(self):
-    #    self._assert_get_song(self.song.sid, self.mc)
-
-    #@staticmethod
-    #def _list_songs_incrementally(client):
-    #    lib_chunk_gen = client.get_all_songs(incremental=True)
-    #    assert_true(isinstance(lib_chunk_gen, types.GeneratorType))
-
-    #    assert_equal([s for chunk in lib_chunk_gen for s in chunk],
-    #                 client.get_all_songs(incremental=False))
-
-    #@song_test
-    #def list_songs_incrementally_wc(self):
-    #    self._list_songs_incrementally(self.wc)
-
-    #@song_test
-    #def list_songs_incrementally_mm(self):
-    #    self._list_songs_incrementally(self.mm)
-
-    #@mc_test
-    #def list_songs_incrementally_mc(self):
-    #    self._list_songs_incrementally(self.mc)
 
     #@song_test
     #def change_metadata(self):
