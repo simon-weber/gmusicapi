@@ -118,6 +118,7 @@ sj_artist = {
         'albums': {'type': 'array', 'items': sj_album, 'required': False},
         'topTracks': {'type': 'array', 'items': sj_track, 'required': False},
         'total_albums': {'type': 'integer', 'required': False},
+        'artistBio': {'type': 'string', 'required': False},
     }
 }
 

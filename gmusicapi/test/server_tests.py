@@ -14,7 +14,7 @@ import types
 
 from decorator import decorator
 from proboscis.asserts import (
-    assert_true, assert_equal,
+    assert_true, assert_equal, assert_is_not_none,
     Check
 )
 from proboscis import test, before_class, after_class, SkipTest
@@ -25,6 +25,7 @@ import gmusicapi.test.utils as test_utils
 
 TEST_PLAYLIST_NAME = 'gmusicapi_test_playlist'
 TEST_STATION_NAME = 'gmusicapi_test_station'
+TEST_AA_SONG_ID = 'Tqqufr34tuqojlvkolsrwdwx7pe'
 
 # this is a little data class for the songs we upload
 TestSong = namedtuple('TestSong', 'sid title artist album')
@@ -94,32 +95,31 @@ class UpauthTests(object):
     # required resources.
 
     # The intuitition: starting from an empty library, you need to create
-    #  a song before you can add it to a playlist.
+    #  a song before you can eg add it to a playlist.
 
-    # If x --> y means x runs after y, then the graph looks like:
-
-    #    song_create <-- plentry_create --> playlist_create
-    #        ^                  ^                   ^
-    #        |                  |                   |
-    #    song_test       plentry_test       playlist_test
-    #        ^                  ^                   ^
-    #        |                  |                   |
-    #    song_delete     plentry_delete     playlist_delete
-
-    # Singleton groups are used to ease code ordering restraints.
+    # The dependencies end up with an ordering that might look like:
+    #
+    # with song
+    #   with playlist
+    #     with plentry
+    #
+    # with station
+    #
     # Suggestions to improve any of this are welcome!
 
+    @staticmethod
     @retry
-    def assert_songs_state(self, sids, present):
+    def assert_songs_state(method, sids, present):
         """
         Assert presence/absence of sids and return a list of
         TestSongs found.
 
+        :param method: eg self.mc.get_all_songs
         :param sids: list of song ids
         :param present: if True verify songs are present; False the opposite
         """
 
-        library = self.mc.get_all_songs()
+        library = method()
 
         found = [s for s in library if s['id'] in sids]
 
@@ -139,7 +139,7 @@ class UpauthTests(object):
         Assert that some listing method returns the same
         contents for incremental=True/False.
 
-        :param method: eg self.mc.get_all_songs
+        :param method: eg self.mc.get_all_songs, must support `incremental` kwarg
         :param **kwargs: passed to method
         """
 
@@ -197,7 +197,7 @@ class UpauthTests(object):
         # we test get_all_songs here so that we can assume the existance
         # of the song for future tests (the servers take time to sync an upload)
 
-        self.songs = self.assert_songs_state(sids, present=True)
+        self.songs = self.assert_songs_state(self.mc.get_all_songs, sids, present=True)
 
     @test
     def playlist_create(self):
@@ -301,7 +301,7 @@ class UpauthTests(object):
                     res = self.wc.delete_songs(testsong.sid)
                 check.equal(res, [testsong.sid])
 
-        self.assert_songs_state([s.sid for s in self.songs], present=False)
+        self.assert_songs_state(self.mc.get_all_songs, [s.sid for s in self.songs], present=False)
         self.assert_list_with_deleted(self.mc.get_all_songs)
 
     @test
@@ -362,13 +362,48 @@ class UpauthTests(object):
     ## Non-wonky tests resume down here.
 
     ##---------
+    ## MM tests
+    ##---------
+
+    @song_test
+    def mm_list_new_songs(self):
+        self.assert_songs_state(self.mm.get_all_songs, [s.sid for s in self.songs], present=True)
+
+    @test
+    def mm_list_songs_inc_equal(self):
+        self.assert_list_inc_equivalence(self.mm.get_all_songs)
+
+    ##---------
     ## WC tests
     ##---------
+
+    @song_test
+    def wc_list_new_songs(self):
+        self.assert_songs_state(self.wc.get_all_songs, [s.sid for s in self.songs], present=True)
+
+    @test
+    def wc_list_songs_inc_equal(self):
+        self.assert_list_inc_equivalence(self.wc.get_all_songs)
 
     @test
     def wc_get_registered_devices(self):
         # no logic; just checking schema
         self.wc.get_registered_devices()
+
+    @test
+    @all_access
+    def wc_get_aa_stream_urls(self):
+        # that dumb little intro track on Conspiracy of One
+        urls = self.wc.get_stream_urls(TEST_AA_SONG_ID)
+
+        assert_true(len(urls) > 1)
+
+    @test
+    @all_access
+    def wc_stream_aa_track(self):
+        # that dumb little intro track on Conspiracy of One
+        audio = self.wc.get_stream_audio(TEST_AA_SONG_ID)
+        assert_is_not_none(audio)
 
     ##---------
     ## MC tests
@@ -425,7 +460,7 @@ class UpauthTests(object):
 
     @station_test
     @all_access
-    def list_station_tracks(self):
+    def mc_list_station_tracks(self):
         res = self.mc.get_station_tracks(self.station_id, num_tracks=1)
         assert_equal(len(res), 1)
 
@@ -437,120 +472,29 @@ class UpauthTests(object):
             for hits in res.values():
                 check.true(len(hits) > 0)
 
-    #@mc_test
-    #def mc_search_aa_with_limit(self):
-    #    if 'GM_A' in os.environ:
-    #        res_unlimited = self.mc.search_all_access('cat empire')
-    #        res_5 = self.mc.search_all_access('cat empire', max_results=5)
+    @test
+    @all_access
+    def mc_artist_info(self):
+        aid = 'Apoecs6off3y6k4h5nvqqos4b5e'  # amorphis
+        optional_keys = set(('albums', 'topTracks', 'related_artists'))
 
-    #        assert_equal(len(res_5['song_hits']), 5)
-    #        assert_true(len(res_unlimited['song_hits']) > len(res_5['song_hits']))
+        include_all_res = self.mc.get_artist_info(aid, include_albums=True,
+                                                  max_top_tracks=1, max_rel_artist=1)
 
-    #    else:
-    #        raise SkipTest('AA testing not enabled')
+        no_albums_res = self.mc.get_artist_info(aid, include_albums=False)
+        no_rel_res = self.mc.get_artist_info(aid, max_rel_artist=0)
+        no_tracks_res = self.mc.get_artist_info(aid, max_top_tracks=0)
 
-    #@mc_test
-    #def mc_artist_info(self):
-    #    if 'GM_A' in os.environ:
-    #        aid = 'Apoecs6off3y6k4h5nvqqos4b5e'  # amorphis
-    #        optional_keys = set(('albums', 'topTracks', 'related_artists'))
+        with Check() as check:
+            check.true(set(include_all_res.keys()) & optional_keys == optional_keys)
 
-    #        include_all_res = self.mc.get_artist_info(aid, include_albums=True,
-    #                                                  max_top_tracks=1, max_rel_artist=1)
-
-    #        no_albums_res = self.mc.get_artist_info(aid, include_albums=False)
-    #        no_rel_res = self.mc.get_artist_info(aid, max_rel_artist=0)
-    #        no_tracks_res = self.mc.get_artist_info(aid, max_top_tracks=0)
-
-    #        with Check() as check:
-    #            check.true(set(include_all_res.keys()) & optional_keys == optional_keys)
-
-    #            check.true(set(no_albums_res.keys()) & optional_keys ==
-    #                       optional_keys - set(['albums']))
-    #            check.true(set(no_rel_res.keys()) & optional_keys ==
-    #                       optional_keys - set(['related_artists']))
-    #            check.true(set(no_tracks_res.keys()) & optional_keys ==
-    #                       optional_keys - set(['topTracks']))
-
-    #    else:
-    #        assert_raises(CallFailure, self.mc.search_all_access, 'amorphis')
-
-    #@test
-    #def get_aa_stream_urls(self):
-    #    if 'GM_A' in os.environ:
-    #        # that dumb little intro track on Conspiracy of One
-    #        urls = self.wc.get_stream_urls('Tqqufr34tuqojlvkolsrwdwx7pe')
-
-    #        assert_true(len(urls) > 1)
-    #        #TODO test getting the stream
-    #    else:
-    #        raise SkipTest('AA testing not enabled')
-
-    #@test
-    #def stream_aa_track(self):
-    #    if 'GM_A' in os.environ:
-    #        # that dumb little intro track on Conspiracy of One
-    #        audio = self.wc.get_stream_audio('Tqqufr34tuqojlvkolsrwdwx7pe')
-    #        assert_is_not_none(audio)
-    #    else:
-    #        raise SkipTest('AA testing not enabled')
-
-    ##-----------
-    ## Song tests
-    ##-----------
-
+            check.true(set(no_albums_res.keys()) & optional_keys ==
+                       optional_keys - set(['albums']))
+            check.true(set(no_rel_res.keys()) & optional_keys ==
+                       optional_keys - set(['related_artists']))
+            check.true(set(no_tracks_res.keys()) & optional_keys ==
+                       optional_keys - set(['topTracks']))
     ##TODO album art
-
-    #def _assert_get_song(self, sid, client=None):
-    #    """Return the song dictionary with this sid.
-
-    #    (GM has no native get for songs, just list).
-
-    #    :param client: a Webclient or Musicmanager
-    #    """
-    #    if client is None:
-    #        client = self.wc
-
-    #    songs = client.get_all_songs()
-
-    #    found = [s for s in songs if s['id'] == sid] or None
-
-    #    assert_is_not_none(found)
-    #    assert_equal(len(found), 1)
-
-    #    return found[0]
-
-    #@song_test
-    #def list_songs_wc(self):
-    #    self._assert_get_song(self.song.sid, self.wc)
-
-    #@song_test
-    #def list_songs_mm(self):
-    #    self._assert_get_song(self.song.sid, self.mm)
-
-    #@song_test
-    #def list_songs_mc(self):
-    #    self._assert_get_song(self.song.sid, self.mc)
-
-    #@staticmethod
-    #def _list_songs_incrementally(client):
-    #    lib_chunk_gen = client.get_all_songs(incremental=True)
-    #    assert_true(isinstance(lib_chunk_gen, types.GeneratorType))
-
-    #    assert_equal([s for chunk in lib_chunk_gen for s in chunk],
-    #                 client.get_all_songs(incremental=False))
-
-    #@song_test
-    #def list_songs_incrementally_wc(self):
-    #    self._list_songs_incrementally(self.wc)
-
-    #@song_test
-    #def list_songs_incrementally_mm(self):
-    #    self._list_songs_incrementally(self.mm)
-
-    #@mc_test
-    #def list_songs_incrementally_mc(self):
-    #    self._list_songs_incrementally(self.mc)
 
     #@song_test
     #def change_metadata(self):
