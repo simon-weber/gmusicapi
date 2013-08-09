@@ -41,7 +41,7 @@ sj_track = {
         'trackType': {'type': 'string'},
         'storeId': {'type': 'string'},
         'albumId': {'type': 'string'},
-        'artistId': {'type': 'array', 'items': {'type': 'string', 'blank': True}},
+        'artistId': {'type': 'array', 'items': {'type': 'string', 'blank': True}, 'required': False},
         'nid': {'type': 'string'},
         'trackAvailableForPurchase': {'type': 'boolean'},
         'albumAvailableForPurchase': {'type': 'boolean'},
