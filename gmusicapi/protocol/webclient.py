@@ -556,12 +556,12 @@ class GetSettings(WcCall):
             'date': {'type': 'integer',
                      'format': 'utc-millisec'},
             'id': {'type': 'string'},
-            'name': {'type': 'string'},
+            'name': {'type': 'string', 'blank': True},
             'type': {'type': 'string'},
             # only for type == PHONE:
             'model': {'type': 'string', 'required': False},
             'manufacturer': {'type': 'string', 'required': False},
-            'name': {'type': 'string', 'required': False},
+
             'carrier': {'type': 'string', 'required': False},
         },
     }
