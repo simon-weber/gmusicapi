@@ -20,15 +20,18 @@ from proboscis.asserts import (
 from proboscis import test, before_class, after_class, SkipTest
 
 from gmusicapi import Webclient, Musicmanager, Mobileclient
+#from gmusicapi.protocol.metadata import md_expectations
 from gmusicapi.utils.utils import retry
 import gmusicapi.test.utils as test_utils
 
 TEST_PLAYLIST_NAME = 'gmusicapi_test_playlist'
 TEST_STATION_NAME = 'gmusicapi_test_station'
+# that dumb little intro track on Conspiracy of One,
+# picked since it's only a few seconds long
 TEST_AA_SONG_ID = 'Tqqufr34tuqojlvkolsrwdwx7pe'
 
 # this is a little data class for the songs we upload
-TestSong = namedtuple('TestSong', 'sid title artist album')
+TestSong = namedtuple('TestSong', 'sid title artist album full_data')
 
 
 def test_all_access_features():
@@ -129,7 +132,7 @@ class UpauthTests(object):
 
         assert_equal(len(found), expected_len)
 
-        return [TestSong(s['id'], s['title'], s['artist'], s['album'])
+        return [TestSong(s['id'], s['title'], s['artist'], s['album'], s)
                 for s in found]
 
     @staticmethod
@@ -374,6 +377,22 @@ class UpauthTests(object):
     def mm_list_songs_inc_equal(self):
         self.assert_list_inc_equivalence(self.mm.get_all_songs)
 
+    @song_test
+    def mm_download_song(self):
+
+        @retry
+        def assert_download(sid=self.songs[0].sid):
+            filename, audio = self.mm.download_song(sid)
+
+            # there's some kind of a weird race happening here with CI;
+            # usually one will succeed and one will fail
+
+            #TODO could use original filename to verify this
+            # but, when manually checking, got modified title occasionally
+            assert_true(filename.endswith('.mp3'))  # depends on specific file
+            assert_is_not_none(audio)
+        assert_download()
+
     ##---------
     ## WC tests
     ##---------
@@ -394,7 +413,6 @@ class UpauthTests(object):
     @test
     @all_access
     def wc_get_aa_stream_urls(self):
-        # that dumb little intro track on Conspiracy of One
         urls = self.wc.get_stream_urls(TEST_AA_SONG_ID)
 
         assert_true(len(urls) > 1)
@@ -402,9 +420,98 @@ class UpauthTests(object):
     @test
     @all_access
     def wc_stream_aa_track(self):
-        # that dumb little intro track on Conspiracy of One
         audio = self.wc.get_stream_audio(TEST_AA_SONG_ID)
         assert_is_not_none(audio)
+
+    @song_test
+    def wc_get_download_info(self):
+        url, download_count = self.wc.get_song_download_info(self.songs[0].sid)
+
+        assert_is_not_none(url)
+
+    @song_test
+    def wc_get_uploaded_stream_urls(self):
+        urls = self.wc.get_stream_urls(self.songs[0].sid)
+
+        assert_equal(len(urls), 1)
+
+        url = urls[0]
+
+        assert_is_not_none(url)
+        assert_equal(url[:7], 'http://')
+
+    @song_test
+    def wc_upload_album_art(self):
+        self.wc.upload_album_art(self.songs[0].sid, test_utils.image_filename)
+
+        self.wc.change_song_metadata(self.songs[0].full_data)
+        #TODO redownload and verify against original?
+
+    # is this worth the trouble?
+    #@song_test
+    #def wc_change_metadata(self):
+    #    orig_md = self.song.full_data
+
+    #    # Change all mutable entries.
+
+    #    new_md = orig_md.copy()
+
+    #    for name, expt in md_expectations.items():
+    #        if name in orig_md and expt.mutable:
+    #            old_val = orig_md[name]
+    #            new_val = test_utils.modify_md(name, old_val)
+
+    #            assert_not_equal(new_val, old_val)
+    #            new_md[name] = new_val
+
+    #    #TODO check into attempting to mutate non mutables
+    #    self.wc.change_song_metadata(new_md)
+
+    #    #Recreate the dependent md to what they should be (based on how orig_md was changed)
+    #    correct_dependent_md = {}
+    #    for name, expt in md_expectations.items():
+    #        if expt.depends_on and name in orig_md:
+    #            master_name = expt.depends_on
+    #            correct_dependent_md[name] = expt.dependent_transformation(new_md[master_name])
+
+    #    @retry
+    #    def assert_metadata_is(sid, orig_md, correct_dependent_md):
+    #        result_md = self._assert_get_song(sid)
+
+    #        with Check() as check:
+    #            for name, expt in md_expectations.items():
+    #                if name in orig_md:
+    #                    #TODO really need to factor out to test_utils?
+
+    #                    #Check mutability if it's not volatile or dependent.
+    #                    if not expt.volatile and expt.depends_on is None:
+    #                        same, message = test_utils.md_entry_same(name, orig_md, result_md)
+    #                        check.equal(not expt.mutable, same,
+    #                                    "metadata mutability incorrect: " + message)
+
+    #                    #Check dependent md.
+    #                    if expt.depends_on is not None:
+    #                        same, message = test_utils.md_entry_same(
+    #                            name, correct_dependent_md, result_md
+    #                        )
+    #                        check.true(same, "dependent metadata incorrect: " + message)
+
+    #    assert_metadata_is(self.song.sid, orig_md, correct_dependent_md)
+
+    #    #Revert the metadata.
+    #    self.wc.change_song_metadata(orig_md)
+
+    #    @retry
+    #    def assert_metadata_reverted(sid, orig_md):
+    #        result_md = self._assert_get_song(sid)
+
+    #        with Check() as check:
+    #            for name in orig_md:
+    #                #If it's not volatile, it should be back to what it was.
+    #                if not md_expectations[name].volatile:
+    #                    same, message = test_utils.md_entry_same(name, orig_md, result_md)
+    #                    check.true(same, "failed to revert: " + message)
+    #    assert_metadata_reverted(self.song.sid, orig_md)
 
     ##---------
     ## MC tests
@@ -495,193 +602,3 @@ class UpauthTests(object):
                        optional_keys - set(['related_artists']))
             check.true(set(no_tracks_res.keys()) & optional_keys ==
                        optional_keys - set(['topTracks']))
-    ##TODO album art
-
-    #@song_test
-    #def change_metadata(self):
-    #    orig_md = self._assert_get_song(self.song.sid)
-
-    #    # Change all mutable entries.
-
-    #    new_md = copy(orig_md)
-
-    #    for name, expt in md_expectations.items():
-    #        if name in orig_md and expt.mutable:
-    #            old_val = orig_md[name]
-    #            new_val = test_utils.modify_md(name, old_val)
-
-    #            assert_not_equal(new_val, old_val)
-    #            new_md[name] = new_val
-
-    #    #TODO check into attempting to mutate non mutables
-    #    self.wc.change_song_metadata(new_md)
-
-    #    #Recreate the dependent md to what they should be (based on how orig_md was changed)
-    #    correct_dependent_md = {}
-    #    for name, expt in md_expectations.items():
-    #        if expt.depends_on and name in orig_md:
-    #            master_name = expt.depends_on
-    #            correct_dependent_md[name] = expt.dependent_transformation(new_md[master_name])
-
-    #    @retry
-    #    def assert_metadata_is(sid, orig_md, correct_dependent_md):
-    #        result_md = self._assert_get_song(sid)
-
-    #        with Check() as check:
-    #            for name, expt in md_expectations.items():
-    #                if name in orig_md:
-    #                    #TODO really need to factor out to test_utils?
-
-    #                    #Check mutability if it's not volatile or dependent.
-    #                    if not expt.volatile and expt.depends_on is None:
-    #                        same, message = test_utils.md_entry_same(name, orig_md, result_md)
-    #                        check.equal(not expt.mutable, same,
-    #                                    "metadata mutability incorrect: " + message)
-
-    #                    #Check dependent md.
-    #                    if expt.depends_on is not None:
-    #                        same, message = test_utils.md_entry_same(
-    #                            name, correct_dependent_md, result_md
-    #                        )
-    #                        check.true(same, "dependent metadata incorrect: " + message)
-
-    #    assert_metadata_is(self.song.sid, orig_md, correct_dependent_md)
-
-    #    #Revert the metadata.
-    #    self.wc.change_song_metadata(orig_md)
-
-    #    @retry
-    #    def assert_metadata_reverted(sid, orig_md):
-    #        result_md = self._assert_get_song(sid)
-
-    #        with Check() as check:
-    #            for name in orig_md:
-    #                #If it's not volatile, it should be back to what it was.
-    #                if not md_expectations[name].volatile:
-    #                    same, message = test_utils.md_entry_same(name, orig_md, result_md)
-    #                    check.true(same, "failed to revert: " + message)
-    #    assert_metadata_reverted(self.song.sid, orig_md)
-
-    ##TODO verify these better?
-
-    #@song_test
-    #def get_download_info(self):
-    #    url, download_count = self.wc.get_song_download_info(self.song.sid)
-
-    #    assert_is_not_none(url)
-
-    #@song_test
-    #def download_song_mm(self):
-
-    #    @retry
-    #    def assert_download(sid=self.song.sid):
-    #        filename, audio = self.mm.download_song(sid)
-
-    #        # there's some kind of a weird race happening here with CI;
-    #        # usually one will succeed and one will fail
-
-    #        #TODO could use original filename to verify this
-    #        # but, when manually checking, got modified title occasionally
-    #        assert_true(filename.endswith('.mp3'))  # depends on specific file
-    #        assert_is_not_none(audio)
-    #    assert_download()
-
-    #@song_test
-    #def get_uploaded_stream_urls(self):
-    #    urls = self.wc.get_stream_urls(self.song.sid)
-
-    #    assert_equal(len(urls), 1)
-
-    #    url = urls[0]
-
-    #    assert_is_not_none(url)
-    #    assert_equal(url[:7], 'http://')
-
-    #@song_test
-    #def upload_album_art(self):
-    #    orig_md = self._assert_get_song(self.song.sid)
-
-    #    self.wc.upload_album_art(self.song.sid, test_utils.image_filename)
-
-    #    self.wc.change_song_metadata(orig_md)
-    #    #TODO redownload and verify against original?
-
-    ## these search tests are all skipped: see
-    ## https://github.com/simon-weber/Unofficial-Google-Music-API/issues/114
-
-    #@staticmethod
-    #def _assert_search_hit(res, hit_type, hit_key, val):
-    #    """Assert that the result (returned from wc.search) has
-    #    ``hit[hit_type][hit_key] == val`` for only one result in hit_type."""
-
-    #    raise SkipTest('search is unpredictable (#114)')
-
-    #    #assert_equal(sorted(res.keys()), ['album_hits', 'artist_hits', 'song_hits'])
-    #    #assert_not_equal(res[hit_type], [])
-
-    #    #hitmap = (hit[hit_key] == val for hit in res[hit_type])
-    #    #assert_equal(sum(hitmap), 1)  # eg sum(True, False, True) == 2
-
-    ##@song_test
-    ##def search_title(self):
-    ##    res = self.wc.search(self.song.title)
-
-    ##    self._assert_search_hit(res, 'song_hits', 'id', self.song.sid)
-
-    ##@song_test
-    ##def search_artist(self):
-    ##    res = self.wc.search(self.song.artist)
-
-    ##    self._assert_search_hit(res, 'artist_hits', 'id', self.song.sid)
-
-    ##@song_test
-    ##def search_album(self):
-    ##    res = self.wc.search(self.song.album)
-
-    ##    self._assert_search_hit(res, 'album_hits', 'albumName', self.song.album)
-
-    ##---------------
-    ## Playlist tests
-    ##---------------
-
-    ##TODO copy, change (need two songs?)
-
-    #@playlist_test
-    #def change_name(self):
-    #    new_name = TEST_PLAYLIST_NAME + '_mod'
-    #    self.wc.change_playlist_name(self.playlist_id, new_name)
-
-    #    @retry  # change takes time to propogate
-    #    def assert_name_equal(plid, name):
-    #        playlists = self.wc.get_all_playlist_ids()
-
-    #        found = playlists['user'].get(name, None)
-
-    #        assert_is_not_none(found)
-    #        assert_equal(found[-1], self.playlist_id)
-
-    #    assert_name_equal(self.playlist_id, new_name)
-
-    #    # revert
-    #    self.wc.change_playlist_name(self.playlist_id, TEST_PLAYLIST_NAME)
-    #    assert_name_equal(self.playlist_id, TEST_PLAYLIST_NAME)
-
-    #@playlist_test
-    #def add_remove(self):
-    #    @retry
-    #    def assert_song_order(plid, order):
-    #        songs = self.wc.get_playlist_songs(plid)
-    #        server_order = [s['id'] for s in songs]
-
-    #        assert_equal(server_order, order)
-
-    #    # initially empty
-    #    assert_song_order(self.playlist_id, [])
-
-    #    # add two copies
-    #    self.wc.add_songs_to_playlist(self.playlist_id, [self.song.sid] * 2)
-    #    assert_song_order(self.playlist_id, [self.song.sid] * 2)
-
-    #    # remove all copies
-    #    self.wc.remove_songs_from_playlist(self.playlist_id, self.song.sid)
-    #    assert_song_order(self.playlist_id, [])

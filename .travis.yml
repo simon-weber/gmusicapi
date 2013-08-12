@@ -15,6 +15,7 @@ branches:
   only: 
   - develop
   - master
+  - wc-testing
 env: 
   global:
   - GM_N="Travis-CI (gmusicapi)"
