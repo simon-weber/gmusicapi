@@ -429,6 +429,24 @@ class UpauthTests(object):
 
         assert_is_not_none(url)
 
+    @song_test
+    def wc_get_uploaded_stream_urls(self):
+        urls = self.wc.get_stream_urls(self.songs[0].sid)
+
+        assert_equal(len(urls), 1)
+
+        url = urls[0]
+
+        assert_is_not_none(url)
+        assert_equal(url[:7], 'http://')
+
+    @song_test
+    def wc_upload_album_art(self):
+        self.wc.upload_album_art(self.songs[0].sid, test_utils.image_filename)
+
+        self.wc.change_song_metadata(self.songs[0].full_data)
+        #TODO redownload and verify against original?
+
     # is this worth the trouble?
     #@song_test
     #def wc_change_metadata(self):
@@ -587,60 +605,6 @@ class UpauthTests(object):
     ##TODO album art
 
     ##TODO verify these better?
-
-    #@song_test
-    #def get_uploaded_stream_urls(self):
-    #    urls = self.wc.get_stream_urls(self.song.sid)
-
-    #    assert_equal(len(urls), 1)
-
-    #    url = urls[0]
-
-    #    assert_is_not_none(url)
-    #    assert_equal(url[:7], 'http://')
-
-    #@song_test
-    #def upload_album_art(self):
-    #    orig_md = self._assert_get_song(self.song.sid)
-
-    #    self.wc.upload_album_art(self.song.sid, test_utils.image_filename)
-
-    #    self.wc.change_song_metadata(orig_md)
-    #    #TODO redownload and verify against original?
-
-    ## these search tests are all skipped: see
-    ## https://github.com/simon-weber/Unofficial-Google-Music-API/issues/114
-
-    #@staticmethod
-    #def _assert_search_hit(res, hit_type, hit_key, val):
-    #    """Assert that the result (returned from wc.search) has
-    #    ``hit[hit_type][hit_key] == val`` for only one result in hit_type."""
-
-    #    raise SkipTest('search is unpredictable (#114)')
-
-    #    #assert_equal(sorted(res.keys()), ['album_hits', 'artist_hits', 'song_hits'])
-    #    #assert_not_equal(res[hit_type], [])
-
-    #    #hitmap = (hit[hit_key] == val for hit in res[hit_type])
-    #    #assert_equal(sum(hitmap), 1)  # eg sum(True, False, True) == 2
-
-    ##@song_test
-    ##def search_title(self):
-    ##    res = self.wc.search(self.song.title)
-
-    ##    self._assert_search_hit(res, 'song_hits', 'id', self.song.sid)
-
-    ##@song_test
-    ##def search_artist(self):
-    ##    res = self.wc.search(self.song.artist)
-
-    ##    self._assert_search_hit(res, 'artist_hits', 'id', self.song.sid)
-
-    ##@song_test
-    ##def search_album(self):
-    ##    res = self.wc.search(self.song.album)
-
-    ##    self._assert_search_hit(res, 'album_hits', 'albumName', self.song.album)
 
     ##---------------
     ## Playlist tests
