@@ -358,6 +358,8 @@ def transcode_to_mp3(filepath, quality=3, slice_start=None, slice_duration=None)
     """Return the bytestring result of transcoding the file at *filepath* to mp3.
     An ID3 header is not included in the result.
 
+    Currently, avconv is required to be installed and in the path when using this.
+
     :param filepath: location of file
     :param quality: if int, pass to avconv -qscale. if string, pass to avconv -ab
                     -qscale roughly corresponds to libmp3lame -V0, -V1...
@@ -399,14 +401,16 @@ def transcode_to_mp3(filepath, quality=3, slice_start=None, slice_duration=None)
             raise IOError  # handle errors in except
 
     except (OSError, IOError) as e:
-        log.exception('transcoding failure')
 
-        err_msg = "transcoding failed: %s. " % e
+        err_msg = "transcoding command (%s) failed: %s. " % (' '.join(cmd), e)
+
+        if 'No such file or directory' in str(e):
+            err_msg += '\navconv must be installed and in the system path.'
 
         if err_output is not None:
-            err_msg += "stderr: '%s'" % err_output
+            err_msg += "\nstderr: '%s'" % err_output
 
-        log.debug('full failure output: %s', err_output)
+        log.exception('transcoding failure:\n%s', err_msg)
 
         raise IOError(err_msg)
 

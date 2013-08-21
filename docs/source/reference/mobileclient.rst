@@ -45,7 +45,7 @@ All Access Radio
 .. automethod:: Mobileclient.delete_stations
 
 Other All Access features
--------------------
+-------------------------
 All Access/store tracks also have track ids, but they are in a different
 form from normal track ids.
 ``store_id.beginswith('T')`` always holds for these ids (and will not

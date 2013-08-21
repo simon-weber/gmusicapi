@@ -14,7 +14,8 @@ Avoid using ``easy_install``.
 If you're upgrading from a date-versioned release (eg ``2013.03.04``),
 do ``$ pip uninstall gmusicapi; pip install gmusicapi`` instead.
 
-To upload anything other than mp3s, you're going to need
+If you're going to be uploading music,
+you'll likely want
 `Libav's avconv <http://libav.org/avconv.html>`__
 installed and in your system path, along with at least libmp3lame.
 
@@ -23,6 +24,8 @@ installed and in your system path, along with at least libmp3lame.
  - Windows users, get `the most recent static binaries <http://win32.libav.org/releases/>`__
    and then `edit your path <http://www.computerhope.com/issues/ch000549.htm>`__
    to include the directory that contains avconv.exe.
+
+The only time avconv is not required is when uploading mp3s without scan-and-match enabled.
    
 If you need to install avconv from source, be sure to use
 ``$ ./configure --enable-gpl --enable-nonfree --enable-libmp3lame``.

@@ -348,11 +348,13 @@ class Musicmanager(_Base):
     @utils.empty_arg_shortcircuit(return_code='{}')
     def upload(self, filepaths, transcode_quality=3, enable_matching=False):
         """Uploads the given filepaths.
-        Any non-mp3 files will be `transcoded with avconv
-        <https://github.com/simon-weber/Unofficial-Google-Music-API/
-        blob/develop/gmusicapi/utils/utils.py#L18>`__ before being uploaded.
 
-        Return a 3-tuple ``(uploaded, matched, not_uploaded)`` of dictionaries, eg::
+        An available installation of avconv may be required;
+        see `the documentation
+        <https://unofficial-google-music-api.readthedocs.org/en
+        /latest/usage.html?#installation>`__ for details.
+
+        Returns a 3-tuple ``(uploaded, matched, not_uploaded)`` of dictionaries, eg::
 
             (
                 {'<filepath>': '<new server id>'},               # uploaded
