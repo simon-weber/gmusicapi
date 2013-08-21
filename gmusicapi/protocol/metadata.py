@@ -148,12 +148,13 @@ _all_expts = [
         ('playlistEntryId', 'string', 'identifies position in the context of a playlist.'),
         ('albumArtUrl', 'string', "if present, the url of an image for this song's album art."),
         ('artistMatchedId', 'string', 'id of a matching artist in the Play Store?'),
-        ('albumPlaybackTimestamp', 'integer', 'UTC/microsecond timestamp: the last time this album was played?'),
+        ('albumPlaybackTimestamp', 'integer', 'UTC/microsecond timestamp: the last time this album was played?'),   # noqa
         ('origin', 'array', '???'),
         ('artistImageBaseUrl', 'string', 'like albumArtUrl, but for the artist. May be blank.'),
         ('recentTimestamp', 'integer', 'UTC/microsecond timestamp: meaning unknown.'),
         ('deleted', 'boolean', ''),
         ('matchedId', 'string', 'meaning unknown; related to scan and match?'),
+        ('previewToken', 'string', 'meaning unknown'),
     )
 ] + [
     Expectation(name + 'Norm', 'string', mutable=False, optional=False,

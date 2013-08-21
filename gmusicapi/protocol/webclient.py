@@ -48,7 +48,7 @@ pl_schema = {
         "token": {"type": "string", "required": False},
         #only appears when loading multiple playlists
         "title": {"type": "string", "required": False},
-        "continuationToken": {"type": "string", "required": False}
+        "continuationToken": {"type": "string", "required": False},
     },
     "additionalProperties": False
 }
@@ -349,6 +349,7 @@ class GetPlaylistSongs(WcCall):
         """
 
         #This call has a dynamic response schema based on the request.
+        # TODO wow, this is a terrible idea
 
         if playlist_id == 'all':
             cls._res_schema = {
