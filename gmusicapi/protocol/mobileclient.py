@@ -41,7 +41,8 @@ sj_track = {
         'trackType': {'type': 'string'},
         'storeId': {'type': 'string'},
         'albumId': {'type': 'string'},
-        'artistId': {'type': 'array', 'items': {'type': 'string', 'blank': True}, 'required': False},
+        'artistId': {'type': 'array',
+                     'items': {'type': 'string', 'blank': True}, 'required': False},
         'nid': {'type': 'string'},
         'trackAvailableForPurchase': {'type': 'boolean'},
         'albumAvailableForPurchase': {'type': 'boolean'},
@@ -103,7 +104,8 @@ sj_album = {
         'artist': {'type': 'string'},
         'artistId': {'type': 'array', 'items': {'type': 'string', 'blank': True}},
         'year': {'type': 'integer'},
-        'tracks': {'type': 'array', 'items': sj_track, 'required': False}
+        'tracks': {'type': 'array', 'items': sj_track, 'required': False},
+        'description': {'type': 'string', 'required': False},
     }
 }
 
