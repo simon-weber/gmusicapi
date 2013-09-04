@@ -46,9 +46,11 @@ sj_track = {
         'nid': {'type': 'string'},
         'trackAvailableForPurchase': {'type': 'boolean'},
         'albumAvailableForPurchase': {'type': 'boolean'},
+        'composer': {'type': 'string', 'blank': True},
         'playCount': {'type': 'integer', 'required': False},
         'year': {'type': 'integer', 'required': False},
         'rating': {'type': 'string', 'required': False},
+        'genre': {'type': 'string', 'required': False},
     }
 }
 
