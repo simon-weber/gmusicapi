@@ -664,11 +664,57 @@ class Mobileclient(_Base):
 
             get_next_chunk = 'nextPageToken' in lib_chunk
 
-    #TODO below here
-    def get_album(self, albumid, tracks=True):
-        """Retrieve artist data"""
-        res = self._make_call(mobileclient.GetAlbum, albumid, tracks)
+    def get_album_info(self, albumid, include_tracks=True):
+        """Retrieve details on an album.
+
+        Using this method without an All Access subscription will always result in
+        CallFailure being raised.
+
+        Returns a dict, eg::
+
+            {
+                u'kind': u'sj#album',
+                u'name': u'Circle',
+                u'artist': u'Amorphis',
+                u'albumArtRef': u'http://lh6.ggpht.com/...',
+                u'tracks': [  # if `include_tracks` is True
+                {
+                    u'album': u'Circle',
+                    u'kind': u'sj#track',
+                    u'storeId': u'T5zb7luo2vkroozmj57g2nljdsy',
+                    u'artist': u'Amorphis',
+                    u'albumArtRef': [
+                    {
+                        u'url': u'http://lh6.ggpht.com/...'
+                    }],
+                    u'title': u'Shades of Grey',
+                    u'nid': u'T5zb7luo2vkroozmj57g2nljdsy',
+                    u'estimatedSize': u'13115591',
+                    u'albumId': u'Bfr2onjv7g7tm4rzosewnnwxxyy',
+                    u'artistId': [u'Apoecs6off3y6k4h5nvqqos4b5e'],
+                    u'albumArtist': u'Amorphis',
+                    u'durationMillis': u'327000',
+                    u'composer': u'',
+                    u'genre': u'Metal',
+                    u'trackNumber': 1,
+                    u'discNumber': 1,
+                    u'trackAvailableForPurchase': True,
+                    u'trackType': u'7',
+                    u'albumAvailableForPurchase': True
+                }, # ...
+                ],
+                u'albumId': u'Bfr2onjv7g7tm4rzosewnnwxxyy',
+                u'artistId': [u'Apoecs6off3y6k4h5nvqqos4b5e'],
+                u'albumArtist': u'Amorphis',
+                u'year': 2013
+            }
+
+        """
+
+        res = self._make_call(mobileclient.GetAlbum, albumid, include_tracks)
         return res
+
+    #TODO below here
 
     def get_track(self, trackid):
         """Retrieve information about a store track.

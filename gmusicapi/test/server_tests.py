@@ -602,3 +602,18 @@ class UpauthTests(object):
                        optional_keys - set(['related_artists']))
             check.true(set(no_tracks_res.keys()) & optional_keys ==
                        optional_keys - set(['topTracks']))
+
+    @test
+    @all_access
+    def mc_album_info(self):
+        alid = 'Bfr2onjv7g7tm4rzosewnnwxxyy'  # amorphis/shades of grey
+
+        include_tracks = self.mc.get_album_info(alid, include_tracks=True)
+        no_tracks = self.mc.get_album_info(alid, include_tracks=False)
+
+        with Check() as check:
+            check.true('tracks' in include_tracks)
+            check.true('tracks' not in no_tracks)
+
+            del include_tracks['tracks']
+            check.equal(include_tracks, no_tracks)
