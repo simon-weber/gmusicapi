@@ -10,6 +10,7 @@ As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 released 2013-XX-XX
 
 - add Mobileclient.get_album_info
+- add Mobileclient.get_track_info
 
 
 2.0.0

@@ -60,3 +60,4 @@ All Access track ids can be used in most places that normal song ids can
 .. automethod:: Mobileclient.add_aa_track
 .. automethod:: Mobileclient.get_artist_info
 .. automethod:: Mobileclient.get_album_info
+.. automethod:: Mobileclient.get_track_info

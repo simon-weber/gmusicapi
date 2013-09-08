@@ -617,3 +617,10 @@ class UpauthTests(object):
 
             del include_tracks['tracks']
             check.equal(include_tracks, no_tracks)
+
+    @test
+    @all_access
+    def mc_track_info(self):
+        tid = 'Te2qokfjmhqxw4bnkswbfphzs4m'  # amorphis/hopeless days
+
+        self.mc.get_track_info(tid)  # just for the schema

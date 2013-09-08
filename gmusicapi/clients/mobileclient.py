@@ -112,7 +112,7 @@ class Mobileclient(_Base):
         #TODO is there a way to do this on multiple tracks at once?
         # problem is with gathering aa track info
 
-        aa_track_info = self.get_track(aa_song_id)
+        aa_track_info = self.get_track_info(aa_song_id)
 
         mutate_call = mobileclient.BatchMutateTracks
         add_mutation = mutate_call.build_track_add(aa_track_info)
@@ -714,12 +714,40 @@ class Mobileclient(_Base):
         res = self._make_call(mobileclient.GetAlbum, albumid, include_tracks)
         return res
 
-    #TODO below here
-
-    def get_track(self, trackid):
+    def get_track_info(self, store_track_id):
         """Retrieve information about a store track.
 
-        TODO does this work on library tracks?
+        Using this method without an All Access subscription will always result in
+        CallFailure being raised.
+
+        Returns a dict, eg::
+
+            {
+                u 'album': u 'Best Of',
+                u 'kind': u 'sj#track',
+                u 'storeId': u 'Te2qokfjmhqxw4bnkswbfphzs4m',
+                u 'artist': u 'Amorphis',
+                u 'albumArtRef': [
+                {
+                    u 'url': u 'http://lh5.ggpht.com/...'
+                }],
+                u 'title': u 'Hopeless Days',
+                u 'nid': u 'Te2qokfjmhqxw4bnkswbfphzs4m',
+                u 'estimatedSize': u '12325643',
+                u 'albumId': u 'Bsbjjc24a5xutbutvbvg3h4y2k4',
+                u 'artistId': [u 'Apoecs6off3y6k4h5nvqqos4b5e'],
+                u 'albumArtist': u 'Amorphis',
+                u 'durationMillis': u '308000',
+                u 'composer': u '',
+                u 'genre': u 'Metal',
+                u 'trackNumber': 2,
+                u 'discNumber': 1,
+                u 'trackAvailableForPurchase': True,
+                u 'trackType': u '7',
+                u 'albumAvailableForPurchase': True
+            }
+
         """
-        res = self._make_call(mobileclient.GetStoreTrack, trackid)
+
+        res = self._make_call(mobileclient.GetStoreTrack, store_track_id)
         return res
