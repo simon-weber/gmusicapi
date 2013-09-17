@@ -17,8 +17,9 @@ Here are the ports I'm currently aware of:
    (not a full port, just an example)
 
 They're in various states of completion and maintenance because,
-honestly, building a port is tough. If you're really against using Python,
-you might try wrapping gmusicapi in something language-agnostic instead.
+well, building a port is tough.
+
+Alternatively, consider using `GMusicProxy <https://github.com/diraimondo/gmusicproxy>`__ or copying its approach.
 
 Building a Port
 ---------------
