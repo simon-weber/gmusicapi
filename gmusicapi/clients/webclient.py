@@ -48,7 +48,16 @@ class Webclient(_Base):
 
     def get_registered_devices(self):
         """
-        Returns a list of dictionaries, eg::
+        Returns a list of dictionaries representing devices associated with the account.
+
+        Performing the :class:`Musicmanager` OAuth flow will register a device
+        of type ``'DESKTOP_APP'``.
+
+        Installing the Android Google Music app and logging into it will
+        register a device of type ``'PHONE'``, which is required for streaming with
+        the :class:`Mobileclient`.
+
+        Here is an example response::
 
             [
               {
