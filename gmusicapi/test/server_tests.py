@@ -27,6 +27,8 @@ import gmusicapi.test.utils as test_utils
 TEST_PLAYLIST_NAME = 'gmusicapi_test_playlist'
 TEST_STATION_NAME = 'gmusicapi_test_station'
 
+TEST_AA_GENRE_ID = 'METAL'
+
 # that dumb little intro track on Conspiracy of One,
 # picked since it's only a few seconds long
 TEST_AA_SONG_ID = 'Tqqufr34tuqojlvkolsrwdwx7pe'
@@ -62,7 +64,7 @@ class UpauthTests(object):
     songs = None  # [TestSong]
     playlist_id = None
     plentry_ids = None
-    station_id = None
+    station_ids = None
 
     def mc_get_playlist_songs(self, plid):
         """For convenience, since mc can only get all playlists at once."""
@@ -109,8 +111,8 @@ class UpauthTests(object):
     # with song
     #   with playlist
     #     with plentry
+    #   with station
     #
-    # with station
     #
     # Suggestions to improve any of this are welcome!
 
@@ -199,7 +201,7 @@ class UpauthTests(object):
             sids.append(uploaded[fname])
 
         if test_all_access_features():
-            sids.append(self.mc.add_aa_track(test_utils.aa_song_id))
+            sids.append(self.mc.add_aa_track(TEST_AA_SONG_ID))
 
         # we test get_all_songs here so that we can assume the existance
         # of the song for future tests (the servers take time to sync an upload)
@@ -232,7 +234,7 @@ class UpauthTests(object):
         # duplicate song_id case
         double_id = self.songs[0].sid
         if test_all_access_features():
-            double_id = test_utils.aa_song_id
+            double_id = TEST_AA_SONG_ID
 
         song_ids += [double_id] * 2
 
@@ -290,8 +292,62 @@ class UpauthTests(object):
         assert_playlist_does_not_exist(self.playlist_id)
         self.assert_list_with_deleted(self.mc.get_all_playlists)
 
+    @test
+    def station_create(self):
+        if not test_all_access_features():
+            raise SkipTest('AA testing not enabled')
+
+        #TODO should separate aa songs / uploaded songs out better than this
+        #TODO test albums
+
+        station_ids = []
+        for prefix, kwargs in (('AA song', {'track_id': TEST_AA_SONG_ID}),
+                               ('up song', {'track_id': self.songs[0].sid}),
+                               ('artist', {'artist_id': TEST_AA_ARTIST_ID}),
+                               ('genre', {'genre_id': TEST_AA_GENRE_ID})):
+            station_ids.append(
+                self.mc.create_station(prefix + ' ' + TEST_STATION_NAME, **kwargs)
+            )
+
+        @retry
+        def assert_station_exists(station_id):
+            stations = self.mc.get_all_stations()
+
+            found = [s for s in stations
+                     if s['id'] == station_id]
+
+            assert_equal(len(found), 1)
+
+        for station_id in station_ids:
+            assert_station_exists(station_id)
+
+        self.station_ids = station_ids
+
+    @test(groups=['station'], depends_on=[station_create, song_create],
+          runs_after_groups=['station.exists', 'song.exists'],
+          always_run=True)
+    def station_delete(self):
+        if self.station_ids is None:
+            raise SkipTest('did not store self.station_ids')
+
+        res = self.mc.delete_stations(self.station_ids)
+        assert_equal(res, self.station_ids)
+
+        @retry
+        def assert_station_deleted(station_id):
+            stations = self.mc.get_all_stations()
+
+            found = [s for s in stations
+                     if s['id'] == station_id]
+
+            assert_equal(len(found), 0)
+
+        for station_id in self.station_ids:
+            assert_station_deleted(station_id)
+        self.assert_list_with_deleted(self.mc.get_all_stations)
+
     @test(groups=['song'], depends_on=[song_create],
-          runs_after=[plentry_delete],
+          runs_after=[plentry_delete, station_delete],
           runs_after_groups=["song.exists"],
           always_run=True)
     def song_delete(self):
@@ -310,52 +366,6 @@ class UpauthTests(object):
 
         self.assert_songs_state(self.mc.get_all_songs, [s.sid for s in self.songs], present=False)
         self.assert_list_with_deleted(self.mc.get_all_songs)
-
-    @test
-    def station_create(self):
-        if not test_all_access_features():
-            raise SkipTest('AA testing not enabled')
-
-        # seed from Amorphis
-        artist_station_id = self.mc.create_station(TEST_STATION_NAME,
-                                                   artist_id=TEST_AA_ARTIST_ID)
-        song_station_id = self.mc.create_station(TEST_STATION_NAME,
-                                                 track_id=TEST_AA_SONG_ID)
-
-        @retry
-        def assert_station_exists(station_id):
-            stations = self.mc.get_all_stations()
-
-            found = [s for s in stations
-                     if s['id'] == station_id]
-
-            assert_equal(len(found), 1)
-
-        assert_station_exists(artist_station_id)
-        assert_station_exists(song_station_id)
-        self.station_id = artist_station_id
-
-    @test(groups=['station'], depends_on=[station_create],
-          runs_after_groups=['station.exists'],
-          always_run=True)
-    def station_delete(self):
-        if self.station_id is None:
-            raise SkipTest('did not store self.station_id')
-
-        res = self.mc.delete_stations([self.station_id])
-        assert_equal(res, [self.station_id])
-
-        @retry
-        def assert_station_deleted(station_id):
-            stations = self.mc.get_all_stations()
-
-            found = [s for s in stations
-                     if s['id'] == station_id]
-
-            assert_equal(len(found), 0)
-
-        assert_station_deleted(self.station_id)
-        self.assert_list_with_deleted(self.mc.get_all_stations)
 
     ## These decorators just prevent setting groups and depends_on over and over.
     ## They won't work right with additional settings; if that's needed this
@@ -576,8 +586,10 @@ class UpauthTests(object):
     @station_test
     @all_access
     def mc_list_station_tracks(self):
-        res = self.mc.get_station_tracks(self.station_id, num_tracks=1)
-        assert_equal(len(res), 1)
+        for station_id in self.station_ids:
+            self.mc.get_station_tracks(station_id, num_tracks=1)
+            # used to assert that at least 1 track came back, but
+            # our dummy uploaded track won't match anything
 
     @test
     @all_access
