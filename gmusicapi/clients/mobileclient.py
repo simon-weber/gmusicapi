@@ -328,9 +328,10 @@ class Mobileclient(_Base):
         seed = {}
         if track_id is not None:
             if track_id[0] == 'T':
-                seed['trackLockerId'] = track_id
-            else:
                 seed['trackId'] = track_id
+            else:
+                seed['trackLockerId'] = track_id
+
         if artist_id is not None:
             seed['artistId'] = artist_id
         if album_id is not None:
@@ -339,7 +340,7 @@ class Mobileclient(_Base):
             seed['genreId'] = genre_id
 
         if len(seed) != 1:
-            raise ValueError('only one of {track,artist,album,genre}_id may be provided')
+            raise ValueError('exactly one {track,artist,album,genre}_id must be provided')
 
         mutate_call = mobileclient.BatchMutateStations
         add_mutation = mutate_call.build_add(name, seed, include_tracks=False, num_tracks=0)

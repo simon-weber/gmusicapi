@@ -112,7 +112,7 @@ def datetime_to_microseconds(dt):
     :param dt: a datetime.datetime
 
     """
-    return int(time.mktime(dt.timetuple()) * 1000000)
+    return int(time.mktime(dt.timetuple()) * 1000000) + dt.microsecond
 
 
 def is_valid_mac(mac_string):

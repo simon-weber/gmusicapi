@@ -20,7 +20,7 @@ from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
 # URL for sj service
-sj_url = 'https://www.googleapis.com/sj/v1/'
+sj_url = 'https://www.googleapis.com/sj/v1.1/'
 
 # shared schemas
 sj_track = {
