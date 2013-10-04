@@ -103,6 +103,41 @@ class Mobileclient(_Base):
 
         return tracks
 
+    @utils.accept_singleton(dict)
+    @utils.empty_arg_shortcircuit
+    def change_song_metadata(self, songs):
+        """Changes the metadata of tracks.
+        Returns a list of the song ids changed.
+
+        :param songs: a list of song dictionaries
+          or a single song dictionary.
+
+        Not all keys can be changed.
+        These keys are known to work:
+
+        * ``rating``: this is a string!
+                      set to '0' (no thumb), '1' (down thumb), or '5' (up thumb)
+        * ``album``
+        * ``albumArtist``
+        * ``artist``
+        * ``comment``
+        * ``composer``
+        * ``discNumber``
+        * ``genre``
+        * ``playCount``
+        * ``title``
+        * ``totalDiscCount``
+        * ``totalTrackCount``
+        * ``trackNumber``
+        * ``year``
+        """
+
+        mutate_call = mobileclient.BatchMutateTracks
+        mutations = [{'update': s} for s in songs]
+        res = self._make_call(mutate_call, mutations)
+
+        return [d['id'] for d in res['mutate_response']]
+
     def add_aa_track(self, aa_song_id):
         """Adds an All Access track to the library,
         returning the library track id.

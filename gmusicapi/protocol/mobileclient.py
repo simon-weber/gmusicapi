@@ -652,7 +652,7 @@ class BatchMutateTracks(McBatchMutateCall):
     @staticmethod
     def build_track_deletes(track_ids):
         """
-        :param track_id
+        :param track_ids
         """
         return [{'delete': id} for id in track_ids]
 

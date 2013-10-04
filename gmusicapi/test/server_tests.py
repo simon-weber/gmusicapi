@@ -554,6 +554,25 @@ class UpauthTests(object):
     def mc_list_songs_inc_equal_with_deleted(self):
         self.assert_list_inc_equivalence(self.mc.get_all_songs, include_deleted=True)
 
+    @song_test
+    def mc_change_song_rating(self):
+        @retry  # change takes time to propogate
+        def assert_song_rating(sid, rating):
+            songs = self.mc.get_all_songs()
+
+            found = [s for s in songs if s['id'] == sid]
+
+            assert_equal(len(found), 1)
+            assert_equal(found[0]['rating'], rating)
+            return found[0]
+
+        song = assert_song_rating(self.songs[0].sid, '0')  # initially unrated
+
+        song['rating'] = '1'
+        self.mc.change_song_metadata(song)
+
+        assert_song_rating(song['id'], '1')
+
     @playlist_test
     def mc_list_playlists_inc_equal(self):
         self.assert_list_inc_equivalence(self.mc.get_all_playlists)
