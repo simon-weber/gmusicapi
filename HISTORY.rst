@@ -5,10 +5,11 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-2.0.0-dev
+2.1.0-dev
 +++++++++
 released 2013-XX-XX
 
+- musicmanager.get_all_songs is now musicmanager.get_uploaded_songs
 - add Mobileclient.get_album_info
 - add Mobileclient.get_track_info
 

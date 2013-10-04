@@ -246,10 +246,13 @@ class Musicmanager(_Base):
 
     # mostly copy-paste from Webclient.get_all_songs.
     # not worried about overlap in this case; the logic of either could change.
-    def get_all_songs(self, incremental=False):
+    def get_uploaded_songs(self, incremental=False):
         """Returns a list of dictionaries, each with the following keys:
         ``('id', 'title', 'album', 'album_artist', 'artist', 'track_number',
         'track_size')``.
+
+        All Access tracks that were added to the library will not be included,
+        only tracks uploaded/matched by the user.
 
         :param incremental: if True, return a generator that yields lists
           of at most 1000 dictionaries

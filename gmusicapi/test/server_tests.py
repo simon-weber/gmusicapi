@@ -34,6 +34,11 @@ TEST_AA_SONG_ID = 'Tqqufr34tuqojlvkolsrwdwx7pe'
 TestSong = namedtuple('TestSong', 'sid title artist album full_data')
 
 
+def sids(test_songs):
+    """Given [TestSong], return ['sid']."""
+    return [s.sid for s in test_songs]
+
+
 def test_all_access_features():
     return 'GM_A' in os.environ
 
@@ -54,11 +59,19 @@ class UpauthTests(object):
     mm = None  # musicmanager
     mc = None  # mobileclient
 
-    #These are set on the instance in create_song/playlist.
-    songs = None  # [TestSong]
+    #These are set on the instance in eg create_song.
+
+    # both are [TestSong]
+    user_songs = None
+    aa_songs = None
+
     playlist_id = None
     plentry_ids = None
     station_id = None
+
+    @property
+    def all_songs(self):
+        return (self.user_songs or []) + (self.aa_songs or [])
 
     def mc_get_playlist_songs(self, plid):
         """For convenience, since mc can only get all playlists at once."""
@@ -173,11 +186,12 @@ class UpauthTests(object):
         # This can create more than one song: one through uploading, one through
         # adding an AA track to the library.
 
+        user_sids = []
+        aa_sids = []
+
         fname = test_utils.small_mp3
 
         uploaded, matched, not_uploaded = self.mm.upload(fname)
-
-        sids = []
 
         if len(not_uploaded) == 1 and 'ALREADY_EXISTS' in not_uploaded[fname]:
             # If a previous test went wrong, the track might be there already.
@@ -185,22 +199,24 @@ class UpauthTests(object):
             assert_equal(matched, {})
             assert_equal(uploaded, {})
 
-            sids.append(re.search(r'\(.*\)', not_uploaded[fname]).group().strip('()'))
+            # this matches the sid from the error message
+            user_sids.append(re.search(r'\(.*\)', not_uploaded[fname]).group().strip('()'))
         else:
             # Otherwise, it should have been uploaded normally.
             assert_equal(not_uploaded, {})
             assert_equal(matched, {})
             assert_equal(uploaded.keys(), [fname])
 
-            sids.append(uploaded[fname])
+            user_sids.append(uploaded[fname])
 
         if test_all_access_features():
-            sids.append(self.mc.add_aa_track(test_utils.aa_song_id))
+            aa_sids.append(self.mc.add_aa_track(TEST_AA_SONG_ID))
 
         # we test get_all_songs here so that we can assume the existance
         # of the song for future tests (the servers take time to sync an upload)
 
-        self.songs = self.assert_songs_state(self.mc.get_all_songs, sids, present=True)
+        self.user_songs = self.assert_songs_state(self.mc.get_all_songs, user_sids, present=True)
+        self.aa_songs = self.assert_songs_state(self.mc.get_all_songs, aa_sids, present=True)
 
     @test
     def playlist_create(self):
@@ -221,14 +237,14 @@ class UpauthTests(object):
           runs_after_groups=['playlist.exists', 'song.exists'])
     def plentry_create(self):
 
-        song_ids = [self.songs[0].sid]
+        song_ids = [self.user_songs[0].sid]
 
-        # create 3 entries
+        # create 3 entries total
         # 3 songs is the minimum to fully test reordering, and also includes the
         # duplicate song_id case
-        double_id = self.songs[0].sid
+        double_id = self.user_songs[0].sid
         if test_all_access_features():
-            double_id = test_utils.aa_song_id
+            double_id = TEST_AA_SONG_ID
 
         song_ids += [double_id] * 2
 
@@ -291,20 +307,17 @@ class UpauthTests(object):
           runs_after_groups=["song.exists"],
           always_run=True)
     def song_delete(self):
-        if self.songs is None:
-            raise SkipTest('did not store self.songs')
-
         # split deletion between wc and mc
         # mc is the only to run if AA testing not enabled
         with Check() as check:
-            for i, testsong in enumerate(self.songs):
+            for i, testsong in enumerate(self.all_songs):
                 if i % 2 == 0:
                     res = self.mc.delete_songs(testsong.sid)
                 else:
                     res = self.wc.delete_songs(testsong.sid)
                 check.equal(res, [testsong.sid])
 
-        self.assert_songs_state(self.mc.get_all_songs, [s.sid for s in self.songs], present=False)
+        self.assert_songs_state(self.mc.get_all_songs, sids(self.all_songs), present=False)
         self.assert_list_with_deleted(self.mc.get_all_songs)
 
     @test
@@ -368,30 +381,29 @@ class UpauthTests(object):
     ## MM tests
     ##---------
 
-    # disabled for now -- see #152
-    #@song_test
-    #def mm_list_new_songs(self):
-    #    self.assert_songs_state(self.mm.get_all_songs, [s.sid for s in self.songs], present=True)
+    @song_test
+    def mm_list_new_songs(self):
+        # mm only includes user-uploaded songs
+        self.assert_songs_state(self.mm.get_uploaded_songs, sids(self.user_songs), present=True)
+        self.assert_songs_state(self.mm.get_uploaded_songs, sids(self.aa_songs), present=False)
 
     @test
     def mm_list_songs_inc_equal(self):
-        self.assert_list_inc_equivalence(self.mm.get_all_songs)
+        self.assert_list_inc_equivalence(self.mm.get_uploaded_songs)
 
     @song_test
     def mm_download_song(self):
 
         @retry
-        def assert_download(sid=self.songs[0].sid):
+        def assert_download(sid):
             filename, audio = self.mm.download_song(sid)
-
-            # there's some kind of a weird race happening here with CI;
-            # usually one will succeed and one will fail
 
             #TODO could use original filename to verify this
             # but, when manually checking, got modified title occasionally
-            assert_true(filename.endswith('.mp3'))  # depends on specific file
+            assert_true(filename.endswith('.mp3'))
             assert_is_not_none(audio)
-        assert_download()
+
+        assert_download(self.user_songs[0].sid)
 
     ##---------
     ## WC tests
@@ -399,7 +411,7 @@ class UpauthTests(object):
 
     @song_test
     def wc_list_new_songs(self):
-        self.assert_songs_state(self.wc.get_all_songs, [s.sid for s in self.songs], present=True)
+        self.assert_songs_state(self.wc.get_all_songs, sids(self.all_songs), present=True)
 
     @test
     def wc_list_songs_inc_equal(self):
@@ -425,13 +437,13 @@ class UpauthTests(object):
 
     @song_test
     def wc_get_download_info(self):
-        url, download_count = self.wc.get_song_download_info(self.songs[0].sid)
+        url, download_count = self.wc.get_song_download_info(self.user_songs[0].sid)
 
         assert_is_not_none(url)
 
     @song_test
     def wc_get_uploaded_stream_urls(self):
-        urls = self.wc.get_stream_urls(self.songs[0].sid)
+        urls = self.wc.get_stream_urls(self.user_songs[0].sid)
 
         assert_equal(len(urls), 1)
 
@@ -442,9 +454,9 @@ class UpauthTests(object):
 
     @song_test
     def wc_upload_album_art(self):
-        self.wc.upload_album_art(self.songs[0].sid, test_utils.image_filename)
+        self.wc.upload_album_art(self.user_songs[0].sid, test_utils.image_filename)
 
-        self.wc.change_song_metadata(self.songs[0].full_data)
+        self.wc.change_song_metadata(self.user_songs[0].full_data)
         #TODO redownload and verify against original?
 
     # is this worth the trouble?
