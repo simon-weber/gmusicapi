@@ -36,6 +36,9 @@ TEST_AA_SONG_ID = 'Tqqufr34tuqojlvkolsrwdwx7pe'
 # Amorphis
 TEST_AA_ARTIST_ID = 'Apoecs6off3y6k4h5nvqqos4b5e'
 
+# Holographic Universe
+TEST_AA_ALBUM_ID = 'B4cao5ms5jjn36notfgnhjtguwa'
+
 # this is a little data class for the songs we upload
 TestSong = namedtuple('TestSong', 'sid title artist album full_data')
 
@@ -304,6 +307,7 @@ class UpauthTests(object):
         for prefix, kwargs in (('AA song', {'track_id': TEST_AA_SONG_ID}),
                                ('up song', {'track_id': self.songs[0].sid}),
                                ('artist', {'artist_id': TEST_AA_ARTIST_ID}),
+                               ('album', {'album_id': TEST_AA_ALBUM_ID}),
                                ('genre', {'genre_id': TEST_AA_GENRE_ID})):
             station_ids.append(
                 self.mc.create_station(prefix + ' ' + TEST_STATION_NAME, **kwargs)
