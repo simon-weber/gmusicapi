@@ -26,9 +26,13 @@ import gmusicapi.test.utils as test_utils
 
 TEST_PLAYLIST_NAME = 'gmusicapi_test_playlist'
 TEST_STATION_NAME = 'gmusicapi_test_station'
+
 # that dumb little intro track on Conspiracy of One,
 # picked since it's only a few seconds long
 TEST_AA_SONG_ID = 'Tqqufr34tuqojlvkolsrwdwx7pe'
+
+# Amorphis
+TEST_AA_ARTIST_ID = 'Apoecs6off3y6k4h5nvqqos4b5e'
 
 # this is a little data class for the songs we upload
 TestSong = namedtuple('TestSong', 'sid title artist album full_data')
@@ -313,8 +317,10 @@ class UpauthTests(object):
             raise SkipTest('AA testing not enabled')
 
         # seed from Amorphis
-        station_id = self.mc.create_station(TEST_STATION_NAME,
-                                            artist_id='Apoecs6off3y6k4h5nvqqos4b5e')
+        artist_station_id = self.mc.create_station(TEST_STATION_NAME,
+                                                   artist_id=TEST_AA_ARTIST_ID)
+        song_station_id = self.mc.create_station(TEST_STATION_NAME,
+                                                 track_id=TEST_AA_SONG_ID)
 
         @retry
         def assert_station_exists(station_id):
@@ -325,8 +331,9 @@ class UpauthTests(object):
 
             assert_equal(len(found), 1)
 
-        assert_station_exists(station_id)
-        self.station_id = station_id
+        assert_station_exists(artist_station_id)
+        assert_station_exists(song_station_id)
+        self.station_id = artist_station_id
 
     @test(groups=['station'], depends_on=[station_create],
           runs_after_groups=['station.exists'],
