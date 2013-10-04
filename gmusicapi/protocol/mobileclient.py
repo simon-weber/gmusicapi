@@ -20,7 +20,7 @@ from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
 # URL for sj service
-sj_url = 'https://www.googleapis.com/sj/v1/'
+sj_url = 'https://www.googleapis.com/sj/v1.1/'
 
 # shared schemas
 sj_track = {
@@ -652,7 +652,7 @@ class BatchMutateTracks(McBatchMutateCall):
     @staticmethod
     def build_track_deletes(track_ids):
         """
-        :param track_id
+        :param track_ids
         """
         return [{'delete': id} for id in track_ids]
 

@@ -9,9 +9,11 @@ As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 +++++++++
 released 2013-XX-XX
 
-- musicmanager.get_all_songs is now musicmanager.get_uploaded_songs
+- Musicmanager.get_all_songs is now musicmanager.get_uploaded_songs
+- add Mobileclient.change_song_metadata
 - add Mobileclient.get_album_info
 - add Mobileclient.get_track_info
+- compatibility fixes
 
 
 2.0.0

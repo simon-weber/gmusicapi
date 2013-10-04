@@ -7,7 +7,7 @@ Here are the ports I'm currently aware of:
 
 
 -  C#:
-   `Taylor Finnell <https://github.com/Byteopia/GoogleMusicAPI.NET>`__
+   `Taylor Finnell <https://github.com/taylorfinnell/GoogleMusicAPI.NET>`__
 -  Java: `Jens Villadsen <https://github.com/jkiddo/gmusic.api>`__
    and `Nick Martin <https://github.com/xnickmx/google-play-client>`__
 -  PHP:
