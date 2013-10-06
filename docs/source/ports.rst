@@ -19,7 +19,7 @@ Here are the ports I'm currently aware of:
 They're in various states of completion and maintenance because,
 well, building a port is tough.
 
-Alternatively, consider using `GMusicProxy <https://github.com/diraimondo/gmusicproxy>`__ or copying its approach.
+Alternatively, consider using `GMusicProxy <http://gmusicproxy.net/>`__ or copying its approach.
 
 Building a Port
 ---------------
