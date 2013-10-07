@@ -60,9 +60,15 @@ pl_array = {
 
 
 class Init(Call):
-    """Called after login and once before any other webclient call.
-    This gathers the cookies we need (specifically xt); it's the call that
-    creates the webclient DOM."""
+    """Called one time per session, immediately after login.
+    
+    This performs one-time setup:
+    it gathers the cookies we need (specifically `xt`), and Google uses it 
+    to create the webclient DOM.
+    
+    Note the use of the HEAD verb. Google uses GET, but we don't need
+    the large response containing Google's webui.
+    """
 
     static_method = 'HEAD'
     static_url = base_url + 'listen'
