@@ -12,6 +12,8 @@ Here are the ports I'm currently aware of:
    and `Nick Martin <https://github.com/xnickmx/google-play-client>`__
 -  PHP:
    `raydanhk <http://code.google.com/p/unofficial-google-music-api-php/>`__
+-  Objective-C:
+   `Gregory Wicks <https://github.com/gwicks/gmusicapi-objc>`__
 -  Javascript: `My Google Music Turntable uploader
    <https://github.com/simon-weber/Google-Music-Turntable-Uploader>`__
    (not a full port, just an example)
