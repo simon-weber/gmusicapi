@@ -61,11 +61,11 @@ pl_array = {
 
 class Init(Call):
     """Called one time per session, immediately after login.
-    
+
     This performs one-time setup:
-    it gathers the cookies we need (specifically `xt`), and Google uses it 
+    it gathers the cookies we need (specifically `xt`), and Google uses it
     to create the webclient DOM.
-    
+
     Note the use of the HEAD verb. Google uses GET, but we don't need
     the large response containing Google's webui.
     """
@@ -602,7 +602,7 @@ class GetSettings(WcCall):
                     },
                     'isSubscription': {'type': 'boolean', 'required': False},
                     'isTrial': {'type': 'boolean', 'required': False},
-                    'hasFreeTrial': {'type': 'boolean'},
+                    'hasFreeTrial': {'type': 'boolean', 'required': False},
                     'subscriptionNewsletter': {'type': 'boolean'},
                 },
             },
