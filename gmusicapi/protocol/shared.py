@@ -205,6 +205,8 @@ class Call(object):
 
         req_kwargs = cls.build_request(*args, **kwargs)
 
+        log.debug(req_kwargs)
+
         response = session.send(req_kwargs, cls.required_auth)
         #TODO trim the logged response if it's huge?
 
@@ -237,6 +239,8 @@ class Call(object):
                 log.exception("could not parse %s response: (omitted)", call_name)
 
             raise CallFailure(err_msg, call_name)
+
+        log.debug(parsed_response)  # debug
 
         if cls.gets_logged:
             log.debug(cls.filter_response(parsed_response))

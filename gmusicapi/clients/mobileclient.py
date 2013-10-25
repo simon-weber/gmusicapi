@@ -317,6 +317,28 @@ class Mobileclient(_Base):
 
         return playlists
 
+    def get_shared_playlist_contents(self, share_token):
+        """
+        TODO
+
+          {
+              u'kind': u'sj#playlistEntry',
+              u'deleted': False,
+              u'trackId': u'2bb0ab1c-ce1a-3c0f-9217-a06da207b7a7',
+              u'lastModifiedTimestamp': u'1325285553655027',
+              u'playlistId': u'3d72c9b5-baad-4ff7-815d-cdef717e5d61',
+              u'absolutePosition': u'01729382256910287871',  # ??
+              u'source': u'1',  # ??
+              u'creationTimestamp': u'1325285553655027',
+              u'id': u'c9f1aff5-f93d-4b98-b13a-429cc7972fea'
+          }
+        """
+
+        res = self._make_call(mobileclient.ListSharedPlaylistEntries,
+                              updated_after=None, share_token=share_token)
+
+        return res
+
     @utils.accept_singleton(basestring, 2)
     @utils.empty_arg_shortcircuit(position=2)
     @utils.enforce_ids_param(position=2)
