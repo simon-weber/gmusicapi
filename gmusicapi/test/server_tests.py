@@ -39,6 +39,11 @@ TEST_AA_ARTIST_ID = 'Apoecs6off3y6k4h5nvqqos4b5e'
 # Holographic Universe
 TEST_AA_ALBUM_ID = 'B4cao5ms5jjn36notfgnhjtguwa'
 
+# this is owned by my test account, so it shouldn't disappear
+TEST_PLAYLIST_SHARETOKEN = ('AMaBXymHAkflgs5lvFAUyyQLYelqqMZNAB4v7Y_-'
+                            'v9vmrctLOeW64GScAScoFHEnrLgOP5DSRpl9FYIH'
+                            'b84HRBvyIMsxc7Zlrg==')
+
 # this is a little data class for the songs we upload
 TestSong = namedtuple('TestSong', 'sid title artist album full_data')
 
@@ -84,7 +89,7 @@ class UpauthTests(object):
 
     def mc_get_playlist_songs(self, plid):
         """For convenience, since mc can only get all playlists at once."""
-        all_contents = self.mc.get_all_playlist_contents()
+        all_contents = self.mc.get_all_user_playlist_contents()
         found = [p for p in all_contents if p['id'] == plid]
 
         assert_true(len(found), 1)
@@ -554,6 +559,11 @@ class UpauthTests(object):
     @test
     def mc_list_stations_inc_equal_with_deleted(self):
         self.assert_list_inc_equivalence(self.mc.get_all_stations, include_deleted=True)
+
+    @test
+    def mc_list_shared_playlist_entries(self):
+        entries = self.mc.get_shared_playlist_contents(TEST_PLAYLIST_SHARETOKEN)
+        assert_true(len(entries) > 0)
 
     @song_test
     def mc_list_songs_inc_equal(self):

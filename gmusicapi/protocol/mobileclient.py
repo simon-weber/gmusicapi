@@ -36,6 +36,10 @@ sj_track = {
         'durationMillis': {'type': 'string'},
         'albumArtRef': {'type': 'array',
                         'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}}},
+        'artistArtRef': {'type': 'array',
+                         'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}},
+                         'required': False,
+                       },
         'discNumber': {'type': 'integer'},
         'estimatedSize': {'type': 'string'},
         'trackType': {'type': 'string'},
@@ -91,8 +95,12 @@ sj_plentry = {
         'lastModifiedTimestamp': {'type': 'string'},
         'deleted': {'type': 'boolean'},
         'source': {'type': 'string'},
+        'track': sj_track.copy()
     },
 }
+
+sj_plentry['properties']['track']['required'] = False
+
 
 sj_album = {
     'type': 'object',
@@ -443,7 +451,33 @@ class ListPlaylistEntries(McListCall):
 
 
 class ListSharedPlaylistEntries(McListCall):
-    item_schema = sj_plentry
+    shared_plentry = sj_plentry.copy()
+    del shared_plentry['properties']['playlistId']
+    del shared_plentry['properties']['clientId']
+
+    item_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'shareToken': {'type': 'string'},
+            'responseCode': {'type': 'string'},
+            'playlistEntry': {
+                'type': 'array',
+                'items': shared_plentry,
+                'required': False,
+            }
+        }
+    }
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'kind': {'type': 'string'},
+            'entries': {'type': 'array',
+                        'items': item_schema,
+                       },
+        },
+    }
     filter_text = 'shared plentries'
 
     static_method = 'POST'
@@ -478,13 +512,11 @@ class ListSharedPlaylistEntries(McListCall):
 
         return json.dumps({'entries': [data]})
 
-    #TODO test for empty playlist
-
     @classmethod
     def parse_response(cls, response):
         res = cls._parse_json(response.text)
-        if 'entries' not in res:
-            res['entries'] = {'playlistEntry': []}
+        if 'playlistEntry' not in res['entries'][0]:
+            res['entries'][0]['playlistEntry'] = []
 
         return res
 
