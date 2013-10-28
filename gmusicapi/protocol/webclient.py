@@ -464,7 +464,9 @@ class GetStreamUrl(WcCall):
         "type": "object",
         "properties": {
             "url": {"type": "string", "required": False},
-            "urls": {"type": "array", "required": False}
+            "urls": {"type": "array", "required": False},
+            'now': {'type': 'integer'},
+            'tier': {'type': 'integer'},
         },
         "additionalProperties": False
     }
