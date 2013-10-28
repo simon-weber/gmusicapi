@@ -47,11 +47,8 @@ Status and updates
 .. image:: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API.png?branch=develop
         :target: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API
 
-The project is in the middle of a major change at the moment: the Webclient interface has
-gotten horrible to maintain, so I'm working on
-switching the the Android app api. This will provide easy All Access support and easier
-maintainability going forward. At this point, prefer the Mobileclient to the Webclient
-whenever possible.
+Over the summer, the project began a major shift away from the Webclient interface.
+That's mostly finished now, so prefer the new Mobileclient interface whenever possible.
 
 For development updates, follow me on Twitter:
 `@simonmweber <https://twitter.com/simonmweber>`__.
