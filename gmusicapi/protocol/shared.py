@@ -240,8 +240,6 @@ class Call(object):
 
             raise CallFailure(err_msg, call_name)
 
-        log.debug(parsed_response)  # debug
-
         if cls.gets_logged:
             log.debug(cls.filter_response(parsed_response))
 
