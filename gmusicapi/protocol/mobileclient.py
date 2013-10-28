@@ -36,6 +36,10 @@ sj_track = {
         'durationMillis': {'type': 'string'},
         'albumArtRef': {'type': 'array',
                         'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}}},
+        'artistArtRef': {'type': 'array',
+                         'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}},
+                         'required': False,
+                       },
         'discNumber': {'type': 'integer'},
         'estimatedSize': {'type': 'string'},
         'trackType': {'type': 'string'},
@@ -91,8 +95,12 @@ sj_plentry = {
         'lastModifiedTimestamp': {'type': 'string'},
         'deleted': {'type': 'boolean'},
         'source': {'type': 'string'},
+        'track': sj_track.copy()
     },
 }
+
+sj_plentry['properties']['track']['required'] = False
+
 
 sj_album = {
     'type': 'object',
@@ -440,6 +448,85 @@ class ListPlaylistEntries(McListCall):
 
     static_method = 'POST'
     static_url = sj_url + 'plentryfeed'
+
+
+class ListSharedPlaylistEntries(McListCall):
+    shared_plentry = sj_plentry.copy()
+    del shared_plentry['properties']['playlistId']
+    del shared_plentry['properties']['clientId']
+
+    item_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'shareToken': {'type': 'string'},
+            'responseCode': {'type': 'string'},
+            'playlistEntry': {
+                'type': 'array',
+                'items': shared_plentry,
+                'required': False,
+            }
+        }
+    }
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'kind': {'type': 'string'},
+            'entries': {'type': 'array',
+                        'items': item_schema,
+                       },
+        },
+    }
+    filter_text = 'shared plentries'
+
+    static_method = 'POST'
+    static_url = sj_url + 'plentries/shared'
+
+    # odd: this request has an additional level of nesting compared to others,
+    # and changes the data/entry schema to entries/playlistEntry.
+    # Those horrible naming choices make this even harder to understand.
+
+    @classmethod
+    def dynamic_params(cls, share_token, updated_after=None, start_token=None, max_results=None):
+        return super(ListSharedPlaylistEntries, cls).dynamic_params(
+            updated_after, start_token, max_results)
+
+    @classmethod
+    def dynamic_data(cls, share_token, updated_after=None, start_token=None, max_results=None):
+        """
+        :param share_token: from a shared playlist
+        :param updated_after: ignored
+        :param start_token: nextPageToken from a previous response
+        :param max_results: a positive int; if not provided, server defaults to 1000
+        """
+        data = {}
+
+        data['shareToken'] = share_token
+
+        if start_token is not None:
+            data['start-token'] = start_token
+
+        if max_results is not None:
+            data['max-results'] = str(max_results)
+
+        return json.dumps({'entries': [data]})
+
+    @classmethod
+    def parse_response(cls, response):
+        res = cls._parse_json(response.text)
+        if 'playlistEntry' not in res['entries'][0]:
+            res['entries'][0]['playlistEntry'] = []
+
+        return res
+
+    @classmethod
+    def filter_response(cls, msg):
+        filtered = copy.deepcopy(msg)
+        filtered['entries'][0]['playlistEntry'] = ["<%s %s>" %
+                                                   (len(filtered['entries'][0]['playlistEntry']),
+                                                    cls.filter_text)]
+        return filtered
 
 
 class BatchMutatePlaylists(McBatchMutateCall):

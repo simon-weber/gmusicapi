@@ -31,11 +31,12 @@ The tracks making up a playlist are referred to as
 entire library (not just their containing playlist).
 
 .. automethod:: Mobileclient.get_all_playlists
-.. automethod:: Mobileclient.get_all_playlist_contents
+.. automethod:: Mobileclient.get_all_user_playlist_contents
 .. automethod:: Mobileclient.create_playlist
 .. automethod:: Mobileclient.delete_playlist
 .. automethod:: Mobileclient.add_songs_to_playlist
 .. automethod:: Mobileclient.remove_entries_from_playlist
+.. automethod:: Mobileclient.get_shared_playlist_contents
 
 All Access Radio
 ----------------

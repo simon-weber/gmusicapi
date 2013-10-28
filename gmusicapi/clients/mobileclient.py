@@ -219,7 +219,7 @@ class Mobileclient(_Base):
                 u'kind': u'sj#playlist',
                 u'name': u'Something Mix',
                 u'deleted': False,
-                u'type': u'MAGIC',  # if not present, playlist is user-created
+                u'type': u'USER_GENERATED',  # or SHARED (public/subscribed to) or MAGIC
                 u'lastModifiedTimestamp': u'1325458766483033',
                 u'recentTimestamp': u'1325458766479000',
                 u'shareToken': u'<long string>',
@@ -276,12 +276,16 @@ class Mobileclient(_Base):
 
         return res['mutate_response'][0]['id']
 
-    def get_all_playlist_contents(self):
+    def get_all_user_playlist_contents(self):
         """
-        Retrieves the contents of *all* playlists
+        Retrieves the contents of *all* user-created playlists
         -- the Mobileclient does not support retrieving
         only the contents of one
         playlist.
+
+        This will not return results for public playlists
+        that the user is subscribed to; use :func:`get_shared_playlist_contents`
+        instead.
 
         Returns the same structure as :func:`get_all_playlists`,
         with the addition of a ``'tracks'`` key in each dict
@@ -302,20 +306,47 @@ class Mobileclient(_Base):
           }
         """
 
-        playlists = self.get_all_playlists()
+        user_playlists = [p for p in self.get_all_playlists()
+                          if p.get('type') == 'USER_GENERATED']
 
         all_entries = self._get_all_items(mobileclient.ListPlaylistEntries,
                                           incremental=False, include_deleted=False,
                                           updated_after=None)
 
-        for playlist in playlists:
+        for playlist in user_playlists:
+            #TODO could use a dict to make this faster
             entries = [e for e in all_entries
                        if e['playlistId'] == playlist['id']]
             entries.sort(key=itemgetter('absolutePosition'))
 
             playlist['tracks'] = entries
 
-        return playlists
+        return user_playlists
+
+    def get_shared_playlist_contents(self, share_token):
+        """
+        :param share_token: from ``playlist['shareToken']``, or a playlist share
+          url (``https://play.google.com/music/playlist/<token>``).
+
+          Note that tokens from urls will need to be url-decoded,
+          eg ``AM...%3D%3D`` becomes ``AM...==``.
+
+        Retrieves the contents of a public All Access playlist.
+        The user need not be subscribed to it.
+
+        Returns a list of playlist entries
+        with structure the same as those
+        returned by :func:`get_all_user_playlist_contents`,
+        but without the ``'clientId'`` or ``'playlistId'`` keys.
+        """
+
+        res = self._make_call(mobileclient.ListSharedPlaylistEntries,
+                              updated_after=None, share_token=share_token)
+
+        entries = res['entries'][0]['playlistEntry']
+        entries.sort(key=itemgetter('absolutePosition'))
+
+        return entries
 
     @utils.accept_singleton(basestring, 2)
     @utils.empty_arg_shortcircuit(position=2)
