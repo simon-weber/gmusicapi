@@ -640,9 +640,6 @@ class ListStationTracks(McListCall):
             'tracks': {'type': 'array', 'required': False, 'items': sj_track},
         }
     }
-    # assert lack of paging in schema
-    _res_schema = McListCall._res_schema.copy()
-    del _res_schema['properties']['nextPageToken']
 
     filter_text = 'stations'
 

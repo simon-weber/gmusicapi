@@ -696,18 +696,14 @@ class Mobileclient(_Base):
         kwargs are passed to the call.
         """
         if not incremental:
-            # slight optimization; can get all items at once
-            res = self._make_call(call, max_results=20000, **kwargs)
+            # slight optimization: get more items in a page
+            kwargs.setdefault('max_results', 20000)
 
-            items = res['data']['items']
+        generator = self._get_all_items_incremental(call, include_deleted, **kwargs)
+        if incremental:
+            return generator
 
-            if not include_deleted:
-                items = [t for t in items if not t['deleted']]
-
-            return items
-
-        # otherwise, return a generator
-        return self._get_all_items_incremental(call, include_deleted, **kwargs)
+        return [s for chunk in generator for s in chunk]
 
     def _get_all_items_incremental(self, call, include_deleted, **kwargs):
         """Return a generator of lists of tracks.
