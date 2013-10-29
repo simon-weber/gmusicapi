@@ -697,8 +697,7 @@ class Mobileclient(_Base):
         """
         if not incremental:
             # slight optimization; can get all items at once
-            #TODO does max_results control results by page or in total?
-            res = self._make_call(call, max_results=200000, **kwargs)
+            res = self._make_call(call, max_results=20000, **kwargs)
 
             items = res['data']['items']
 
