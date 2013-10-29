@@ -313,7 +313,7 @@ class McBatchMutateCall(McCall):
                 'items': {
                     'type': 'object',
                     'properties': {
-                        'id': {'type': 'string'},
+                        'id': {'type': 'string', 'required': False},
                         'client_id': {'type': 'string', 'blank': True,
                                       'required': False},
                         'response_code': {'type': 'string'},

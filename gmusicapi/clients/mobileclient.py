@@ -134,9 +134,11 @@ class Mobileclient(_Base):
 
         mutate_call = mobileclient.BatchMutateTracks
         mutations = [{'update': s} for s in songs]
-        res = self._make_call(mutate_call, mutations)
+        self._make_call(mutate_call, mutations)
 
-        return [d['id'] for d in res['mutate_response']]
+        # store tracks don't send back their id, so we're
+        # forced to spoof this
+        return [utils.id_or_nid(d) for d in songs]
 
     def add_aa_track(self, aa_song_id):
         """Adds an All Access track to the library,

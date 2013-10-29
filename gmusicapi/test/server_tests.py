@@ -21,7 +21,7 @@ from proboscis import test, before_class, after_class, SkipTest
 
 from gmusicapi import Webclient, Musicmanager, Mobileclient
 #from gmusicapi.protocol.metadata import md_expectations
-from gmusicapi.utils.utils import retry
+from gmusicapi.utils.utils import retry, id_or_nid
 import gmusicapi.test.utils as test_utils
 
 TEST_PLAYLIST_NAME = 'gmusicapi_test_playlist'
@@ -565,6 +565,61 @@ class UpauthTests(object):
         entries = self.mc.get_shared_playlist_contents(TEST_PLAYLIST_SHARETOKEN)
         assert_true(len(entries) > 0)
 
+    @staticmethod
+    @retry
+    def _assert_song_rating(method, sid, rating):
+        """
+        :param method: eg self.mc.get_all_songs
+        :param sid: song id
+        :param rating: a string
+        """
+        songs = method()
+
+        if not isinstance(songs, list):
+            # kind of a hack to support get_track_info as well
+            songs = [songs]
+
+        found = [s for s in songs if id_or_nid(s) == sid]
+
+        assert_equal(len(found), 1)
+        if 'rating' not in found[0]:
+            import code
+            import pprint
+            pprint.pprint(found[0])
+            code.interact(local=locals())
+
+        assert_equal(found[0]['rating'], rating)
+        return found[0]
+
+    # how can I get the rating key to show up for store tracks?
+    # it works in Google's clients!
+
+    # @test
+    # @all_access
+    # def mc_change_store_song_rating(self):
+    #     song = self.mc.get_track_info(TEST_AA_SONG_ID)
+
+    #     # increment by one but keep in rating range
+    #     song['rating'] = int(song.get('rating', '0')) + 1
+    #     song['rating'] = str(song['rating'] % 6)
+
+    #     self.mc.change_song_metadata(song)
+
+    #     self._assert_song_rating(lambda: self.mc.get_track_info(TEST_AA_SONG_ID),
+    #                              id_or_nid(song),
+    #                              song['rating'])
+
+    @song_test
+    def mc_change_uploaded_song_rating(self):
+        song = self._assert_song_rating(self.mc.get_all_songs,
+                                        self.all_songs[0].sid,
+                                        '0')  # initially unrated
+
+        song['rating'] = '1'
+        self.mc.change_song_metadata(song)
+
+        self._assert_song_rating(self.mc.get_all_songs, song['id'], '1')
+
     @song_test
     def mc_list_songs_inc_equal(self):
         self.assert_list_inc_equivalence(self.mc.get_all_songs)
@@ -572,25 +627,6 @@ class UpauthTests(object):
     @song_test
     def mc_list_songs_inc_equal_with_deleted(self):
         self.assert_list_inc_equivalence(self.mc.get_all_songs, include_deleted=True)
-
-    @song_test
-    def mc_change_song_rating(self):
-        @retry  # change takes time to propogate
-        def assert_song_rating(sid, rating):
-            songs = self.mc.get_all_songs()
-
-            found = [s for s in songs if s['id'] == sid]
-
-            assert_equal(len(found), 1)
-            assert_equal(found[0]['rating'], rating)
-            return found[0]
-
-        song = assert_song_rating(self.all_songs[0].sid, '0')  # initially unrated
-
-        song['rating'] = '1'
-        self.mc.change_song_metadata(song)
-
-        assert_song_rating(song['id'], '1')
 
     @playlist_test
     def mc_list_playlists_inc_equal(self):
@@ -681,6 +717,4 @@ class UpauthTests(object):
     @test
     @all_access
     def mc_track_info(self):
-        tid = 'Te2qokfjmhqxw4bnkswbfphzs4m'  # amorphis/hopeless days
-
-        self.mc.get_track_info(tid)  # just for the schema
+        self.mc.get_track_info(TEST_AA_SONG_ID)  # just for the schema

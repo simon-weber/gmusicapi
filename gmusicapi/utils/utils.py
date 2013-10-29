@@ -106,6 +106,16 @@ class DynamicClientLogger(object):
 log = DynamicClientLogger(__name__)
 
 
+def id_or_nid(song_dict):
+    """Equivalent to ``d.get('id') or d['nid']``.
+
+    Uploaded songs have an id key, while AA tracks
+    have a nid key, which can often be used interchangably.
+    """
+
+    return song_dict.get('id') or song_dict['nid']
+
+
 def datetime_to_microseconds(dt):
     """Return microseconds since epoch, as an int.
 
