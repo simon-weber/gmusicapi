@@ -631,6 +631,11 @@ class Mobileclient(_Base):
     def get_artist_info(self, artist_id, include_albums=True, max_top_tracks=5, max_rel_artist=5):
         """Retrieve details on an artist.
 
+        :param artist_id: an All Access artist id (hint: they always start with 'A')
+        :param include_albums: when True, create the ``'albums'`` substructure
+        :param max_top_tracks: maximum number of top tracks to retrieve
+        :param max_rel_artist: maximum number of related artists to retrieve
+
         Using this method without an All Access subscription will always result in
         CallFailure being raised.
 
@@ -739,8 +744,11 @@ class Mobileclient(_Base):
 
             get_next_chunk = 'nextPageToken' in lib_chunk
 
-    def get_album_info(self, albumid, include_tracks=True):
+    def get_album_info(self, album_id, include_tracks=True):
         """Retrieve details on an album.
+
+        :param album_id: an All Access album id (hint: they always start with 'B')
+        :param include_tracks: when True, create the ``'tracks'`` substructure
 
         Using this method without an All Access subscription will always result in
         CallFailure being raised.
@@ -756,7 +764,7 @@ class Mobileclient(_Base):
                 {
                     u'album': u'Circle',
                     u'kind': u'sj#track',
-                    u'storeId': u'T5zb7luo2vkroozmj57g2nljdsy',
+                    u'storeId': u'T5zb7luo2vkroozmj57g2nljdsy',  # can be used as a song id
                     u'artist': u'Amorphis',
                     u'albumArtRef': [
                     {
@@ -786,10 +794,12 @@ class Mobileclient(_Base):
 
         """
 
-        return self._make_call(mobileclient.GetAlbum, albumid, include_tracks)
+        return self._make_call(mobileclient.GetAlbum, album_id, include_tracks)
 
     def get_track_info(self, store_track_id):
         """Retrieve information about a store track.
+
+        :param store_track_id: an All Access track id (hint: they always start with 'T')
 
         Using this method without an All Access subscription will always result in
         CallFailure being raised.
@@ -834,18 +844,18 @@ class Mobileclient(_Base):
         Returns a list of dicts of the form, eg::
 
             {
-                'name': 'Alternative/Indie',
-                'id': 'ALTERNATIVE_INDIE'
-                'kind': 'sj#musicGenre',
-                'children': [             # this key may not be present
-                    'ALTERNATIVE_80S',    # these are ids
-                    'ALT_COUNTRY',
+                u'name': u'Alternative/Indie',
+                u'id': u'ALTERNATIVE_INDIE'
+                u'kind': u'sj#musicGenre',
+                u'children': [             # this key may not be present
+                    u'ALTERNATIVE_80S',    # these are ids
+                    u'ALT_COUNTRY',
                     ...
                     ],
-                'images': [
+                u'images': [
                     {
                         # these are album covers representative of the genre
-                        'url': 'http://lh6.ggpht.com/...'
+                        u'url': u'http://lh6.ggpht.com/...'
                     },
                 ...
                 ],

@@ -772,7 +772,7 @@ class BatchMutateTracks(McBatchMutateCall):
 
 
 class GetStoreTrack(McCall):
-    #TODO I think this should accept library ids, too
+    #TODO does this accept library ids, too?
     static_method = 'GET'
     static_url = sj_url + 'fetchtrack'
     static_headers = {'Content-Type': 'application/json'}
@@ -828,7 +828,6 @@ class GetGenres(McCall):
     }
 
 
-#TODO below here
 class GetArtist(McCall):
     static_method = 'GET'
     static_url = sj_url + 'fetchartist'
@@ -838,6 +837,12 @@ class GetArtist(McCall):
 
     @staticmethod
     def dynamic_params(artist_id, include_albums, num_top_tracks, num_rel_artist):
+        """
+        :param include_albums: bool
+        :param num_top_tracks: int
+        :param num_rel_artist: int
+        """
+
         return {'nid': artist_id,
                 'include-albums': include_albums,
                 'num-top-tracks': num_top_tracks,
@@ -847,11 +852,11 @@ class GetArtist(McCall):
 
 class GetAlbum(McCall):
     static_method = 'GET'
+    static_url = sj_url + 'fetchalbum'
+    static_params = {'alt': 'json'}
+
     _res_schema = sj_album
 
     @staticmethod
-    def dynamic_url(albumid, tracks=True):
-        ret = sj_url + 'fetchalbum?alt=json'
-        ret += '&nid=%s' % albumid
-        ret += '&include-tracks=%r' % tracks
-        return ret
+    def dynamic_params(album_id, tracks):
+        return {'nid': album_id, 'include-tracks': tracks}
