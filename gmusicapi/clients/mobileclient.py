@@ -55,46 +55,46 @@ class Mobileclient(_Base):
         Here is an example song dictionary::
 
             {
-               u'comment':u'',
-               u'rating':u'0',
-               u'albumArtRef':[
+               'comment':'',
+               'rating':'0',
+               'albumArtRef':[
                  {
-                   u'url': u'http://lh6.ggpht.com/...'
+                   'url': 'http://lh6.ggpht.com/...'
                  }
                ],
-               u'artistId':[
-                 u'Aod62yyj3u3xsjtooghh2glwsdi'
+               'artistId':[
+                 'Aod62yyj3u3xsjtooghh2glwsdi'
                ],
-               u'composer':u'',
-               u'year':2011,
-               u'creationTimestamp':u'1330879409467830',
-               u'id':u'5924d75a-931c-30ed-8790-f7fce8943c85',
-               u'album':u'Heritage ',
-               u'totalDiscCount':0,
-               u'title':u'Haxprocess',
-               u'recentTimestamp':u'1372040508935000',
-               u'albumArtist':u'',
-               u'trackNumber':6,
-               u'discNumber':0,
-               u'deleted':False,
-               u'storeId':u'Txsffypukmmeg3iwl3w5a5s3vzy',
-               u'nid':u'Txsffypukmmeg3iwl3w5a5s3vzy',
-               u'totalTrackCount':10,
-               u'estimatedSize':u'17229205',
-               u'albumId':u'Bdkf6ywxmrhflvtasnayxlkgpcm',
-               u'beatsPerMinute':0,
-               u'genre':u'Progressive Metal',
-               u'playCount':7,
-               u'artistArtRef':[
+               'composer':'',
+               'year':2011,
+               'creationTimestamp':'1330879409467830',
+               'id':'5924d75a-931c-30ed-8790-f7fce8943c85',
+               'album':'Heritage ',
+               'totalDiscCount':0,
+               'title':'Haxprocess',
+               'recentTimestamp':'1372040508935000',
+               'albumArtist':'',
+               'trackNumber':6,
+               'discNumber':0,
+               'deleted':False,
+               'storeId':'Txsffypukmmeg3iwl3w5a5s3vzy',
+               'nid':'Txsffypukmmeg3iwl3w5a5s3vzy',
+               'totalTrackCount':10,
+               'estimatedSize':'17229205',
+               'albumId':'Bdkf6ywxmrhflvtasnayxlkgpcm',
+               'beatsPerMinute':0,
+               'genre':'Progressive Metal',
+               'playCount':7,
+               'artistArtRef':[
                  {
-                   u'url': u'http://lh3.ggpht.com/...'
+                   'url': 'http://lh3.ggpht.com/...'
                  }
                ],
-               u'kind':u'sj#track',
-               u'artist':u'Opeth',
-               u'lastModifiedTimestamp':u'1330881158830924',
-               u'clientId':u'+eGFGTbiyMktbPuvB5MfsA',
-               u'durationMillis':u'418000'
+               'kind':'sj#track',
+               'artist':'Opeth',
+               'lastModifiedTimestamp':'1330881158830924',
+               'clientId':'+eGFGTbiyMktbPuvB5MfsA',
+               'durationMillis':'418000'
              }
 
         """
@@ -228,18 +228,18 @@ class Mobileclient(_Base):
         Here is an example playlist dictionary::
 
             {
-                u'kind': u'sj#playlist',
-                u'name': u'Something Mix',
-                u'deleted': False,
-                u'type': u'USER_GENERATED',  # or SHARED (public/subscribed to) or MAGIC
-                u'lastModifiedTimestamp': u'1325458766483033',
-                u'recentTimestamp': u'1325458766479000',
-                u'shareToken': u'<long string>',
-                u'ownerProfilePhotoUrl': u'http://lh3.googleusercontent.com/...',
-                u'ownerName': u'Simon Weber',
-                u'accessControlled': False,  # something to do with shared playlists?
-                u'creationTimestamp': u'1325285553626172',
-                u'id': u'3d72c9b5-baad-4ff7-815d-cdef717e5d61'
+                'kind': 'sj#playlist',
+                'name': 'Something Mix',
+                'deleted': False,
+                'type': 'USER_GENERATED',  # or SHARED (public/subscribed to) or MAGIC
+                'lastModifiedTimestamp': '1325458766483033',
+                'recentTimestamp': '1325458766479000',
+                'shareToken': '<long string>',
+                'ownerProfilePhotoUrl': 'http://lh3.googleusercontent.com/...',
+                'ownerName': 'Simon Weber',
+                'accessControlled': False,  # something to do with shared playlists?
+                'creationTimestamp': '1325285553626172',
+                'id': '3d72c9b5-baad-4ff7-815d-cdef717e5d61'
             }
         """
 
@@ -306,15 +306,15 @@ class Mobileclient(_Base):
         Here is an example playlist entry::
 
           {
-              u'kind': u'sj#playlistEntry',
-              u'deleted': False,
-              u'trackId': u'2bb0ab1c-ce1a-3c0f-9217-a06da207b7a7',
-              u'lastModifiedTimestamp': u'1325285553655027',
-              u'playlistId': u'3d72c9b5-baad-4ff7-815d-cdef717e5d61',
-              u'absolutePosition': u'01729382256910287871',  # ??
-              u'source': u'1',  # ??
-              u'creationTimestamp': u'1325285553655027',
-              u'id': u'c9f1aff5-f93d-4b98-b13a-429cc7972fea'
+              'kind': 'sj#playlistEntry',
+              'deleted': False,
+              'trackId': '2bb0ab1c-ce1a-3c0f-9217-a06da207b7a7',
+              'lastModifiedTimestamp': '1325285553655027',
+              'playlistId': '3d72c9b5-baad-4ff7-815d-cdef717e5d61',
+              'absolutePosition': '01729382256910287871',  # ??
+              'source': '1',  # ??
+              'creationTimestamp': '1325285553655027',
+              'id': 'c9f1aff5-f93d-4b98-b13a-429cc7972fea'
           }
         """
 
@@ -455,21 +455,21 @@ class Mobileclient(_Base):
         Here is an example station dictionary::
 
             {
-                u'imageUrl': u'http://lh6.ggpht.com/...',
-                u'kind': u'sj#radioStation',
-                u'name': u'station',
-                u'deleted': False,
-                u'lastModifiedTimestamp': u'1370796487455005',
-                u'recentTimestamp': u'1370796487454000',
-                u'clientId': u'c2639bf4-af24-4e4f-ab37-855fc89d15a1',
-                u'seed':
+                'imageUrl': 'http://lh6.ggpht.com/...',
+                'kind': 'sj#radioStation',
+                'name': 'station',
+                'deleted': False,
+                'lastModifiedTimestamp': '1370796487455005',
+                'recentTimestamp': '1370796487454000',
+                'clientId': 'c2639bf4-af24-4e4f-ab37-855fc89d15a1',
+                'seed':
                 {
-                    u'kind': u'sj#radioSeed',
-                    u'trackLockerId': u'7df3aadd-9a18-3dc1-b92e-a7cf7619da7e'
+                    'kind': 'sj#radioSeed',
+                    'trackLockerId': '7df3aadd-9a18-3dc1-b92e-a7cf7619da7e'
                     # possible keys:
                     #  albumId, artistId, genreId, trackId, trackLockerId
                 },
-                u'id': u'69f1bfce-308a-313e-9ed2-e50abe33a25d'
+                'id': '69f1bfce-308a-313e-9ed2-e50abe33a25d'
             },
         """
         return self._get_all_items(mobileclient.ListStations, incremental, include_deleted,
@@ -512,110 +512,110 @@ class Mobileclient(_Base):
             {
                'album_hits':[
                   {
-                     u'album':{
-                        u'albumArtRef':u'http://lh6.ggpht.com/...',
-                        u'albumId':u'Bfr2onjv7g7tm4rzosewnnwxxyy',
-                        u'artist':u'Amorphis',
-                        u'artistId':[
-                           u'Apoecs6off3y6k4h5nvqqos4b5e'
+                     'album':{
+                        'albumArtRef':'http://lh6.ggpht.com/...',
+                        'albumId':'Bfr2onjv7g7tm4rzosewnnwxxyy',
+                        'artist':'Amorphis',
+                        'artistId':[
+                           'Apoecs6off3y6k4h5nvqqos4b5e'
                         ],
-                        u'kind':u'sj#album',
-                        u'name':u'Circle',
-                        u'year':2013
+                        'kind':'sj#album',
+                        'name':'Circle',
+                        'year':2013
                      },
-                     u'best_result':True,
-                     u'score':385.55609130859375,
-                     u'type':u'3'
+                     'best_result':True,
+                     'score':385.55609130859375,
+                     'type':'3'
                   },
                   {
-                     u'album':{
-                        u'albumArtRef':u'http://lh3.ggpht.com/...',
-                        u'albumArtist':u'Amorphis',
-                        u'albumId':u'Bqzxfykbqcqmjjtdom7ukegaf2u',
-                        u'artist':u'Amorphis',
-                        u'artistId':[
-                           u'Apoecs6off3y6k4h5nvqqos4b5e'
+                     'album':{
+                        'albumArtRef':'http://lh3.ggpht.com/...',
+                        'albumArtist':'Amorphis',
+                        'albumId':'Bqzxfykbqcqmjjtdom7ukegaf2u',
+                        'artist':'Amorphis',
+                        'artistId':[
+                           'Apoecs6off3y6k4h5nvqqos4b5e'
                         ],
-                        u'kind':u'sj#album',
-                        u'name':u'Elegy',
-                        u'year':1996
+                        'kind':'sj#album',
+                        'name':'Elegy',
+                        'year':1996
                      },
-                     u'score':236.33485412597656,
-                     u'type':u'3'
+                     'score':236.33485412597656,
+                     'type':'3'
                   },
                ],
                'artist_hits':[
                   {
-                     u'artist':{
-                        u'artistArtRef':u'http://lh6.ggpht.com/...',
-                        u'artistId':u'Apoecs6off3y6k4h5nvqqos4b5e',
-                        u'kind':u'sj#artist',
-                        u'name':u'Amorphis'
+                     'artist':{
+                        'artistArtRef':'http://lh6.ggpht.com/...',
+                        'artistId':'Apoecs6off3y6k4h5nvqqos4b5e',
+                        'kind':'sj#artist',
+                        'name':'Amorphis'
                      },
-                     u'score':237.86375427246094,
-                     u'type':u'2'
+                     'score':237.86375427246094,
+                     'type':'2'
                   }
                ],
                'song_hits':[
                   {
-                     u'score':105.23198699951172,
-                     u'track':{
-                        u'album':u'Skyforger',
-                        u'albumArtRef':[
+                     'score':105.23198699951172,
+                     'track':{
+                        'album':'Skyforger',
+                        'albumArtRef':[
                            {
-                              u'url':u'http://lh4.ggpht.com/...'
+                              'url':'http://lh4.ggpht.com/...'
                            }
                         ],
-                        u'albumArtist':u'Amorphis',
-                        u'albumAvailableForPurchase':True,
-                        u'albumId':u'B5nc22xlcmdwi3zn5htkohstg44',
-                        u'artist':u'Amorphis',
-                        u'artistId':[
-                           u'Apoecs6off3y6k4h5nvqqos4b5e'
+                        'albumArtist':'Amorphis',
+                        'albumAvailableForPurchase':True,
+                        'albumId':'B5nc22xlcmdwi3zn5htkohstg44',
+                        'artist':'Amorphis',
+                        'artistId':[
+                           'Apoecs6off3y6k4h5nvqqos4b5e'
                         ],
-                        u'discNumber':1,
-                        u'durationMillis':u'253000',
-                        u'estimatedSize':u'10137633',
-                        u'kind':u'sj#track',
-                        u'nid':u'Tn2ugrgkeinrrb2a4ji7khungoy',
-                        u'playCount':1,
-                        u'storeId':u'Tn2ugrgkeinrrb2a4ji7khungoy',
-                        u'title':u'Silver Bride',
-                        u'trackAvailableForPurchase':True,
-                        u'trackNumber':2,
-                        u'trackType':u'7'
+                        'discNumber':1,
+                        'durationMillis':'253000',
+                        'estimatedSize':'10137633',
+                        'kind':'sj#track',
+                        'nid':'Tn2ugrgkeinrrb2a4ji7khungoy',
+                        'playCount':1,
+                        'storeId':'Tn2ugrgkeinrrb2a4ji7khungoy',
+                        'title':'Silver Bride',
+                        'trackAvailableForPurchase':True,
+                        'trackNumber':2,
+                        'trackType':'7'
                      },
-                     u'type':u'1'
+                     'type':'1'
                   },
                   {
-                     u'score':96.23717498779297,
-                     u'track':{
-                        u'album':u'Magic And Mayhem - Tales From The Early Years',
-                        u'albumArtRef':[
+                     'score':96.23717498779297,
+                     'track':{
+                        'album':'Magic And Mayhem - Tales From The Early Years',
+                        'albumArtRef':[
                            {
-                              u'url':u'http://lh4.ggpht.com/...'
+                              'url':'http://lh4.ggpht.com/...'
                            }
                         ],
-                        u'albumArtist':u'Amorphis',
-                        u'albumAvailableForPurchase':True,
-                        u'albumId':u'B7dplgr5h2jzzkcyrwhifgwl2v4',
-                        u'artist':u'Amorphis',
-                        u'artistId':[
-                           u'Apoecs6off3y6k4h5nvqqos4b5e'
+                        'albumArtist':'Amorphis',
+                        'albumAvailableForPurchase':True,
+                        'albumId':'B7dplgr5h2jzzkcyrwhifgwl2v4',
+                        'artist':'Amorphis',
+                        'artistId':[
+                           'Apoecs6off3y6k4h5nvqqos4b5e'
                         ],
-                        u'discNumber':1,
-                        u'durationMillis':u'235000',
-                        u'estimatedSize':u'9405159',
-                        u'kind':u'sj#track',
-                        u'nid':u'T4j5jxodzredqklxxhncsua5oba',
-                        u'storeId':u'T4j5jxodzredqklxxhncsua5oba',
-                        u'title':u'Black Winter Day',
-                        u'trackAvailableForPurchase':True,
-                        u'trackNumber':4,
-                        u'trackType':u'7',
-                        u'year':2010
+                        'discNumber':1,
+                        'durationMillis':'235000',
+                        'estimatedSize':'9405159',
+                        'kind':'sj#track',
+                        'nid':'T4j5jxodzredqklxxhncsua5oba',
+                        'storeId':'T4j5jxodzredqklxxhncsua5oba',
+                        'title':'Black Winter Day',
+                        'trackAvailableForPurchase':True,
+                        'trackNumber':4,
+                        'trackType':'7',
+                        'year':2010
                      },
-                     u'type':u'1'
+                     'type':'1'
                   },
                ]
             }
@@ -642,61 +642,61 @@ class Mobileclient(_Base):
         Returns a dict, eg::
 
             {
-              u'albums':[  # only if include_albums is True
+              'albums':[  # only if include_albums is True
                 {
-                  u'albumArtRef':u'http://lh6.ggpht.com/...',
-                  u'albumArtist':u'Amorphis',
-                  u'albumId':u'Bfr2onjv7g7tm4rzosewnnwxxyy',
-                  u'artist':u'Amorphis',
-                  u'artistId':[
-                    u'Apoecs6off3y6k4h5nvqqos4b5e'
+                  'albumArtRef':'http://lh6.ggpht.com/...',
+                  'albumArtist':'Amorphis',
+                  'albumId':'Bfr2onjv7g7tm4rzosewnnwxxyy',
+                  'artist':'Amorphis',
+                  'artistId':[
+                    'Apoecs6off3y6k4h5nvqqos4b5e'
                   ],
-                  u'kind':u'sj#album',
-                  u'name':u'Circle',
-                  u'year':2013
+                  'kind':'sj#album',
+                  'name':'Circle',
+                  'year':2013
                 },
               ],
-              u'artistArtRef':  u'http://lh6.ggpht.com/...',
-              u'artistId':u'Apoecs6off3y6k4h5nvqqos4b5e',
-              u'kind':u'sj#artist',
-              u'name':u'Amorphis',
-              u'related_artists':[  # only if max_rel_artists > 0
+              'artistArtRef':  'http://lh6.ggpht.com/...',
+              'artistId':'Apoecs6off3y6k4h5nvqqos4b5e',
+              'kind':'sj#artist',
+              'name':'Amorphis',
+              'related_artists':[  # only if max_rel_artists > 0
                 {
-                  u'artistArtRef':      u'http://lh5.ggpht.com/...',
-                  u'artistId':u'Aheqc7kveljtq7rptd7cy5gvk2q',
-                  u'kind':u'sj#artist',
-                  u'name':u'Dark Tranquillity'
+                  'artistArtRef':      'http://lh5.ggpht.com/...',
+                  'artistId':'Aheqc7kveljtq7rptd7cy5gvk2q',
+                  'kind':'sj#artist',
+                  'name':'Dark Tranquillity'
                 }
               ],
-              u'topTracks':[  # only if max_top_tracks > 0
+              'topTracks':[  # only if max_top_tracks > 0
                 {
-                  u'album':u'Skyforger',
-                  u'albumArtRef':[
+                  'album':'Skyforger',
+                  'albumArtRef':[
                     {
-                      u'url':          u'http://lh4.ggpht.com/...'
+                      'url':          'http://lh4.ggpht.com/...'
                     }
                   ],
-                  u'albumArtist':u'Amorphis',
-                  u'albumAvailableForPurchase':True,
-                  u'albumId':u'B5nc22xlcmdwi3zn5htkohstg44',
-                  u'artist':u'Amorphis',
-                  u'artistId':[
-                    u'Apoecs6off3y6k4h5nvqqos4b5e'
+                  'albumArtist':'Amorphis',
+                  'albumAvailableForPurchase':True,
+                  'albumId':'B5nc22xlcmdwi3zn5htkohstg44',
+                  'artist':'Amorphis',
+                  'artistId':[
+                    'Apoecs6off3y6k4h5nvqqos4b5e'
                   ],
-                  u'discNumber':1,
-                  u'durationMillis':u'253000',
-                  u'estimatedSize':u'10137633',
-                  u'kind':u'sj#track',
-                  u'nid':u'Tn2ugrgkeinrrb2a4ji7khungoy',
-                  u'playCount':1,
-                  u'storeId':u'Tn2ugrgkeinrrb2a4ji7khungoy',
-                  u'title':u'Silver Bride',
-                  u'trackAvailableForPurchase':True,
-                  u'trackNumber':2,
-                  u'trackType':u'7'
+                  'discNumber':1,
+                  'durationMillis':'253000',
+                  'estimatedSize':'10137633',
+                  'kind':'sj#track',
+                  'nid':'Tn2ugrgkeinrrb2a4ji7khungoy',
+                  'playCount':1,
+                  'storeId':'Tn2ugrgkeinrrb2a4ji7khungoy',
+                  'title':'Silver Bride',
+                  'trackAvailableForPurchase':True,
+                  'trackNumber':2,
+                  'trackType':'7'
                 }
               ],
-              u'total_albums':21
+              'total_albums':21
             }
         """
 
@@ -756,40 +756,40 @@ class Mobileclient(_Base):
         Returns a dict, eg::
 
             {
-                u'kind': u'sj#album',
-                u'name': u'Circle',
-                u'artist': u'Amorphis',
-                u'albumArtRef': u'http://lh6.ggpht.com/...',
-                u'tracks': [  # if `include_tracks` is True
+                'kind': 'sj#album',
+                'name': 'Circle',
+                'artist': 'Amorphis',
+                'albumArtRef': 'http://lh6.ggpht.com/...',
+                'tracks': [  # if `include_tracks` is True
                 {
-                    u'album': u'Circle',
-                    u'kind': u'sj#track',
-                    u'storeId': u'T5zb7luo2vkroozmj57g2nljdsy',  # can be used as a song id
-                    u'artist': u'Amorphis',
-                    u'albumArtRef': [
+                    'album': 'Circle',
+                    'kind': 'sj#track',
+                    'storeId': 'T5zb7luo2vkroozmj57g2nljdsy',  # can be used as a song id
+                    'artist': 'Amorphis',
+                    'albumArtRef': [
                     {
-                        u'url': u'http://lh6.ggpht.com/...'
+                        'url': 'http://lh6.ggpht.com/...'
                     }],
-                    u'title': u'Shades of Grey',
-                    u'nid': u'T5zb7luo2vkroozmj57g2nljdsy',
-                    u'estimatedSize': u'13115591',
-                    u'albumId': u'Bfr2onjv7g7tm4rzosewnnwxxyy',
-                    u'artistId': [u'Apoecs6off3y6k4h5nvqqos4b5e'],
-                    u'albumArtist': u'Amorphis',
-                    u'durationMillis': u'327000',
-                    u'composer': u'',
-                    u'genre': u'Metal',
-                    u'trackNumber': 1,
-                    u'discNumber': 1,
-                    u'trackAvailableForPurchase': True,
-                    u'trackType': u'7',
-                    u'albumAvailableForPurchase': True
+                    'title': 'Shades of Grey',
+                    'nid': 'T5zb7luo2vkroozmj57g2nljdsy',
+                    'estimatedSize': '13115591',
+                    'albumId': 'Bfr2onjv7g7tm4rzosewnnwxxyy',
+                    'artistId': ['Apoecs6off3y6k4h5nvqqos4b5e'],
+                    'albumArtist': 'Amorphis',
+                    'durationMillis': '327000',
+                    'composer': '',
+                    'genre': 'Metal',
+                    'trackNumber': 1,
+                    'discNumber': 1,
+                    'trackAvailableForPurchase': True,
+                    'trackType': '7',
+                    'albumAvailableForPurchase': True
                 }, # ...
                 ],
-                u'albumId': u'Bfr2onjv7g7tm4rzosewnnwxxyy',
-                u'artistId': [u'Apoecs6off3y6k4h5nvqqos4b5e'],
-                u'albumArtist': u'Amorphis',
-                u'year': 2013
+                'albumId': 'Bfr2onjv7g7tm4rzosewnnwxxyy',
+                'artistId': ['Apoecs6off3y6k4h5nvqqos4b5e'],
+                'albumArtist': 'Amorphis',
+                'year': 2013
             }
 
         """
@@ -807,28 +807,28 @@ class Mobileclient(_Base):
         Returns a dict, eg::
 
             {
-                u 'album': u 'Best Of',
-                u 'kind': u 'sj#track',
-                u 'storeId': u 'Te2qokfjmhqxw4bnkswbfphzs4m',
-                u 'artist': u 'Amorphis',
-                u 'albumArtRef': [
+                'album': 'Best Of',
+                'kind': 'sj#track',
+                'storeId': 'Te2qokfjmhqxw4bnkswbfphzs4m',
+                'artist': 'Amorphis',
+                'albumArtRef': [
                 {
-                    u 'url': u 'http://lh5.ggpht.com/...'
+                    'url': 'http://lh5.ggpht.com/...'
                 }],
-                u 'title': u 'Hopeless Days',
-                u 'nid': u 'Te2qokfjmhqxw4bnkswbfphzs4m',
-                u 'estimatedSize': u '12325643',
-                u 'albumId': u 'Bsbjjc24a5xutbutvbvg3h4y2k4',
-                u 'artistId': [u 'Apoecs6off3y6k4h5nvqqos4b5e'],
-                u 'albumArtist': u 'Amorphis',
-                u 'durationMillis': u '308000',
-                u 'composer': u '',
-                u 'genre': u 'Metal',
-                u 'trackNumber': 2,
-                u 'discNumber': 1,
-                u 'trackAvailableForPurchase': True,
-                u 'trackType': u '7',
-                u 'albumAvailableForPurchase': True
+                'title': 'Hopeless Days',
+                'nid': 'Te2qokfjmhqxw4bnkswbfphzs4m',
+                'estimatedSize': '12325643',
+                'albumId': 'Bsbjjc24a5xutbutvbvg3h4y2k4',
+                'artistId': ['Apoecs6off3y6k4h5nvqqos4b5e'],
+                'albumArtist': 'Amorphis',
+                'durationMillis': '308000',
+                'composer': '',
+                'genre': 'Metal',
+                'trackNumber': 2,
+                'discNumber': 1,
+                'trackAvailableForPurchase': True,
+                'trackType': '7',
+                'albumAvailableForPurchase': True
             }
 
         """
@@ -844,18 +844,18 @@ class Mobileclient(_Base):
         Returns a list of dicts of the form, eg::
 
             {
-                u'name': u'Alternative/Indie',
-                u'id': u'ALTERNATIVE_INDIE'
-                u'kind': u'sj#musicGenre',
-                u'children': [             # this key may not be present
-                    u'ALTERNATIVE_80S',    # these are ids
-                    u'ALT_COUNTRY',
+                'name': 'Alternative/Indie',
+                'id': 'ALTERNATIVE_INDIE'
+                'kind': 'sj#musicGenre',
+                'children': [             # this key may not be present
+                    'ALTERNATIVE_80S',    # these are ids
+                    'ALT_COUNTRY',
                     ...
                     ],
-                u'images': [
+                'images': [
                     {
                         # these are album covers representative of the genre
-                        u'url': u'http://lh6.ggpht.com/...'
+                        'url': 'http://lh6.ggpht.com/...'
                     },
                 ...
                 ],
