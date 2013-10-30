@@ -718,3 +718,8 @@ class UpauthTests(object):
     @all_access
     def mc_track_info(self):
         self.mc.get_track_info(TEST_AA_SONG_ID)  # just for the schema
+
+    @test
+    @all_access
+    def mc_genres(self):
+        self.mc.get_genres()

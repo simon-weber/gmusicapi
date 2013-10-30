@@ -776,8 +776,7 @@ class Mobileclient(_Base):
 
         """
 
-        res = self._make_call(mobileclient.GetAlbum, albumid, include_tracks)
-        return res
+        return self._make_call(mobileclient.GetAlbum, albumid, include_tracks)
 
     def get_track_info(self, store_track_id):
         """Retrieve information about a store track.
@@ -814,5 +813,36 @@ class Mobileclient(_Base):
 
         """
 
-        res = self._make_call(mobileclient.GetStoreTrack, store_track_id)
-        return res
+        return self._make_call(mobileclient.GetStoreTrack, store_track_id)
+
+    def get_genres(self):
+        """Retrieve information on Google Music genres.
+
+        Using this method without an All Access subscription will always result in
+        CallFailure being raised.
+
+        Returns a list of dicts of the form, eg::
+
+            {
+                'name': 'Alternative/Indie',
+                'id': 'ALTERNATIVE_INDIE'
+                'kind': 'sj#musicGenre',
+                'children': [             # this key may not be present
+                    'ALTERNATIVE_80S',    # these are ids
+                    'ALT_COUNTRY',
+                    ...
+                    ],
+                'images': [
+                    {
+                        # these are album covers representative of the genre
+                        'url': 'http://lh6.ggpht.com/...'
+                    },
+                ...
+                ],
+            }
+
+        Note that the id can be used with :func:`create_station`
+        to seed an All Access radio station.
+        """
+
+        return self._make_call(mobileclient.GetGenres)

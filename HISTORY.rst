@@ -15,6 +15,7 @@ released 2013-XX-XX
 - add Mobileclient.change_song_metadata
 - add Mobileclient.get_album_info
 - add Mobileclient.get_track_info
+- add Mobileclient.get_genres
 - compatibility fixes
 
 

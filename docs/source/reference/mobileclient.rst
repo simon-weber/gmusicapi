@@ -56,9 +56,11 @@ Adding a store track to a library will yield a normal song id.
 
 All Access track ids can be used in most places that normal song ids can
 (e.g. when for playlist addition or streaming).
+Note that sometimes they are stored under the ``'nid'`` key, not the ``'id'`` key.
 
 .. automethod:: Mobileclient.search_all_access
 .. automethod:: Mobileclient.add_aa_track
 .. automethod:: Mobileclient.get_artist_info
 .. automethod:: Mobileclient.get_album_info
 .. automethod:: Mobileclient.get_track_info
+.. automethod:: Mobileclient.get_genres

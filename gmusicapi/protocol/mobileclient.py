@@ -785,6 +785,49 @@ class GetStoreTrack(McCall):
         return {'nid': track_id}
 
 
+class GetGenres(McCall):
+    static_method = 'GET'
+    static_url = sj_url + 'explore/genres'
+    static_params = {'alt': 'json'}
+
+    genre_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'name': {'type': 'string'},
+            'id': {'type': 'string'},
+            'kind': {'type': 'string'},
+            'images': {
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'additionalProperties': False,
+                    'properties': {
+                        'url': {'type': 'string'}
+                    },
+                }
+            },
+            'children': {
+                'type': 'array',
+                'items': {'type': 'string'},
+                'required': False,
+            }
+        }
+    }
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'kind': {'type': 'string'},
+            'genres': {
+                'type': 'array',
+                'items': genre_schema,
+            }
+        }
+    }
+
+
 #TODO below here
 class GetArtist(McCall):
     static_method = 'GET'
