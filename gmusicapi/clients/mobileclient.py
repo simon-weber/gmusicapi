@@ -850,14 +850,14 @@ class Mobileclient(_Base):
                 'children': [             # this key may not be present
                     'ALTERNATIVE_80S',    # these are ids
                     'ALT_COUNTRY',
-                    ...
+                    # ...
                     ],
                 'images': [
                     {
                         # these are album covers representative of the genre
                         'url': 'http://lh6.ggpht.com/...'
                     },
-                ...
+                    # ...
                 ],
             }
 
