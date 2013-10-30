@@ -722,4 +722,4 @@ class UpauthTests(object):
     @test
     @all_access
     def mc_genres(self):
-        self.mc.get_genres()
+        self.mc.get_genres()  # just for the schema

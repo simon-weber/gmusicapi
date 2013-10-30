@@ -117,6 +117,7 @@ class Mobileclient(_Base):
 
         * ``rating``: this is a string!
                       set to '0' (no thumb), '1' (down thumb), or '5' (up thumb)
+                      unless you're using the 5-star ratings lab
         * ``album``
         * ``albumArtist``
         * ``artist``
@@ -130,12 +131,21 @@ class Mobileclient(_Base):
         * ``totalTrackCount``
         * ``trackNumber``
         * ``year``
+
+        You can also use this to rate All Access tracks
+        that aren't in your library, eg::
+
+            song = mc.get_track_info('<some store track id>')
+            song['rating'] = '5'
+            mc.change_song_metadata(song)
+
         """
 
         mutate_call = mobileclient.BatchMutateTracks
         mutations = [{'update': s} for s in songs]
         self._make_call(mutate_call, mutations)
 
+        #TODO
         # store tracks don't send back their id, so we're
         # forced to spoof this
         return [utils.id_or_nid(d) for d in songs]
