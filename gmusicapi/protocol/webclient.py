@@ -571,7 +571,7 @@ class GetSettings(WcCall):
             'model': {'type': 'string', 'required': False},
             'manufacturer': {'type': 'string', 'required': False},
 
-            'carrier': {'type': 'string', 'required': False},
+            'carrier': {'type': 'string', 'blank': True, 'required': False},
         },
     }
 
