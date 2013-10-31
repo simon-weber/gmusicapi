@@ -39,7 +39,7 @@ class Mobileclient(_Base):
 
         return True
 
-    #TODO expose max-results, updated_after, etc for list operations
+    #TODO expose max/page-results, updated_after, etc for list operations
 
     def get_all_songs(self, incremental=False, include_deleted=False):
         """Returns a list of dictionaries that each represent a song.
@@ -388,6 +388,21 @@ class Mobileclient(_Base):
         mutate_call = mobileclient.BatchMutatePlaylistEntries
         del_mutations = mutate_call.build_plentry_deletes(entry_ids)
         res = self._make_call(mutate_call, del_mutations)
+
+        return [e['id'] for e in res['mutate_response']]
+
+    def reorder_playlist_entry(self, entry, to_follow_entry=None, to_precede_entry=None):
+        """TODO"""
+
+        if to_follow_entry is None and to_precede_entry is None:
+            raise ValueError('either to_follow_entry or to_precede_entry must be provided')
+
+        mutate_call = mobileclient.BatchMutatePlaylistEntries
+        before = to_follow_entry['clientId'] if to_follow_entry else None
+        after = to_precede_entry['clientId'] if to_precede_entry else None
+
+        reorder_mutation = mutate_call.build_plentry_reorder(entry, before, after)
+        res = self._make_call(mutate_call, [reorder_mutation])
 
         return [e['id'] for e in res['mutate_response']]
 

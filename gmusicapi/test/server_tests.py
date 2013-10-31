@@ -8,6 +8,7 @@ an extra test playlist or song may result.
 """
 
 from collections import namedtuple
+import itertools
 import os
 import re
 import types
@@ -582,11 +583,6 @@ class UpauthTests(object):
         found = [s for s in songs if id_or_nid(s) == sid]
 
         assert_equal(len(found), 1)
-        if 'rating' not in found[0]:
-            import code
-            import pprint
-            pprint.pprint(found[0])
-            code.interact(local=locals())
 
         assert_equal(found[0]['rating'], rating)
         return found[0]
@@ -657,9 +653,78 @@ class UpauthTests(object):
         self.mc.change_playlist_name(self.playlist_id, TEST_PLAYLIST_NAME)
         assert_name_equal(self.playlist_id, TEST_PLAYLIST_NAME)
 
+    @retry
+    def _mc_assert_ple_position(self, entry, pos):
+        """
+        :param entry: entry dict
+        :pos: 0-based position to assert
+        """
+        pl = self.mc_get_playlist_songs(entry['playlistId'])
+
+        indices = [i for (i, e) in enumerate(pl)
+                   if e['id'] == entry['id']]
+
+        assert_equal(len(indices), 1)
+
+        assert_equal(indices[0], pos)
+
     @plentry_test
-    def pt(self):
-        raise SkipTest('plentry placeholder')
+    def mc_reorder_ples_forwards(self):
+        playlist_len = len(self.plentry_ids)
+        for from_pos, to_pos in [pair for pair in
+                                 itertools.product(range(playlist_len), repeat=2)
+                                 if pair[0] < pair[1]]:
+            pl = self.mc_get_playlist_songs(self.playlist_id)
+
+            from_e = pl[from_pos]
+
+            e_before_new_pos, e_after_new_pos = None, None
+
+            if to_pos - 1 >= 0:
+                e_before_new_pos = pl[to_pos]
+
+            if to_pos + 1 < playlist_len:
+                e_after_new_pos = pl[to_pos + 1]
+
+            self.mc.reorder_playlist_entry(from_e,
+                                           to_follow_entry=e_before_new_pos,
+                                           to_precede_entry=e_after_new_pos)
+            self._mc_assert_ple_position(from_e, to_pos)
+
+            if e_before_new_pos:
+                self._mc_assert_ple_position(e_before_new_pos, to_pos - 1)
+
+            if e_after_new_pos:
+                self._mc_assert_ple_position(e_after_new_pos, to_pos + 1)
+
+    @plentry_test
+    def mc_reorder_ples_backwards(self):
+        playlist_len = len(self.plentry_ids)
+        for from_pos, to_pos in [pair for pair in
+                                 itertools.product(range(playlist_len), repeat=2)
+                                 if pair[0] > pair[1]]:
+            pl = self.mc_get_playlist_songs(self.playlist_id)
+
+            from_e = pl[from_pos]
+
+            e_before_new_pos, e_after_new_pos = None, None
+
+            if to_pos - 1 >= 0:
+                e_before_new_pos = pl[to_pos - 1]
+
+            if to_pos + 1 < playlist_len:
+                e_after_new_pos = pl[to_pos]
+
+            self.mc.reorder_playlist_entry(from_e,
+                                           to_follow_entry=e_before_new_pos,
+                                           to_precede_entry=e_after_new_pos)
+            self._mc_assert_ple_position(from_e, to_pos)
+
+            if e_before_new_pos:
+                self._mc_assert_ple_position(e_before_new_pos, to_pos - 1)
+
+            if e_after_new_pos:
+                self._mc_assert_ple_position(e_after_new_pos, to_pos + 1)
 
     @station_test
     @all_access
