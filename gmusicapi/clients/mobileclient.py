@@ -391,6 +391,42 @@ class Mobileclient(_Base):
 
         return [e['id'] for e in res['mutate_response']]
 
+    @staticmethod
+    def reorder_playlist(reordered_playlist, orig_playlist=None):
+        """TODO"""
+
+        if not reordered_playlist['tracks']:
+            return
+
+        if orig_playlist is None:
+            #TODO get pl from server
+            pass
+
+        if len(reordered_playlist['tracks']) != len(orig_playlist['tracks']):
+            raise ValueError('the original playlist does not have the same number of'
+                             ' tracks as the provided playlist')
+
+        # find the minimum number of mutations to match the orig playlist
+
+        orig_tracks = orig_playlist['tracks']
+        orig_tracks_id_to_idx = dict([(t['id'], i) for (i, t) in enumerate(orig_tracks)])
+
+        re_tracks = reordered_playlist['tracks']
+        re_tracks_id_to_idx = dict([(t['id'], i) for (i, t) in enumerate(re_tracks)])
+
+        translated_re_tracks = [orig_tracks_id_to_idx[t['id']] for t in re_tracks]
+
+        lis = utils.longest_increasing_subseq(translated_re_tracks)
+
+        idx_to_move = set(range(len(orig_tracks))) - set(lis)
+
+        idx_pos_pairs = [(i, re_tracks_id_to_idx[orig_tracks[i]['id']])
+                         for i in idx_to_move]
+
+        #TODO build out mutations
+
+        return idx_pos_pairs
+
     def reorder_playlist_entry(self, entry, to_follow_entry=None, to_precede_entry=None):
         """TODO"""
 

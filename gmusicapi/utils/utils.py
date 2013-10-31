@@ -107,8 +107,8 @@ class DynamicClientLogger(object):
 log = DynamicClientLogger(__name__)
 
 
-def longest_increasing_subseq_idxs(seq):
-    """Returns the indices making up the longest (non-contiguous) subsequence
+def longest_increasing_subseq(seq):
+    """Returns the longest (non-contiguous) subsequence
     of seq that is strictly increasing.
     """
     # adapted from http://goo.gl/lddm3c
@@ -137,7 +137,7 @@ def longest_increasing_subseq_idxs(seq):
     result = []
     trace_idx = head[-1]
     while (trace_idx >= 0):
-        result.append(trace_idx)
+        result.append(seq[trace_idx])
         trace_idx = predecessor[trace_idx]
 
     return result[::-1]
