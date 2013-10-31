@@ -27,6 +27,16 @@ from gmusicapi.utils import utils
 #All tests end up in the local group.
 test = test(groups=['local'])
 
+
+@test
+def longest_increasing_sub():
+    lisi = utils.longest_increasing_subseq_idxs
+    assert_equal(lisi([]), [])
+    assert_equal(lisi(range(10, 0, -1)), [9])
+    assert_equal(lisi(range(10, 20)), range(10))
+    assert_equal(lisi([3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9]),
+                 [1, 6, 9, 10, 11, 12])
+
 ##
 # clients
 ##

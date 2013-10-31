@@ -2,6 +2,7 @@
 
 """Utility functions used across api code."""
 
+from bisect import bisect_left
 import errno
 import functools
 import inspect
@@ -104,6 +105,42 @@ class DynamicClientLogger(object):
 
 
 log = DynamicClientLogger(__name__)
+
+
+def longest_increasing_subseq_idxs(seq):
+    """Returns the indices making up the longest (non-contiguous) subsequence
+    of seq that is strictly increasing.
+    """
+    # adapted from http://goo.gl/lddm3c
+    if not seq:
+        return []
+
+    # head[j] = index in 'seq' of the final member of the best subsequence
+    # of length 'j + 1' yet found
+    head = [0]
+    # predecessor[j] = linked list of indices of best subsequence ending
+    # at seq[j], in reverse order
+    predecessor = [-1]
+    for i in xrange(1, len(seq)):
+        ## Find j such that:  seq[head[j - 1]] < seq[i] <= seq[head[j]]
+        ## seq[head[j]] is increasing, so use binary search.
+        j = bisect_left([seq[head[idx]] for idx in xrange(len(head))], seq[i])
+
+        if j == len(head):
+            head.append(i)
+        if seq[i] < seq[head[j]]:
+            head[j] = i
+
+        predecessor.append(head[j - 1] if j > 0 else -1)
+
+    ## trace subsequence back to output
+    result = []
+    trace_idx = head[-1]
+    while (trace_idx >= 0):
+        result.append(trace_idx)
+        trace_idx = predecessor[trace_idx]
+
+    return result[::-1]
 
 
 def id_or_nid(song_dict):
