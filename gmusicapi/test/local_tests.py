@@ -15,7 +15,7 @@ from proboscis.asserts import (
 from proboscis import test
 
 import gmusicapi.session
-from gmusicapi.clients import Webclient, Musicmanager, Mobileclient
+from gmusicapi.clients import Webclient, Musicmanager
 from gmusicapi.exceptions import AlreadyLoggedIn  # ,NotLoggedIn
 from gmusicapi.protocol.shared import authtypes
 from gmusicapi.protocol import mobileclient
@@ -36,31 +36,6 @@ def longest_increasing_sub():
     assert_equal(lisi(range(10, 20)), range(10, 20))
     assert_equal(lisi([3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9]),
                  [1, 2, 3, 5, 8, 9])
-
-
-def _t(name):
-    return {'id': name}
-
-
-@test
-def reordering():
-    res = Mobileclient.reorder_playlist({'tracks': [_t('a'), _t('b'), _t('c')]},
-                                        {'tracks': [_t('b'), _t('a'), _t('c')]})
-    assert_equal(res, [(1, 0)])
-
-
-@test
-def reordering2():
-    res = Mobileclient.reorder_playlist({'tracks': [_t(e) for e in 'abcde']},
-                                        {'tracks': [_t(e) for e in 'eabcd']})
-    assert_equal(res, [(0, 4)])
-
-
-@test
-def reordering3():
-    res = Mobileclient.reorder_playlist({'tracks': [_t(e) for e in 'afbcde']},
-                                        {'tracks': [_t(e) for e in 'eabcdf']})
-    assert_equal(res, [(0, 5), (5, 1)])
 
 ##
 # clients

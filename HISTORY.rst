@@ -12,6 +12,7 @@ released 2013-XX-XX
 - Musicmanager.get_all_songs is now Musicmanager.get_uploaded_songs
 - Mobileclient.get_all_playlist_contents is now Mobileclient.get_all_user_playlist_contents, and will no longer return results for subscribed playlists
 - add Mobileclient.get_shared_playlist_contents
+- add Mobileclient.reorder_playlist_entry
 - add Mobileclient.change_song_metadata
 - add Mobileclient.get_album_info
 - add Mobileclient.get_track_info
