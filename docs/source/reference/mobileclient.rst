@@ -35,6 +35,7 @@ entire library (not just their containing playlist).
 .. automethod:: Mobileclient.create_playlist
 .. automethod:: Mobileclient.delete_playlist
 .. automethod:: Mobileclient.add_songs_to_playlist
+.. automethod:: Mobileclient.reorder_playlist_entry
 .. automethod:: Mobileclient.remove_entries_from_playlist
 .. automethod:: Mobileclient.get_shared_playlist_contents
 

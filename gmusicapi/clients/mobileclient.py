@@ -39,7 +39,7 @@ class Mobileclient(_Base):
 
         return True
 
-    #TODO expose max-results, updated_after, etc for list operations
+    #TODO expose max/page-results, updated_after, etc for list operations
 
     def get_all_songs(self, incremental=False, include_deleted=False):
         """Returns a list of dictionaries that each represent a song.
@@ -299,7 +299,8 @@ class Mobileclient(_Base):
         that the user is subscribed to; use :func:`get_shared_playlist_contents`
         instead.
 
-        Returns the same structure as :func:`get_all_playlists`,
+        The same structure as :func:`get_all_playlists`
+        will be returned, but
         with the addition of a ``'tracks'`` key in each dict
         set to a list of properly-ordered playlist entry dicts.
 
@@ -311,7 +312,7 @@ class Mobileclient(_Base):
               'trackId': '2bb0ab1c-ce1a-3c0f-9217-a06da207b7a7',
               'lastModifiedTimestamp': '1325285553655027',
               'playlistId': '3d72c9b5-baad-4ff7-815d-cdef717e5d61',
-              'absolutePosition': '01729382256910287871',  # ??
+              'absolutePosition': '01729382256910287871',  # denotes playlist ordering
               'source': '1',  # ??
               'creationTimestamp': '1325285553655027',
               'id': 'c9f1aff5-f93d-4b98-b13a-429cc7972fea'
@@ -337,14 +338,15 @@ class Mobileclient(_Base):
 
     def get_shared_playlist_contents(self, share_token):
         """
+        Retrieves the contents of a public All Access playlist.
+
         :param share_token: from ``playlist['shareToken']``, or a playlist share
           url (``https://play.google.com/music/playlist/<token>``).
 
           Note that tokens from urls will need to be url-decoded,
           eg ``AM...%3D%3D`` becomes ``AM...==``.
 
-        Retrieves the contents of a public All Access playlist.
-        The user need not be subscribed to it.
+        The user need not be subscribed to a playlist to list its tracks.
 
         Returns a list of playlist entries
         with structure the same as those
@@ -365,7 +367,7 @@ class Mobileclient(_Base):
     @utils.enforce_ids_param(position=2)
     def add_songs_to_playlist(self, playlist_id, song_ids):
         """Appends songs to the end of a playlist.
-        Returns a list of playlistEntryIds that were added.
+        Returns a list of playlist entry ids that were added.
 
         :param playlist_id: the id of the playlist to add to.
         :param song_ids: a list of song ids, or a single song id.
@@ -380,7 +382,7 @@ class Mobileclient(_Base):
     @utils.empty_arg_shortcircuit(position=1)
     @utils.enforce_ids_param(position=1)
     def remove_entries_from_playlist(self, entry_ids):
-        """Remove specific entries from a playlist.
+        """Removes specific entries from a playlist.
         Returns a list of entry ids that were removed.
 
         :param entry_ids: a list of entry ids, or a single entry id.
@@ -390,6 +392,119 @@ class Mobileclient(_Base):
         res = self._make_call(mutate_call, del_mutations)
 
         return [e['id'] for e in res['mutate_response']]
+
+    def reorder_playlist_entry(self, entry, to_follow_entry=None, to_precede_entry=None):
+        """Reorders a single entry in a playlist and returns its id.
+
+        Read ``reorder_playlist_entry(foo, bar, gaz)`` as
+        "reorder playlist entry *foo* to follow entry *bar*
+        and precede entry *gaz*."
+
+        :param entry: the playlist entry to move.
+        :param to_follow_entry: the playlist entry
+          that will come before *entry* in the resulting playlist,
+          or None if *entry* is to be the first entry in the playlist.
+        :param to_precede_entry: the playlist entry
+          that will come after *entry* in the resulting playlist
+          or None if *entry* is to be the last entry in the playlist.
+
+        ``reorder_playlist_entry(foo)`` is invalid and will raise ValueError;
+        provide at least one of *to_follow_entry* or *to_precede_entry*.
+
+        Leaving *to_follow_entry* or *to_precede_entry* as None when
+        *entry* is not to be the first or last entry in the playlist
+        is undefined.
+
+        All params are dicts returned by
+        :func:`get_all_user_playlist_contents` or
+        :func:`get_shared_playlist_contents`.
+
+        """
+
+        if to_follow_entry is None and to_precede_entry is None:
+            raise ValueError('either to_follow_entry or to_precede_entry must be provided')
+
+        mutate_call = mobileclient.BatchMutatePlaylistEntries
+        before = to_follow_entry['clientId'] if to_follow_entry else None
+        after = to_precede_entry['clientId'] if to_precede_entry else None
+
+        reorder_mutation = mutate_call.build_plentry_reorder(entry, before, after)
+        res = self._make_call(mutate_call, [reorder_mutation])
+
+        return [e['id'] for e in res['mutate_response']]
+
+    # WIP, see issue #179
+    #def reorder_playlist(self, reordered_playlist, orig_playlist=None):
+    #    """TODO"""
+
+    #    if not reordered_playlist['tracks']:
+    #        #TODO what to return?
+    #        return
+
+    #    if orig_playlist is None:
+    #        #TODO get pl from server
+    #        pass
+
+    #    if len(reordered_playlist['tracks']) != len(orig_playlist['tracks']):
+    #        raise ValueError('the original playlist does not have the same number of'
+    #                         ' tracks as the reordered playlist')
+
+    #    # find the minimum number of mutations to match the orig playlist
+
+    #    orig_tracks = orig_playlist['tracks']
+    #    orig_tracks_id_to_idx = dict([(t['id'], i) for (i, t) in enumerate(orig_tracks)])
+
+    #    re_tracks = reordered_playlist['tracks']
+    #    re_tracks_id_to_idx = dict([(t['id'], i) for (i, t) in enumerate(re_tracks)])
+
+    #    translated_re_tracks = [orig_tracks_id_to_idx[t['id']] for t in re_tracks]
+
+    #    lis = utils.longest_increasing_subseq(translated_re_tracks)
+
+    #    idx_to_move = set(range(len(orig_tracks))) - set(lis)
+
+    #    idx_pos_pairs = [(i, re_tracks_id_to_idx[orig_tracks[i]['id']])
+    #                     for i in idx_to_move]
+
+    #    #TODO build out mutations
+
+    #    return idx_pos_pairs
+
+    #@staticmethod
+    #def _create_ple_reorder_mutations(tracks, from_to_idx_pairs):
+    #    """
+    #    Return a list of mutations.
+
+    #    :param tracks: orig_playlist['tracks']
+    #    :param from_to_idx_pairs: [(from_index, to_index)]
+    #    """
+    #    for from_idx, to_idx in sorted(key=itemgetter(1)
+    #    playlist_len = len(self.plentry_ids)
+    #    for from_pos, to_pos in [pair for pair in
+    #                             itertools.product(range(playlist_len), repeat=2)
+    #                             if pair[0] < pair[1]]:
+    #        pl = self.mc_get_playlist_songs(self.playlist_id)
+
+    #        from_e = pl[from_pos]
+
+    #        e_before_new_pos, e_after_new_pos = None, None
+
+    #        if to_pos - 1 >= 0:
+    #            e_before_new_pos = pl[to_pos]
+
+    #        if to_pos + 1 < playlist_len:
+    #            e_after_new_pos = pl[to_pos + 1]
+
+    #        self.mc.reorder_playlist_entry(from_e,
+    #                                       to_follow_entry=e_before_new_pos,
+    #                                       to_precede_entry=e_after_new_pos)
+    #        self._mc_assert_ple_position(from_e, to_pos)
+
+    #        if e_before_new_pos:
+    #            self._mc_assert_ple_position(e_before_new_pos, to_pos - 1)
+
+    #        if e_after_new_pos:
+    #            self._mc_assert_ple_position(e_after_new_pos, to_pos + 1)
 
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
@@ -629,7 +744,7 @@ class Mobileclient(_Base):
                 'song_hits': [hit for hit in hits if hit['type'] == '1']}
 
     def get_artist_info(self, artist_id, include_albums=True, max_top_tracks=5, max_rel_artist=5):
-        """Retrieve details on an artist.
+        """Retrieves details on an artist.
 
         :param artist_id: an All Access artist id (hint: they always start with 'A')
         :param include_albums: when True, create the ``'albums'`` substructure
@@ -745,7 +860,7 @@ class Mobileclient(_Base):
             get_next_chunk = 'nextPageToken' in lib_chunk
 
     def get_album_info(self, album_id, include_tracks=True):
-        """Retrieve details on an album.
+        """Retrieves details on an album.
 
         :param album_id: an All Access album id (hint: they always start with 'B')
         :param include_tracks: when True, create the ``'tracks'`` substructure
@@ -797,7 +912,7 @@ class Mobileclient(_Base):
         return self._make_call(mobileclient.GetAlbum, album_id, include_tracks)
 
     def get_track_info(self, store_track_id):
-        """Retrieve information about a store track.
+        """Retrieves information about a store track.
 
         :param store_track_id: an All Access track id (hint: they always start with 'T')
 
@@ -836,7 +951,7 @@ class Mobileclient(_Base):
         return self._make_call(mobileclient.GetStoreTrack, store_track_id)
 
     def get_genres(self):
-        """Retrieve information on Google Music genres.
+        """Retrieves information on Google Music genres.
 
         Using this method without an All Access subscription will always result in
         CallFailure being raised.

@@ -581,6 +581,33 @@ class BatchMutatePlaylistEntries(McBatchMutateCall):
         return [{'delete': id} for id in entry_ids]
 
     @staticmethod
+    def build_plentry_reorder(plentry, preceding_cid, following_cid):
+        """
+        :param plentry: plentry that is moving
+        :param preceding_cid: clientid of entry that will be before the moved entry
+        :param following_cid: "" that will be after the moved entry
+        """
+
+        mutation = copy.deepcopy(plentry)
+        keys_to_keep = set(['clientId', 'creationTimestamp', 'deleted', 'id',
+                            'lastModifiedTimestamp', 'playlistId',
+                            'source', 'trackId'])
+
+        for key in mutation.keys():
+            if key not in keys_to_keep:
+                del mutation[key]
+
+        # horribly misleading key names; these are _clientids_
+        # using entryids works sometimes, but with seemingly random results
+        if preceding_cid:
+            mutation['precedingEntryId'] = preceding_cid
+
+        if following_cid:
+            mutation['followingEntryId'] = following_cid
+
+        return {'update': mutation}
+
+    @staticmethod
     def build_plentry_adds(playlist_id, song_ids):
         """
         :param playlist_id

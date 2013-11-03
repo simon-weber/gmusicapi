@@ -8,6 +8,7 @@ an extra test playlist or song may result.
 """
 
 from collections import namedtuple
+import itertools
 import os
 import re
 import types
@@ -20,6 +21,7 @@ from proboscis.asserts import (
 from proboscis import test, before_class, after_class, SkipTest
 
 from gmusicapi import Webclient, Musicmanager, Mobileclient
+#from gmusicapi.protocol import mobileclient
 #from gmusicapi.protocol.metadata import md_expectations
 from gmusicapi.utils.utils import retry, id_or_nid
 import gmusicapi.test.utils as test_utils
@@ -582,11 +584,6 @@ class UpauthTests(object):
         found = [s for s in songs if id_or_nid(s) == sid]
 
         assert_equal(len(found), 1)
-        if 'rating' not in found[0]:
-            import code
-            import pprint
-            pprint.pprint(found[0])
-            code.interact(local=locals())
 
         assert_equal(found[0]['rating'], rating)
         return found[0]
@@ -657,9 +654,99 @@ class UpauthTests(object):
         self.mc.change_playlist_name(self.playlist_id, TEST_PLAYLIST_NAME)
         assert_name_equal(self.playlist_id, TEST_PLAYLIST_NAME)
 
+    @retry
+    def _mc_assert_ple_position(self, entry, pos):
+        """
+        :param entry: entry dict
+        :pos: 0-based position to assert
+        """
+        pl = self.mc_get_playlist_songs(entry['playlistId'])
+
+        indices = [i for (i, e) in enumerate(pl)
+                   if e['id'] == entry['id']]
+
+        assert_equal(len(indices), 1)
+
+        assert_equal(indices[0], pos)
+
     @plentry_test
-    def pt(self):
-        raise SkipTest('plentry placeholder')
+    def mc_reorder_ple_forwards(self):
+        playlist_len = len(self.plentry_ids)
+        for from_pos, to_pos in [pair for pair in
+                                 itertools.product(range(playlist_len), repeat=2)
+                                 if pair[0] < pair[1]]:
+            pl = self.mc_get_playlist_songs(self.playlist_id)
+
+            from_e = pl[from_pos]
+
+            e_before_new_pos, e_after_new_pos = None, None
+
+            if to_pos - 1 >= 0:
+                e_before_new_pos = pl[to_pos]
+
+            if to_pos + 1 < playlist_len:
+                e_after_new_pos = pl[to_pos + 1]
+
+            self.mc.reorder_playlist_entry(from_e,
+                                           to_follow_entry=e_before_new_pos,
+                                           to_precede_entry=e_after_new_pos)
+            self._mc_assert_ple_position(from_e, to_pos)
+
+            if e_before_new_pos:
+                self._mc_assert_ple_position(e_before_new_pos, to_pos - 1)
+
+            if e_after_new_pos:
+                self._mc_assert_ple_position(e_after_new_pos, to_pos + 1)
+
+    @plentry_test
+    def mc_reorder_ple_backwards(self):
+        playlist_len = len(self.plentry_ids)
+        for from_pos, to_pos in [pair for pair in
+                                 itertools.product(range(playlist_len), repeat=2)
+                                 if pair[0] > pair[1]]:
+            pl = self.mc_get_playlist_songs(self.playlist_id)
+
+            from_e = pl[from_pos]
+
+            e_before_new_pos, e_after_new_pos = None, None
+
+            if to_pos - 1 >= 0:
+                e_before_new_pos = pl[to_pos - 1]
+
+            if to_pos + 1 < playlist_len:
+                e_after_new_pos = pl[to_pos]
+
+            self.mc.reorder_playlist_entry(from_e,
+                                           to_follow_entry=e_before_new_pos,
+                                           to_precede_entry=e_after_new_pos)
+            self._mc_assert_ple_position(from_e, to_pos)
+
+            if e_before_new_pos:
+                self._mc_assert_ple_position(e_before_new_pos, to_pos - 1)
+
+            if e_after_new_pos:
+                self._mc_assert_ple_position(e_after_new_pos, to_pos + 1)
+
+    # This fails, unfortunately, which means n reorderings mean n
+    # separate calls in the general case.
+    #@plentry_test
+    #def mc_reorder_ples_forwards(self):
+    #    pl = self.mc_get_playlist_songs(self.playlist_id)
+    #    # rot2, eg 0123 -> 2301
+    #    pl.append(pl.pop(0))
+    #    pl.append(pl.pop(0))
+
+    #    mutate_call = mobileclient.BatchMutatePlaylistEntries
+    #    mutations = [
+    #        mutate_call.build_plentry_reorder(
+    #            pl[-1], pl[-2]['clientId'], None),
+    #        mutate_call.build_plentry_reorder(
+    #            pl[-2], pl[-3]['clientId'], pl[-1]['clientId'])
+    #    ]
+
+    #    self.mc._make_call(mutate_call, [mutations])
+    #    self._mc_assert_ple_position(pl[-1], len(pl) - 1)
+    #    self._mc_assert_ple_position(pl[-2], len(pl) - 2)
 
     @station_test
     @all_access
