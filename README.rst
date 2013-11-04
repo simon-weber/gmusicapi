@@ -47,10 +47,16 @@ Status and updates
 .. image:: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API.png?branch=develop
         :target: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API
 
-Over the summer, the project began a major shift away from the Webclient interface.
-That's mostly finished now, so prefer the new Mobileclient interface whenever possible.
+Over the summer, gmusicapi began a major shift away from the Webclient interface.
+That's finished now, so prefer the new Mobileclient interface whenever possible.
+Non-deprecated parts of the Webclient are listed at
+`the Webclient documentation page
+<http://unofficial-google-music-api.readthedocs.org/en/latest/reference/webclient.html>`__.
 
-For development updates, follow me on Twitter:
+I've started fulltime work at Venmo as of November, meaning this project is back to
+night and weekend development.
+
+For fine-grained development updates, follow me on Twitter:
 `@simonmweber <https://twitter.com/simonmweber>`__.
 
 ------------

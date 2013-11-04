@@ -5,9 +5,9 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-3.0.0-dev
-+++++++++
-released 2013-XX-XX
+3.0.0
++++++
+released 2013-11-03
 
 - Musicmanager.get_all_songs is now Musicmanager.get_uploaded_songs
 - Mobileclient.get_all_playlist_contents is now Mobileclient.get_all_user_playlist_contents, and will no longer return results for subscribed playlists

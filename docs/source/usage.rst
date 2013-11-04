@@ -33,8 +33,10 @@ If you need to install avconv from source, be sure to use
 Quickstart
 ----------
 
-If you're not going to be uploading music, use the :py:class:`Mobileclient`.
-This requires plaintext auth, so your code might look something like:
+If you're not going to be uploading music, you'll likely
+want to use the :py:class:`Mobileclient`: it supports streaming
+and library management.
+It requires plaintext auth, so your code might look something like:
 
 .. code-block:: python
 
@@ -75,10 +77,13 @@ Then, future runs can start with:
     # ...
 
 
-If you need both library management and uploading, just create one of each
-type of client.
+If you need both library management and uploading, just create 
+multiple client instances.
 
-The reference section has complete information on both clients:
+There is also the :py:class:`Webclient`, which is a mostly-deprecated
+interface that provides similar features to the Mobileclient.
+
+The reference section has complete information on all clients:
 
 .. toctree::
    :maxdepth: 2

@@ -15,6 +15,18 @@ class Webclient(_Base):
 
     Uploading is not supported by this client (use the :class:`Musicmanager`
     to upload).
+
+    Any methods in this class that are duplicated by
+    the :class:`Mobileclient` should be considered deprecated.
+    The following methods are *not* deprecated:
+
+        * :func:`get_registered_devices`
+        * :func:`get_song_download_info`
+        * :func:`get_stream_urls`
+        * :func:`get_stream_audio`
+        * :func:`report_incorrect_match`
+        * :func:`upload_album_art`
+
     """
 
     def __init__(self, debug_logging=True, validate=True):
@@ -68,7 +80,7 @@ class Webclient(_Base):
                },
                {
                 u'carrier':      u'Google',
-                u'date':         1344808742774
+                u'date':         1344808742774,
                 u'id':           u'0x00112233aabbccdd',
                 u'manufacturer': u'Asus',
                 u'model':        u'Nexus 7',
@@ -82,6 +94,135 @@ class Webclient(_Base):
         #TODO sessionid stuff
         res = self._make_call(webclient.GetSettings, '')
         return res['settings']['devices']
+
+    @utils.enforce_id_param
+    def get_song_download_info(self, song_id):
+        """Returns a tuple: ``('<url>', <download count>)``.
+
+        :param song_id: a single song id.
+
+        ``url`` will be ``None`` if the download limit is exceeded.
+
+        GM allows 2 downloads per song. The download count may not always be accurate,
+        and the 2 download limit seems to be loosely enforced.
+
+        This call alone does not count towards a download -
+        the count is incremented when ``url`` is retrieved.
+        """
+
+        #TODO the protocol expects a list of songs - could extend with accept_singleton
+        info = self._make_call(webclient.GetDownloadInfo, [song_id])
+        url = info.get('url')
+
+        return (url, info["downloadCounts"][song_id])
+
+    @utils.enforce_id_param
+    def get_stream_urls(self, song_id):
+        """Returns a list of urls that point to a streamable version of this song.
+
+        If you just need the audio and are ok with gmusicapi doing the download,
+        consider using :func:`get_stream_audio` instead.
+        This abstracts away the differences between different kinds of tracks:
+
+            * normal tracks return a single url
+            * All Access tracks return multiple urls, which must be combined
+
+        :param song_id: a single song id.
+
+        While acquiring the urls requires authentication, retreiving the
+        contents does not.
+
+        However, there are limitations on how the stream urls can be used:
+
+            * the urls expire after a minute
+            * only one IP can be streaming music at once.
+              Other attempts will get an http 403 with
+              ``X-Rejected-Reason: ANOTHER_STREAM_BEING_PLAYED``.
+
+        *This is only intended for streaming*. The streamed audio does not contain metadata.
+        Use :func:`get_song_download_info` or :func:`Musicmanager.download_song
+        <gmusicapi.clients.Musicmanager.download_song>`
+        to download files with metadata.
+        """
+
+        res = self._make_call(webclient.GetStreamUrl, song_id)
+
+        try:
+            return [res['url']]
+        except KeyError:
+            return res['urls']
+
+    @utils.enforce_id_param
+    def get_stream_audio(self, song_id):
+        """Returns a bytestring containing mp3 audio for this song.
+
+        :param song_id: a single song id
+        """
+
+        urls = self.get_stream_urls(song_id)
+
+        if len(urls) == 1:
+            return self.session._rsession.get(urls[0]).content
+
+        # AA tracks are separated into multiple files
+        # the url contains the range of each file to be used
+
+        range_pairs = [[int(s) for s in val.split('-')]
+                       for url in urls
+                       for key, val in parse_qsl(urlparse(url)[4])
+                       if key == 'range']
+
+        stream_pieces = []
+        prev_end = 0
+
+        for url, (start, end) in zip(urls, range_pairs):
+            audio = self.session._rsession.get(url).content
+            stream_pieces.append(audio[prev_end - start:])
+
+            prev_end = end + 1
+
+        return ''.join(stream_pieces)
+
+    @utils.accept_singleton(basestring)
+    @utils.empty_arg_shortcircuit
+    @utils.enforce_id_param
+    def report_incorrect_match(self, song_ids):
+        """Equivalent to the 'Fix Incorrect Match' button, this requests re-uploading of songs.
+        Returns the song_ids provided.
+
+        :param song_ids: a list of song ids to report, or a single song id.
+
+        Note that if you uploaded a song through gmusicapi, it won't be reuploaded
+        automatically - this currently only works for songs uploaded with the Music Manager.
+        See issue `#89 <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/89>`__.
+
+        This should only be used on matched tracks (``song['type'] == 6``).
+        """
+
+        self._make_call(webclient.ReportBadSongMatch, song_ids)
+
+        return song_ids
+
+    @utils.accept_singleton(basestring)
+    @utils.empty_arg_shortcircuit
+    @utils.enforce_ids_param
+    def upload_album_art(self, song_ids, image_filepath):
+        """Uploads an image and sets it as the album art for songs.
+
+        :param song_ids: a list of song ids, or a single song id.
+        :param image_filepath: filepath of the art to use. jpg and png are known to work.
+
+        This function will *always* upload the provided image, even if it's already uploaded.
+        If the art is already uploaded and set for another song, copy over the
+        value of the ``'albumArtUrl'`` key using :func:`change_song_metadata` instead.
+        """
+
+        res = self._make_call(webclient.UploadImage, image_filepath)
+        url = res['imageUrl']
+
+        song_dicts = [dict((('id', id), ('albumArtUrl', url))) for id in song_ids]
+
+        return self.change_song_metadata(song_dicts)
 
     @utils.accept_singleton(dict)
     @utils.empty_arg_shortcircuit
@@ -239,94 +380,6 @@ class Webclient(_Base):
                 u'Last added': u'auto-playlist-recent',
                 u'Free and purchased': u'auto-playlist-promo'}
 
-    @utils.enforce_id_param
-    def get_song_download_info(self, song_id):
-        """Returns a tuple: ``('<url>', <download count>)``.
-
-        :param song_id: a single song id.
-
-        ``url`` will be ``None`` if the download limit is exceeded.
-
-        GM allows 2 downloads per song. The download count may not always be accurate,
-        and the 2 download limit seems to be loosely enforced.
-
-        This call alone does not count towards a download -
-        the count is incremented when ``url`` is retrieved.
-        """
-
-        #TODO the protocol expects a list of songs - could extend with accept_singleton
-        info = self._make_call(webclient.GetDownloadInfo, [song_id])
-        url = info.get('url')
-
-        return (url, info["downloadCounts"][song_id])
-
-    @utils.enforce_id_param
-    def get_stream_urls(self, song_id):
-        """Returns a list of urls that point to a streamable version of this song.
-
-        If you just need the audio and are ok with gmusicapi doing the download,
-        consider using :func:`get_stream_audio` instead.
-        This abstracts away the differences between different kinds of tracks:
-
-            * normal tracks return a single url
-            * All Access tracks return multiple urls, which must be combined
-
-        :param song_id: a single song id.
-
-        While acquiring the urls requires authentication, retreiving the
-        contents does not.
-
-        However, there are limitations on how the stream urls can be used:
-
-            * the urls expire after a minute
-            * only one IP can be streaming music at once.
-              Other attempts will get an http 403 with
-              ``X-Rejected-Reason: ANOTHER_STREAM_BEING_PLAYED``.
-
-        *This is only intended for streaming*. The streamed audio does not contain metadata.
-        Use :func:`get_song_download_info` or :func:`Musicmanager.download_song
-        <gmusicapi.clients.Musicmanager.download_song>`
-        to download files with metadata.
-        """
-
-        res = self._make_call(webclient.GetStreamUrl, song_id)
-
-        try:
-            return [res['url']]
-        except KeyError:
-            return res['urls']
-
-    @utils.enforce_id_param
-    def get_stream_audio(self, song_id):
-        """Returns a bytestring containing mp3 audio for this song.
-
-        :param song_id: a single song id
-        """
-
-        urls = self.get_stream_urls(song_id)
-
-        if len(urls) == 1:
-            return self.session._rsession.get(urls[0]).content
-
-        # AA tracks are separated into multiple files
-        # the url contains the range of each file to be used
-
-        range_pairs = [[int(s) for s in val.split('-')]
-                       for url in urls
-                       for key, val in parse_qsl(urlparse(url)[4])
-                       if key == 'range']
-
-        stream_pieces = []
-        prev_end = 0
-
-        for url, (start, end) in zip(urls, range_pairs):
-            audio = self.session._rsession.get(url).content
-            stream_pieces.append(audio[prev_end - start:])
-
-            prev_end = end + 1
-
-        return ''.join(stream_pieces)
-
     @utils.accept_singleton(basestring, 2)
     @utils.empty_arg_shortcircuit(position=2)
     @utils.enforce_ids_param(position=2)
@@ -399,44 +452,3 @@ class Webclient(_Base):
         res = self._make_call(webclient.DeleteSongs, sids, playlist_id, eids)
 
         return res['deleteIds']
-
-    @utils.accept_singleton(basestring)
-    @utils.empty_arg_shortcircuit
-    @utils.enforce_id_param
-    def report_incorrect_match(self, song_ids):
-        """Equivalent to the 'Fix Incorrect Match' button, this requests re-uploading of songs.
-        Returns the song_ids provided.
-
-        :param song_ids: a list of song ids to report, or a single song id.
-
-        Note that if you uploaded a song through gmusicapi, it won't be reuploaded
-        automatically - this currently only works for songs uploaded with the Music Manager.
-        See issue `#89 <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/89>`__.
-
-        This should only be used on matched tracks (``song['type'] == 6``).
-        """
-
-        self._make_call(webclient.ReportBadSongMatch, song_ids)
-
-        return song_ids
-
-    @utils.accept_singleton(basestring)
-    @utils.empty_arg_shortcircuit
-    @utils.enforce_ids_param
-    def upload_album_art(self, song_ids, image_filepath):
-        """Uploads an image and sets it as the album art for songs.
-
-        :param song_ids: a list of song ids, or a single song id.
-        :param image_filepath: filepath of the art to use. jpg and png are known to work.
-
-        This function will *always* upload the provided image, even if it's already uploaded.
-        If the art is already uploaded and set for another song, copy over the
-        value of the ``'albumArtUrl'`` key using :func:`change_song_metadata` instead.
-        """
-
-        res = self._make_call(webclient.UploadImage, image_filepath)
-        url = res['imageUrl']
-
-        song_dicts = [dict((('id', id), ('albumArtUrl', url))) for id in song_ids]
-
-        return self.change_song_metadata(song_dicts)
