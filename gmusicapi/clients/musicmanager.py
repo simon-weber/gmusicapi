@@ -246,10 +246,13 @@ class Musicmanager(_Base):
 
     # mostly copy-paste from Webclient.get_all_songs.
     # not worried about overlap in this case; the logic of either could change.
-    def get_all_songs(self, incremental=False):
+    def get_uploaded_songs(self, incremental=False):
         """Returns a list of dictionaries, each with the following keys:
         ``('id', 'title', 'album', 'album_artist', 'artist', 'track_number',
         'track_size')``.
+
+        All Access tracks that were added to the library will not be included,
+        only tracks uploaded/matched by the user.
 
         :param incremental: if True, return a generator that yields lists
           of at most 1000 dictionaries
@@ -348,11 +351,13 @@ class Musicmanager(_Base):
     @utils.empty_arg_shortcircuit(return_code='{}')
     def upload(self, filepaths, transcode_quality=3, enable_matching=False):
         """Uploads the given filepaths.
-        Any non-mp3 files will be `transcoded with avconv
-        <https://github.com/simon-weber/Unofficial-Google-Music-API/
-        blob/develop/gmusicapi/utils/utils.py#L18>`__ before being uploaded.
 
-        Return a 3-tuple ``(uploaded, matched, not_uploaded)`` of dictionaries, eg::
+        An available installation of avconv may be required;
+        see `the documentation
+        <https://unofficial-google-music-api.readthedocs.org/en
+        /latest/usage.html?#installation>`__ for details.
+
+        Returns a 3-tuple ``(uploaded, matched, not_uploaded)`` of dictionaries, eg::
 
             (
                 {'<filepath>': '<new server id>'},               # uploaded

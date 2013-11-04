@@ -39,7 +39,7 @@ class Mobileclient(_Base):
 
         return True
 
-    #TODO expose max-results, updated_after, etc for list operations
+    #TODO expose max/page-results, updated_after, etc for list operations
 
     def get_all_songs(self, incremental=False, include_deleted=False):
         """Returns a list of dictionaries that each represent a song.
@@ -55,46 +55,46 @@ class Mobileclient(_Base):
         Here is an example song dictionary::
 
             {
-               u'comment':u'',
-               u'rating':u'0',
-               u'albumArtRef':[
+               'comment':'',
+               'rating':'0',
+               'albumArtRef':[
                  {
-                   u'url': u'http://lh6.ggpht.com/...'
+                   'url': 'http://lh6.ggpht.com/...'
                  }
                ],
-               u'artistId':[
-                 u'Aod62yyj3u3xsjtooghh2glwsdi'
+               'artistId':[
+                 'Aod62yyj3u3xsjtooghh2glwsdi'
                ],
-               u'composer':u'',
-               u'year':2011,
-               u'creationTimestamp':u'1330879409467830',
-               u'id':u'5924d75a-931c-30ed-8790-f7fce8943c85',
-               u'album':u'Heritage ',
-               u'totalDiscCount':0,
-               u'title':u'Haxprocess',
-               u'recentTimestamp':u'1372040508935000',
-               u'albumArtist':u'',
-               u'trackNumber':6,
-               u'discNumber':0,
-               u'deleted':False,
-               u'storeId':u'Txsffypukmmeg3iwl3w5a5s3vzy',
-               u'nid':u'Txsffypukmmeg3iwl3w5a5s3vzy',
-               u'totalTrackCount':10,
-               u'estimatedSize':u'17229205',
-               u'albumId':u'Bdkf6ywxmrhflvtasnayxlkgpcm',
-               u'beatsPerMinute':0,
-               u'genre':u'Progressive Metal',
-               u'playCount':7,
-               u'artistArtRef':[
+               'composer':'',
+               'year':2011,
+               'creationTimestamp':'1330879409467830',
+               'id':'5924d75a-931c-30ed-8790-f7fce8943c85',
+               'album':'Heritage ',
+               'totalDiscCount':0,
+               'title':'Haxprocess',
+               'recentTimestamp':'1372040508935000',
+               'albumArtist':'',
+               'trackNumber':6,
+               'discNumber':0,
+               'deleted':False,
+               'storeId':'Txsffypukmmeg3iwl3w5a5s3vzy',
+               'nid':'Txsffypukmmeg3iwl3w5a5s3vzy',
+               'totalTrackCount':10,
+               'estimatedSize':'17229205',
+               'albumId':'Bdkf6ywxmrhflvtasnayxlkgpcm',
+               'beatsPerMinute':0,
+               'genre':'Progressive Metal',
+               'playCount':7,
+               'artistArtRef':[
                  {
-                   u'url': u'http://lh3.ggpht.com/...'
+                   'url': 'http://lh3.ggpht.com/...'
                  }
                ],
-               u'kind':u'sj#track',
-               u'artist':u'Opeth',
-               u'lastModifiedTimestamp':u'1330881158830924',
-               u'clientId':u'+eGFGTbiyMktbPuvB5MfsA',
-               u'durationMillis':u'418000'
+               'kind':'sj#track',
+               'artist':'Opeth',
+               'lastModifiedTimestamp':'1330881158830924',
+               'clientId':'+eGFGTbiyMktbPuvB5MfsA',
+               'durationMillis':'418000'
              }
 
         """
@@ -102,6 +102,53 @@ class Mobileclient(_Base):
         tracks = self._get_all_items(mobileclient.ListTracks, incremental, include_deleted)
 
         return tracks
+
+    @utils.accept_singleton(dict)
+    @utils.empty_arg_shortcircuit
+    def change_song_metadata(self, songs):
+        """Changes the metadata of tracks.
+        Returns a list of the song ids changed.
+
+        :param songs: a list of song dictionaries
+          or a single song dictionary.
+
+        Not all keys can be changed.
+        These keys are known to work:
+
+        * ``rating``: this is a string!
+                      set to '0' (no thumb), '1' (down thumb), or '5' (up thumb)
+                      unless you're using the 5-star ratings lab
+        * ``album``
+        * ``albumArtist``
+        * ``artist``
+        * ``comment``
+        * ``composer``
+        * ``discNumber``
+        * ``genre``
+        * ``playCount``
+        * ``title``
+        * ``totalDiscCount``
+        * ``totalTrackCount``
+        * ``trackNumber``
+        * ``year``
+
+        You can also use this to rate All Access tracks
+        that aren't in your library, eg::
+
+            song = mc.get_track_info('<some store track id>')
+            song['rating'] = '5'
+            mc.change_song_metadata(song)
+
+        """
+
+        mutate_call = mobileclient.BatchMutateTracks
+        mutations = [{'update': s} for s in songs]
+        self._make_call(mutate_call, mutations)
+
+        #TODO
+        # store tracks don't send back their id, so we're
+        # forced to spoof this
+        return [utils.id_or_nid(d) for d in songs]
 
     def add_aa_track(self, aa_song_id):
         """Adds an All Access track to the library,
@@ -112,7 +159,7 @@ class Mobileclient(_Base):
         #TODO is there a way to do this on multiple tracks at once?
         # problem is with gathering aa track info
 
-        aa_track_info = self.get_track(aa_song_id)
+        aa_track_info = self.get_track_info(aa_song_id)
 
         mutate_call = mobileclient.BatchMutateTracks
         add_mutation = mutate_call.build_track_add(aa_track_info)
@@ -181,18 +228,18 @@ class Mobileclient(_Base):
         Here is an example playlist dictionary::
 
             {
-                u'kind': u'sj#playlist',
-                u'name': u'Something Mix',
-                u'deleted': False,
-                u'type': u'MAGIC',  # if not present, playlist is user-created
-                u'lastModifiedTimestamp': u'1325458766483033',
-                u'recentTimestamp': u'1325458766479000',
-                u'shareToken': u'<long string>',
-                u'ownerProfilePhotoUrl': u'http://lh3.googleusercontent.com/...',
-                u'ownerName': u'Simon Weber',
-                u'accessControlled': False,  # something to do with shared playlists?
-                u'creationTimestamp': u'1325285553626172',
-                u'id': u'3d72c9b5-baad-4ff7-815d-cdef717e5d61'
+                'kind': 'sj#playlist',
+                'name': 'Something Mix',
+                'deleted': False,
+                'type': 'USER_GENERATED',  # or SHARED (public/subscribed to) or MAGIC
+                'lastModifiedTimestamp': '1325458766483033',
+                'recentTimestamp': '1325458766479000',
+                'shareToken': '<long string>',
+                'ownerProfilePhotoUrl': 'http://lh3.googleusercontent.com/...',
+                'ownerName': 'Simon Weber',
+                'accessControlled': False,  # something to do with shared playlists?
+                'creationTimestamp': '1325285553626172',
+                'id': '3d72c9b5-baad-4ff7-815d-cdef717e5d61'
             }
         """
 
@@ -215,6 +262,20 @@ class Mobileclient(_Base):
 
         return res['mutate_response'][0]['id']
 
+    def change_playlist_name(self, playlist_id, new_name):
+        """Changes the name of a playlist and returns its id.
+
+        :param playlist_id: the id of the playlist
+        :param new_name: desired title
+        """
+
+        mutate_call = mobileclient.BatchMutatePlaylists
+        update_mutations = mutate_call.build_playlist_updates([(playlist_id, new_name)])
+        res = self._make_call(mutate_call, update_mutations)
+
+        return res['mutate_response'][0]['id']
+
+    #TODO accept multiple?
     def delete_playlist(self, playlist_id):
         """Deletes a playlist and returns its id.
 
@@ -227,53 +288,86 @@ class Mobileclient(_Base):
 
         return res['mutate_response'][0]['id']
 
-    def get_all_playlist_contents(self):
+    def get_all_user_playlist_contents(self):
         """
-        Retrieves the contents of *all* playlists
+        Retrieves the contents of *all* user-created playlists
         -- the Mobileclient does not support retrieving
         only the contents of one
         playlist.
 
-        Returns the same structure as :func:`get_all_playlists`,
+        This will not return results for public playlists
+        that the user is subscribed to; use :func:`get_shared_playlist_contents`
+        instead.
+
+        The same structure as :func:`get_all_playlists`
+        will be returned, but
         with the addition of a ``'tracks'`` key in each dict
         set to a list of properly-ordered playlist entry dicts.
 
         Here is an example playlist entry::
 
           {
-              u'kind': u'sj#playlistEntry',
-              u'deleted': False,
-              u'trackId': u'2bb0ab1c-ce1a-3c0f-9217-a06da207b7a7',
-              u'lastModifiedTimestamp': u'1325285553655027',
-              u'playlistId': u'3d72c9b5-baad-4ff7-815d-cdef717e5d61',
-              u'absolutePosition': u'01729382256910287871',  # ??
-              u'source': u'1',  # ??
-              u'creationTimestamp': u'1325285553655027',
-              u'id': u'c9f1aff5-f93d-4b98-b13a-429cc7972fea'
+              'kind': 'sj#playlistEntry',
+              'deleted': False,
+              'trackId': '2bb0ab1c-ce1a-3c0f-9217-a06da207b7a7',
+              'lastModifiedTimestamp': '1325285553655027',
+              'playlistId': '3d72c9b5-baad-4ff7-815d-cdef717e5d61',
+              'absolutePosition': '01729382256910287871',  # denotes playlist ordering
+              'source': '1',  # ??
+              'creationTimestamp': '1325285553655027',
+              'id': 'c9f1aff5-f93d-4b98-b13a-429cc7972fea'
           }
         """
 
-        playlists = self.get_all_playlists()
+        user_playlists = [p for p in self.get_all_playlists()
+                          if p.get('type') == 'USER_GENERATED']
 
         all_entries = self._get_all_items(mobileclient.ListPlaylistEntries,
                                           incremental=False, include_deleted=False,
                                           updated_after=None)
 
-        for playlist in playlists:
+        for playlist in user_playlists:
+            #TODO could use a dict to make this faster
             entries = [e for e in all_entries
                        if e['playlistId'] == playlist['id']]
             entries.sort(key=itemgetter('absolutePosition'))
 
             playlist['tracks'] = entries
 
-        return playlists
+        return user_playlists
+
+    def get_shared_playlist_contents(self, share_token):
+        """
+        Retrieves the contents of a public All Access playlist.
+
+        :param share_token: from ``playlist['shareToken']``, or a playlist share
+          url (``https://play.google.com/music/playlist/<token>``).
+
+          Note that tokens from urls will need to be url-decoded,
+          eg ``AM...%3D%3D`` becomes ``AM...==``.
+
+        The user need not be subscribed to a playlist to list its tracks.
+
+        Returns a list of playlist entries
+        with structure the same as those
+        returned by :func:`get_all_user_playlist_contents`,
+        but without the ``'clientId'`` or ``'playlistId'`` keys.
+        """
+
+        res = self._make_call(mobileclient.ListSharedPlaylistEntries,
+                              updated_after=None, share_token=share_token)
+
+        entries = res['entries'][0]['playlistEntry']
+        entries.sort(key=itemgetter('absolutePosition'))
+
+        return entries
 
     @utils.accept_singleton(basestring, 2)
     @utils.empty_arg_shortcircuit(position=2)
     @utils.enforce_ids_param(position=2)
     def add_songs_to_playlist(self, playlist_id, song_ids):
         """Appends songs to the end of a playlist.
-        Returns a list of playlistEntryIds that were added.
+        Returns a list of playlist entry ids that were added.
 
         :param playlist_id: the id of the playlist to add to.
         :param song_ids: a list of song ids, or a single song id.
@@ -288,7 +382,7 @@ class Mobileclient(_Base):
     @utils.empty_arg_shortcircuit(position=1)
     @utils.enforce_ids_param(position=1)
     def remove_entries_from_playlist(self, entry_ids):
-        """Remove specific entries from a playlist.
+        """Removes specific entries from a playlist.
         Returns a list of entry ids that were removed.
 
         :param entry_ids: a list of entry ids, or a single entry id.
@@ -298,6 +392,169 @@ class Mobileclient(_Base):
         res = self._make_call(mutate_call, del_mutations)
 
         return [e['id'] for e in res['mutate_response']]
+
+    def reorder_playlist_entry(self, entry, to_follow_entry=None, to_precede_entry=None):
+        """Reorders a single entry in a playlist and returns its id.
+
+        Read ``reorder_playlist_entry(foo, bar, gaz)`` as
+        "reorder playlist entry *foo* to follow entry *bar*
+        and precede entry *gaz*."
+
+        :param entry: the playlist entry to move.
+        :param to_follow_entry: the playlist entry
+          that will come before *entry* in the resulting playlist,
+          or None if *entry* is to be the first entry in the playlist.
+        :param to_precede_entry: the playlist entry
+          that will come after *entry* in the resulting playlist
+          or None if *entry* is to be the last entry in the playlist.
+
+        ``reorder_playlist_entry(foo)`` is invalid and will raise ValueError;
+        provide at least one of *to_follow_entry* or *to_precede_entry*.
+
+        Leaving *to_follow_entry* or *to_precede_entry* as None when
+        *entry* is not to be the first or last entry in the playlist
+        is undefined.
+
+        All params are dicts returned by
+        :func:`get_all_user_playlist_contents` or
+        :func:`get_shared_playlist_contents`.
+
+        """
+
+        if to_follow_entry is None and to_precede_entry is None:
+            raise ValueError('either to_follow_entry or to_precede_entry must be provided')
+
+        mutate_call = mobileclient.BatchMutatePlaylistEntries
+        before = to_follow_entry['clientId'] if to_follow_entry else None
+        after = to_precede_entry['clientId'] if to_precede_entry else None
+
+        reorder_mutation = mutate_call.build_plentry_reorder(entry, before, after)
+        res = self._make_call(mutate_call, [reorder_mutation])
+
+        return [e['id'] for e in res['mutate_response']]
+
+    # WIP, see issue #179
+    #def reorder_playlist(self, reordered_playlist, orig_playlist=None):
+    #    """TODO"""
+
+    #    if not reordered_playlist['tracks']:
+    #        #TODO what to return?
+    #        return
+
+    #    if orig_playlist is None:
+    #        #TODO get pl from server
+    #        pass
+
+    #    if len(reordered_playlist['tracks']) != len(orig_playlist['tracks']):
+    #        raise ValueError('the original playlist does not have the same number of'
+    #                         ' tracks as the reordered playlist')
+
+    #    # find the minimum number of mutations to match the orig playlist
+
+    #    orig_tracks = orig_playlist['tracks']
+    #    orig_tracks_id_to_idx = dict([(t['id'], i) for (i, t) in enumerate(orig_tracks)])
+
+    #    re_tracks = reordered_playlist['tracks']
+    #    re_tracks_id_to_idx = dict([(t['id'], i) for (i, t) in enumerate(re_tracks)])
+
+    #    translated_re_tracks = [orig_tracks_id_to_idx[t['id']] for t in re_tracks]
+
+    #    lis = utils.longest_increasing_subseq(translated_re_tracks)
+
+    #    idx_to_move = set(range(len(orig_tracks))) - set(lis)
+
+    #    idx_pos_pairs = [(i, re_tracks_id_to_idx[orig_tracks[i]['id']])
+    #                     for i in idx_to_move]
+
+    #    #TODO build out mutations
+
+    #    return idx_pos_pairs
+
+    #@staticmethod
+    #def _create_ple_reorder_mutations(tracks, from_to_idx_pairs):
+    #    """
+    #    Return a list of mutations.
+
+    #    :param tracks: orig_playlist['tracks']
+    #    :param from_to_idx_pairs: [(from_index, to_index)]
+    #    """
+    #    for from_idx, to_idx in sorted(key=itemgetter(1)
+    #    playlist_len = len(self.plentry_ids)
+    #    for from_pos, to_pos in [pair for pair in
+    #                             itertools.product(range(playlist_len), repeat=2)
+    #                             if pair[0] < pair[1]]:
+    #        pl = self.mc_get_playlist_songs(self.playlist_id)
+
+    #        from_e = pl[from_pos]
+
+    #        e_before_new_pos, e_after_new_pos = None, None
+
+    #        if to_pos - 1 >= 0:
+    #            e_before_new_pos = pl[to_pos]
+
+    #        if to_pos + 1 < playlist_len:
+    #            e_after_new_pos = pl[to_pos + 1]
+
+    #        self.mc.reorder_playlist_entry(from_e,
+    #                                       to_follow_entry=e_before_new_pos,
+    #                                       to_precede_entry=e_after_new_pos)
+    #        self._mc_assert_ple_position(from_e, to_pos)
+
+    #        if e_before_new_pos:
+    #            self._mc_assert_ple_position(e_before_new_pos, to_pos - 1)
+
+    #        if e_after_new_pos:
+    #            self._mc_assert_ple_position(e_after_new_pos, to_pos + 1)
+
+    def create_station(self, name,
+                       track_id=None, artist_id=None, album_id=None,
+                       genre_id=None):
+        """Creates an All Access radio station and returns its id.
+
+        :param name: the name of the station to create
+        :param \*_id: the id of an item to seed the station from.
+          Exactly one of these params must be provided, or ValueError
+          will be raised.
+        """
+        #TODO could expose include_tracks
+
+        seed = {}
+        if track_id is not None:
+            if track_id[0] == 'T':
+                seed['trackId'] = track_id
+            else:
+                seed['trackLockerId'] = track_id
+
+        if artist_id is not None:
+            seed['artistId'] = artist_id
+        if album_id is not None:
+            seed['albumId'] = album_id
+        if genre_id is not None:
+            seed['genreId'] = genre_id
+
+        if len(seed) != 1:
+            raise ValueError('exactly one {track,artist,album,genre}_id must be provided')
+
+        mutate_call = mobileclient.BatchMutateStations
+        add_mutation = mutate_call.build_add(name, seed, include_tracks=False, num_tracks=0)
+        res = self._make_call(mutate_call, [add_mutation])
+
+        return res['mutate_response'][0]['id']
+
+    @utils.accept_singleton(basestring)
+    @utils.empty_arg_shortcircuit
+    @utils.enforce_ids_param
+    def delete_stations(self, station_ids):
+        """Deletes All Access radio stations and returns their ids.
+
+        :param station_ids: a single id, or a list of ids to delete
+        """
+
+        mutate_call = mobileclient.BatchMutateStations
+        delete_mutations = mutate_call.build_deletes(station_ids)
+        res = self._make_call(mutate_call, delete_mutations)
+
+        return [s['id'] for s in res['mutate_response']]
 
     def get_all_stations(self, incremental=False, include_deleted=False, updated_after=None):
         """Returns a list of dictionaries that each represent a radio station.
@@ -313,25 +570,47 @@ class Mobileclient(_Base):
         Here is an example station dictionary::
 
             {
-                u'imageUrl': u'http://lh6.ggpht.com/...',
-                u'kind': u'sj#radioStation',
-                u'name': u'station',
-                u'deleted': False,
-                u'lastModifiedTimestamp': u'1370796487455005',
-                u'recentTimestamp': u'1370796487454000',
-                u'clientId': u'c2639bf4-af24-4e4f-ab37-855fc89d15a1',
-                u'seed':
+                'imageUrl': 'http://lh6.ggpht.com/...',
+                'kind': 'sj#radioStation',
+                'name': 'station',
+                'deleted': False,
+                'lastModifiedTimestamp': '1370796487455005',
+                'recentTimestamp': '1370796487454000',
+                'clientId': 'c2639bf4-af24-4e4f-ab37-855fc89d15a1',
+                'seed':
                 {
-                    u'kind': u'sj#radioSeed',
-                    u'trackLockerId': u'7df3aadd-9a18-3dc1-b92e-a7cf7619da7e'
+                    'kind': 'sj#radioSeed',
+                    'trackLockerId': '7df3aadd-9a18-3dc1-b92e-a7cf7619da7e'
                     # possible keys:
                     #  albumId, artistId, genreId, trackId, trackLockerId
                 },
-                u'id': u'69f1bfce-308a-313e-9ed2-e50abe33a25d'
+                'id': '69f1bfce-308a-313e-9ed2-e50abe33a25d'
             },
         """
         return self._get_all_items(mobileclient.ListStations, incremental, include_deleted,
                                    updated_after=updated_after)
+
+    def get_station_tracks(self, station_id, num_tracks=25):
+        """Returns a list of dictionaries that each represent a track.
+
+        Each call performs a separate sampling (with replacement?)
+        from all possible tracks for the station.
+
+        :param station_id: the id of a radio station to retrieve tracks from
+        :param num_tracks: the number of tracks to retrieve
+
+        See :func:`get_all_songs` for the format of a track dictionary.
+        """
+
+        #TODO recently played?
+
+        res = self._make_call(mobileclient.ListStationTracks,
+                              station_id, num_tracks, recently_played=[])
+
+        if not res['data']['items']:
+            return []
+
+        return res['data']['items'][0].get('tracks', [])
 
     def search_all_access(self, query, max_results=50):
         """Queries the server for All Access songs and albums.
@@ -348,122 +627,129 @@ class Mobileclient(_Base):
             {
                'album_hits':[
                   {
-                     u'album':{
-                        u'albumArtRef':u'http://lh6.ggpht.com/...',
-                        u'albumId':u'Bfr2onjv7g7tm4rzosewnnwxxyy',
-                        u'artist':u'Amorphis',
-                        u'artistId':[
-                           u'Apoecs6off3y6k4h5nvqqos4b5e'
+                     'album':{
+                        'albumArtRef':'http://lh6.ggpht.com/...',
+                        'albumId':'Bfr2onjv7g7tm4rzosewnnwxxyy',
+                        'artist':'Amorphis',
+                        'artistId':[
+                           'Apoecs6off3y6k4h5nvqqos4b5e'
                         ],
-                        u'kind':u'sj#album',
-                        u'name':u'Circle',
-                        u'year':2013
+                        'kind':'sj#album',
+                        'name':'Circle',
+                        'year':2013
                      },
-                     u'best_result':True,
-                     u'score':385.55609130859375,
-                     u'type':u'3'
+                     'best_result':True,
+                     'score':385.55609130859375,
+                     'type':'3'
                   },
                   {
-                     u'album':{
-                        u'albumArtRef':u'http://lh3.ggpht.com/...',
-                        u'albumArtist':u'Amorphis',
-                        u'albumId':u'Bqzxfykbqcqmjjtdom7ukegaf2u',
-                        u'artist':u'Amorphis',
-                        u'artistId':[
-                           u'Apoecs6off3y6k4h5nvqqos4b5e'
+                     'album':{
+                        'albumArtRef':'http://lh3.ggpht.com/...',
+                        'albumArtist':'Amorphis',
+                        'albumId':'Bqzxfykbqcqmjjtdom7ukegaf2u',
+                        'artist':'Amorphis',
+                        'artistId':[
+                           'Apoecs6off3y6k4h5nvqqos4b5e'
                         ],
-                        u'kind':u'sj#album',
-                        u'name':u'Elegy',
-                        u'year':1996
+                        'kind':'sj#album',
+                        'name':'Elegy',
+                        'year':1996
                      },
-                     u'score':236.33485412597656,
-                     u'type':u'3'
+                     'score':236.33485412597656,
+                     'type':'3'
                   },
                ],
                'artist_hits':[
                   {
-                     u'artist':{
-                        u'artistArtRef':u'http://lh6.ggpht.com/...',
-                        u'artistId':u'Apoecs6off3y6k4h5nvqqos4b5e',
-                        u'kind':u'sj#artist',
-                        u'name':u'Amorphis'
+                     'artist':{
+                        'artistArtRef':'http://lh6.ggpht.com/...',
+                        'artistId':'Apoecs6off3y6k4h5nvqqos4b5e',
+                        'kind':'sj#artist',
+                        'name':'Amorphis'
                      },
-                     u'score':237.86375427246094,
-                     u'type':u'2'
+                     'score':237.86375427246094,
+                     'type':'2'
                   }
                ],
                'song_hits':[
                   {
-                     u'score':105.23198699951172,
-                     u'track':{
-                        u'album':u'Skyforger',
-                        u'albumArtRef':[
+                     'score':105.23198699951172,
+                     'track':{
+                        'album':'Skyforger',
+                        'albumArtRef':[
                            {
-                              u'url':u'http://lh4.ggpht.com/...'
+                              'url':'http://lh4.ggpht.com/...'
                            }
                         ],
-                        u'albumArtist':u'Amorphis',
-                        u'albumAvailableForPurchase':True,
-                        u'albumId':u'B5nc22xlcmdwi3zn5htkohstg44',
-                        u'artist':u'Amorphis',
-                        u'artistId':[
-                           u'Apoecs6off3y6k4h5nvqqos4b5e'
+                        'albumArtist':'Amorphis',
+                        'albumAvailableForPurchase':True,
+                        'albumId':'B5nc22xlcmdwi3zn5htkohstg44',
+                        'artist':'Amorphis',
+                        'artistId':[
+                           'Apoecs6off3y6k4h5nvqqos4b5e'
                         ],
-                        u'discNumber':1,
-                        u'durationMillis':u'253000',
-                        u'estimatedSize':u'10137633',
-                        u'kind':u'sj#track',
-                        u'nid':u'Tn2ugrgkeinrrb2a4ji7khungoy',
-                        u'playCount':1,
-                        u'storeId':u'Tn2ugrgkeinrrb2a4ji7khungoy',
-                        u'title':u'Silver Bride',
-                        u'trackAvailableForPurchase':True,
-                        u'trackNumber':2,
-                        u'trackType':u'7'
+                        'discNumber':1,
+                        'durationMillis':'253000',
+                        'estimatedSize':'10137633',
+                        'kind':'sj#track',
+                        'nid':'Tn2ugrgkeinrrb2a4ji7khungoy',
+                        'playCount':1,
+                        'storeId':'Tn2ugrgkeinrrb2a4ji7khungoy',
+                        'title':'Silver Bride',
+                        'trackAvailableForPurchase':True,
+                        'trackNumber':2,
+                        'trackType':'7'
                      },
-                     u'type':u'1'
+                     'type':'1'
                   },
                   {
-                     u'score':96.23717498779297,
-                     u'track':{
-                        u'album':u'Magic And Mayhem - Tales From The Early Years',
-                        u'albumArtRef':[
+                     'score':96.23717498779297,
+                     'track':{
+                        'album':'Magic And Mayhem - Tales From The Early Years',
+                        'albumArtRef':[
                            {
-                              u'url':u'http://lh4.ggpht.com/...'
+                              'url':'http://lh4.ggpht.com/...'
                            }
                         ],
-                        u'albumArtist':u'Amorphis',
-                        u'albumAvailableForPurchase':True,
-                        u'albumId':u'B7dplgr5h2jzzkcyrwhifgwl2v4',
-                        u'artist':u'Amorphis',
-                        u'artistId':[
-                           u'Apoecs6off3y6k4h5nvqqos4b5e'
+                        'albumArtist':'Amorphis',
+                        'albumAvailableForPurchase':True,
+                        'albumId':'B7dplgr5h2jzzkcyrwhifgwl2v4',
+                        'artist':'Amorphis',
+                        'artistId':[
+                           'Apoecs6off3y6k4h5nvqqos4b5e'
                         ],
-                        u'discNumber':1,
-                        u'durationMillis':u'235000',
-                        u'estimatedSize':u'9405159',
-                        u'kind':u'sj#track',
-                        u'nid':u'T4j5jxodzredqklxxhncsua5oba',
-                        u'storeId':u'T4j5jxodzredqklxxhncsua5oba',
-                        u'title':u'Black Winter Day',
-                        u'trackAvailableForPurchase':True,
-                        u'trackNumber':4,
-                        u'trackType':u'7',
-                        u'year':2010
+                        'discNumber':1,
+                        'durationMillis':'235000',
+                        'estimatedSize':'9405159',
+                        'kind':'sj#track',
+                        'nid':'T4j5jxodzredqklxxhncsua5oba',
+                        'storeId':'T4j5jxodzredqklxxhncsua5oba',
+                        'title':'Black Winter Day',
+                        'trackAvailableForPurchase':True,
+                        'trackNumber':4,
+                        'trackType':'7',
+                        'year':2010
                      },
-                     u'type':u'1'
+                     'type':'1'
                   },
                ]
             }
         """
-        res = self._make_call(mobileclient.Search, query, max_results)['entries']
+        res = self._make_call(mobileclient.Search, query, max_results)
 
-        return {'album_hits': [hit for hit in res if hit['type'] == '3'],
-                'artist_hits': [hit for hit in res if hit['type'] == '2'],
-                'song_hits': [hit for hit in res if hit['type'] == '1']}
+        hits = res.get('entries', [])
+
+        return {'album_hits': [hit for hit in hits if hit['type'] == '3'],
+                'artist_hits': [hit for hit in hits if hit['type'] == '2'],
+                'song_hits': [hit for hit in hits if hit['type'] == '1']}
 
     def get_artist_info(self, artist_id, include_albums=True, max_top_tracks=5, max_rel_artist=5):
-        """Retrieve details on an artist.
+        """Retrieves details on an artist.
+
+        :param artist_id: an All Access artist id (hint: they always start with 'A')
+        :param include_albums: when True, create the ``'albums'`` substructure
+        :param max_top_tracks: maximum number of top tracks to retrieve
+        :param max_rel_artist: maximum number of related artists to retrieve
 
         Using this method without an All Access subscription will always result in
         CallFailure being raised.
@@ -471,61 +757,61 @@ class Mobileclient(_Base):
         Returns a dict, eg::
 
             {
-              u'albums':[  # only if include_albums is True
+              'albums':[  # only if include_albums is True
                 {
-                  u'albumArtRef':u'http://lh6.ggpht.com/...',
-                  u'albumArtist':u'Amorphis',
-                  u'albumId':u'Bfr2onjv7g7tm4rzosewnnwxxyy',
-                  u'artist':u'Amorphis',
-                  u'artistId':[
-                    u'Apoecs6off3y6k4h5nvqqos4b5e'
+                  'albumArtRef':'http://lh6.ggpht.com/...',
+                  'albumArtist':'Amorphis',
+                  'albumId':'Bfr2onjv7g7tm4rzosewnnwxxyy',
+                  'artist':'Amorphis',
+                  'artistId':[
+                    'Apoecs6off3y6k4h5nvqqos4b5e'
                   ],
-                  u'kind':u'sj#album',
-                  u'name':u'Circle',
-                  u'year':2013
+                  'kind':'sj#album',
+                  'name':'Circle',
+                  'year':2013
                 },
               ],
-              u'artistArtRef':  u'http://lh6.ggpht.com/...',
-              u'artistId':u'Apoecs6off3y6k4h5nvqqos4b5e',
-              u'kind':u'sj#artist',
-              u'name':u'Amorphis',
-              u'related_artists':[  # only if max_rel_artists > 0
+              'artistArtRef':  'http://lh6.ggpht.com/...',
+              'artistId':'Apoecs6off3y6k4h5nvqqos4b5e',
+              'kind':'sj#artist',
+              'name':'Amorphis',
+              'related_artists':[  # only if max_rel_artists > 0
                 {
-                  u'artistArtRef':      u'http://lh5.ggpht.com/...',
-                  u'artistId':u'Aheqc7kveljtq7rptd7cy5gvk2q',
-                  u'kind':u'sj#artist',
-                  u'name':u'Dark Tranquillity'
+                  'artistArtRef':      'http://lh5.ggpht.com/...',
+                  'artistId':'Aheqc7kveljtq7rptd7cy5gvk2q',
+                  'kind':'sj#artist',
+                  'name':'Dark Tranquillity'
                 }
               ],
-              u'topTracks':[  # only if max_top_tracks > 0
+              'topTracks':[  # only if max_top_tracks > 0
                 {
-                  u'album':u'Skyforger',
-                  u'albumArtRef':[
+                  'album':'Skyforger',
+                  'albumArtRef':[
                     {
-                      u'url':          u'http://lh4.ggpht.com/...'
+                      'url':          'http://lh4.ggpht.com/...'
                     }
                   ],
-                  u'albumArtist':u'Amorphis',
-                  u'albumAvailableForPurchase':True,
-                  u'albumId':u'B5nc22xlcmdwi3zn5htkohstg44',
-                  u'artist':u'Amorphis',
-                  u'artistId':[
-                    u'Apoecs6off3y6k4h5nvqqos4b5e'
+                  'albumArtist':'Amorphis',
+                  'albumAvailableForPurchase':True,
+                  'albumId':'B5nc22xlcmdwi3zn5htkohstg44',
+                  'artist':'Amorphis',
+                  'artistId':[
+                    'Apoecs6off3y6k4h5nvqqos4b5e'
                   ],
-                  u'discNumber':1,
-                  u'durationMillis':u'253000',
-                  u'estimatedSize':u'10137633',
-                  u'kind':u'sj#track',
-                  u'nid':u'Tn2ugrgkeinrrb2a4ji7khungoy',
-                  u'playCount':1,
-                  u'storeId':u'Tn2ugrgkeinrrb2a4ji7khungoy',
-                  u'title':u'Silver Bride',
-                  u'trackAvailableForPurchase':True,
-                  u'trackNumber':2,
-                  u'trackType':u'7'
+                  'discNumber':1,
+                  'durationMillis':'253000',
+                  'estimatedSize':'10137633',
+                  'kind':'sj#track',
+                  'nid':'Tn2ugrgkeinrrb2a4ji7khungoy',
+                  'playCount':1,
+                  'storeId':'Tn2ugrgkeinrrb2a4ji7khungoy',
+                  'title':'Silver Bride',
+                  'trackAvailableForPurchase':True,
+                  'trackNumber':2,
+                  'trackType':'7'
                 }
               ],
-              u'total_albums':21
+              'total_albums':21
             }
         """
 
@@ -542,18 +828,14 @@ class Mobileclient(_Base):
         kwargs are passed to the call.
         """
         if not incremental:
-            # slight optimization; can get all items at once
-            res = self._make_call(call, max_results=20000, **kwargs)
+            # slight optimization: get more items in a page
+            kwargs.setdefault('max_results', 20000)
 
-            items = res['data']['items']
+        generator = self._get_all_items_incremental(call, include_deleted, **kwargs)
+        if incremental:
+            return generator
 
-            if not include_deleted:
-                items = [t for t in items if not t['deleted']]
-
-            return items
-
-        # otherwise, return a generator
-        return self._get_all_items_incremental(call, include_deleted, **kwargs)
+        return [s for chunk in generator for s in chunk]
 
     def _get_all_items_incremental(self, call, include_deleted, **kwargs):
         """Return a generator of lists of tracks.
@@ -577,16 +859,125 @@ class Mobileclient(_Base):
 
             get_next_chunk = 'nextPageToken' in lib_chunk
 
-    #TODO below here
-    def get_album(self, albumid, tracks=True):
-        """Retrieve artist data"""
-        res = self._make_call(mobileclient.GetAlbum, albumid, tracks)
-        return res
+    def get_album_info(self, album_id, include_tracks=True):
+        """Retrieves details on an album.
 
-    def get_track(self, trackid):
-        """Retrieve information about a store track.
+        :param album_id: an All Access album id (hint: they always start with 'B')
+        :param include_tracks: when True, create the ``'tracks'`` substructure
 
-        TODO does this work on library tracks?
+        Using this method without an All Access subscription will always result in
+        CallFailure being raised.
+
+        Returns a dict, eg::
+
+            {
+                'kind': 'sj#album',
+                'name': 'Circle',
+                'artist': 'Amorphis',
+                'albumArtRef': 'http://lh6.ggpht.com/...',
+                'tracks': [  # if `include_tracks` is True
+                {
+                    'album': 'Circle',
+                    'kind': 'sj#track',
+                    'storeId': 'T5zb7luo2vkroozmj57g2nljdsy',  # can be used as a song id
+                    'artist': 'Amorphis',
+                    'albumArtRef': [
+                    {
+                        'url': 'http://lh6.ggpht.com/...'
+                    }],
+                    'title': 'Shades of Grey',
+                    'nid': 'T5zb7luo2vkroozmj57g2nljdsy',
+                    'estimatedSize': '13115591',
+                    'albumId': 'Bfr2onjv7g7tm4rzosewnnwxxyy',
+                    'artistId': ['Apoecs6off3y6k4h5nvqqos4b5e'],
+                    'albumArtist': 'Amorphis',
+                    'durationMillis': '327000',
+                    'composer': '',
+                    'genre': 'Metal',
+                    'trackNumber': 1,
+                    'discNumber': 1,
+                    'trackAvailableForPurchase': True,
+                    'trackType': '7',
+                    'albumAvailableForPurchase': True
+                }, # ...
+                ],
+                'albumId': 'Bfr2onjv7g7tm4rzosewnnwxxyy',
+                'artistId': ['Apoecs6off3y6k4h5nvqqos4b5e'],
+                'albumArtist': 'Amorphis',
+                'year': 2013
+            }
+
         """
-        res = self._make_call(mobileclient.GetStoreTrack, trackid)
-        return res
+
+        return self._make_call(mobileclient.GetAlbum, album_id, include_tracks)
+
+    def get_track_info(self, store_track_id):
+        """Retrieves information about a store track.
+
+        :param store_track_id: an All Access track id (hint: they always start with 'T')
+
+        Using this method without an All Access subscription will always result in
+        CallFailure being raised.
+
+        Returns a dict, eg::
+
+            {
+                'album': 'Best Of',
+                'kind': 'sj#track',
+                'storeId': 'Te2qokfjmhqxw4bnkswbfphzs4m',
+                'artist': 'Amorphis',
+                'albumArtRef': [
+                {
+                    'url': 'http://lh5.ggpht.com/...'
+                }],
+                'title': 'Hopeless Days',
+                'nid': 'Te2qokfjmhqxw4bnkswbfphzs4m',
+                'estimatedSize': '12325643',
+                'albumId': 'Bsbjjc24a5xutbutvbvg3h4y2k4',
+                'artistId': ['Apoecs6off3y6k4h5nvqqos4b5e'],
+                'albumArtist': 'Amorphis',
+                'durationMillis': '308000',
+                'composer': '',
+                'genre': 'Metal',
+                'trackNumber': 2,
+                'discNumber': 1,
+                'trackAvailableForPurchase': True,
+                'trackType': '7',
+                'albumAvailableForPurchase': True
+            }
+
+        """
+
+        return self._make_call(mobileclient.GetStoreTrack, store_track_id)
+
+    def get_genres(self):
+        """Retrieves information on Google Music genres.
+
+        Using this method without an All Access subscription will always result in
+        CallFailure being raised.
+
+        Returns a list of dicts of the form, eg::
+
+            {
+                'name': 'Alternative/Indie',
+                'id': 'ALTERNATIVE_INDIE'
+                'kind': 'sj#musicGenre',
+                'children': [             # this key may not be present
+                    'ALTERNATIVE_80S',    # these are ids
+                    'ALT_COUNTRY',
+                    # ...
+                    ],
+                'images': [
+                    {
+                        # these are album covers representative of the genre
+                        'url': 'http://lh6.ggpht.com/...'
+                    },
+                    # ...
+                ],
+            }
+
+        Note that the id can be used with :func:`create_station`
+        to seed an All Access radio station.
+        """
+
+        return self._make_call(mobileclient.GetGenres)

@@ -8,25 +8,51 @@ an extra test playlist or song may result.
 """
 
 from collections import namedtuple
+import itertools
 import os
 import re
 import types
 
 from decorator import decorator
 from proboscis.asserts import (
-    assert_true, assert_equal,
+    assert_true, assert_equal, assert_is_not_none,
     Check
 )
 from proboscis import test, before_class, after_class, SkipTest
 
 from gmusicapi import Webclient, Musicmanager, Mobileclient
-from gmusicapi.utils.utils import retry
+#from gmusicapi.protocol import mobileclient
+#from gmusicapi.protocol.metadata import md_expectations
+from gmusicapi.utils.utils import retry, id_or_nid
 import gmusicapi.test.utils as test_utils
 
 TEST_PLAYLIST_NAME = 'gmusicapi_test_playlist'
+TEST_STATION_NAME = 'gmusicapi_test_station'
+
+TEST_AA_GENRE_ID = 'METAL'
+
+# that dumb little intro track on Conspiracy of One,
+# picked since it's only a few seconds long
+TEST_AA_SONG_ID = 'Tqqufr34tuqojlvkolsrwdwx7pe'
+
+# Amorphis
+TEST_AA_ARTIST_ID = 'Apoecs6off3y6k4h5nvqqos4b5e'
+
+# Holographic Universe
+TEST_AA_ALBUM_ID = 'B4cao5ms5jjn36notfgnhjtguwa'
+
+# this is owned by my test account, so it shouldn't disappear
+TEST_PLAYLIST_SHARETOKEN = ('AMaBXymHAkflgs5lvFAUyyQLYelqqMZNAB4v7Y_-'
+                            'v9vmrctLOeW64GScAScoFHEnrLgOP5DSRpl9FYIH'
+                            'b84HRBvyIMsxc7Zlrg==')
 
 # this is a little data class for the songs we upload
-TestSong = namedtuple('TestSong', 'sid title artist album')
+TestSong = namedtuple('TestSong', 'sid title artist album full_data')
+
+
+def sids(test_songs):
+    """Given [TestSong], return ['sid']."""
+    return [s.sid for s in test_songs]
 
 
 def test_all_access_features():
@@ -49,14 +75,23 @@ class UpauthTests(object):
     mm = None  # musicmanager
     mc = None  # mobileclient
 
-    #These are set on the instance in create_song/playlist.
-    songs = None  # [TestSong]
+    #These are set on the instance in eg create_song.
+
+    # both are [TestSong]
+    user_songs = None
+    aa_songs = None
+
     playlist_id = None
     plentry_ids = None
+    station_ids = None
+
+    @property
+    def all_songs(self):
+        return (self.user_songs or []) + (self.aa_songs or [])
 
     def mc_get_playlist_songs(self, plid):
         """For convenience, since mc can only get all playlists at once."""
-        all_contents = self.mc.get_all_playlist_contents()
+        all_contents = self.mc.get_all_user_playlist_contents()
         found = [p for p in all_contents if p['id'] == plid]
 
         assert_true(len(found), 1)
@@ -92,32 +127,31 @@ class UpauthTests(object):
     # required resources.
 
     # The intuitition: starting from an empty library, you need to create
-    #  a song before you can add it to a playlist.
+    #  a song before you can eg add it to a playlist.
 
-    # If x --> y means x runs after y, then the graph looks like:
-
-    #    song_create <-- plentry_create --> playlist_create
-    #        ^                  ^                   ^
-    #        |                  |                   |
-    #    song_test       plentry_test       playlist_test
-    #        ^                  ^                   ^
-    #        |                  |                   |
-    #    song_delete     plentry_delete     playlist_delete
-
-    # Singleton groups are used to ease code ordering restraints.
+    # The dependencies end up with an ordering that might look like:
+    #
+    # with song
+    #   with playlist
+    #     with plentry
+    #   with station
+    #
+    #
     # Suggestions to improve any of this are welcome!
 
+    @staticmethod
     @retry
-    def assert_songs_state(self, sids, present):
+    def assert_songs_state(method, sids, present):
         """
         Assert presence/absence of sids and return a list of
         TestSongs found.
 
+        :param method: eg self.mc.get_all_songs
         :param sids: list of song ids
         :param present: if True verify songs are present; False the opposite
         """
 
-        library = self.mc.get_all_songs()
+        library = method()
 
         found = [s for s in library if s['id'] in sids]
 
@@ -127,7 +161,7 @@ class UpauthTests(object):
 
         assert_equal(len(found), expected_len)
 
-        return [TestSong(s['id'], s['title'], s['artist'], s['album'])
+        return [TestSong(s['id'], s['title'], s['artist'], s['album'], s)
                 for s in found]
 
     @staticmethod
@@ -137,7 +171,7 @@ class UpauthTests(object):
         Assert that some listing method returns the same
         contents for incremental=True/False.
 
-        :param method: eg self.mc.get_all_songs
+        :param method: eg self.mc.get_all_songs, must support `incremental` kwarg
         :param **kwargs: passed to method
         """
 
@@ -168,11 +202,12 @@ class UpauthTests(object):
         # This can create more than one song: one through uploading, one through
         # adding an AA track to the library.
 
+        user_sids = []
+        aa_sids = []
+
         fname = test_utils.small_mp3
 
         uploaded, matched, not_uploaded = self.mm.upload(fname)
-
-        sids = []
 
         if len(not_uploaded) == 1 and 'ALREADY_EXISTS' in not_uploaded[fname]:
             # If a previous test went wrong, the track might be there already.
@@ -180,22 +215,24 @@ class UpauthTests(object):
             assert_equal(matched, {})
             assert_equal(uploaded, {})
 
-            sids.append(re.search(r'\(.*\)', not_uploaded[fname]).group().strip('()'))
+            # this matches the sid from the error message
+            user_sids.append(re.search(r'\(.*\)', not_uploaded[fname]).group().strip('()'))
         else:
             # Otherwise, it should have been uploaded normally.
             assert_equal(not_uploaded, {})
             assert_equal(matched, {})
             assert_equal(uploaded.keys(), [fname])
 
-            sids.append(uploaded[fname])
+            user_sids.append(uploaded[fname])
 
         if test_all_access_features():
-            sids.append(self.mc.add_aa_track(test_utils.aa_song_id))
+            aa_sids.append(self.mc.add_aa_track(TEST_AA_SONG_ID))
 
         # we test get_all_songs here so that we can assume the existance
         # of the song for future tests (the servers take time to sync an upload)
 
-        self.songs = self.assert_songs_state(sids, present=True)
+        self.user_songs = self.assert_songs_state(self.mc.get_all_songs, user_sids, present=True)
+        self.aa_songs = self.assert_songs_state(self.mc.get_all_songs, aa_sids, present=True)
 
     @test
     def playlist_create(self):
@@ -216,20 +253,20 @@ class UpauthTests(object):
           runs_after_groups=['playlist.exists', 'song.exists'])
     def plentry_create(self):
 
-        song_ids = [self.songs[0].sid]
+        song_ids = [self.user_songs[0].sid]
 
-        # create 3 entries
+        # create 3 entries total
         # 3 songs is the minimum to fully test reordering, and also includes the
         # duplicate song_id case
-        double_id = self.songs[0].sid
+        double_id = self.user_songs[0].sid
         if test_all_access_features():
-            double_id = test_utils.aa_song_id
+            double_id = TEST_AA_SONG_ID
 
         song_ids += [double_id] * 2
 
         plentry_ids = self.mc.add_songs_to_playlist(self.playlist_id, song_ids)
 
-        @retry(tries=2)
+        @retry
         def assert_plentries_exist(plid, plentry_ids):
             songs = self.mc_get_playlist_songs(plid)
             found = [e for e in songs
@@ -281,25 +318,74 @@ class UpauthTests(object):
         assert_playlist_does_not_exist(self.playlist_id)
         self.assert_list_with_deleted(self.mc.get_all_playlists)
 
+    @test
+    def station_create(self):
+        if not test_all_access_features():
+            raise SkipTest('AA testing not enabled')
+
+        station_ids = []
+        for prefix, kwargs in (('AA song', {'track_id': TEST_AA_SONG_ID}),
+                               ('AA-added song', {'track_id': self.aa_songs[0].sid}),
+                               ('up song', {'track_id': self.user_songs[0].sid}),
+                               ('artist', {'artist_id': TEST_AA_ARTIST_ID}),
+                               ('album', {'album_id': TEST_AA_ALBUM_ID}),
+                               ('genre', {'genre_id': TEST_AA_GENRE_ID})):
+            station_ids.append(
+                self.mc.create_station(prefix + ' ' + TEST_STATION_NAME, **kwargs))
+
+        @retry
+        def assert_station_exists(station_id):
+            stations = self.mc.get_all_stations()
+
+            found = [s for s in stations
+                     if s['id'] == station_id]
+
+            assert_equal(len(found), 1)
+
+        for station_id in station_ids:
+            assert_station_exists(station_id)
+
+        self.station_ids = station_ids
+
+    @test(groups=['station'], depends_on=[station_create, song_create],
+          runs_after_groups=['station.exists', 'song.exists'],
+          always_run=True)
+    def station_delete(self):
+        if self.station_ids is None:
+            raise SkipTest('did not store self.station_ids')
+
+        res = self.mc.delete_stations(self.station_ids)
+        assert_equal(res, self.station_ids)
+
+        @retry
+        def assert_station_deleted(station_id):
+            stations = self.mc.get_all_stations()
+
+            found = [s for s in stations
+                     if s['id'] == station_id]
+
+            assert_equal(len(found), 0)
+
+        for station_id in self.station_ids:
+            assert_station_deleted(station_id)
+        self.assert_list_with_deleted(self.mc.get_all_stations)
+
     @test(groups=['song'], depends_on=[song_create],
-          runs_after=[plentry_delete],
+          runs_after=[plentry_delete, station_delete],
           runs_after_groups=["song.exists"],
           always_run=True)
     def song_delete(self):
-        if self.songs is None:
-            raise SkipTest('did not store self.songs')
-
         # split deletion between wc and mc
         # mc is the only to run if AA testing not enabled
         with Check() as check:
-            for i, testsong in enumerate(self.songs):
+            for i, testsong in enumerate(self.all_songs):
                 if i % 2 == 0:
                     res = self.mc.delete_songs(testsong.sid)
                 else:
                     res = self.wc.delete_songs(testsong.sid)
                 check.equal(res, [testsong.sid])
 
-        self.assert_songs_state([s.sid for s in self.songs], present=False)
+        self.assert_songs_state(self.mc.get_all_songs, sids(self.all_songs), present=False)
         self.assert_list_with_deleted(self.mc.get_all_songs)
 
     ## These decorators just prevent setting groups and depends_on over and over.
@@ -312,184 +398,100 @@ class UpauthTests(object):
                          depends_on=[playlist_create])
     plentry_test = test(groups=['plentry', 'plentry.exists'],
                         depends_on=[plentry_create])
+    station_test = test(groups=['station', 'station.exists'], depends_on=[station_create])
 
     ## Non-wonky tests resume down here.
 
     ##---------
+    ## MM tests
+    ##---------
+
+    @song_test
+    def mm_list_new_songs(self):
+        # mm only includes user-uploaded songs
+        self.assert_songs_state(self.mm.get_uploaded_songs, sids(self.user_songs), present=True)
+        self.assert_songs_state(self.mm.get_uploaded_songs, sids(self.aa_songs), present=False)
+
+    @test
+    def mm_list_songs_inc_equal(self):
+        self.assert_list_inc_equivalence(self.mm.get_uploaded_songs)
+
+    @song_test
+    def mm_download_song(self):
+
+        @retry
+        def assert_download(sid):
+            filename, audio = self.mm.download_song(sid)
+
+            #TODO could use original filename to verify this
+            # but, when manually checking, got modified title occasionally
+            assert_true(filename.endswith('.mp3'))
+            assert_is_not_none(audio)
+
+        assert_download(self.user_songs[0].sid)
+
+    ##---------
     ## WC tests
     ##---------
+
+    @song_test
+    def wc_list_new_songs(self):
+        self.assert_songs_state(self.wc.get_all_songs, sids(self.all_songs), present=True)
+
+    @test
+    def wc_list_songs_inc_equal(self):
+        self.assert_list_inc_equivalence(self.wc.get_all_songs)
 
     @test
     def wc_get_registered_devices(self):
         # no logic; just checking schema
         self.wc.get_registered_devices()
 
-    ##---------
-    ## MC tests
-    ##---------
-
     @test
-    def mc_list_stations_inc_equal(self):
-        self.assert_list_inc_equivalence(self.mc.get_all_stations)
+    @all_access
+    def wc_get_aa_stream_urls(self):
+        urls = self.wc.get_stream_urls(TEST_AA_SONG_ID)
 
-    @test
-    def mc_list_stations_inc_equal_with_deleted(self):
-        self.assert_list_inc_equivalence(self.mc.get_all_stations, include_deleted=True)
-
-    @song_test
-    def mc_list_songs_inc_equal(self):
-        self.assert_list_inc_equivalence(self.mc.get_all_songs)
-
-    @song_test
-    def mc_list_songs_inc_equal_with_deleted(self):
-        self.assert_list_inc_equivalence(self.mc.get_all_songs, include_deleted=True)
-
-    @playlist_test
-    def mc_list_playlists_inc_equal(self):
-        self.assert_list_inc_equivalence(self.mc.get_all_playlists)
-
-    @playlist_test
-    def mc_list_playlists_inc_equal_with_deleted(self):
-        self.assert_list_inc_equivalence(self.mc.get_all_playlists, include_deleted=True)
-
-    @plentry_test
-    def pt(self):
-        raise SkipTest('remove this')
-
-    #@plentry_test
-    #def mc_list_plentries_inc_equal(self):
-    #    self.assert_list_inc_equivalence(self.mc_get_playlist_songs, playlist_id=self.playlist_id)
+        assert_true(len(urls) > 1)
 
     @test
     @all_access
-    def mc_search_aa(self):
-        res = self.mc.search_all_access('amorphis')
-        with Check() as check:
-            for hits in res.values():
-                check.true(len(hits) > 0)
+    def wc_stream_aa_track(self):
+        audio = self.wc.get_stream_audio(TEST_AA_SONG_ID)
+        assert_is_not_none(audio)
 
-    #@mc_test
-    #def mc_search_aa_with_limit(self):
-    #    if 'GM_A' in os.environ:
-    #        res_unlimited = self.mc.search_all_access('cat empire')
-    #        res_5 = self.mc.search_all_access('cat empire', max_results=5)
+    @song_test
+    def wc_get_download_info(self):
+        url, download_count = self.wc.get_song_download_info(self.user_songs[0].sid)
 
-    #        assert_equal(len(res_5['song_hits']), 5)
-    #        assert_true(len(res_unlimited['song_hits']) > len(res_5['song_hits']))
+        assert_is_not_none(url)
 
-    #    else:
-    #        raise SkipTest('AA testing not enabled')
+    @song_test
+    def wc_get_uploaded_stream_urls(self):
+        urls = self.wc.get_stream_urls(self.user_songs[0].sid)
 
-    #@mc_test
-    #def mc_artist_info(self):
-    #    if 'GM_A' in os.environ:
-    #        aid = 'Apoecs6off3y6k4h5nvqqos4b5e'  # amorphis
-    #        optional_keys = set(('albums', 'topTracks', 'related_artists'))
+        assert_equal(len(urls), 1)
 
-    #        include_all_res = self.mc.get_artist_info(aid, include_albums=True,
-    #                                                  max_top_tracks=1, max_rel_artist=1)
+        url = urls[0]
 
-    #        no_albums_res = self.mc.get_artist_info(aid, include_albums=False)
-    #        no_rel_res = self.mc.get_artist_info(aid, max_rel_artist=0)
-    #        no_tracks_res = self.mc.get_artist_info(aid, max_top_tracks=0)
+        assert_is_not_none(url)
+        assert_equal(url[:7], 'http://')
 
-    #        with Check() as check:
-    #            check.true(set(include_all_res.keys()) & optional_keys == optional_keys)
+    @song_test
+    def wc_upload_album_art(self):
+        self.wc.upload_album_art(self.user_songs[0].sid, test_utils.image_filename)
 
-    #            check.true(set(no_albums_res.keys()) & optional_keys ==
-    #                       optional_keys - set(['albums']))
-    #            check.true(set(no_rel_res.keys()) & optional_keys ==
-    #                       optional_keys - set(['related_artists']))
-    #            check.true(set(no_tracks_res.keys()) & optional_keys ==
-    #                       optional_keys - set(['topTracks']))
+        self.wc.change_song_metadata(self.user_songs[0].full_data)
+        #TODO redownload and verify against original?
 
-    #    else:
-    #        assert_raises(CallFailure, self.mc.search_all_access, 'amorphis')
-
-    #@test
-    #def get_aa_stream_urls(self):
-    #    if 'GM_A' in os.environ:
-    #        # that dumb little intro track on Conspiracy of One
-    #        urls = self.wc.get_stream_urls('Tqqufr34tuqojlvkolsrwdwx7pe')
-
-    #        assert_true(len(urls) > 1)
-    #        #TODO test getting the stream
-    #    else:
-    #        raise SkipTest('AA testing not enabled')
-
-    #@test
-    #def stream_aa_track(self):
-    #    if 'GM_A' in os.environ:
-    #        # that dumb little intro track on Conspiracy of One
-    #        audio = self.wc.get_stream_audio('Tqqufr34tuqojlvkolsrwdwx7pe')
-    #        assert_is_not_none(audio)
-    #    else:
-    #        raise SkipTest('AA testing not enabled')
-
-    ##-----------
-    ## Song tests
-    ##-----------
-
-    ##TODO album art
-
-    #def _assert_get_song(self, sid, client=None):
-    #    """Return the song dictionary with this sid.
-
-    #    (GM has no native get for songs, just list).
-
-    #    :param client: a Webclient or Musicmanager
-    #    """
-    #    if client is None:
-    #        client = self.wc
-
-    #    songs = client.get_all_songs()
-
-    #    found = [s for s in songs if s['id'] == sid] or None
-
-    #    assert_is_not_none(found)
-    #    assert_equal(len(found), 1)
-
-    #    return found[0]
-
+    # is this worth the trouble?
     #@song_test
-    #def list_songs_wc(self):
-    #    self._assert_get_song(self.song.sid, self.wc)
-
-    #@song_test
-    #def list_songs_mm(self):
-    #    self._assert_get_song(self.song.sid, self.mm)
-
-    #@song_test
-    #def list_songs_mc(self):
-    #    self._assert_get_song(self.song.sid, self.mc)
-
-    #@staticmethod
-    #def _list_songs_incrementally(client):
-    #    lib_chunk_gen = client.get_all_songs(incremental=True)
-    #    assert_true(isinstance(lib_chunk_gen, types.GeneratorType))
-
-    #    assert_equal([s for chunk in lib_chunk_gen for s in chunk],
-    #                 client.get_all_songs(incremental=False))
-
-    #@song_test
-    #def list_songs_incrementally_wc(self):
-    #    self._list_songs_incrementally(self.wc)
-
-    #@song_test
-    #def list_songs_incrementally_mm(self):
-    #    self._list_songs_incrementally(self.mm)
-
-    #@mc_test
-    #def list_songs_incrementally_mc(self):
-    #    self._list_songs_incrementally(self.mc)
-
-    #@song_test
-    #def change_metadata(self):
-    #    orig_md = self._assert_get_song(self.song.sid)
+    #def wc_change_metadata(self):
+    #    orig_md = self.song.full_data
 
     #    # Change all mutable entries.
 
-    #    new_md = copy(orig_md)
+    #    new_md = orig_md.copy()
 
     #    for name, expt in md_expectations.items():
     #        if name in orig_md and expt.mutable:
@@ -548,126 +550,263 @@ class UpauthTests(object):
     #                    check.true(same, "failed to revert: " + message)
     #    assert_metadata_reverted(self.song.sid, orig_md)
 
-    ##TODO verify these better?
+    ##---------
+    ## MC tests
+    ##---------
 
-    #@song_test
-    #def get_download_info(self):
-    #    url, download_count = self.wc.get_song_download_info(self.song.sid)
+    @test
+    def mc_list_stations_inc_equal(self):
+        self.assert_list_inc_equivalence(self.mc.get_all_stations)
 
-    #    assert_is_not_none(url)
+    @test
+    def mc_list_stations_inc_equal_with_deleted(self):
+        self.assert_list_inc_equivalence(self.mc.get_all_stations, include_deleted=True)
 
-    #@song_test
-    #def download_song_mm(self):
+    @test
+    def mc_list_shared_playlist_entries(self):
+        entries = self.mc.get_shared_playlist_contents(TEST_PLAYLIST_SHARETOKEN)
+        assert_true(len(entries) > 0)
 
-    #    @retry
-    #    def assert_download(sid=self.song.sid):
-    #        filename, audio = self.mm.download_song(sid)
+    @staticmethod
+    @retry
+    def _assert_song_rating(method, sid, rating):
+        """
+        :param method: eg self.mc.get_all_songs
+        :param sid: song id
+        :param rating: a string
+        """
+        songs = method()
 
-    #        # there's some kind of a weird race happening here with CI;
-    #        # usually one will succeed and one will fail
+        if not isinstance(songs, list):
+            # kind of a hack to support get_track_info as well
+            songs = [songs]
 
-    #        #TODO could use original filename to verify this
-    #        # but, when manually checking, got modified title occasionally
-    #        assert_true(filename.endswith('.mp3'))  # depends on specific file
-    #        assert_is_not_none(audio)
-    #    assert_download()
+        found = [s for s in songs if id_or_nid(s) == sid]
 
-    #@song_test
-    #def get_uploaded_stream_urls(self):
-    #    urls = self.wc.get_stream_urls(self.song.sid)
+        assert_equal(len(found), 1)
 
-    #    assert_equal(len(urls), 1)
+        assert_equal(found[0]['rating'], rating)
+        return found[0]
 
-    #    url = urls[0]
+    # how can I get the rating key to show up for store tracks?
+    # it works in Google's clients!
 
-    #    assert_is_not_none(url)
-    #    assert_equal(url[:7], 'http://')
+    # @test
+    # @all_access
+    # def mc_change_store_song_rating(self):
+    #     song = self.mc.get_track_info(TEST_AA_SONG_ID)
 
-    #@song_test
-    #def upload_album_art(self):
-    #    orig_md = self._assert_get_song(self.song.sid)
+    #     # increment by one but keep in rating range
+    #     song['rating'] = int(song.get('rating', '0')) + 1
+    #     song['rating'] = str(song['rating'] % 6)
 
-    #    self.wc.upload_album_art(self.song.sid, test_utils.image_filename)
+    #     self.mc.change_song_metadata(song)
 
-    #    self.wc.change_song_metadata(orig_md)
-    #    #TODO redownload and verify against original?
+    #     self._assert_song_rating(lambda: self.mc.get_track_info(TEST_AA_SONG_ID),
+    #                              id_or_nid(song),
+    #                              song['rating'])
 
-    ## these search tests are all skipped: see
-    ## https://github.com/simon-weber/Unofficial-Google-Music-API/issues/114
+    @song_test
+    def mc_change_uploaded_song_rating(self):
+        song = self._assert_song_rating(self.mc.get_all_songs,
+                                        self.all_songs[0].sid,
+                                        '0')  # initially unrated
 
-    #@staticmethod
-    #def _assert_search_hit(res, hit_type, hit_key, val):
-    #    """Assert that the result (returned from wc.search) has
-    #    ``hit[hit_type][hit_key] == val`` for only one result in hit_type."""
+        song['rating'] = '1'
+        self.mc.change_song_metadata(song)
 
-    #    raise SkipTest('search is unpredictable (#114)')
+        self._assert_song_rating(self.mc.get_all_songs, song['id'], '1')
 
-    #    #assert_equal(sorted(res.keys()), ['album_hits', 'artist_hits', 'song_hits'])
-    #    #assert_not_equal(res[hit_type], [])
+    @song_test
+    def mc_list_songs_inc_equal(self):
+        self.assert_list_inc_equivalence(self.mc.get_all_songs)
 
-    #    #hitmap = (hit[hit_key] == val for hit in res[hit_type])
-    #    #assert_equal(sum(hitmap), 1)  # eg sum(True, False, True) == 2
+    @song_test
+    def mc_list_songs_inc_equal_with_deleted(self):
+        self.assert_list_inc_equivalence(self.mc.get_all_songs, include_deleted=True)
 
-    ##@song_test
-    ##def search_title(self):
-    ##    res = self.wc.search(self.song.title)
+    @playlist_test
+    def mc_list_playlists_inc_equal(self):
+        self.assert_list_inc_equivalence(self.mc.get_all_playlists)
 
-    ##    self._assert_search_hit(res, 'song_hits', 'id', self.song.sid)
+    @playlist_test
+    def mc_list_playlists_inc_equal_with_deleted(self):
+        self.assert_list_inc_equivalence(self.mc.get_all_playlists, include_deleted=True)
 
-    ##@song_test
-    ##def search_artist(self):
-    ##    res = self.wc.search(self.song.artist)
+    @playlist_test
+    def mc_change_playlist_name(self):
+        new_name = TEST_PLAYLIST_NAME + '_mod'
+        plid = self.mc.change_playlist_name(self.playlist_id, new_name)
+        assert_equal(self.playlist_id, plid)
 
-    ##    self._assert_search_hit(res, 'artist_hits', 'id', self.song.sid)
+        @retry  # change takes time to propogate
+        def assert_name_equal(plid, name):
+            playlists = self.mc.get_all_playlists()
 
-    ##@song_test
-    ##def search_album(self):
-    ##    res = self.wc.search(self.song.album)
+            found = [p for p in playlists if p['id'] == plid]
 
-    ##    self._assert_search_hit(res, 'album_hits', 'albumName', self.song.album)
+            assert_equal(len(found), 1)
+            assert_equal(found[0]['name'], name)
 
-    ##---------------
-    ## Playlist tests
-    ##---------------
+        assert_name_equal(self.playlist_id, new_name)
 
-    ##TODO copy, change (need two songs?)
+        # revert
+        self.mc.change_playlist_name(self.playlist_id, TEST_PLAYLIST_NAME)
+        assert_name_equal(self.playlist_id, TEST_PLAYLIST_NAME)
 
-    #@playlist_test
-    #def change_name(self):
-    #    new_name = TEST_PLAYLIST_NAME + '_mod'
-    #    self.wc.change_playlist_name(self.playlist_id, new_name)
+    @retry
+    def _mc_assert_ple_position(self, entry, pos):
+        """
+        :param entry: entry dict
+        :pos: 0-based position to assert
+        """
+        pl = self.mc_get_playlist_songs(entry['playlistId'])
 
-    #    @retry  # change takes time to propogate
-    #    def assert_name_equal(plid, name):
-    #        playlists = self.wc.get_all_playlist_ids()
+        indices = [i for (i, e) in enumerate(pl)
+                   if e['id'] == entry['id']]
 
-    #        found = playlists['user'].get(name, None)
+        assert_equal(len(indices), 1)
 
-    #        assert_is_not_none(found)
-    #        assert_equal(found[-1], self.playlist_id)
+        assert_equal(indices[0], pos)
 
-    #    assert_name_equal(self.playlist_id, new_name)
+    @plentry_test
+    def mc_reorder_ple_forwards(self):
+        playlist_len = len(self.plentry_ids)
+        for from_pos, to_pos in [pair for pair in
+                                 itertools.product(range(playlist_len), repeat=2)
+                                 if pair[0] < pair[1]]:
+            pl = self.mc_get_playlist_songs(self.playlist_id)
 
-    #    # revert
-    #    self.wc.change_playlist_name(self.playlist_id, TEST_PLAYLIST_NAME)
-    #    assert_name_equal(self.playlist_id, TEST_PLAYLIST_NAME)
+            from_e = pl[from_pos]
 
-    #@playlist_test
-    #def add_remove(self):
-    #    @retry
-    #    def assert_song_order(plid, order):
-    #        songs = self.wc.get_playlist_songs(plid)
-    #        server_order = [s['id'] for s in songs]
+            e_before_new_pos, e_after_new_pos = None, None
 
-    #        assert_equal(server_order, order)
+            if to_pos - 1 >= 0:
+                e_before_new_pos = pl[to_pos]
 
-    #    # initially empty
-    #    assert_song_order(self.playlist_id, [])
+            if to_pos + 1 < playlist_len:
+                e_after_new_pos = pl[to_pos + 1]
 
-    #    # add two copies
-    #    self.wc.add_songs_to_playlist(self.playlist_id, [self.song.sid] * 2)
-    #    assert_song_order(self.playlist_id, [self.song.sid] * 2)
+            self.mc.reorder_playlist_entry(from_e,
+                                           to_follow_entry=e_before_new_pos,
+                                           to_precede_entry=e_after_new_pos)
+            self._mc_assert_ple_position(from_e, to_pos)
 
-    #    # remove all copies
-    #    self.wc.remove_songs_from_playlist(self.playlist_id, self.song.sid)
-    #    assert_song_order(self.playlist_id, [])
+            if e_before_new_pos:
+                self._mc_assert_ple_position(e_before_new_pos, to_pos - 1)
+
+            if e_after_new_pos:
+                self._mc_assert_ple_position(e_after_new_pos, to_pos + 1)
+
+    @plentry_test
+    def mc_reorder_ple_backwards(self):
+        playlist_len = len(self.plentry_ids)
+        for from_pos, to_pos in [pair for pair in
+                                 itertools.product(range(playlist_len), repeat=2)
+                                 if pair[0] > pair[1]]:
+            pl = self.mc_get_playlist_songs(self.playlist_id)
+
+            from_e = pl[from_pos]
+
+            e_before_new_pos, e_after_new_pos = None, None
+
+            if to_pos - 1 >= 0:
+                e_before_new_pos = pl[to_pos - 1]
+
+            if to_pos + 1 < playlist_len:
+                e_after_new_pos = pl[to_pos]
+
+            self.mc.reorder_playlist_entry(from_e,
+                                           to_follow_entry=e_before_new_pos,
+                                           to_precede_entry=e_after_new_pos)
+            self._mc_assert_ple_position(from_e, to_pos)
+
+            if e_before_new_pos:
+                self._mc_assert_ple_position(e_before_new_pos, to_pos - 1)
+
+            if e_after_new_pos:
+                self._mc_assert_ple_position(e_after_new_pos, to_pos + 1)
+
+    # This fails, unfortunately, which means n reorderings mean n
+    # separate calls in the general case.
+    #@plentry_test
+    #def mc_reorder_ples_forwards(self):
+    #    pl = self.mc_get_playlist_songs(self.playlist_id)
+    #    # rot2, eg 0123 -> 2301
+    #    pl.append(pl.pop(0))
+    #    pl.append(pl.pop(0))
+
+    #    mutate_call = mobileclient.BatchMutatePlaylistEntries
+    #    mutations = [
+    #        mutate_call.build_plentry_reorder(
+    #            pl[-1], pl[-2]['clientId'], None),
+    #        mutate_call.build_plentry_reorder(
+    #            pl[-2], pl[-3]['clientId'], pl[-1]['clientId'])
+    #    ]
+
+    #    self.mc._make_call(mutate_call, [mutations])
+    #    self._mc_assert_ple_position(pl[-1], len(pl) - 1)
+    #    self._mc_assert_ple_position(pl[-2], len(pl) - 2)
+
+    @station_test
+    @all_access
+    def mc_list_station_tracks(self):
+        for station_id in self.station_ids:
+            self.mc.get_station_tracks(station_id, num_tracks=1)
+            # used to assert that at least 1 track came back, but
+            # our dummy uploaded track won't match anything
+
+    @test
+    @all_access
+    def mc_search_aa(self):
+        res = self.mc.search_all_access('amorphis')
+        with Check() as check:
+            for hits in res.values():
+                check.true(len(hits) > 0)
+
+    @test
+    @all_access
+    def mc_artist_info(self):
+        aid = 'Apoecs6off3y6k4h5nvqqos4b5e'  # amorphis
+        optional_keys = set(('albums', 'topTracks', 'related_artists'))
+
+        include_all_res = self.mc.get_artist_info(aid, include_albums=True,
+                                                  max_top_tracks=1, max_rel_artist=1)
+
+        no_albums_res = self.mc.get_artist_info(aid, include_albums=False)
+        no_rel_res = self.mc.get_artist_info(aid, max_rel_artist=0)
+        no_tracks_res = self.mc.get_artist_info(aid, max_top_tracks=0)
+
+        with Check() as check:
+            check.true(set(include_all_res.keys()) & optional_keys == optional_keys)
+
+            check.true(set(no_albums_res.keys()) & optional_keys ==
+                       optional_keys - set(['albums']))
+            check.true(set(no_rel_res.keys()) & optional_keys ==
+                       optional_keys - set(['related_artists']))
+            check.true(set(no_tracks_res.keys()) & optional_keys ==
+                       optional_keys - set(['topTracks']))
+
+    @test
+    @retry
+    @all_access
+    def mc_album_info(self):
+        include_tracks = self.mc.get_album_info(TEST_AA_ALBUM_ID, include_tracks=True)
+        no_tracks = self.mc.get_album_info(TEST_AA_ALBUM_ID, include_tracks=False)
+
+        with Check() as check:
+            check.true('tracks' in include_tracks)
+            check.true('tracks' not in no_tracks)
+
+            del include_tracks['tracks']
+            check.equal(include_tracks, no_tracks)
+
+    @test
+    @all_access
+    def mc_track_info(self):
+        self.mc.get_track_info(TEST_AA_SONG_ID)  # just for the schema
+
+    @test
+    @all_access
+    def mc_genres(self):
+        self.mc.get_genres()  # just for the schema

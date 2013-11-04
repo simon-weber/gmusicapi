@@ -2,6 +2,7 @@
 
 """Utility functions used across api code."""
 
+from bisect import bisect_left
 import errno
 import functools
 import inspect
@@ -106,13 +107,59 @@ class DynamicClientLogger(object):
 log = DynamicClientLogger(__name__)
 
 
+def longest_increasing_subseq(seq):
+    """Returns the longest (non-contiguous) subsequence
+    of seq that is strictly increasing.
+    """
+    # adapted from http://goo.gl/lddm3c
+    if not seq:
+        return []
+
+    # head[j] = index in 'seq' of the final member of the best subsequence
+    # of length 'j + 1' yet found
+    head = [0]
+    # predecessor[j] = linked list of indices of best subsequence ending
+    # at seq[j], in reverse order
+    predecessor = [-1]
+    for i in xrange(1, len(seq)):
+        ## Find j such that:  seq[head[j - 1]] < seq[i] <= seq[head[j]]
+        ## seq[head[j]] is increasing, so use binary search.
+        j = bisect_left([seq[head[idx]] for idx in xrange(len(head))], seq[i])
+
+        if j == len(head):
+            head.append(i)
+        if seq[i] < seq[head[j]]:
+            head[j] = i
+
+        predecessor.append(head[j - 1] if j > 0 else -1)
+
+    ## trace subsequence back to output
+    result = []
+    trace_idx = head[-1]
+    while (trace_idx >= 0):
+        result.append(seq[trace_idx])
+        trace_idx = predecessor[trace_idx]
+
+    return result[::-1]
+
+
+def id_or_nid(song_dict):
+    """Equivalent to ``d.get('id') or d['nid']``.
+
+    Uploaded songs have an id key, while AA tracks
+    have a nid key, which can often be used interchangably.
+    """
+
+    return song_dict.get('id') or song_dict['nid']
+
+
 def datetime_to_microseconds(dt):
     """Return microseconds since epoch, as an int.
 
     :param dt: a datetime.datetime
 
     """
-    return int(time.mktime(dt.timetuple()) * 1000000)
+    return int(time.mktime(dt.timetuple()) * 1000000) + dt.microsecond
 
 
 def is_valid_mac(mac_string):
@@ -282,7 +329,7 @@ def configure_debug_log_handlers(logger):
 
 
 @dual_decorator
-def retry(retry_exception=None, tries=6, delay=2, backoff=2, logger=None):
+def retry(retry_exception=None, tries=5, delay=2, backoff=2, logger=None):
     """Retry calling the decorated function using an exponential backoff.
 
     An exception from a final attempt will propogate.
@@ -358,6 +405,8 @@ def transcode_to_mp3(filepath, quality=3, slice_start=None, slice_duration=None)
     """Return the bytestring result of transcoding the file at *filepath* to mp3.
     An ID3 header is not included in the result.
 
+    Currently, avconv is required to be installed and in the path when using this.
+
     :param filepath: location of file
     :param quality: if int, pass to avconv -qscale. if string, pass to avconv -ab
                     -qscale roughly corresponds to libmp3lame -V0, -V1...
@@ -399,14 +448,16 @@ def transcode_to_mp3(filepath, quality=3, slice_start=None, slice_duration=None)
             raise IOError  # handle errors in except
 
     except (OSError, IOError) as e:
-        log.exception('transcoding failure')
 
-        err_msg = "transcoding failed: %s. " % e
+        err_msg = "transcoding command (%s) failed: %s. " % (' '.join(cmd), e)
+
+        if 'No such file or directory' in str(e):
+            err_msg += '\navconv must be installed and in the system path.'
 
         if err_output is not None:
-            err_msg += "stderr: '%s'" % err_output
+            err_msg += "\nstderr: '%s'" % err_output
 
-        log.debug('full failure output: %s', err_output)
+        log.exception('transcoding failure:\n%s', err_msg)
 
         raise IOError(err_msg)
 

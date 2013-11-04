@@ -20,7 +20,7 @@ gmusicapi allows control of
     
 **gmusicapi is not supported nor endorsed by Google.**
 
-That said, it's actively maintained, and used in a bunch of cool projects:
+That said, it's actively maintained, and used in a bunch of cool projects, like:
 
 -  Malcolm Still's `command line Google Music client <https://github.com/mstill/thunner>`__
    (`screenshot <http://i.imgur.com/Mwl0k.png>`__)
@@ -28,10 +28,9 @@ That said, it's actively maintained, and used in a bunch of cool projects:
    filesystem linked to your music
 -  Kilian Lackhove's `Google Music support <https://github.com/crabmanX/google-music-resolver>`__
    for http://www.tomahawk-player.org
+-  `Mario Di Raimondo <https://github.com/diraimondo>`__'s `Google Music http proxy for mediaplayers <http://gmusicproxy.net>`__
 -  `@thebigmunch <https://github.com/thebigmunch>`__'s `syncing scripts <https://github.com/thebigmunch/gmusicapi-scripts>`__
--  David Dooling's `sync scripts for Banshee <https://github.com/ddgenome/banshee-helper-scripts>`__
 -  Tom Graham's `playlist syncing tool <https://github.com/Tyris/m3uGoogleMusicSync>`__
--  Karl Stoney's `sync tool <https://github.com/Stono/GoogleMusicSync>`__
 
 
 Getting started
@@ -48,13 +47,16 @@ Status and updates
 .. image:: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API.png?branch=develop
         :target: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API
 
-The project is in the middle of a major change at the moment: the Webclient interface has
-gotten horrible to maintain, so I'm working on
-switching the the Android app api. This will provide easy All Access support and easier
-maintainability going forward. At this point, prefer the Mobileclient to the Webclient
-whenever possible.
+Over the summer, gmusicapi began a major shift away from the Webclient interface.
+That's finished now, so prefer the new Mobileclient interface whenever possible.
+Non-deprecated parts of the Webclient are listed at
+`the Webclient documentation page
+<http://unofficial-google-music-api.readthedocs.org/en/latest/reference/webclient.html>`__.
 
-For development updates, follow me on Twitter:
+I've started fulltime work at Venmo as of November, meaning this project is back to
+night and weekend development.
+
+For fine-grained development updates, follow me on Twitter:
 `@simonmweber <https://twitter.com/simonmweber>`__.
 
 ------------

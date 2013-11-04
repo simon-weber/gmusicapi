@@ -5,8 +5,23 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
+3.0.0
++++++
+released 2013-11-03
+
+- Musicmanager.get_all_songs is now Musicmanager.get_uploaded_songs
+- Mobileclient.get_all_playlist_contents is now Mobileclient.get_all_user_playlist_contents, and will no longer return results for subscribed playlists
+- add Mobileclient.get_shared_playlist_contents
+- add Mobileclient.reorder_playlist_entry
+- add Mobileclient.change_song_metadata
+- add Mobileclient.get_album_info
+- add Mobileclient.get_track_info
+- add Mobileclient.get_genres
+- compatibility fixes
+
+
 2.0.0
-+++++++++
++++++
 released 2013-08-01
 
 - remove broken Webclient.{create_playlist, change_playlist, copy_playlist, search, change_playlist_name}

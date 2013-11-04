@@ -5,22 +5,22 @@
 
 import base64
 import copy
+from datetime import datetime
 from hashlib import sha1
 import hmac
 import sys
 import time
 from uuid import uuid1
 
-
 import validictory
 
 from gmusicapi.compat import json
-from gmusicapi.exceptions import ValidationException
+from gmusicapi.exceptions import ValidationException, CallFailure
 from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
 # URL for sj service
-sj_url = 'https://www.googleapis.com/sj/v1/'
+sj_url = 'https://www.googleapis.com/sj/v1.1/'
 
 # shared schemas
 sj_track = {
@@ -36,17 +36,25 @@ sj_track = {
         'durationMillis': {'type': 'string'},
         'albumArtRef': {'type': 'array',
                         'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}}},
+        'artistArtRef': {'type': 'array',
+                         'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}},
+                         'required': False,
+                       },
         'discNumber': {'type': 'integer'},
         'estimatedSize': {'type': 'string'},
         'trackType': {'type': 'string'},
         'storeId': {'type': 'string'},
         'albumId': {'type': 'string'},
-        'artistId': {'type': 'array', 'items': {'type': 'string'}},
+        'artistId': {'type': 'array',
+                     'items': {'type': 'string', 'blank': True}, 'required': False},
         'nid': {'type': 'string'},
         'trackAvailableForPurchase': {'type': 'boolean'},
         'albumAvailableForPurchase': {'type': 'boolean'},
+        'composer': {'type': 'string', 'blank': True},
         'playCount': {'type': 'integer', 'required': False},
         'year': {'type': 'integer', 'required': False},
+        'rating': {'type': 'string', 'required': False},
+        'genre': {'type': 'string', 'required': False},
     }
 }
 
@@ -87,8 +95,12 @@ sj_plentry = {
         'lastModifiedTimestamp': {'type': 'string'},
         'deleted': {'type': 'boolean'},
         'source': {'type': 'string'},
+        'track': sj_track.copy()
     },
 }
+
+sj_plentry['properties']['track']['required'] = False
+
 
 sj_album = {
     'type': 'object',
@@ -100,9 +112,10 @@ sj_album = {
         'albumArtRef': {'type': 'string'},
         'albumId': {'type': 'string'},
         'artist': {'type': 'string'},
-        'artistId': {'type': 'array', 'items': {'type': 'string'}},
+        'artistId': {'type': 'array', 'items': {'type': 'string', 'blank': True}},
         'year': {'type': 'integer'},
-        'tracks': {'type': 'array', 'items': sj_track, 'required': False}
+        'tracks': {'type': 'array', 'items': sj_track, 'required': False},
+        'description': {'type': 'string', 'required': False},
     }
 }
 
@@ -113,10 +126,12 @@ sj_artist = {
         'kind': {'type': 'string'},
         'name': {'type': 'string'},
         'artistArtRef': {'type': 'string', 'required': False},
-        'artistId': {'type': 'string'},
+        'artistBio': {'type': 'string', 'required': False},
+        'artistId': {'type': 'string', 'blank': True},
         'albums': {'type': 'array', 'items': sj_album, 'required': False},
         'topTracks': {'type': 'array', 'items': sj_track, 'required': False},
         'total_albums': {'type': 'integer', 'required': False},
+        'artistBio': {'type': 'string', 'required': False},
     }
 }
 
@@ -126,7 +141,6 @@ sj_artist['properties']['related_artists'] = {
     'required': False
 }
 
-# Result definition may not contain any item.
 sj_result = {
     'type': 'object',
     'additionalProperties': False,
@@ -299,7 +313,7 @@ class McBatchMutateCall(McCall):
                 'items': {
                     'type': 'object',
                     'properties': {
-                        'id': {'type': 'string'},
+                        'id': {'type': 'string', 'required': False},
                         'client_id': {'type': 'string', 'blank': True,
                                       'required': False},
                         'response_code': {'type': 'string'},
@@ -317,14 +331,17 @@ class McBatchMutateCall(McCall):
 
         return json.dumps({'mutations': mutations})
 
-    @staticmethod
-    def check_success(response, msg):
-        if not all([d.get('response_code', None) == 'OK'
-                    for d in msg.get('mutate_response', [])]):
-            raise ValidationException
-
-        if 'error' in msg:
-            raise ValidationException
+    @classmethod
+    def check_success(cls, response, msg):
+        if ('error' in msg or
+            not all([d.get('response_code', None) in ('OK', 'CONFLICT')
+                     for d in msg.get('mutate_response', [])])):
+            raise CallFailure('The server reported failure while'
+                              ' changing the requested resource.'
+                              " If this wasn't caused by invalid arguments"
+                              ' or server flakiness,'
+                              ' please open an issue.',
+                              cls.__name__)
 
 
 class Search(McCall):
@@ -337,7 +354,9 @@ class Search(McCall):
         'additionalProperties': False,
         'properties': {
             'kind': {'type': 'string'},
-            'entries': {'type': 'array', 'items': sj_result}
+            'entries': {'type': 'array',
+                        'items': sj_result,
+                        'required': False}
         },
     }
 
@@ -431,6 +450,85 @@ class ListPlaylistEntries(McListCall):
     static_url = sj_url + 'plentryfeed'
 
 
+class ListSharedPlaylistEntries(McListCall):
+    shared_plentry = sj_plentry.copy()
+    del shared_plentry['properties']['playlistId']
+    del shared_plentry['properties']['clientId']
+
+    item_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'shareToken': {'type': 'string'},
+            'responseCode': {'type': 'string'},
+            'playlistEntry': {
+                'type': 'array',
+                'items': shared_plentry,
+                'required': False,
+            }
+        }
+    }
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'kind': {'type': 'string'},
+            'entries': {'type': 'array',
+                        'items': item_schema,
+                       },
+        },
+    }
+    filter_text = 'shared plentries'
+
+    static_method = 'POST'
+    static_url = sj_url + 'plentries/shared'
+
+    # odd: this request has an additional level of nesting compared to others,
+    # and changes the data/entry schema to entries/playlistEntry.
+    # Those horrible naming choices make this even harder to understand.
+
+    @classmethod
+    def dynamic_params(cls, share_token, updated_after=None, start_token=None, max_results=None):
+        return super(ListSharedPlaylistEntries, cls).dynamic_params(
+            updated_after, start_token, max_results)
+
+    @classmethod
+    def dynamic_data(cls, share_token, updated_after=None, start_token=None, max_results=None):
+        """
+        :param share_token: from a shared playlist
+        :param updated_after: ignored
+        :param start_token: nextPageToken from a previous response
+        :param max_results: a positive int; if not provided, server defaults to 1000
+        """
+        data = {}
+
+        data['shareToken'] = share_token
+
+        if start_token is not None:
+            data['start-token'] = start_token
+
+        if max_results is not None:
+            data['max-results'] = str(max_results)
+
+        return json.dumps({'entries': [data]})
+
+    @classmethod
+    def parse_response(cls, response):
+        res = cls._parse_json(response.text)
+        if 'playlistEntry' not in res['entries'][0]:
+            res['entries'][0]['playlistEntry'] = []
+
+        return res
+
+    @classmethod
+    def filter_response(cls, msg):
+        filtered = copy.deepcopy(msg)
+        filtered['entries'][0]['playlistEntry'] = ["<%s %s>" %
+                                                   (len(filtered['entries'][0]['playlistEntry']),
+                                                    cls.filter_text)]
+        return filtered
+
+
 class BatchMutatePlaylists(McBatchMutateCall):
     static_method = 'POST'
     static_url = sj_url + 'playlistbatch'
@@ -444,6 +542,14 @@ class BatchMutatePlaylists(McBatchMutateCall):
         :param playlist_ids
         """
         return [{'delete': id} for id in playlist_ids]
+
+    @staticmethod
+    def build_playlist_updates(pl_id_name_pairs):
+        """
+        :param pl_id_name_pairs: [(playlist_id, new_name)]
+        """
+        return [{'update': {'id': pl_id, 'name': new_name}} for
+                (pl_id, new_name) in pl_id_name_pairs]
 
     @staticmethod
     def build_playlist_adds(names):
@@ -473,6 +579,33 @@ class BatchMutatePlaylistEntries(McBatchMutateCall):
         :param entry_ids
         """
         return [{'delete': id} for id in entry_ids]
+
+    @staticmethod
+    def build_plentry_reorder(plentry, preceding_cid, following_cid):
+        """
+        :param plentry: plentry that is moving
+        :param preceding_cid: clientid of entry that will be before the moved entry
+        :param following_cid: "" that will be after the moved entry
+        """
+
+        mutation = copy.deepcopy(plentry)
+        keys_to_keep = set(['clientId', 'creationTimestamp', 'deleted', 'id',
+                            'lastModifiedTimestamp', 'playlistId',
+                            'source', 'trackId'])
+
+        for key in mutation.keys():
+            if key not in keys_to_keep:
+                del mutation[key]
+
+        # horribly misleading key names; these are _clientids_
+        # using entryids works sometimes, but with seemingly random results
+        if preceding_cid:
+            mutation['precedingEntryId'] = preceding_cid
+
+        if following_cid:
+            mutation['followingEntryId'] = following_cid
+
+        return {'update': mutation}
 
     @staticmethod
     def build_plentry_adds(playlist_id, song_ids):
@@ -518,6 +651,63 @@ class ListStations(McListCall):
     static_url = sj_url + 'radio/station'
 
 
+class ListStationTracks(McListCall):
+    # this isn't really proper usage of the abc:
+    #  * there is no paging (assumed, not proven)
+    #  * the query interface is totally different
+
+    # clients.Mobileclient will
+    # just have to wire up the call itself
+
+    item_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'radioId': {'type': 'string'},
+            'tracks': {'type': 'array', 'required': False, 'items': sj_track},
+        }
+    }
+
+    filter_text = 'stations'
+
+    static_method = 'POST'
+    static_url = sj_url + 'radio/stationfeed'
+
+    @staticmethod
+    def dynamic_params(*args, **kwargs):
+        # override the parent (which has params for paging support)
+        return {}
+
+    @staticmethod
+    def dynamic_data(station_id, num_entries, recently_played):
+        """
+        :param station_id
+        :param num_entries: maximum number of tracks to return
+        :param recently_played: a list of...song ids? never seen an example
+        """
+        #TODO
+        # clearly, this supports more than one at a time,
+        # but then that might introduce paging?
+        # I'll leave it for someone else
+
+        return json.dumps({'contentFilter': 1,
+                           'stations': [
+                               {
+                                   'numEntries': num_entries,
+                                   'radioId': station_id,
+                                   'recentlyPlayed': recently_played
+                               }
+                           ]})
+
+    @staticmethod
+    def filter_response(msg):
+        filtered = copy.deepcopy(msg)
+        if 'tracks' in filtered['data']['items']:
+            filtered['data']['items']['tracks'] = \
+                    ["<%s tracks>" % len(filtered['data']['items']['tracks'])]
+        return filtered
+
+
 class BatchMutateStations(McBatchMutateCall):
     static_method = 'POST'
     static_url = sj_url + 'radio/editstation'
@@ -531,94 +721,38 @@ class BatchMutateStations(McBatchMutateCall):
                 for id in station_ids]
 
     @staticmethod
-    def build_adds(names):
+    def build_add(name, seed, include_tracks, num_tracks, recent_datetime=None):
         """
-        :param names
+        :param name: the title
+        :param seed: a dict with a single pair, {'itemId': id}
+        :param include_tracks: if True, return `num_tracks` tracks in the response
+        :param num_tracks:
+        :param recent_datetime: purpose unknown. defaults to now.
         """
 
-        #TODO
-        # this has a clientId; need to figure out where that comes from
-        pass
+        if recent_datetime is None:
+            recent_datetime = datetime.now()
 
+        recent_timestamp = utils.datetime_to_microseconds(recent_datetime)
 
-#TODO
-class ListStationTracks(McListCall):
-    pass
-    #static_headers = {'Content-Type': 'application/json'}
-    #static_params = {'alt': 'json'}
-
-    #_res_schema = {
-    #    'type': 'object',
-    #    'additionalProperties': False,
-    #    'properties': {
-    #        'kind': {'type': 'string'},
-    #        'nextPageToken': {'type': 'string', 'required': False},
-    #        'data': {'type': 'object',
-    #                 'items': {'type': 'array', 'items': item_schema},
-    #                 'required': False,
-    #                },
-    #    },
-    #}
-
-    #@classmethod
-    #def dynamic_params(cls, updated_after=None, start_token=None, max_results=None):
-    #    """
-    #    :param updated_after: datetime.datetime; defaults to epoch
-    #    """
-
-    #    if updated_after is None:
-    #        microseconds = 0
-    #    else:
-    #        microseconds = utils.datetime_to_microseconds(updated_after)
-
-    #    return {'updated-min': microseconds}
-
-    #@classmethod
-    #def dynamic_data(cls, updated_after=None, start_token=None, max_results=None):
-    #    """
-    #    :param updated_after: ignored
-    #    :param start_token: nextPageToken from a previous response
-    #    :param max_results: a positive int; if not provided, server defaults to 1000
-    #    """
-    #    data = {}
-
-    #    if start_token is not None:
-    #        data['start-token'] = start_token
-
-    #    if max_results is not None:
-    #        data['max-results'] = str(max_results)
-
-    #    return json.dumps(data)
-
-    #@classmethod
-    #def parse_response(cls, response):
-    #    # empty results don't include the data key
-    #    # make sure it's always there
-    #    res = cls._parse_json(response.text)
-    #    if 'data' not in res:
-    #        res['data'] = {'items': []}
-
-    #    return res
-
-    #@classmethod
-    #def filter_response(cls, msg):
-    #    filtered = copy.deepcopy(msg)
-    #    filtered['data']['items'] = ["<%s %s>" % (len(filtered['data']['items']),
-    #                                              cls.filter_text)]
-    #    return filtered
-
-    #item_schema = {
-    #    'type': 'object',
-    #    'additionalProperties': False,
-    #    'properties': {
-    #        'radioId': {'type': 'string'},
-    #        'tracks': {'type': 'array', 'items': sj_track},
-    #    }
-    #}
-    #filter_text = 'tracks'
-
-    #static_method = 'POST'
-    #static_url = sj_url + 'radio/stationfeed'
+        return {
+            "create": {
+                "clientId": str(uuid1()),
+                "deleted": False,
+                "imageType": 1,
+                "lastModifiedTimestamp": "-1",
+                "name": name,
+                "recentTimestamp": str(recent_timestamp),
+                "seed": seed,
+                "tracks": []
+            },
+            "includeFeed": include_tracks,
+            "numEntries": num_tracks,
+            "params":
+            {
+                "contentFilter": 1
+            }
+        }
 
 
 class BatchMutateTracks(McBatchMutateCall):
@@ -629,7 +763,7 @@ class BatchMutateTracks(McBatchMutateCall):
     @staticmethod
     def build_track_deletes(track_ids):
         """
-        :param track_id
+        :param track_ids
         """
         return [{'delete': id} for id in track_ids]
 
@@ -665,7 +799,7 @@ class BatchMutateTracks(McBatchMutateCall):
 
 
 class GetStoreTrack(McCall):
-    #TODO I think this should accept library ids, too
+    #TODO does this accept library ids, too?
     static_method = 'GET'
     static_url = sj_url + 'fetchtrack'
     static_headers = {'Content-Type': 'application/json'}
@@ -678,7 +812,49 @@ class GetStoreTrack(McCall):
         return {'nid': track_id}
 
 
-#TODO below here
+class GetGenres(McCall):
+    static_method = 'GET'
+    static_url = sj_url + 'explore/genres'
+    static_params = {'alt': 'json'}
+
+    genre_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'name': {'type': 'string'},
+            'id': {'type': 'string'},
+            'kind': {'type': 'string'},
+            'images': {
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'additionalProperties': False,
+                    'properties': {
+                        'url': {'type': 'string'}
+                    },
+                }
+            },
+            'children': {
+                'type': 'array',
+                'items': {'type': 'string'},
+                'required': False,
+            }
+        }
+    }
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'kind': {'type': 'string'},
+            'genres': {
+                'type': 'array',
+                'items': genre_schema,
+            }
+        }
+    }
+
+
 class GetArtist(McCall):
     static_method = 'GET'
     static_url = sj_url + 'fetchartist'
@@ -688,6 +864,12 @@ class GetArtist(McCall):
 
     @staticmethod
     def dynamic_params(artist_id, include_albums, num_top_tracks, num_rel_artist):
+        """
+        :param include_albums: bool
+        :param num_top_tracks: int
+        :param num_rel_artist: int
+        """
+
         return {'nid': artist_id,
                 'include-albums': include_albums,
                 'num-top-tracks': num_top_tracks,
@@ -697,11 +879,11 @@ class GetArtist(McCall):
 
 class GetAlbum(McCall):
     static_method = 'GET'
+    static_url = sj_url + 'fetchalbum'
+    static_params = {'alt': 'json'}
+
     _res_schema = sj_album
 
     @staticmethod
-    def dynamic_url(albumid, tracks=True):
-        ret = sj_url + 'fetchalbum?alt=json'
-        ret += '&nid=%s' % albumid
-        ret += '&include-tracks=%r' % tracks
-        return ret
+    def dynamic_params(album_id, tracks):
+        return {'nid': album_id, 'include-tracks': tracks}

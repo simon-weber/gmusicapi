@@ -14,7 +14,8 @@ Avoid using ``easy_install``.
 If you're upgrading from a date-versioned release (eg ``2013.03.04``),
 do ``$ pip uninstall gmusicapi; pip install gmusicapi`` instead.
 
-To upload anything other than mp3s, you're going to need
+If you're going to be uploading music,
+you'll likely want
 `Libav's avconv <http://libav.org/avconv.html>`__
 installed and in your system path, along with at least libmp3lame.
 
@@ -23,6 +24,8 @@ installed and in your system path, along with at least libmp3lame.
  - Windows users, get `the most recent static binaries <http://win32.libav.org/releases/>`__
    and then `edit your path <http://www.computerhope.com/issues/ch000549.htm>`__
    to include the directory that contains avconv.exe.
+
+The only time avconv is not required is when uploading mp3s without scan-and-match enabled.
    
 If you need to install avconv from source, be sure to use
 ``$ ./configure --enable-gpl --enable-nonfree --enable-libmp3lame``.
@@ -30,8 +33,10 @@ If you need to install avconv from source, be sure to use
 Quickstart
 ----------
 
-If you're not going to be uploading music, use the :py:class:`Mobileclient`.
-This requires plaintext auth, so your code might look something like:
+If you're not going to be uploading music, you'll likely
+want to use the :py:class:`Mobileclient`: it supports streaming
+and library management.
+It requires plaintext auth, so your code might look something like:
 
 .. code-block:: python
 
@@ -72,10 +77,13 @@ Then, future runs can start with:
     # ...
 
 
-If you need both library management and uploading, just create one of each
-type of client.
+If you need both library management and uploading, just create 
+multiple client instances.
 
-The reference section has complete information on both clients:
+There is also the :py:class:`Webclient`, which is a mostly-deprecated
+interface that provides similar features to the Mobileclient.
+
+The reference section has complete information on all clients:
 
 .. toctree::
    :maxdepth: 2

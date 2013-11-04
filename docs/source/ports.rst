@@ -7,7 +7,7 @@ Here are the ports I'm currently aware of:
 
 
 -  C#:
-   `Taylor Finnell <https://github.com/Byteopia/GoogleMusicAPI.NET>`__
+   `Taylor Finnell <https://github.com/taylorfinnell/GoogleMusicAPI.NET>`__
 -  Java: `Jens Villadsen <https://github.com/jkiddo/gmusic.api>`__
    and `Nick Martin <https://github.com/xnickmx/google-play-client>`__
 -  PHP:
@@ -19,8 +19,9 @@ Here are the ports I'm currently aware of:
    (not a full port, just an example)
 
 They're in various states of completion and maintenance because,
-honestly, building a port is tough. If you're really against using Python,
-you might try wrapping gmusicapi in something language-agnostic instead.
+well, building a port is tough.
+
+Alternatively, consider using `GMusicProxy <http://gmusicproxy.net/>`__ or copying its approach.
 
 Building a Port
 ---------------

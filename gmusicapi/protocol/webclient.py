@@ -48,7 +48,7 @@ pl_schema = {
         "token": {"type": "string", "required": False},
         #only appears when loading multiple playlists
         "title": {"type": "string", "required": False},
-        "continuationToken": {"type": "string", "required": False}
+        "continuationToken": {"type": "string", "required": False},
     },
     "additionalProperties": False
 }
@@ -60,9 +60,15 @@ pl_array = {
 
 
 class Init(Call):
-    """Called after login and once before any other webclient call.
-    This gathers the cookies we need (specifically xt); it's the call that
-    creates the webclient DOM."""
+    """Called one time per session, immediately after login.
+
+    This performs one-time setup:
+    it gathers the cookies we need (specifically `xt`), and Google uses it
+    to create the webclient DOM.
+
+    Note the use of the HEAD verb. Google uses GET, but we don't need
+    the large response containing Google's webui.
+    """
 
     static_method = 'HEAD'
     static_url = base_url + 'listen'
@@ -349,6 +355,7 @@ class GetPlaylistSongs(WcCall):
         """
 
         #This call has a dynamic response schema based on the request.
+        # TODO wow, this is a terrible idea
 
         if playlist_id == 'all':
             cls._res_schema = {
@@ -457,7 +464,9 @@ class GetStreamUrl(WcCall):
         "type": "object",
         "properties": {
             "url": {"type": "string", "required": False},
-            "urls": {"type": "array", "required": False}
+            "urls": {"type": "array", "required": False},
+            'now': {'type': 'integer', 'required': False},
+            'tier': {'type': 'integer', 'required': False},
         },
         "additionalProperties": False
     }
@@ -556,13 +565,14 @@ class GetSettings(WcCall):
             'date': {'type': 'integer',
                      'format': 'utc-millisec'},
             'id': {'type': 'string'},
-            'name': {'type': 'string'},
+            'name': {'type': 'string', 'blank': True},
             'type': {'type': 'string'},
+
             # only for type == PHONE:
-            'model': {'type': 'string', 'required': False},
-            'manufacturer': {'type': 'string', 'required': False},
-            'name': {'type': 'string', 'required': False},
-            'carrier': {'type': 'string', 'required': False},
+            'model': {'type': 'string', 'blank': True, 'required': False},
+            'manufacturer': {'type': 'string', 'blank': True, 'required': False},
+
+            'carrier': {'type': 'string', 'blank': True, 'required': False},
         },
     }
 
@@ -595,7 +605,8 @@ class GetSettings(WcCall):
                     },
                     'isSubscription': {'type': 'boolean', 'required': False},
                     'isTrial': {'type': 'boolean', 'required': False},
-                    'hasFreeTrial': {'type': 'boolean'},
+                    'hasFreeTrial': {'type': 'boolean', 'required': False},
+                    'subscriptionNewsletter': {'type': 'boolean'},
                 },
             },
         },
