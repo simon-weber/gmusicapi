@@ -13,10 +13,11 @@ This library allows control of
     # => True
     
     library = api.get_all_songs()
-    sweet_tracks = [track for track in library if track['artist'] == 'The Cat Empire']
+    sweet_track_ids = [track['id'] for track in library
+                       if track['artist'] == 'The Cat Empire']
     
     playlist_id = api.create_playlist('Rad muzak')
-    api.add_songs_to_playlist(playlist_id, sweet_tracks)
+    api.add_songs_to_playlist(playlist_id, sweet_track_ids)
     
 
 **This project is not supported nor endorsed by Google.**
