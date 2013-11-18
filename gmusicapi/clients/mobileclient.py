@@ -228,16 +228,18 @@ class Mobileclient(_Base):
         Here is an example playlist dictionary::
 
             {
+                 # can also be SHARED (public/subscribed to), MAGIC or omitted
+                'type': 'USER_GENERATED',
+
                 'kind': 'sj#playlist',
                 'name': 'Something Mix',
                 'deleted': False,
-                'type': 'USER_GENERATED',  # or SHARED (public/subscribed to) or MAGIC
                 'lastModifiedTimestamp': '1325458766483033',
                 'recentTimestamp': '1325458766479000',
                 'shareToken': '<long string>',
                 'ownerProfilePhotoUrl': 'http://lh3.googleusercontent.com/...',
                 'ownerName': 'Simon Weber',
-                'accessControlled': False,  # something to do with shared playlists?
+                'accessControlled': False,  # has to do with shared playlists
                 'creationTimestamp': '1325285553626172',
                 'id': '3d72c9b5-baad-4ff7-815d-cdef717e5d61'
             }
@@ -320,7 +322,9 @@ class Mobileclient(_Base):
         """
 
         user_playlists = [p for p in self.get_all_playlists()
-                          if p.get('type') == 'USER_GENERATED']
+                          if (p.get('type') == 'USER_GENERATED' or
+                              p.get('type') != 'SHARED' or
+                              'type' not in p)]
 
         all_entries = self._get_all_items(mobileclient.ListPlaylistEntries,
                                           incremental=False, include_deleted=False,
