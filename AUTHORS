@@ -1,9 +1,1 @@
-Simon Weber	  everything else
-
-Tim Simpson   proboscis test improvements
-Tom Graham    a fix for uploading uppercase filenames
-David Dooling compatibility updates in protocol.py
-Kevin Kwok    original work on Music Manager protocol
-Darryl Pogue  PlaySession simplifications in api.py; .gitignore; tokenauth.py; clientlogin.py
-mystilleef	  change to relative imports in api.py and protocol.py
-Ryan Hsu      slimmed down to_camel_case function in utils/utils.py
+See https://github.com/simon-weber/Unofficial-Google-Music-API/graphs/contributors.
