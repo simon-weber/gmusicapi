@@ -176,8 +176,11 @@ class Webclient(_Base):
         prev_end = 0
 
         for url, (start, end) in zip(urls, range_pairs):
-            audio = self.session._rsession.get(url).content
-            stream_pieces.append(audio[prev_end - start:])
+            headers = {
+                'Range': 'bytes=' + str(prev_end - start) + '-'
+            }
+            audio = self.session._rsession.get(url, headers=headers).content
+            stream_pieces.append(audio)
 
             prev_end = end + 1
 
