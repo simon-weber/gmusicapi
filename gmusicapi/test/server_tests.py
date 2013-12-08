@@ -12,6 +12,7 @@ import itertools
 import os
 import re
 import types
+from hashlib import md5
 
 from decorator import decorator
 from proboscis.asserts import (
@@ -37,6 +38,9 @@ TEST_AA_GENRE_ID = 'METAL'
 # that dumb little intro track on Conspiracy of One,
 # picked since it's only a few seconds long
 TEST_AA_SONG_ID = 'Tqqufr34tuqojlvkolsrwdwx7pe'
+
+#used for testing get_stream_audio
+TEST_AA_SONG_MD5_HASH = '78d789b3e36820206da29d23c239171b'
 
 # Amorphis
 TEST_AA_ARTIST_ID = 'Apoecs6off3y6k4h5nvqqos4b5e'
@@ -486,9 +490,17 @@ class ClientTests(object):
 
     @test
     @all_access
-    def wc_stream_aa_track(self):
-        audio = self.wc.get_stream_audio(TEST_AA_SONG_ID)
-        assert_is_not_none(audio)
+    def wc_stream_aa_track_with_header(self):
+        audio = self.wc.get_stream_audio(TEST_AA_SONG_ID, use_range_header=True)
+
+        assert_equal(md5(audio).hexdigest(), TEST_AA_SONG_MD5_HASH)
+
+    @test
+    @all_access
+    def wc_stream_aa_track_without_header(self):
+        audio = self.wc.get_stream_audio(TEST_AA_SONG_ID, use_range_header=False)
+
+        assert_equal(md5(audio).hexdigest(), TEST_AA_SONG_MD5_HASH)
 
     @song_test
     def wc_get_download_info(self):
