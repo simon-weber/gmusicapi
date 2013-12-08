@@ -21,6 +21,8 @@ OAUTH_FILEPATH = os.path.join(my_appdirs.user_data_dir, 'oauth.cred')
 
 
 class Musicmanager(_Base):
+    _session_class = session.Musicmanager
+
     """Allows uploading by posing as Google's Music Manager.
 
     Musicmanager uses OAuth, so a plaintext email and password are not required
@@ -89,11 +91,11 @@ class Musicmanager(_Base):
 
         return credentials
 
-    def __init__(self, debug_logging=True, validate=True):
-        self.session = session.Musicmanager()
-
-        super(Musicmanager, self).__init__(self.__class__.__name__, debug_logging, validate)
-        self.logout()
+    def __init__(self, debug_logging=True, validate=True, verify_ssl=True):
+        super(Musicmanager, self).__init__(self.__class__.__name__,
+                                           debug_logging,
+                                           validate,
+                                           verify_ssl)
 
     def login(self, oauth_credentials=OAUTH_FILEPATH,
               uploader_id=None, uploader_name=None):

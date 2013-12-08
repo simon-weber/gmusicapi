@@ -10,6 +10,8 @@ import gmusicapi.session
 
 
 class Webclient(_Base):
+    _session_class = gmusicapi.session.Webclient
+
     """Allows library management and streaming by posing as the
     music.google.com webclient.
 
@@ -29,11 +31,11 @@ class Webclient(_Base):
 
     """
 
-    def __init__(self, debug_logging=True, validate=True):
-        self.session = gmusicapi.session.Webclient()
-
-        super(Webclient, self).__init__(self.__class__.__name__, debug_logging, validate)
-        self.logout()
+    def __init__(self, debug_logging=True, validate=True, verify_ssl=True):
+        super(Webclient, self).__init__(self.__class__.__name__,
+                                        debug_logging,
+                                        validate,
+                                        verify_ssl)
 
     def login(self, email, password):
         """Authenticates the webclient.

@@ -16,12 +16,15 @@ import types
 from decorator import decorator
 from proboscis.asserts import (
     assert_true, assert_equal, assert_is_not_none,
-    Check
+    assert_raises, Check
 )
 from proboscis import test, before_class, after_class, SkipTest
+import requests
+from requests.exceptions import SSLError
 
 from gmusicapi import Webclient, Musicmanager, Mobileclient
 #from gmusicapi.protocol import mobileclient
+from gmusicapi.protocol.shared import authtypes
 #from gmusicapi.protocol.metadata import md_expectations
 from gmusicapi.utils.utils import retry, id_or_nid
 import gmusicapi.test.utils as test_utils
@@ -68,8 +71,35 @@ def all_access(f, *args, **kwargs):
         raise SkipTest('All Access testing disabled')
 
 
+@test(groups=['server-other'])
+class SslVerificationTests(object):
+    # found on https://onlinessl.netlock.hu/en/test-center/invalid-ssl-certificate.html
+    test_url = 'https://tv.eurosport.com/'
+
+    @test
+    def site_has_invalid_cert(self):
+        assert_raises(SSLError, requests.head, self.test_url)
+
+    def request_invalid_site(self, client):
+        req_kwargs = {'url': self.test_url,
+                      'method': 'HEAD'}
+        no_auth = authtypes()
+
+        client.session.send(req_kwargs, no_auth)
+
+    @test
+    def clients_verify_by_default(self):
+        for client_cls in (Webclient, Mobileclient, Musicmanager):
+            assert_raises(SSLError, self.request_invalid_site, client_cls())
+
+    @test
+    def disable_client_verify(self):
+        for client_cls in (Webclient, Mobileclient, Musicmanager):
+            self.request_invalid_site(client_cls(verify_ssl=False))  # should not raise SSLError
+
+
 @test(groups=['server'])
-class UpauthTests(object):
+class ClientTests(object):
     # set on the instance in login
     wc = None  # webclient
     mm = None  # musicmanager

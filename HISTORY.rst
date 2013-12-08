@@ -9,6 +9,8 @@ As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 +++++
 released XXXX-XX-XX
 
+- add verify_ssl option to client init
+
 3.0.0
 +++++
 released 2013-11-03
