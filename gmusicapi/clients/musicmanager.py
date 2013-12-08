@@ -21,8 +21,6 @@ OAUTH_FILEPATH = os.path.join(my_appdirs.user_data_dir, 'oauth.cred')
 
 
 class Musicmanager(_Base):
-    _session_class = session.Musicmanager
-
     """Allows uploading by posing as Google's Music Manager.
 
     Musicmanager uses OAuth, so a plaintext email and password are not required
@@ -37,6 +35,8 @@ class Musicmanager(_Base):
     Some authors may want more control over the OAuth flow.
     In this case, credentials can be directly provided to :func:`login`.
     """
+
+    _session_class = session.Musicmanager
 
     @staticmethod
     def perform_oauth(storage_filepath=OAUTH_FILEPATH, open_browser=False):

@@ -7,14 +7,15 @@ from gmusicapi.utils import utils
 
 
 class Mobileclient(_Base):
-    _session_class = session.Webclient  # ie mobileclient uses clientlogin, too
-
     """Allows library management and streaming by posing as the
     googleapis.com mobile clients.
 
     Uploading is not supported by this client (use the :class:`Musicmanager`
     to upload).
     """
+
+    _session_class = session.Webclient  # ie mobileclient uses clientlogin, too
+
     def __init__(self, debug_logging=True, validate=True, verify_ssl=True):
         super(Mobileclient, self).__init__(self.__class__.__name__,
                                            debug_logging,
