@@ -357,6 +357,12 @@ class Mobileclient(_Base):
           Note that tokens from urls will need to be url-decoded,
           eg ``AM...%3D%3D`` becomes ``AM...==``.
 
+        For example, to retrieve the contents of a playlist that the user is
+        subscribed to::
+            subscribed_to = [p for p in mc.get_all_playlists() if p.get('type') == 'SHARED']
+            share_tok = subscribed_to[0]['shareToken']
+            tracks = mc.get_shared_playlist_contents(share_tok)
+
         The user need not be subscribed to a playlist to list its tracks.
 
         Returns a list of playlist entries
@@ -602,7 +608,7 @@ class Mobileclient(_Base):
         return self._get_all_items(mobileclient.ListStations, incremental, include_deleted,
                                    updated_after=updated_after)
 
-    utils.enforce_id_param
+    @utils.enforce_id_param
     def get_station_tracks(self, station_id, num_tracks=25):
         """Returns a list of dictionaries that each represent a track.
 
