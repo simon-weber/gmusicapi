@@ -6,7 +6,6 @@ appdirs==1.2.0
 argparse==1.2.1
 decorator==3.4.0
 docutils==0.11
--e git+git@github.com:simon-weber/Unofficial-Google-Music-API.git@936c4db10a72b054ed3632937ad08341607d7665#egg=gmusicapi-dev
 httplib2==0.8
 mock==1.0.1
 mutagen==1.22
