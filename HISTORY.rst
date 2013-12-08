@@ -5,7 +5,7 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-3.0.1-dev
+3.1.0-dev
 +++++
 released XXXX-XX-XX
 
