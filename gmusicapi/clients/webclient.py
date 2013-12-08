@@ -215,8 +215,8 @@ class Webclient(_Base):
         return ''.join(stream_pieces)
 
     @utils.accept_singleton(basestring)
+    @utils.enforce_ids_param
     @utils.empty_arg_shortcircuit
-    @utils.enforce_id_param
     def report_incorrect_match(self, song_ids):
         """Equivalent to the 'Fix Incorrect Match' button, this requests re-uploading of songs.
         Returns the song_ids provided.
@@ -235,8 +235,8 @@ class Webclient(_Base):
         return song_ids
 
     @utils.accept_singleton(basestring)
-    @utils.empty_arg_shortcircuit
     @utils.enforce_ids_param
+    @utils.empty_arg_shortcircuit
     def upload_album_art(self, song_ids, image_filepath):
         """Uploads an image and sets it as the album art for songs.
 
@@ -286,8 +286,8 @@ class Webclient(_Base):
         return [s['id'] for s in res['songs']]
 
     @utils.accept_singleton(basestring)
-    @utils.empty_arg_shortcircuit
     @utils.enforce_ids_param
+    @utils.empty_arg_shortcircuit
     def delete_songs(self, song_ids):
         """Deletes songs from the entire library. Returns a list of deleted song ids.
 
@@ -328,6 +328,7 @@ class Webclient(_Base):
 
             get_next_chunk = 'continuationToken' in lib_chunk
 
+    @utils.enforce_id_param
     def get_playlist_songs(self, playlist_id):
         """Returns a list of :ref:`song dictionaries <songdict-format>`,
         which include ``playlistEntryId`` keys for the given playlist.
@@ -412,8 +413,9 @@ class Webclient(_Base):
                 u'Free and purchased': u'auto-playlist-promo'}
 
     @utils.accept_singleton(basestring, 2)
+    @utils.enforce_ids_param(2)
+    @utils.enforce_id_param
     @utils.empty_arg_shortcircuit(position=2)
-    @utils.enforce_ids_param(position=2)
     def add_songs_to_playlist(self, playlist_id, song_ids):
         """Appends songs to a playlist.
         Returns a list of (song id, playlistEntryId) tuples that were added.
@@ -428,6 +430,8 @@ class Webclient(_Base):
         return [(e['songId'], e['playlistEntryId']) for e in new_entries]
 
     @utils.accept_singleton(basestring, 2)
+    @utils.enforce_ids_param(2)
+    @utils.enforce_id_param
     @utils.empty_arg_shortcircuit(position=2)
     def remove_songs_from_playlist(self, playlist_id, sids_to_match):
         """Removes all copies of the given song ids from a playlist.

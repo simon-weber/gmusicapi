@@ -260,7 +260,7 @@ def enforce_id_param(position=1):
 
         if not isinstance(args[position], basestring):
             raise ValueError("Invalid param type in position %s;"
-                             " expected a song id (did you pass a song dictionary?)" % position)
+                             " expected an id (did you pass a dictionary?)" % position)
 
         return function(*args, **kw)
 
@@ -281,7 +281,7 @@ def enforce_ids_param(position=1):
         if ((not isinstance(args[position], (list, tuple)) or
              not all([isinstance(e, basestring) for e in args[position]]))):
             raise ValueError("Invalid param type in position %s;"
-                             " expected song ids (did you pass song dictionaries?)" % position)
+                             " expected ids (did you pass dictionaries?)" % position)
 
         return function(*args, **kw)
 
