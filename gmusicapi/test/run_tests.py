@@ -19,8 +19,10 @@ from gmusicapi.test.utils import NoticeLogging
 EnvArg = namedtuple('EnvArg', 'envarg kwarg description')
 
 # these names needed to be compressed to fit everything into the travisci key size.
-# there's also GM_A, which when set (to anything) states that we are testing on
-# and All Access account.
+# there's also:
+#    * GM_A: when set (to anything) states that we are testing on an All Access account.
+#    * GM_AA_D_ID: a registered device id for use with mc streaming
+
 wc_envargs = (
     EnvArg('GM_U', 'email', 'WC user. If not present, user will be prompted.'),
     EnvArg('GM_P', 'password', 'WC password. If not present, user will be prompted.'),
@@ -87,15 +89,21 @@ def retrieve_auth():
     return (wc_kwargs, mm_kwargs)
 
 
+def freeze_method_kwargs(klass, method_name, **kwargs):
+    method = getattr(klass, method_name)
+
+    setattr(klass, method_name, MethodType(
+        update_wrapper(partial(method, **kwargs), method),
+        None, klass))
+
+
 def freeze_login_details(wc_kwargs, mm_kwargs):
     """Set the given kwargs to be the default for client login methods."""
     for cls, kwargs in ((Musicmanager, mm_kwargs),
                         (Webclient, wc_kwargs),
                         (Mobileclient, wc_kwargs),
                        ):
-        cls.login = MethodType(
-            update_wrapper(partial(cls.login, **kwargs), cls.login),
-            None, cls)
+        freeze_method_kwargs(cls, 'login', **kwargs)
 
 
 def main():
@@ -104,6 +112,12 @@ def main():
     if '--group=local' not in sys.argv:
         # hack: assume we're just running the proboscis local group
         freeze_login_details(*retrieve_auth())
+
+    if 'GM_AA_D_ID' in os.environ:
+        freeze_method_kwargs(
+            Mobileclient,
+            'get_stream_url',
+            device_id=os.environ['GM_AA_D_ID'])
 
     # warnings typically signal a change in protocol,
     # so fail the build if anything >= warning are sent,

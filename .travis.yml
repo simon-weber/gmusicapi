@@ -18,6 +18,7 @@ branches:
 env: 
   global:
   - GM_N="Travis-CI (gmusicapi)"
+  - GM_AA_D_ID="30da8b7f1d8cab94"
   matrix: 
   # first is AA, second is not
   - secure: "De4nJrP5O5uL0kWPYCDmTdsiDTHv7Vuvkv02XdwPOFoGG6sOL1svrJhL3Z+G\n3eMFy3DE69mybFf1gZEb9XdDY3LoOX0oAgkHigh+memrvgw/QzaJYN553kmF\n31ose52SFNmtFZH95cwQg1qkSZZsMXlmPxRq510MVl6SA7j6Pi4="
