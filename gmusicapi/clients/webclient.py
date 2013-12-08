@@ -159,20 +159,27 @@ class Webclient(_Base):
         """Returns a bytestring containing mp3 audio for this song.
 
         :param song_id: a single song id
-        :param use_range_header: whether or not to use the HTTP range
-          header for All Access songs to save some bandwidth. default
-          value will make it try to use the header and if it fails then
-          strip the audio after it has been downloaded. if set to True
-          then it will raise an exception if the header does not work.
+        :param use_range_header: in some cases, an HTTP range header can be
+          used to save some bandwidth.
+          However, there's no guarantee that the server will respect it,
+          meaning that the client may get back an unexpected response when
+          using it.
+
+          There are three possible values for this argument:
+              * None: (default) send header; fix response locally on problems
+              * True: send header; raise IOError on problems
+              * False: do not send header
         """
 
         urls = self.get_stream_urls(song_id)
 
+        #TODO shouldn't session.send be used throughout?
+
         if len(urls) == 1:
             return self.session._rsession.get(urls[0]).content
 
-        # AA tracks are separated into multiple files
-        # the url contains the range of each file to be used
+        # AA tracks are separated into multiple files.
+        # the url contains the range of each file to be used.
 
         range_pairs = [[int(s) for s in val.split('-')]
                        for url in urls
@@ -181,21 +188,24 @@ class Webclient(_Base):
 
         stream_pieces = []
         prev_end = 0
+        headers = None
 
         for url, (start, end) in zip(urls, range_pairs):
-            headers = None
             if use_range_header or use_range_header is None:
-                headers = {
-                    'Range': 'bytes=' + str(prev_end - start) + '-'
-                }
+                headers = {'Range': 'bytes=' + str(prev_end - start) + '-'}
+
             audio = self.session._rsession.get(url, headers=headers).content
 
-            #content length is not in the right range
             if end - prev_end != len(audio) - 1:
-                #raise an exception if the user explicitly wanted the range header to be used
+                #content length is not in the right range
+
                 if use_range_header:
-                    raise RuntimeError('use_range_header is True but did not get the correct content length. (possibly bad HTTP proxy?)')
-                #otherwise strip the audio
+                    # the user didn't want automatic response fixup
+                    raise IOError('use_range_header is True but the response'
+                                  ' was not the correct content length.'
+                                  ' This might be caused by a (poorly-written) http proxy.')
+
+                # trim to the proper range
                 audio = audio[prev_end - start:]
 
             stream_pieces.append(audio)
