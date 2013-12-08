@@ -28,12 +28,14 @@ class Musicmanager(_Base):
     Musicmanager uses OAuth, so a plaintext email and password are not required
     when logging in.
 
-    For most users, :func:`perform_oauth` should be run once per machine to
-    store credentials to disk. Future calls to :func:`login` can use
+    For most authors and users of gmusicapi scripts,
+    :func:`perform_oauth` should be run once per machine to
+    store credentials to disk.
+    Future calls to :func:`login` can use
     use the stored credentials by default.
 
-    Alternatively, users can implement the OAuth flow themselves, then
-    provide credentials directly to :func:`login`.
+    Some authors may want more control over the OAuth flow.
+    In this case, credentials can be directly provided to :func:`login`.
     """
 
     @staticmethod
@@ -62,6 +64,11 @@ class Musicmanager(_Base):
         :param open_browser: if True, attempt to open the auth url
           in the system default web browser. The url will be printed
           regardless of this param's setting.
+
+        This flow is intentionally very simple.
+        For complete control over the OAuth flow, pass an
+        ``oauth2client.client.OAuth2Credentials``
+        to :func:`login` instead.
         """
 
         flow = OAuth2WebServerFlow(*musicmanager.oauth)
