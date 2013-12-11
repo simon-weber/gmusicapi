@@ -47,7 +47,7 @@ setup(
         'decorator >= 3.3.2,  <= 3.4.0',     # keep
         'mutagen >= 1.20, <= 1.22',          # MM
         'protobuf >= 2.4.1, <= 2.5.0',       # MM
-        'requests >= 1.0.4, <= 2.0.1',       # keep
+        'requests >= 1.0.4, <= 2.1.0',       # keep
         'python-dateutil == 2.1',            # MM
         'proboscis >= 1.2.5.3, <= 1.2.6.0',  # testing
         'oauth2client >= 1.1, <= 1.2',       # MM
