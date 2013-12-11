@@ -205,8 +205,6 @@ class Call(object):
 
         req_kwargs = cls.build_request(*args, **kwargs)
 
-        log.debug(req_kwargs)
-
         response = session.send(req_kwargs, cls.required_auth)
         #TODO trim the logged response if it's huge?
 
