@@ -22,4 +22,6 @@ env:
   matrix: 
   # first is AA, second is not
   - secure: "De4nJrP5O5uL0kWPYCDmTdsiDTHv7Vuvkv02XdwPOFoGG6sOL1svrJhL3Z+G\n3eMFy3DE69mybFf1gZEb9XdDY3LoOX0oAgkHigh+memrvgw/QzaJYN553kmF\n31ose52SFNmtFZH95cwQg1qkSZZsMXlmPxRq510MVl6SA7j6Pi4="
+
+    secure: "Wkc8sGGet9bd3pqspDUuGtqDWEv+C7Vd9Glp8TtMbTmCzNU7J9qnbF6T0SzA\nhgdQSEyi79OYlKg0FVIoCKlsW7Sdmf+PKsQoTYm29FKkUvrhrnqRoms3IwVe\nFTifw5N40Jm4BXQCFdkWZPQ3X7CgQa0jnB+dso/9bbvyKtOxTHM="
   - secure: "aK3s024vOcybRx+Wq7/9tSd9XGJn0LBAuejTWxIiUul0I8sgt/ry7Pc8r0Gv\nXU3a9P/0LOUAYu1hS3/hH3u2oVIgXoEotrm2wC6r8N2R8xE7ZhYVl1Nf0fOK\ns0jy1ebIU+s/yHQmuboe61FT3lfiFRxQm6yJu5/G/D77O4HGuQQ="
