@@ -4,7 +4,7 @@ python:
 install:
 - python setup.py sdist --formats=zip -k
 - find ./dist -iname "*.zip" -print0 | xargs -0 pip install
-- wget https://gist.github.com/simon-weber/8211306/raw/0afaf2eda0d512c1eb58ec65e000095c70321125/travis-secure-redefine.py
+- wget https://gist.github.com/simon-weber/8211306/raw/travis-secure-redefine.py
 script: python travis-secure-redefine.py 'python -m gmusicapi.test.run_tests' IDARG GM_U GM_P GM_O GM_I GM_A
 before_install:
 - sudo apt-get update -qq
