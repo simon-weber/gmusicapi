@@ -361,8 +361,11 @@ class Musicmanager(_Base):
     def upload(self, filepaths, transcode_quality=3, enable_matching=False):
         """Uploads the given filepaths.
 
-        An available installation of avconv may be required;
-        see `the documentation
+        All non-mp3 files will be transcoded before being uploaded.
+        This is a limitation of Google's backend.
+
+        An available installation of avconv is required in most cases:
+        see `the installation page
         <https://unofficial-google-music-api.readthedocs.org/en
         /latest/usage.html?#installation>`__ for details.
 
@@ -384,6 +387,7 @@ class Musicmanager(_Base):
         :param enable_matching: if ``True``, attempt to use `scan and match
           <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=2920799&topic=2450455>`__
           to avoid uploading every song.
+          This requires avconv.
           **WARNING**: currently, mismatched songs can *not* be fixed with the 'Fix Incorrect Match'
           button nor :py:func:`report_incorrect_match
           <gmusicapi.clients.Webclient.report_incorrect_match>`.
