@@ -9,8 +9,13 @@ As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 +++++
 released XXXX-XX-XX
 
-- remove extraneous logging introduced in 3.0.0 -- this could have logged auth details, so it's recommended to delete old logs
 - add verify_ssl option to client init
+
+3.0.1
++++++
+released 2013-12-11
+
+- remove extraneous logging introduced in 3.0.0 -- this could have logged auth details, so it's recommended to delete old logs
 
 3.0.0
 +++++
