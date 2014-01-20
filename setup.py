@@ -13,7 +13,10 @@ if not ((2, 6, 0) <= sys.version_info[:3] < (2, 8)):
 dynamic_requires = []
 
 if sys.version_info[:2] == (2, 6):
-    dynamic_requires += ['unittest2 == 0.5.1', 'simplejson == 3.0.7']
+    dynamic_requires += [
+        'unittest2 == 0.5.1',   # parity with 2.7
+        'simplejson == 3.0.7',
+    ]
 
 
 #This hack is from http://stackoverflow.com/a/7071358/1231454;
