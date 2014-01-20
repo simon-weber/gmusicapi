@@ -14,7 +14,7 @@ branches:
   only:
   - develop
   - master
-  - split-travis-vars
+  - loosen-dep-ranges
 env:
   global:
   - GM_N="Travis-CI (gmusicapi)"
