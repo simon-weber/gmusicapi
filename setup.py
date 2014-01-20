@@ -43,16 +43,16 @@ setup(
     long_description=(open('README.rst').read() + '\n\n' +
                       open('HISTORY.rst').read()),
     install_requires=[
-        'validictory >= 0.8.3',    # validation
-        'decorator >= 3.3.2',     # keep
-        'mutagen >= 1.20',          # MM
-        'protobuf >= 2.4.1',       # MM
-        'requests >= 1.0.4',       # keep
-        'python-dateutil == 2.1',            # MM
-        'proboscis >= 1.2.5.3',  # testing
-        'oauth2client >= 1.1',       # MM
-        'mock >= 1.0.0',           # testing
-        'appdirs == 1.2.0',                  # keep
+        'validictory >= 0.8.3',
+        'decorator >= 3.3.2',
+        'mutagen >= 1.20',
+        'protobuf >= 2.4.1',
+        'requests >= 1.0.4',
+        'python-dateutil == 2.1',
+        'proboscis >= 1.2.5.3',
+        'oauth2client >= 1.1',
+        'mock >= 1.0.0',
+        'appdirs >= 1.1.0',       # user_log_dir
     ] + dynamic_requires,
     classifiers=[
         'Programming Language :: Python',
