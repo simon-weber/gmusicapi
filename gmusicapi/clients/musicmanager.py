@@ -26,13 +26,17 @@ class Musicmanager(_Base):
     Musicmanager uses OAuth, so a plaintext email and password are not required
     when logging in.
 
-    For most users, :func:`perform_oauth` should be run once per machine to
-    store credentials to disk. Future calls to :func:`login` can use
+    For most authors and users of gmusicapi scripts,
+    :func:`perform_oauth` should be run once per machine to
+    store credentials to disk.
+    Future calls to :func:`login` can use
     use the stored credentials by default.
 
-    Alternatively, users can implement the OAuth flow themselves, then
-    provide credentials directly to :func:`login`.
+    Some authors may want more control over the OAuth flow.
+    In this case, credentials can be directly provided to :func:`login`.
     """
+
+    _session_class = session.Musicmanager
 
     @staticmethod
     def perform_oauth(storage_filepath=OAUTH_FILEPATH, open_browser=False):
@@ -60,6 +64,11 @@ class Musicmanager(_Base):
         :param open_browser: if True, attempt to open the auth url
           in the system default web browser. The url will be printed
           regardless of this param's setting.
+
+        This flow is intentionally very simple.
+        For complete control over the OAuth flow, pass an
+        ``oauth2client.client.OAuth2Credentials``
+        to :func:`login` instead.
         """
 
         flow = OAuth2WebServerFlow(*musicmanager.oauth)
@@ -89,11 +98,11 @@ class Musicmanager(_Base):
 
         return credentials
 
-    def __init__(self, debug_logging=True, validate=True):
-        self.session = session.Musicmanager()
-
-        super(Musicmanager, self).__init__(self.__class__.__name__, debug_logging, validate)
-        self.logout()
+    def __init__(self, debug_logging=True, validate=True, verify_ssl=True):
+        super(Musicmanager, self).__init__(self.__class__.__name__,
+                                           debug_logging,
+                                           validate,
+                                           verify_ssl)
 
     def login(self, oauth_credentials=OAUTH_FILEPATH,
               uploader_id=None, uploader_name=None):
@@ -352,8 +361,11 @@ class Musicmanager(_Base):
     def upload(self, filepaths, transcode_quality=3, enable_matching=False):
         """Uploads the given filepaths.
 
-        An available installation of avconv may be required;
-        see `the documentation
+        All non-mp3 files will be transcoded before being uploaded.
+        This is a limitation of Google's backend.
+
+        An available installation of avconv is required in most cases:
+        see `the installation page
         <https://unofficial-google-music-api.readthedocs.org/en
         /latest/usage.html?#installation>`__ for details.
 
@@ -375,6 +387,7 @@ class Musicmanager(_Base):
         :param enable_matching: if ``True``, attempt to use `scan and match
           <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=2920799&topic=2450455>`__
           to avoid uploading every song.
+          This requires avconv.
           **WARNING**: currently, mismatched songs can *not* be fixed with the 'Fix Incorrect Match'
           button nor :py:func:`report_incorrect_match
           <gmusicapi.clients.Webclient.report_incorrect_match>`.

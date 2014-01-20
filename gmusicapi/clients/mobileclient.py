@@ -13,11 +13,14 @@ class Mobileclient(_Base):
     Uploading is not supported by this client (use the :class:`Musicmanager`
     to upload).
     """
-    def __init__(self, debug_logging=True, validate=True):
-        self.session = session.Webclient()
 
-        super(Mobileclient, self).__init__(self.__class__.__name__, debug_logging, validate)
-        self.logout()
+    _session_class = session.Webclient  # ie mobileclient uses clientlogin, too
+
+    def __init__(self, debug_logging=True, validate=True, verify_ssl=True):
+        super(Mobileclient, self).__init__(self.__class__.__name__,
+                                           debug_logging,
+                                           validate,
+                                           verify_ssl)
 
     def login(self, email, password):
         """Authenticates the Mobileclient.
@@ -150,6 +153,7 @@ class Mobileclient(_Base):
         # forced to spoof this
         return [utils.id_or_nid(d) for d in songs]
 
+    @utils.enforce_id_param
     def add_aa_track(self, aa_song_id):
         """Adds an All Access track to the library,
         returning the library track id.
@@ -168,8 +172,8 @@ class Mobileclient(_Base):
         return res['mutate_response'][0]['id']
 
     @utils.accept_singleton(basestring)
-    @utils.empty_arg_shortcircuit
     @utils.enforce_ids_param
+    @utils.empty_arg_shortcircuit
     def delete_songs(self, library_song_ids):
         """Deletes songs from the library.
         Returns a list of deleted song ids.
@@ -183,6 +187,7 @@ class Mobileclient(_Base):
 
         return [d['id'] for d in res['mutate_response']]
 
+    @utils.enforce_id_param
     def get_stream_url(self, song_id, device_id):
         """Returns a url that will point to an mp3 file.
 
@@ -228,16 +233,18 @@ class Mobileclient(_Base):
         Here is an example playlist dictionary::
 
             {
+                 # can also be SHARED (public/subscribed to), MAGIC or omitted
+                'type': 'USER_GENERATED',
+
                 'kind': 'sj#playlist',
                 'name': 'Something Mix',
                 'deleted': False,
-                'type': 'USER_GENERATED',  # or SHARED (public/subscribed to) or MAGIC
                 'lastModifiedTimestamp': '1325458766483033',
                 'recentTimestamp': '1325458766479000',
                 'shareToken': '<long string>',
                 'ownerProfilePhotoUrl': 'http://lh3.googleusercontent.com/...',
                 'ownerName': 'Simon Weber',
-                'accessControlled': False,  # something to do with shared playlists?
+                'accessControlled': False,  # has to do with shared playlists
                 'creationTimestamp': '1325285553626172',
                 'id': '3d72c9b5-baad-4ff7-815d-cdef717e5d61'
             }
@@ -262,6 +269,7 @@ class Mobileclient(_Base):
 
         return res['mutate_response'][0]['id']
 
+    @utils.enforce_id_param
     def change_playlist_name(self, playlist_id, new_name):
         """Changes the name of a playlist and returns its id.
 
@@ -275,12 +283,13 @@ class Mobileclient(_Base):
 
         return res['mutate_response'][0]['id']
 
-    #TODO accept multiple?
+    @utils.enforce_id_param
     def delete_playlist(self, playlist_id):
         """Deletes a playlist and returns its id.
 
         :param playlist_id: the id to delete.
         """
+        #TODO accept multiple?
 
         mutate_call = mobileclient.BatchMutatePlaylists
         del_mutations = mutate_call.build_playlist_deletes([playlist_id])
@@ -320,7 +329,9 @@ class Mobileclient(_Base):
         """
 
         user_playlists = [p for p in self.get_all_playlists()
-                          if p.get('type') == 'USER_GENERATED']
+                          if (p.get('type') == 'USER_GENERATED' or
+                              p.get('type') != 'SHARED' or
+                              'type' not in p)]
 
         all_entries = self._get_all_items(mobileclient.ListPlaylistEntries,
                                           incremental=False, include_deleted=False,
@@ -346,6 +357,12 @@ class Mobileclient(_Base):
           Note that tokens from urls will need to be url-decoded,
           eg ``AM...%3D%3D`` becomes ``AM...==``.
 
+        For example, to retrieve the contents of a playlist that the user is
+        subscribed to::
+            subscribed_to = [p for p in mc.get_all_playlists() if p.get('type') == 'SHARED']
+            share_tok = subscribed_to[0]['shareToken']
+            tracks = mc.get_shared_playlist_contents(share_tok)
+
         The user need not be subscribed to a playlist to list its tracks.
 
         Returns a list of playlist entries
@@ -363,8 +380,9 @@ class Mobileclient(_Base):
         return entries
 
     @utils.accept_singleton(basestring, 2)
-    @utils.empty_arg_shortcircuit(position=2)
+    @utils.enforce_id_param
     @utils.enforce_ids_param(position=2)
+    @utils.empty_arg_shortcircuit(position=2)
     def add_songs_to_playlist(self, playlist_id, song_ids):
         """Appends songs to the end of a playlist.
         Returns a list of playlist entry ids that were added.
@@ -379,8 +397,8 @@ class Mobileclient(_Base):
         return [e['id'] for e in res['mutate_response']]
 
     @utils.accept_singleton(basestring, 1)
-    @utils.empty_arg_shortcircuit(position=1)
     @utils.enforce_ids_param(position=1)
+    @utils.empty_arg_shortcircuit(position=1)
     def remove_entries_from_playlist(self, entry_ids):
         """Removes specific entries from a playlist.
         Returns a list of entry ids that were removed.
@@ -542,8 +560,8 @@ class Mobileclient(_Base):
         return res['mutate_response'][0]['id']
 
     @utils.accept_singleton(basestring)
-    @utils.empty_arg_shortcircuit
     @utils.enforce_ids_param
+    @utils.empty_arg_shortcircuit
     def delete_stations(self, station_ids):
         """Deletes All Access radio stations and returns their ids.
 
@@ -590,6 +608,7 @@ class Mobileclient(_Base):
         return self._get_all_items(mobileclient.ListStations, incremental, include_deleted,
                                    updated_after=updated_after)
 
+    @utils.enforce_id_param
     def get_station_tracks(self, station_id, num_tracks=25):
         """Returns a list of dictionaries that each represent a track.
 
@@ -743,6 +762,7 @@ class Mobileclient(_Base):
                 'artist_hits': [hit for hit in hits if hit['type'] == '2'],
                 'song_hits': [hit for hit in hits if hit['type'] == '1']}
 
+    @utils.enforce_id_param
     def get_artist_info(self, artist_id, include_albums=True, max_top_tracks=5, max_rel_artist=5):
         """Retrieves details on an artist.
 
@@ -859,6 +879,7 @@ class Mobileclient(_Base):
 
             get_next_chunk = 'nextPageToken' in lib_chunk
 
+    @utils.enforce_id_param
     def get_album_info(self, album_id, include_tracks=True):
         """Retrieves details on an album.
 
@@ -911,6 +932,7 @@ class Mobileclient(_Base):
 
         return self._make_call(mobileclient.GetAlbum, album_id, include_tracks)
 
+    @utils.enforce_id_param
     def get_track_info(self, store_track_id):
         """Retrieves information about a store track.
 

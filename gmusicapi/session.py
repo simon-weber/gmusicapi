@@ -3,6 +3,7 @@
 """
 Sessions handle the details of authentication and transporting requests.
 """
+from contextlib import closing
 
 import oauth2client
 import httplib2  # included with oauth2client
@@ -19,20 +20,28 @@ log = utils.DynamicClientLogger(__name__)
 
 
 class _Base(object):
-    def __init__(self):
+    def __init__(self, rsession_setup=None):
+        """
+        :param rsession_setup: a callable that will be called with
+          the backing requests.Session to delegate config to callers.
+        """
         self._rsession = requests.Session()
+
+        if rsession_setup is None:
+            rsession_setup = lambda x: x
+        self._rsession_setup = rsession_setup
+        self._rsession_setup(self._rsession)
+
         self.is_authenticated = False
 
     def _send_with_auth(self, req_kwargs, desired_auth, rsession):
         raise NotImplementedError
 
     def _send_without_auth(self, req_kwargs, rsession):
-        res = rsession.request(**req_kwargs)
-        rsession.close()
-
-        return res
+        return rsession.request(**req_kwargs)
 
     def login(self, *args, **kwargs):
+        # subclasses extend / use super()
         if self.is_authenticated:
             raise AlreadyLoggedIn
 
@@ -41,7 +50,11 @@ class _Base(object):
         Reset the session to an unauthenticated, default state.
         """
         self._rsession.close()
-        self.__init__()
+
+        self._rsession = requests.Session()
+        self._rsession_setup(self._rsession)
+
+        self.is_authenticated = False
 
     def send(self, req_kwargs, desired_auth, rsession=None):
         """Send a request from a Call using this session's auth.
@@ -49,14 +62,18 @@ class _Base(object):
         :param req_kwargs: kwargs for requests.Session.request
         :param desired_auth: protocol.shared.AuthTypes to attach
         :param rsession: (optional) a requests.Session to use
-         (default ``self._rsession`` - this is exposed for test purposes)
+          (default ``self._rsession`` - this is exposed for test purposes)
         """
+        res = None
+
         if not any(desired_auth):
             if rsession is None:
                 # use a throwaway session to ensure it's clean
-                rsession = requests.Session()
-
-            return self._send_without_auth(req_kwargs, rsession)
+                with closing(requests.Session()) as new_session:
+                    self._rsession_setup(new_session)
+                    res = self._send_without_auth(req_kwargs, new_session)
+            else:
+                res = self._send_without_auth(req_kwargs, rsession)
 
         else:
             if not self.is_authenticated:
@@ -65,12 +82,14 @@ class _Base(object):
             if rsession is None:
                 rsession = self._rsession
 
-            return self._send_with_auth(req_kwargs, desired_auth, rsession)
+            res = self._send_with_auth(req_kwargs, desired_auth, rsession)
+
+        return res
 
 
 class Webclient(_Base):
-    def __init__(self):
-        super(Webclient, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(Webclient, self).__init__(*args, **kwargs)
         self._authtoken = None
 
     def login(self, email, password, *args, **kwargs):
@@ -123,8 +142,8 @@ class Webclient(_Base):
 
 
 class Musicmanager(_Base):
-    def __init__(self):
-        super(Musicmanager, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(Musicmanager, self).__init__(*args, **kwargs)
         self._oauth_creds = None
 
     def login(self, oauth_credentials, *args, **kwargs):

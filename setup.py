@@ -6,14 +6,17 @@ from setuptools import setup, find_packages
 import sys
 
 #Only 2.6-2.7 are supported.
-if not ((2, 6, 0) <= sys.version_info[:3] <= (2, 7, 5)):
+if not ((2, 6, 0) <= sys.version_info[:3] < (2, 8)):
     sys.stderr.write('gmusicapi does not officially support this Python version.\n')
     #try to continue anyway
 
 dynamic_requires = []
 
 if sys.version_info[:2] == (2, 6):
-    dynamic_requires += ['unittest2 == 0.5.1', 'simplejson == 3.0.7']
+    dynamic_requires += [
+        'unittest2 == 0.5.1',   # parity with 2.7
+        'simplejson >= 3.0.6',  # ensure_ascii
+    ]
 
 
 #This hack is from http://stackoverflow.com/a/7071358/1231454;
@@ -43,25 +46,28 @@ setup(
     long_description=(open('README.rst').read() + '\n\n' +
                       open('HISTORY.rst').read()),
     install_requires=[
-        'validictory == 0.9.1',    # validation
-        'decorator == 3.4.0',      # keep
-        'mutagen == 1.22',         # MM
-        'protobuf == 2.5.0',       # MM
-        'requests == 2.0.1',       # keep
-        'python-dateutil == 2.1',  # MM
-        'proboscis==1.2.5.3',      # testing
-        'oauth2client==1.2',       # MM
-        'mock==1.0.1',             # testing
-        'appdirs==1.2.0',          # keep
+        'validictory >= 0.8.0, != 0.9.2',  # error messages, 0.9.2 is broken
+        'decorator >= 3.3.1',              # > 3.0 likely work, but not on pypi
+        'mutagen >= 1.18',                 # EasyID3 module renaming
+        'protobuf >= 2.4.1',               # 2.3.0 uses ez_setup?
+        'requests >= 1.1.0',               # session.close
+        'python-dateutil >= 1.3, != 2.0',  # 2.0 is python3-only
+        'proboscis >= 1.2.5.1',            # runs_after
+        'oauth2client >= 1.1',             # TokenRevokeError
+        'mock >= 0.7.0',                   # MagicMock
+        'appdirs >= 1.1.0',                # user_log_dir
     ] + dynamic_requires,
     classifiers=[
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Topic :: Internet :: WWW/HTTP',
         'Topic :: Multimedia :: Sound/Audio',
-        'Topic :: Software Development :: Libraries :: Python Modules'
+        'Topic :: Software Development :: Libraries :: Python Modules',
     ],
     include_package_data=True,
     zip_safe=False,

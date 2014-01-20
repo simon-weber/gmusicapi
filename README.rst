@@ -62,7 +62,5 @@ For fine-grained development updates, follow me on Twitter:
 
 ------------
 
-Copyright 2013 `Simon Weber <http://www.simonmweber.com>`__.
+Copyright 2014 `Simon Weber <http://www.simonmweber.com>`__.
 Licensed under the 3-clause BSD. See LICENSE.
-
-.. image:: https://cruel-carlota.pagodabox.com/68a92ecf6b6590372f435fb2674d072e

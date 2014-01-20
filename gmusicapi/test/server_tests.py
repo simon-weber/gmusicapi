@@ -12,16 +12,20 @@ import itertools
 import os
 import re
 import types
+from hashlib import md5
 
 from decorator import decorator
 from proboscis.asserts import (
     assert_true, assert_equal, assert_is_not_none,
-    Check
+    assert_raises, Check
 )
 from proboscis import test, before_class, after_class, SkipTest
+import requests
+from requests.exceptions import SSLError
 
 from gmusicapi import Webclient, Musicmanager, Mobileclient
 #from gmusicapi.protocol import mobileclient
+from gmusicapi.protocol.shared import authtypes
 #from gmusicapi.protocol.metadata import md_expectations
 from gmusicapi.utils.utils import retry, id_or_nid
 import gmusicapi.test.utils as test_utils
@@ -34,6 +38,11 @@ TEST_AA_GENRE_ID = 'METAL'
 # that dumb little intro track on Conspiracy of One,
 # picked since it's only a few seconds long
 TEST_AA_SONG_ID = 'Tqqufr34tuqojlvkolsrwdwx7pe'
+
+# used for testing streaming.
+# differences between clients are from stream quality.
+TEST_AA_SONG_WC_HASH = '78d789b3e36820206da29d23c239171b'
+TEST_AA_SONG_MC_HASH = 'c1dcdf2b69fe809f717c0fc1f7303a27'
 
 # Amorphis
 TEST_AA_ARTIST_ID = 'Apoecs6off3y6k4h5nvqqos4b5e'
@@ -68,8 +77,35 @@ def all_access(f, *args, **kwargs):
         raise SkipTest('All Access testing disabled')
 
 
+@test(groups=['server-other'])
+class SslVerificationTests(object):
+    # found on https://onlinessl.netlock.hu/en/test-center/invalid-ssl-certificate.html
+    test_url = 'https://tv.eurosport.com/'
+
+    @test
+    def site_has_invalid_cert(self):
+        assert_raises(SSLError, requests.head, self.test_url)
+
+    def request_invalid_site(self, client):
+        req_kwargs = {'url': self.test_url,
+                      'method': 'HEAD'}
+        no_auth = authtypes()
+
+        client.session.send(req_kwargs, no_auth)
+
+    @test
+    def clients_verify_by_default(self):
+        for client_cls in (Webclient, Mobileclient, Musicmanager):
+            assert_raises(SSLError, self.request_invalid_site, client_cls())
+
+    @test
+    def disable_client_verify(self):
+        for client_cls in (Webclient, Mobileclient, Musicmanager):
+            self.request_invalid_site(client_cls(verify_ssl=False))  # should not raise SSLError
+
+
 @test(groups=['server'])
-class UpauthTests(object):
+class ClientTests(object):
     # set on the instance in login
     wc = None  # webclient
     mm = None  # musicmanager
@@ -456,9 +492,17 @@ class UpauthTests(object):
 
     @test
     @all_access
-    def wc_stream_aa_track(self):
-        audio = self.wc.get_stream_audio(TEST_AA_SONG_ID)
-        assert_is_not_none(audio)
+    def wc_stream_aa_track_with_header(self):
+        audio = self.wc.get_stream_audio(TEST_AA_SONG_ID, use_range_header=True)
+
+        assert_equal(md5(audio).hexdigest(), TEST_AA_SONG_WC_HASH)
+
+    @test
+    @all_access
+    def wc_stream_aa_track_without_header(self):
+        audio = self.wc.get_stream_audio(TEST_AA_SONG_ID, use_range_header=False)
+
+        assert_equal(md5(audio).hexdigest(), TEST_AA_SONG_WC_HASH)
 
     @song_test
     def wc_get_download_info(self):
@@ -566,6 +610,13 @@ class UpauthTests(object):
     def mc_list_shared_playlist_entries(self):
         entries = self.mc.get_shared_playlist_contents(TEST_PLAYLIST_SHARETOKEN)
         assert_true(len(entries) > 0)
+
+    @test
+    @all_access
+    def mc_stream_aa_track(self):
+        url = self.mc.get_stream_url(TEST_AA_SONG_ID)  # uses frozen device_id
+        audio = self.mc.session._rsession.get(url).content
+        assert_equal(md5(audio).hexdigest(), TEST_AA_SONG_MC_HASH)
 
     @staticmethod
     @retry

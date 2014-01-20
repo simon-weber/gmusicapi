@@ -26,14 +26,15 @@ class Webclient(_Base):
         * :func:`get_stream_audio`
         * :func:`report_incorrect_match`
         * :func:`upload_album_art`
-
     """
 
-    def __init__(self, debug_logging=True, validate=True):
-        self.session = gmusicapi.session.Webclient()
+    _session_class = gmusicapi.session.Webclient
 
-        super(Webclient, self).__init__(self.__class__.__name__, debug_logging, validate)
-        self.logout()
+    def __init__(self, debug_logging=True, validate=True, verify_ssl=True):
+        super(Webclient, self).__init__(self.__class__.__name__,
+                                        debug_logging,
+                                        validate,
+                                        verify_ssl)
 
     def login(self, email, password):
         """Authenticates the webclient.
@@ -153,19 +154,31 @@ class Webclient(_Base):
             return res['urls']
 
     @utils.enforce_id_param
-    def get_stream_audio(self, song_id):
+    def get_stream_audio(self, song_id, use_range_header=None):
         """Returns a bytestring containing mp3 audio for this song.
 
         :param song_id: a single song id
+        :param use_range_header: in some cases, an HTTP range header can be
+          used to save some bandwidth.
+          However, there's no guarantee that the server will respect it,
+          meaning that the client may get back an unexpected response when
+          using it.
+
+          There are three possible values for this argument:
+              * None: (default) send header; fix response locally on problems
+              * True: send header; raise IOError on problems
+              * False: do not send header
         """
 
         urls = self.get_stream_urls(song_id)
 
+        #TODO shouldn't session.send be used throughout?
+
         if len(urls) == 1:
             return self.session._rsession.get(urls[0]).content
 
-        # AA tracks are separated into multiple files
-        # the url contains the range of each file to be used
+        # AA tracks are separated into multiple files.
+        # the url contains the range of each file to be used.
 
         range_pairs = [[int(s) for s in val.split('-')]
                        for url in urls
@@ -174,18 +187,35 @@ class Webclient(_Base):
 
         stream_pieces = []
         prev_end = 0
+        headers = None
 
         for url, (start, end) in zip(urls, range_pairs):
-            audio = self.session._rsession.get(url).content
-            stream_pieces.append(audio[prev_end - start:])
+            if use_range_header or use_range_header is None:
+                headers = {'Range': 'bytes=' + str(prev_end - start) + '-'}
+
+            audio = self.session._rsession.get(url, headers=headers).content
+
+            if end - prev_end != len(audio) - 1:
+                #content length is not in the right range
+
+                if use_range_header:
+                    # the user didn't want automatic response fixup
+                    raise IOError('use_range_header is True but the response'
+                                  ' was not the correct content length.'
+                                  ' This might be caused by a (poorly-written) http proxy.')
+
+                # trim to the proper range
+                audio = audio[prev_end - start:]
+
+            stream_pieces.append(audio)
 
             prev_end = end + 1
 
         return ''.join(stream_pieces)
 
     @utils.accept_singleton(basestring)
+    @utils.enforce_ids_param
     @utils.empty_arg_shortcircuit
-    @utils.enforce_id_param
     def report_incorrect_match(self, song_ids):
         """Equivalent to the 'Fix Incorrect Match' button, this requests re-uploading of songs.
         Returns the song_ids provided.
@@ -204,8 +234,8 @@ class Webclient(_Base):
         return song_ids
 
     @utils.accept_singleton(basestring)
-    @utils.empty_arg_shortcircuit
     @utils.enforce_ids_param
+    @utils.empty_arg_shortcircuit
     def upload_album_art(self, song_ids, image_filepath):
         """Uploads an image and sets it as the album art for songs.
 
@@ -255,8 +285,8 @@ class Webclient(_Base):
         return [s['id'] for s in res['songs']]
 
     @utils.accept_singleton(basestring)
-    @utils.empty_arg_shortcircuit
     @utils.enforce_ids_param
+    @utils.empty_arg_shortcircuit
     def delete_songs(self, song_ids):
         """Deletes songs from the entire library. Returns a list of deleted song ids.
 
@@ -297,6 +327,7 @@ class Webclient(_Base):
 
             get_next_chunk = 'continuationToken' in lib_chunk
 
+    @utils.enforce_id_param
     def get_playlist_songs(self, playlist_id):
         """Returns a list of :ref:`song dictionaries <songdict-format>`,
         which include ``playlistEntryId`` keys for the given playlist.
@@ -381,8 +412,9 @@ class Webclient(_Base):
                 u'Free and purchased': u'auto-playlist-promo'}
 
     @utils.accept_singleton(basestring, 2)
+    @utils.enforce_ids_param(2)
+    @utils.enforce_id_param
     @utils.empty_arg_shortcircuit(position=2)
-    @utils.enforce_ids_param(position=2)
     def add_songs_to_playlist(self, playlist_id, song_ids):
         """Appends songs to a playlist.
         Returns a list of (song id, playlistEntryId) tuples that were added.
@@ -397,6 +429,8 @@ class Webclient(_Base):
         return [(e['songId'], e['playlistEntryId']) for e in new_entries]
 
     @utils.accept_singleton(basestring, 2)
+    @utils.enforce_ids_param(2)
+    @utils.enforce_id_param
     @utils.empty_arg_shortcircuit(position=2)
     def remove_songs_from_playlist(self, playlist_id, sids_to_match):
         """Removes all copies of the given song ids from a playlist.

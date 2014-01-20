@@ -7,10 +7,11 @@ class _Base(object):
     """Factors out common client setup."""
 
     __metaclass__ = utils.DocstringInheritMeta
+    _session_class = utils.NotImplementedField
 
     num_clients = 0  # used to disambiguate loggers
 
-    def __init__(self, logger_basename, debug_logging, validate):
+    def __init__(self, logger_basename, debug_logging, validate, verify_ssl):
         """
 
         :param debug_logging: each Client has a ``logger`` member.
@@ -42,6 +43,11 @@ class _Base(object):
 
           This arg is stored as ``self.validate`` and can be safely
           modified at runtime.
+
+        :param verify_ssl: if False, exceptions will not be raised if there
+          are problems verifying SSL certificates.
+          Be wary of using this option; it's almost always better to
+          fix the machine's SSL configuration than to ignore errors.
         """
         # this isn't correct if init is called more than once, so we log the
         # client name below to avoid confusion for people reading logs
@@ -51,11 +57,18 @@ class _Base(object):
                                           _Base.num_clients)
         self.logger = logging.getLogger(logger_name)
         self.validate = validate
+        self._verify_ssl = verify_ssl
+
+        def setup_session(s):
+            s.verify = self._verify_ssl
+
+        self.session = self._session_class(rsession_setup=setup_session)
 
         if debug_logging:
             utils.configure_debug_log_handlers(self.logger)
 
         self.logger.info("initialized")
+        self.logout()
 
     def _make_call(self, protocol, *args, **kwargs):
         """Returns the response of a protocol.Call.
@@ -73,6 +86,8 @@ class _Base(object):
     def logout(self):
         """Forgets local authentication in this Api instance.
         Returns ``True`` on success."""
+
+        # note to clients: this will be called during __init__.
 
         self.session.logout()
         self.logger.info("logged out")
