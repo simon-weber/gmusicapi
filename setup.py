@@ -58,13 +58,16 @@ setup(
         'appdirs >= 1.1.0',                # user_log_dir
     ] + dynamic_requires,
     classifiers=[
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Topic :: Internet :: WWW/HTTP',
         'Topic :: Multimedia :: Sound/Audio',
-        'Topic :: Software Development :: Libraries :: Python Modules'
+        'Topic :: Software Development :: Libraries :: Python Modules',
     ],
     include_package_data=True,
     zip_safe=False,
