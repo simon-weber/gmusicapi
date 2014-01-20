@@ -5,9 +5,9 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-3.1.0-dev
+3.1.0
 +++++
-released XXXX-XX-XX
+released 2014-01-20
 
 - add verify_ssl option to client init
 - greatly loosen dependency version requirements
