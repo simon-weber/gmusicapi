@@ -49,7 +49,7 @@ setup(
         'protobuf >= 2.4.1',
         'requests >= 1.0.4',
         'python-dateutil == 2.1',
-        'proboscis >= 1.2.5.3',
+        'proboscis >= 1.2.5.1',   # runs_after
         'oauth2client >= 1.1',    # TokenRevokeError
         'mock >= 0.7.0',          # MagicMock
         'appdirs >= 1.1.0',       # user_log_dir
