@@ -15,7 +15,7 @@ dynamic_requires = []
 if sys.version_info[:2] == (2, 6):
     dynamic_requires += [
         'unittest2 == 0.5.1',   # parity with 2.7
-        'simplejson == 3.0.7',
+        'simplejson >= 3.0.6',  # ensure_ascii
     ]
 
 
