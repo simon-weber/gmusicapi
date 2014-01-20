@@ -43,16 +43,16 @@ setup(
     long_description=(open('README.rst').read() + '\n\n' +
                       open('HISTORY.rst').read()),
     install_requires=[
-        'validictory >= 0.8.3',
+        'validictory >= 0.8.0, != 0.9.2',  # error messages, 0.9.2 is broken
         'decorator >= 3.3.1',              # > 3.0 likely work, but not on pypi
         'mutagen >= 1.18',                 # EasyID3 module renaming
         'protobuf >= 2.4.1',               # 2.3.0 uses ez_setup?
         'requests >= 1.1.0',               # session.close
         'python-dateutil >= 1.3, != 2.0',  # 2.0 is python3-only
-        'proboscis >= 1.2.5.1',   # runs_after
-        'oauth2client >= 1.1',    # TokenRevokeError
-        'mock >= 0.7.0',          # MagicMock
-        'appdirs >= 1.1.0',       # user_log_dir
+        'proboscis >= 1.2.5.1',            # runs_after
+        'oauth2client >= 1.1',             # TokenRevokeError
+        'mock >= 0.7.0',                   # MagicMock
+        'appdirs >= 1.1.0',                # user_log_dir
     ] + dynamic_requires,
     classifiers=[
         'Programming Language :: Python',
