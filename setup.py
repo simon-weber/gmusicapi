@@ -44,7 +44,7 @@ setup(
                       open('HISTORY.rst').read()),
     install_requires=[
         'validictory >= 0.8.3',
-        'decorator >= 3.3.2',
+        'decorator >= 3.3.1',              # > 3.0 likely work, but not on pypi
         'mutagen >= 1.18',                 # EasyID3 module renaming
         'protobuf >= 2.4.1',               # 2.3.0 uses ez_setup?
         'requests >= 1.1.0',               # session.close
