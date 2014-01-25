@@ -359,6 +359,7 @@ class Mobileclient(_Base):
 
         For example, to retrieve the contents of a playlist that the user is
         subscribed to::
+
             subscribed_to = [p for p in mc.get_all_playlists() if p.get('type') == 'SHARED']
             share_tok = subscribed_to[0]['shareToken']
             tracks = mc.get_shared_playlist_contents(share_tok)
