@@ -40,8 +40,8 @@ TEST_AA_GENRE_ID = 'METAL'
 TEST_AA_SONG_ID = 'Tqqufr34tuqojlvkolsrwdwx7pe'
 
 # used for testing streaming.
-# differences between clients are from stream quality.
-TEST_AA_SONG_WC_HASH = '78d789b3e36820206da29d23c239171b'
+# differences between clients are presumably from stream quality.
+TEST_AA_SONG_WC_HASH = '731fc03139a6aa9e4fa2f970b4d6d64f'
 TEST_AA_SONG_MC_HASH = 'c1dcdf2b69fe809f717c0fc1f7303a27'
 
 # Amorphis
