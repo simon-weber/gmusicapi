@@ -567,6 +567,7 @@ class GetSettings(WcCall):
             'id': {'type': 'string'},
             'name': {'type': 'string', 'blank': True},
             'type': {'type': 'string'},
+            'lastUsedMs': {'type': 'integer'},
 
             # only for type == PHONE:
             'model': {'type': 'string', 'blank': True, 'required': False},
