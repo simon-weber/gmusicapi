@@ -35,7 +35,8 @@ sj_track = {
         'trackNumber': {'type': 'integer'},
         'durationMillis': {'type': 'string'},
         'albumArtRef': {'type': 'array',
-                        'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}}},
+                        'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}}
+                        'required': False},
         'artistArtRef': {'type': 'array',
                          'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}},
                          'required': False,
