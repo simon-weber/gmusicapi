@@ -118,9 +118,9 @@ class Mobileclient(_Base):
         Not all keys can be changed.
         These keys are known to work:
 
-        * ``rating``: this is a string!
-                      set to '0' (no thumb), '1' (down thumb), or '5' (up thumb)
-                      unless you're using the 5-star ratings lab
+        * ``rating`` - this is a string!
+                       set to ``'0'`` (no thumb), ``'1'`` (down thumb), or ``'5'`` (up thumb)
+                       unless you're using the 5-star ratings lab.
         * ``album``
         * ``albumArtist``
         * ``artist``
