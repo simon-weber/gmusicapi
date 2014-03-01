@@ -238,13 +238,14 @@ class Webclient(_Base):
     @utils.empty_arg_shortcircuit
     def upload_album_art(self, song_ids, image_filepath):
         """Uploads an image and sets it as the album art for songs.
+        Returns a url to the image on Google's servers.
 
         :param song_ids: a list of song ids, or a single song id.
         :param image_filepath: filepath of the art to use. jpg and png are known to work.
 
         This function will *always* upload the provided image, even if it's already uploaded.
         If the art is already uploaded and set for another song, copy over the
-        value of the ``'albumArtUrl'`` key using :func:`change_song_metadata` instead.
+        value of the ``'albumArtUrl'`` key using :func:`Mobileclient.change_song_metadata` instead.
         """
 
         res = self._make_call(webclient.UploadImage, image_filepath)
@@ -252,8 +253,9 @@ class Webclient(_Base):
 
         song_dicts = [dict((('id', id), ('albumArtUrl', url))) for id in song_ids]
 
-        return self.change_song_metadata(song_dicts)
+        self._make_call(webclient.ChangeSongMetadata, song_dicts)
 
+        return url
 
     @utils.accept_singleton(basestring)
     @utils.enforce_ids_param

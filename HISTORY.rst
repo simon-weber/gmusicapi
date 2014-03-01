@@ -6,10 +6,11 @@ History
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
 4.0.0-dev
-++++++++
++++++++++
 released XXXX-XX-XX
 
-- remove webclient.change_song_metadata; use mobileclient.change_song_metadata instead
+- breaking: remove webclient.change_song_metadata; use mobileclient.change_song_metadata instead
+- breaking: webclient.upload_album_art now returns a url to the uploaded image
 
 3.1.0
 +++++

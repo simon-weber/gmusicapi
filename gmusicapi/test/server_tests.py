@@ -523,10 +523,6 @@ class ClientTests(object):
 
     @song_test
     def wc_upload_album_art(self):
-        self.wc.upload_album_art(self.user_songs[0].sid, test_utils.image_filename)
-
-        self.wc.change_song_metadata(self.user_songs[0].full_data)
-        #TODO redownload and verify against original?
         url = self.wc.upload_album_art(self.user_songs[0].sid, test_utils.image_filename)
         assert_equal(url[:7], 'http://')
         #TODO download the track and verify the metadata changed
