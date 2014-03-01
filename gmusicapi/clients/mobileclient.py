@@ -218,7 +218,7 @@ class Mobileclient(_Base):
         to download files with metadata.
         """
 
-        return self._make_call(mobileclient.GetStreamUrl, song_id, device_id)
+        return self._make_call(mobileclient.GetStreamUrl, song_id, str(int(device_id, 16)))
 
     def get_all_playlists(self, incremental=False, include_deleted=False):
         """Returns a list of dictionaries that each represent a playlist.
