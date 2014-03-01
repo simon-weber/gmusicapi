@@ -390,35 +390,29 @@ class ChangeSongMetadata(WcCall):
     """Edit the metadata of songs."""
 
     static_method = 'POST'
-    static_url = service_url + 'modifyentries'
+    static_url = service_url + 'modifytracks'
+    static_params = {'format': 'jsarray'}
 
     _res_schema = {
-        "type": "object",
-        "properties": {
-            "success": {"type": "boolean"},
-            "songs": song_array
-        },
-        "additionalProperties": False
+        "type": "array",
+        # eg [[0,1],[1393706382978]]
     }
 
     @staticmethod
-    def dynamic_data(songs):
+    def dynamic_data(songs, session_id=""):
         """
-        :param songs: a list of dictionary representations of songs
+        :param songs: a list of dicts ``{'id': '...', 'albumArtUrl': '...'}``
         """
-        return {'json': json.dumps({'entries': songs})}
+        if any([s for s in songs if set(s.keys()) != set(['id', 'albumArtUrl'])]):
+            raise ValueError("ChangeSongMetadata only supports the 'id' and 'albumArtUrl' keys."
+                             " All other keys must be removed.")
 
-    @staticmethod
-    def filter_response(msg):
-        filtered = copy.copy(msg)
-        filtered['songs'] = ["<%s songs>" % len(filtered.get('songs', []))]
-        return filtered
+        # jsarray is just wonderful
+        jsarray = [[session_id, 1]]
+        song_arrays = [[s['id'], None, s['albumArtUrl']] + [None] * 36 + [[]] for s in songs]
+        jsarray.append([song_arrays])
 
-    @staticmethod
-    def validate(response, msg):
-        """The data that comes back doesn't follow normal metadata rules,
-        and is meaningless anyway; it'll lie about results."""
-        pass
+        return json.dumps(jsarray)
 
 
 class GetDownloadInfo(WcCall):
