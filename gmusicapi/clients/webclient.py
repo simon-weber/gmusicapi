@@ -254,35 +254,6 @@ class Webclient(_Base):
 
         return self.change_song_metadata(song_dicts)
 
-    @utils.accept_singleton(dict)
-    @utils.empty_arg_shortcircuit
-    def change_song_metadata(self, songs):
-        """Changes the metadata for some :ref:`song dictionaries <songdict-format>`.
-        Returns a list of the song ids changed.
-
-        :param songs: a list of :ref:`song dictionaries <songdict-format>`,
-          or a single :ref:`song dictionary <songdict-format>`.
-
-        Generally, stick to these metadata keys:
-
-        * ``rating``: set to 0 (no thumb), 1 (down thumb), or 5 (up thumb)
-        * ``name``: use this instead of ``title``
-        * ``album``
-        * ``albumArtist``
-        * ``artist``
-        * ``composer``
-        * ``disc``
-        * ``genre``
-        * ``playCount``
-        * ``totalDiscs``
-        * ``totalTracks``
-        * ``track``
-        * ``year``
-        """
-
-        res = self._make_call(webclient.ChangeSongMetadata, songs)
-
-        return [s['id'] for s in res['songs']]
 
     @utils.accept_singleton(basestring)
     @utils.enforce_ids_param

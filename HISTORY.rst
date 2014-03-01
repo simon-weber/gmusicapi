@@ -5,9 +5,11 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-3.1.1-dev
-+++++
+4.0.0-dev
+++++++++
 released XXXX-XX-XX
+
+- remove webclient.change_song_metadata; use mobileclient.change_song_metadata instead
 
 3.1.0
 +++++
