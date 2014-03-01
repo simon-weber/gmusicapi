@@ -527,72 +527,9 @@ class ClientTests(object):
 
         self.wc.change_song_metadata(self.user_songs[0].full_data)
         #TODO redownload and verify against original?
-
-    # is this worth the trouble?
-    #@song_test
-    #def wc_change_metadata(self):
-    #    orig_md = self.song.full_data
-
-    #    # Change all mutable entries.
-
-    #    new_md = orig_md.copy()
-
-    #    for name, expt in md_expectations.items():
-    #        if name in orig_md and expt.mutable:
-    #            old_val = orig_md[name]
-    #            new_val = test_utils.modify_md(name, old_val)
-
-    #            assert_not_equal(new_val, old_val)
-    #            new_md[name] = new_val
-
-    #    #TODO check into attempting to mutate non mutables
-    #    self.wc.change_song_metadata(new_md)
-
-    #    #Recreate the dependent md to what they should be (based on how orig_md was changed)
-    #    correct_dependent_md = {}
-    #    for name, expt in md_expectations.items():
-    #        if expt.depends_on and name in orig_md:
-    #            master_name = expt.depends_on
-    #            correct_dependent_md[name] = expt.dependent_transformation(new_md[master_name])
-
-    #    @retry
-    #    def assert_metadata_is(sid, orig_md, correct_dependent_md):
-    #        result_md = self._assert_get_song(sid)
-
-    #        with Check() as check:
-    #            for name, expt in md_expectations.items():
-    #                if name in orig_md:
-    #                    #TODO really need to factor out to test_utils?
-
-    #                    #Check mutability if it's not volatile or dependent.
-    #                    if not expt.volatile and expt.depends_on is None:
-    #                        same, message = test_utils.md_entry_same(name, orig_md, result_md)
-    #                        check.equal(not expt.mutable, same,
-    #                                    "metadata mutability incorrect: " + message)
-
-    #                    #Check dependent md.
-    #                    if expt.depends_on is not None:
-    #                        same, message = test_utils.md_entry_same(
-    #                            name, correct_dependent_md, result_md
-    #                        )
-    #                        check.true(same, "dependent metadata incorrect: " + message)
-
-    #    assert_metadata_is(self.song.sid, orig_md, correct_dependent_md)
-
-    #    #Revert the metadata.
-    #    self.wc.change_song_metadata(orig_md)
-
-    #    @retry
-    #    def assert_metadata_reverted(sid, orig_md):
-    #        result_md = self._assert_get_song(sid)
-
-    #        with Check() as check:
-    #            for name in orig_md:
-    #                #If it's not volatile, it should be back to what it was.
-    #                if not md_expectations[name].volatile:
-    #                    same, message = test_utils.md_entry_same(name, orig_md, result_md)
-    #                    check.true(same, "failed to revert: " + message)
-    #    assert_metadata_reverted(self.song.sid, orig_md)
+        url = self.wc.upload_album_art(self.user_songs[0].sid, test_utils.image_filename)
+        assert_equal(url[:7], 'http://')
+        #TODO download the track and verify the metadata changed
 
     ##---------
     ## MC tests
