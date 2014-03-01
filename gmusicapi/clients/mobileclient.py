@@ -1,4 +1,5 @@
 from operator import itemgetter
+import re
 
 from gmusicapi import session
 from gmusicapi.clients.shared import _Base
@@ -218,7 +219,11 @@ class Mobileclient(_Base):
         to download files with metadata.
         """
 
-        return self._make_call(mobileclient.GetStreamUrl, song_id, str(int(device_id, 16)))
+        if len(device_id) == 16 and re.match('^[a-z0-9]*$', device_id):
+            # android device ids are now sent in base 10
+            device_id = str(int(device_id, 16))
+
+        return self._make_call(mobileclient.GetStreamUrl, song_id, device_id)
 
     def get_all_playlists(self, incremental=False, include_deleted=False):
         """Returns a list of dictionaries that each represent a playlist.
