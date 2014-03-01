@@ -618,6 +618,13 @@ class ClientTests(object):
         audio = self.mc.session._rsession.get(url).content
         assert_equal(md5(audio).hexdigest(), TEST_AA_SONG_MC_HASH)
 
+    @song_test
+    def mc_get_uploaded_track_stream_url(self):
+        url = self.mc.get_stream_url(self.user_songs[0].sid)
+
+        assert_is_not_none(url)
+        assert_equal(url[:7], 'http://')
+
     @staticmethod
     @retry
     def _assert_song_rating(method, sid, rating):
