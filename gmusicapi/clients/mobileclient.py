@@ -14,7 +14,7 @@ class Mobileclient(_Base):
     to upload).
     """
 
-    _session_class = session.Webclient  # ie mobileclient uses clientlogin, too
+    _session_class = session.Mobileclient
 
     def __init__(self, debug_logging=True, validate=True, verify_ssl=True):
         super(Mobileclient, self).__init__(self.__class__.__name__,
