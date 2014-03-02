@@ -116,25 +116,9 @@ class Mobileclient(_Base):
         :param songs: a list of song dictionaries
           or a single song dictionary.
 
-        Not all keys can be changed.
-        These keys are known to work:
-
-        * ``rating`` - this is a string!
-                       set to ``'0'`` (no thumb), ``'1'`` (down thumb), or ``'5'`` (up thumb)
-                       unless you're using the 5-star ratings lab.
-        * ``album``
-        * ``albumArtist``
-        * ``artist``
-        * ``comment``
-        * ``composer``
-        * ``discNumber``
-        * ``genre``
-        * ``playCount``
-        * ``title``
-        * ``totalDiscCount``
-        * ``totalTrackCount``
-        * ``trackNumber``
-        * ``year``
+        Currently, only the ``rating`` key can be changed.
+        Set it to ``'0'`` (no thumb), ``'1'`` (down thumb), or ``'5'`` (up thumb)
+        unless you're using the 5-star ratings lab.
 
         You can also use this to rate All Access tracks
         that aren't in your library, eg::

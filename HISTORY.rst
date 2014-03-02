@@ -11,6 +11,7 @@ released XXXX-XX-XX
 
 - breaking: remove webclient.change_song_metadata; use mobileclient.change_song_metadata instead
 - breaking: webclient.upload_album_art now returns a url to the uploaded image
+- breaking: due to backend changes, mobileclient.change_song_metadata can only change ratings
 
 3.1.0
 +++++

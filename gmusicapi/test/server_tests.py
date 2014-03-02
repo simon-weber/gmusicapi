@@ -560,11 +560,12 @@ class ClientTests(object):
 
     @staticmethod
     @retry
-    def _assert_song_rating(method, sid, rating):
+    def _assert_song_key_equal_to(method, sid, key, value):
         """
         :param method: eg self.mc.get_all_songs
         :param sid: song id
-        :param rating: a string
+        :param key: eg 'rating'
+        :param value: eg '1'
         """
         songs = method()
 
@@ -576,7 +577,7 @@ class ClientTests(object):
 
         assert_equal(len(found), 1)
 
-        assert_equal(found[0]['rating'], rating)
+        assert_equal(found[0][key], value)
         return found[0]
 
     # how can I get the rating key to show up for store tracks?
@@ -593,20 +594,35 @@ class ClientTests(object):
 
     #     self.mc.change_song_metadata(song)
 
-    #     self._assert_song_rating(lambda: self.mc.get_track_info(TEST_AA_SONG_ID),
+    #     self._assert_song_key_equal_to(lambda: self.mc.get_track_info(TEST_AA_SONG_ID),
     #                              id_or_nid(song),
     #                              song['rating'])
 
     @song_test
     def mc_change_uploaded_song_rating(self):
-        song = self._assert_song_rating(self.mc.get_all_songs,
-                                        self.all_songs[0].sid,
-                                        '0')  # initially unrated
+        song = self._assert_song_key_equal_to(
+            self.mc.get_all_songs,
+            self.all_songs[0].sid,
+            'rating',
+            '0')  # initially unrated
 
         song['rating'] = '1'
         self.mc.change_song_metadata(song)
 
-        self._assert_song_rating(self.mc.get_all_songs, song['id'], '1')
+        self._assert_song_key_equal_to(self.mc.get_all_songs, song['id'], 'rating', '1')
+
+    @song_test
+    def mc_change_uploaded_song_title_fails(self):
+        # this used to work, but now only ratings can be changed.
+        # this test is here so I can tell if this starts working again.
+        song = self.assert_songs_state(self.mc.get_all_songs, [self.all_songs[0].sid],
+                                       present=True)[0]
+
+        old_title = song.title
+        new_title = old_title + '_mod'
+        self.mc.change_song_metadata({'id': song.sid, 'title': new_title})
+
+        self._assert_song_key_equal_to(self.mc.get_all_songs, song.sid, 'title', old_title)
 
     @song_test
     def mc_list_songs_inc_equal(self):
