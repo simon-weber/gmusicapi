@@ -76,18 +76,25 @@ class Webclient(_Base):
               {
                 u'date': 1367470393588,           # utc-millisecond
                 u'id':   u'AA:BB:CC:11:22:33',
+                u'lastUsedMs': 1394138679694,
                 u'name': u'my-hostname',
                 u'type': u'DESKTOP_APP'
-               },
-               {
+              },
+              {
                 u'carrier':      u'Google',
                 u'date':         1344808742774,
-                u'id':           u'0x00112233aabbccdd',
+                u'id':           u'0x00112233aabbccdd',  # remove 0x when streaming
                 u'manufacturer': u'Asus',
                 u'model':        u'Nexus 7',
                 u'name':         u'',
-                u'type':         u'PHONE',
-               }
+                u'type':         u'PHONE'
+              },
+              {
+                u'date': 1394133624308,
+                u'id': u'ios:01234567-0123-0123-0123-0123456789AB',
+                u'lastUsedMs': 1394138679694,
+                u'type': u'IOS'
+              }
             ]
 
         """
