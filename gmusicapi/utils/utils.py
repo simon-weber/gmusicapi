@@ -12,13 +12,14 @@ import re
 import subprocess
 import time
 import traceback
+import warnings
 
 from decorator import decorator
 from google.protobuf.descriptor import FieldDescriptor
 
 from gmusicapi import __version__
 from gmusicapi.compat import my_appdirs
-from gmusicapi.exceptions import CallFailure
+from gmusicapi.exceptions import CallFailure, GmusicapiWarning
 
 # this controls the crazy logging setup that checks the callstack;
 #  it should be monkey-patched to False after importing to disable it.
@@ -105,6 +106,27 @@ class DynamicClientLogger(object):
 
 
 log = DynamicClientLogger(__name__)
+
+
+def deprecated(instructions):
+    """Flags a method as deprecated.
+
+    :param instructions: human-readable note to assist migration.
+    """
+
+    @decorator
+    def wrapper(func, *args, **kwargs):
+        message = "{} is deprecated and may break unexpectedly.\n{}".format(
+            func.__name__,
+            instructions)
+
+        warnings.warn(message,
+                      GmusicapiWarning,
+                      stacklevel=2)
+
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
 def longest_increasing_subseq(seq):
