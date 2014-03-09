@@ -537,8 +537,6 @@ class BatchMutatePlaylists(McBatchMutateCall):
     static_method = 'POST'
     static_url = sj_url + 'playlistbatch'
 
-    #TODO is it possible to mutate name through this?
-
     @staticmethod
     def build_playlist_deletes(playlist_ids):
         #TODO can probably pull this up one
@@ -556,18 +554,19 @@ class BatchMutatePlaylists(McBatchMutateCall):
                 (pl_id, new_name) in pl_id_name_pairs]
 
     @staticmethod
-    def build_playlist_adds(names):
+    def build_playlist_adds(pl_descriptions):
         """
-        :param names
+        :param pl_descriptions: [{'name': '', 'public': <bool>}]
         """
 
         return [{'create': {
             'creationTimestamp': '-1',
             'deleted': False,
             'lastModifiedTimestamp': '0',
-            'name': name,
-            'type': 'USER_GENERATED'
-        }} for name in names]
+            'name': pl_desc['name'],
+            'type': 'USER_GENERATED',
+            'accessControlled': pl_desc['public'],
+        }} for pl_desc in pl_descriptions]
 
 
 class BatchMutatePlaylistEntries(McBatchMutateCall):

@@ -117,7 +117,7 @@ class ClientTests(object):
     user_songs = None
     aa_songs = None
 
-    playlist_id = None
+    playlist_ids = None
     plentry_ids = None
     station_ids = None
 
@@ -219,7 +219,7 @@ class ClientTests(object):
 
     @staticmethod
     @retry
-    def assert_list_with_deleted(method):
+    def assert_listing_contains_deleted_items(method):
         """
         Assert that some listing method includes deleted tracks.
 
@@ -272,18 +272,19 @@ class ClientTests(object):
 
     @test
     def playlist_create(self):
-        playlist_id = self.mc.create_playlist(TEST_PLAYLIST_NAME)
+        mc_id = self.mc.create_playlist(TEST_PLAYLIST_NAME)
+        wc_id = self.wc.create_playlist(TEST_PLAYLIST_NAME, "", public=True)
 
         # like song_create, retry until the playlist appears
         @retry
-        def assert_playlist_exists(plid):
+        def assert_playlist_exists(plids):
             found = [p for p in self.mc.get_all_playlists()
-                     if p['id'] == plid]
+                     if p['id'] in plids]
 
-            assert_equal(len(found), 1)
+            assert_equal(len(found), 2)
 
-        assert_playlist_exists(playlist_id)
-        self.playlist_id = playlist_id
+        assert_playlist_exists([mc_id, wc_id])
+        self.playlist_ids = [mc_id, wc_id]
 
     @test(depends_on=[playlist_create, song_create],
           runs_after_groups=['playlist.exists', 'song.exists'])
@@ -300,7 +301,7 @@ class ClientTests(object):
 
         song_ids += [double_id] * 2
 
-        plentry_ids = self.mc.add_songs_to_playlist(self.playlist_id, song_ids)
+        plentry_ids = self.mc.add_songs_to_playlist(self.playlist_ids[0], song_ids)
 
         @retry
         def assert_plentries_exist(plid, plentry_ids):
@@ -310,7 +311,7 @@ class ClientTests(object):
 
             assert_equal(len(found), len(plentry_ids))
 
-        assert_plentries_exist(self.playlist_id, plentry_ids)
+        assert_plentries_exist(self.playlist_ids[0], plentry_ids)
         self.plentry_ids = plentry_ids
 
     @test(groups=['plentry'], depends_on=[plentry_create],
@@ -330,19 +331,20 @@ class ClientTests(object):
 
             assert_equal(len(found), 0)
 
-        assert_plentries_removed(self.playlist_id, self.plentry_ids)
-        #self.assert_list_with_deleted(self.mc_get_playlist_songs)
+        assert_plentries_removed(self.playlist_ids[0], self.plentry_ids)
+        #self.assert_listing_contains_deleted_items(self.mc_get_playlist_songs)
 
     @test(groups=['playlist'], depends_on=[playlist_create],
           runs_after=[plentry_delete],
           runs_after_groups=['playlist.exists'],
           always_run=True)
     def playlist_delete(self):
-        if self.playlist_id is None:
-            raise SkipTest('did not store self.playlist_id')
+        if self.playlist_ids is None:
+            raise SkipTest('did not store self.playlist_ids')
 
-        res = self.mc.delete_playlist(self.playlist_id)
-        assert_equal(res, self.playlist_id)
+        for plid in self.playlist_ids:
+            res = self.mc.delete_playlist(plid)
+            assert_equal(res, plid)
 
         @retry
         def assert_playlist_does_not_exist(plid):
@@ -351,8 +353,9 @@ class ClientTests(object):
 
             assert_equal(len(found), 0)
 
-        assert_playlist_does_not_exist(self.playlist_id)
-        self.assert_list_with_deleted(self.mc.get_all_playlists)
+        for plid in self.playlist_ids:
+            assert_playlist_does_not_exist(plid)
+            self.assert_listing_contains_deleted_items(self.mc.get_all_playlists)
 
     @test
     def station_create(self):
@@ -404,7 +407,7 @@ class ClientTests(object):
 
         for station_id in self.station_ids:
             assert_station_deleted(station_id)
-        self.assert_list_with_deleted(self.mc.get_all_stations)
+        self.assert_listing_contains_deleted_items(self.mc.get_all_stations)
 
     @test(groups=['song'], depends_on=[song_create],
           runs_after=[plentry_delete, station_delete],
@@ -422,7 +425,7 @@ class ClientTests(object):
                 check.equal(res, [testsong.sid])
 
         self.assert_songs_state(self.mc.get_all_songs, sids(self.all_songs), present=False)
-        self.assert_list_with_deleted(self.mc.get_all_songs)
+        self.assert_listing_contains_deleted_items(self.mc.get_all_songs)
 
     ## These decorators just prevent setting groups and depends_on over and over.
     ## They won't work right with additional settings; if that's needed this
@@ -643,8 +646,8 @@ class ClientTests(object):
     @playlist_test
     def mc_change_playlist_name(self):
         new_name = TEST_PLAYLIST_NAME + '_mod'
-        plid = self.mc.change_playlist_name(self.playlist_id, new_name)
-        assert_equal(self.playlist_id, plid)
+        plid = self.mc.change_playlist_name(self.playlist_ids[0], new_name)
+        assert_equal(self.playlist_ids[0], plid)
 
         @retry  # change takes time to propogate
         def assert_name_equal(plid, name):
@@ -655,11 +658,11 @@ class ClientTests(object):
             assert_equal(len(found), 1)
             assert_equal(found[0]['name'], name)
 
-        assert_name_equal(self.playlist_id, new_name)
+        assert_name_equal(self.playlist_ids[0], new_name)
 
         # revert
-        self.mc.change_playlist_name(self.playlist_id, TEST_PLAYLIST_NAME)
-        assert_name_equal(self.playlist_id, TEST_PLAYLIST_NAME)
+        self.mc.change_playlist_name(self.playlist_ids[0], TEST_PLAYLIST_NAME)
+        assert_name_equal(self.playlist_ids[0], TEST_PLAYLIST_NAME)
 
     @retry
     def _mc_assert_ple_position(self, entry, pos):
@@ -682,7 +685,7 @@ class ClientTests(object):
         for from_pos, to_pos in [pair for pair in
                                  itertools.product(range(playlist_len), repeat=2)
                                  if pair[0] < pair[1]]:
-            pl = self.mc_get_playlist_songs(self.playlist_id)
+            pl = self.mc_get_playlist_songs(self.playlist_ids[0])
 
             from_e = pl[from_pos]
 
@@ -711,7 +714,7 @@ class ClientTests(object):
         for from_pos, to_pos in [pair for pair in
                                  itertools.product(range(playlist_len), repeat=2)
                                  if pair[0] > pair[1]]:
-            pl = self.mc_get_playlist_songs(self.playlist_id)
+            pl = self.mc_get_playlist_songs(self.playlist_ids[0])
 
             from_e = pl[from_pos]
 
@@ -738,7 +741,7 @@ class ClientTests(object):
     # separate calls in the general case.
     #@plentry_test
     #def mc_reorder_ples_forwards(self):
-    #    pl = self.mc_get_playlist_songs(self.playlist_id)
+    #    pl = self.mc_get_playlist_songs(self.playlist_ids[0])
     #    # rot2, eg 0123 -> 2301
     #    pl.append(pl.pop(0))
     #    pl.append(pl.pop(0))

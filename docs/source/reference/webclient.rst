@@ -30,8 +30,9 @@ Song manipulation
 .. automethod:: Webclient.upload_album_art
 .. automethod:: Webclient.delete_songs
 
-Playlist content manipulation
+Playlist manipulation
 -----------------------------
+.. automethod:: Webclient.create_playlist
 .. automethod:: Webclient.add_songs_to_playlist
 .. automethod:: Webclient.remove_songs_from_playlist
 

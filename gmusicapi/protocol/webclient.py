@@ -124,6 +124,25 @@ class WcCall(Call):
         return cls._parse_json(response.text)
 
 
+class CreatePlaylist(WcCall):
+    """Adds songs to a playlist."""
+    static_method = 'POST'
+    static_url = service_url + 'createplaylist'
+    static_params = {'format': 'jsarray'}
+
+    _res_schema = {
+        "type": "array",
+        # eg:
+        # [[0,2]
+        # ,["id","sharetoken",[]
+        #  ,<millis>]]
+    }
+
+    @staticmethod
+    def dynamic_data(name, description, public, session_id=""):
+        return json.dumps([[session_id, 1], [public, name, description, []]])
+
+
 class AddToPlaylist(WcCall):
     """Adds songs to a playlist."""
     static_method = 'POST'
