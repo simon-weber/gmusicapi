@@ -12,10 +12,6 @@ Setup and login
 .. automethod:: Webclient.login
 .. automethod:: Webclient.logout
 
-Getting songs and playlists
----------------------------
-.. automethod:: Webclient.get_all_playlist_ids
-
 Song downloading and streaming
 ------------------------------
 .. automethod:: Webclient.get_song_download_info

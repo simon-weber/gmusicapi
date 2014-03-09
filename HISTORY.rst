@@ -12,6 +12,7 @@ released XXXX-XX-XX
 - breaking: remove webclient.change_song_metadata; use mobileclient.change_song_metadata instead
 - breaking: remove webclient.get_all_songs; use mobileclient.get_all_songs instead
 - breaking: remove webclient.get_playlist_songs; use mobileclient.get_all_user_playlist_contents instead
+- breaking: remove webclient.get_all_playlist_ids; use mobileclient.get_all_user_playlists instead
 - breaking: webclient.upload_album_art now returns a url to the uploaded image
 - breaking: due to backend changes, mobileclient.change_song_metadata can only change ratings
 - add webclient.create_playlist, which is capable of creating public playlists
