@@ -17,7 +17,9 @@ class Webclient(_Base):
     to upload).
 
     Any methods in this class that are duplicated by
-    the :class:`Mobileclient` should be considered deprecated.
+    the :class:`Mobileclient` are deprecated, and will generate a
+    warning at runtime.
+
     The following methods are *not* deprecated:
 
         * :func:`create_playlist`
@@ -277,11 +279,16 @@ class Webclient(_Base):
 
         return url
 
+    # deprecated methods follow:
+
     @utils.accept_singleton(basestring)
     @utils.enforce_ids_param
     @utils.empty_arg_shortcircuit
+    @utils.deprecated('prefer Mobileclient.delete_songs')
     def delete_songs(self, song_ids):
-        """Deletes songs from the entire library. Returns a list of deleted song ids.
+        """**Deprecated**: prefer :func:`Mobileclient.delete_songs`.
+
+        Deletes songs from the entire library. Returns a list of deleted song ids.
 
         :param song_ids: a list of song ids, or a single song id.
         """
@@ -290,8 +297,11 @@ class Webclient(_Base):
 
         return res['deleteIds']
 
+    @utils.deprecated('prefer Mobileclient.get_all_playlists')
     def get_all_playlist_ids(self, auto=True, user=True):
-        """Returns a dictionary that maps playlist types to dictionaries.
+        """**Deprecated**: prefer :func:`Mobileclient.get_all_playlists`.
+
+        Returns a dictionary that maps playlist types to dictionaries.
 
         :param auto: create an ``'auto'`` subdictionary entry.
           Currently, this will just map to ``{}``; support for 'Shared with me' and
@@ -365,8 +375,11 @@ class Webclient(_Base):
     @utils.enforce_ids_param(2)
     @utils.enforce_id_param
     @utils.empty_arg_shortcircuit(position=2)
+    @utils.deprecated('prefer Mobileclient.add_songs_to_playlist')
     def add_songs_to_playlist(self, playlist_id, song_ids):
-        """Appends songs to a playlist.
+        """**Deprecated**: prefer :func:`Mobileclient.add_songs_to_playlist`.
+
+        Appends songs to a playlist.
         Returns a list of (song id, playlistEntryId) tuples that were added.
 
         :param playlist_id: id of the playlist to add to.
@@ -382,8 +395,11 @@ class Webclient(_Base):
     @utils.enforce_ids_param(2)
     @utils.enforce_id_param
     @utils.empty_arg_shortcircuit(position=2)
+    @utils.deprecated('prefer Mobileclient.remove_entries_from_playlist')
     def remove_songs_from_playlist(self, playlist_id, sids_to_match):
-        """Removes all copies of the given song ids from a playlist.
+        """**Deprecated**: prefer :func:`Mobileclient.remove_entries_from_playlist`.
+
+        Removes all copies of the given song ids from a playlist.
         Returns a list of removed (sid, eid) pairs.
 
         :param playlist_id: id of the playlist to remove songs from.
