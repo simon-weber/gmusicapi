@@ -8,11 +8,12 @@ an extra test playlist or song may result.
 """
 
 from collections import namedtuple
+from hashlib import md5
 import itertools
 import os
 import re
 import types
-from hashlib import md5
+import warnings
 
 from decorator import decorator
 from proboscis.asserts import (
@@ -421,7 +422,9 @@ class ClientTests(object):
                 if i % 2 == 0:
                     res = self.mc.delete_songs(testsong.sid)
                 else:
-                    res = self.wc.delete_songs(testsong.sid)
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        res = self.wc.delete_songs(testsong.sid)
                 check.equal(res, [testsong.sid])
 
         self.assert_songs_state(self.mc.get_all_songs, sids(self.all_songs), present=False)
