@@ -116,7 +116,7 @@ def deprecated(instructions):
 
     @decorator
     def wrapper(func, *args, **kwargs):
-        message = "{} is deprecated and may break unexpectedly.\n{}".format(
+        message = "{0} is deprecated and may break unexpectedly.\n{1}".format(
             func.__name__,
             instructions)
 
