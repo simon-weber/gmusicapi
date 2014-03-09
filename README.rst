@@ -21,17 +21,18 @@ gmusicapi allows control of
     
 **gmusicapi is not supported nor endorsed by Google.**
 
-That said, it's actively maintained, and used in a bunch of cool projects, like:
+That said, it's actively maintained, and powers a bunch of cool projects:
 
--  Malcolm Still's `command line Google Music client <https://github.com/mstill/thunner>`__
-   (`screenshot <http://i.imgur.com/Mwl0k.png>`__)
--  Ryan McGuire's `GMusicFS <https://github.com/EnigmaCurry/GMusicFS>`__ - a FUSE
-   filesystem linked to your music
--  Kilian Lackhove's `Google Music support <https://github.com/crabmanX/google-music-resolver>`__
-   for http://www.tomahawk-player.org
--  `Mario Di Raimondo <https://github.com/diraimondo>`__'s `Google Music http proxy for mediaplayers <http://gmusicproxy.net>`__
--  `@thebigmunch <https://github.com/thebigmunch>`__'s `syncing scripts <https://github.com/thebigmunch/gmusicapi-scripts>`__
--  Tom Graham's `playlist syncing tool <https://github.com/Tyris/m3uGoogleMusicSync>`__
+-  alternate clients, including
+   `a command line client <https://github.com/mstill/thunner>`__
+   and `FUSE filesystem <https://github.com/EnigmaCurry/GMusicFS>`__
+-  `syncing tools <https://github.com/thebigmunch/gmusicapi-scripts>`__ for library management
+-  proxies for media players, such as
+   `gmusicproxy <http://gmusicproxy.net>`__ and
+   `gmusicprocurator <https://github.com/malept/gmusicprocurator>`__,
+   as well as plugins for 
+   `Mopidy <https://github.com/hechtus/mopidy-gmusic>`__ and
+   `Squeezebox <https://github.com/hechtus/squeezebox-googlemusic>`__.
 
 
 Getting started
