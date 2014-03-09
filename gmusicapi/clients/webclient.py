@@ -20,13 +20,13 @@ class Webclient(_Base):
     the :class:`Mobileclient` should be considered deprecated.
     The following methods are *not* deprecated:
 
+        * :func:`create_playlist`
         * :func:`get_registered_devices`
         * :func:`get_song_download_info`
         * :func:`get_stream_urls`
         * :func:`get_stream_audio`
         * :func:`report_incorrect_match`
         * :func:`upload_album_art`
-        * :func:`create_playlist`
     """
 
     _session_class = gmusicapi.session.Webclient
@@ -289,49 +289,6 @@ class Webclient(_Base):
         res = self._make_call(webclient.DeleteSongs, song_ids)
 
         return res['deleteIds']
-
-    def get_all_songs(self, incremental=False):
-        """Returns a list of :ref:`song dictionaries <songdict-format>`.
-
-        :param incremental: if True, return a generator that yields lists
-          of at most 2500 :ref:`song dictionaries <songdict-format>`
-          as they are retrieved from the server. This can be useful for
-          presenting a loading bar to a user.
-        """
-
-        to_return = self._get_all_songs()
-
-        if not incremental:
-            to_return = [song for chunk in to_return for song in chunk]
-
-        return to_return
-
-    def _get_all_songs(self):
-        """Return a generator of song chunks."""
-
-        get_next_chunk = True
-        lib_chunk = {'continuationToken': None}
-
-        while get_next_chunk:
-            lib_chunk = self._make_call(webclient.GetLibrarySongs,
-                                        lib_chunk['continuationToken'])
-
-            yield lib_chunk['playlist']  # list of songs of the chunk
-
-            get_next_chunk = 'continuationToken' in lib_chunk
-
-    @utils.enforce_id_param
-    def get_playlist_songs(self, playlist_id):
-        """Returns a list of :ref:`song dictionaries <songdict-format>`,
-        which include ``playlistEntryId`` keys for the given playlist.
-
-        :param playlist_id: id of the playlist to load.
-
-        This will return ``[]`` if the playlist id does not exist.
-        """
-
-        res = self._make_call(webclient.GetPlaylistSongs, playlist_id)
-        return res['playlist']
 
     def get_all_playlist_ids(self, auto=True, user=True):
         """Returns a dictionary that maps playlist types to dictionaries.

@@ -473,14 +473,6 @@ class ClientTests(object):
     ## WC tests
     ##---------
 
-    @song_test
-    def wc_list_new_songs(self):
-        self.assert_songs_state(self.wc.get_all_songs, sids(self.all_songs), present=True)
-
-    @test
-    def wc_list_songs_inc_equal(self):
-        self.assert_list_inc_equivalence(self.wc.get_all_songs)
-
     @test
     def wc_get_registered_devices(self):
         # no logic; just checking schema
