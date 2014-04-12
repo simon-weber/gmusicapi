@@ -310,6 +310,8 @@ class Webclient(_Base):
 
         :param playlist_id: id of the playlist to add to.
         :param song_ids: a list of song ids, or a single song id.
+
+        Playlists have a maximum size of 1000 songs.
         """
 
         res = self._make_call(webclient.AddToPlaylist, playlist_id, song_ids)
