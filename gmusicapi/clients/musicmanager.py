@@ -358,7 +358,7 @@ class Musicmanager(_Base):
 
     @utils.accept_singleton(basestring)
     @utils.empty_arg_shortcircuit(return_code='{}')
-    def upload(self, filepaths, transcode_quality=3, enable_matching=False):
+    def upload(self, filepaths, transcode_quality='320k', enable_matching=False):
         """Uploads the given filepaths.
 
         All non-mp3 files will be transcoded before being uploaded.
@@ -378,11 +378,11 @@ class Musicmanager(_Base):
             )
 
         :param filepaths: a list of filepaths, or a single filepath.
-        :param transcode_quality: if int, pass to avconv ``-qscale`` for libmp3lame
-          (lower-better int, roughly corresponding to `hydrogenaudio -vX settings
-          <http://wiki.hydrogenaudio.org/index.php?title=LAME#Recommended_encoder_settings>`__).
-          If string, pass to avconv ``-ab`` (eg ``'128k'`` for an average bitrate of 128k). The
-          default is ~175kbs vbr.
+        :param transcode_quality: if int, pass to ffmpeg/avconv ``-q:a`` for libmp3lame
+          (lower-better int,
+          <http://trac.ffmpeg.org/wiki/Encoding%20VBR%20(Variable%20Bit%20Rate)%20mp3%20audio>`__).
+          If string, pass to avconv ``-b:a`` (eg ``'128k'`` for an average bitrate of 128k). The
+          default is 320kbps cbr (the highest possible quality).
 
         :param enable_matching: if ``True``, attempt to use `scan and match
           <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=2920799&topic=2450455>`__
