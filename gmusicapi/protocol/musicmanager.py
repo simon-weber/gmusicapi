@@ -161,9 +161,7 @@ class UploadMetadata(MmCall):
     #these collections define how locker_pb2.Track fields align to mutagen's.
     shared_fields = ('album', 'artist', 'composer', 'genre')
     field_map = {  # mutagen: Track
-        #albumartist is 'performer' according to:
-        # http://goo.gl/5i18X
-        'performer': 'album_artist',
+        'albumartist': 'album_artist',
         'bpm': 'beats_per_minute',
     }
     count_fields = {  # mutagen: (part, total)
