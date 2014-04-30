@@ -247,20 +247,18 @@ class ClientTests(object):
         uploaded, matched, not_uploaded = self.mm.upload(fname)
 
         if len(not_uploaded) == 1 and 'ALREADY_EXISTS' in not_uploaded[fname]:
-            # If a previous test went wrong, the track might be there already.
-            #TODO This build will fail because of the warning - is that what we want?
-            assert_equal(matched, {})
-            assert_equal(uploaded, {})
+            # delete the song if it exists already because a previous test failed
+            mc.delete_songs(re.search(r'\(.*\)', not_uploaded[fname]).group().strip('()'))
+            
+            # and retry the upload
+            uploaded, matched, not_uploaded = self.mm.upload(fname)
 
-            # this matches the sid from the error message
-            user_sids.append(re.search(r'\(.*\)', not_uploaded[fname]).group().strip('()'))
-        else:
-            # Otherwise, it should have been uploaded normally.
-            assert_equal(not_uploaded, {})
-            assert_equal(matched, {})
-            assert_equal(uploaded.keys(), [fname])
+        # Otherwise, it should have been uploaded normally.
+        assert_equal(not_uploaded, {})
+        assert_equal(matched, {})
+        assert_equal(uploaded.keys(), [fname])
 
-            user_sids.append(uploaded[fname])
+        user_sids.append(uploaded[fname])
 
         if test_all_access_features():
             aa_sids.append(self.mc.add_aa_track(TEST_AA_SONG_ID))
