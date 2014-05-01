@@ -429,8 +429,8 @@ def transcode_to_mp3(filepath, quality=3, slice_start=None, slice_duration=None)
     An ID3 header is not included in the result.
 
     :param filepath: location of file
-    :param quality: if int, pass to -qscale. if string, pass to -ab
-                    -qscale roughly corresponds to libmp3lame -V0, -V1...
+    :param quality: if int, pass to -q:a. if string, pass to -b:a
+                    -q:a roughly corresponds to libmp3lame -V0, -V1...
     :param slice_start: (optional) transcode a slice, starting at this many seconds
     :param slice_duration: (optional) when used with slice_start, the number of seconds in the slice
 
@@ -451,9 +451,9 @@ def transcode_to_mp3(filepath, quality=3, slice_start=None, slice_duration=None)
         cmd.extend(['-ss', str(slice_start)])
 
     if isinstance(quality, int):
-        cmd.extend(['-qscale', str(quality)])
+        cmd.extend(['-q:a', str(quality)])
     elif isinstance(quality, basestring):
-        cmd.extend(['-ab', quality])
+        cmd.extend(['-b:a', quality])
     else:
         raise ValueError("quality must be int or string, but received %r" % quality)
 
