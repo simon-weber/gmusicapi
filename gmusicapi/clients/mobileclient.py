@@ -623,10 +623,11 @@ class Mobileclient(_Base):
         res = self._make_call(mobileclient.ListStationTracks,
                               station_id, num_tracks, recently_played=[])
 
-        if not res['data']['items']:
+        stations = res.get('data', {}).get('stations')
+        if not stations:
             return []
 
-        return res['data']['items'][0].get('tracks', [])
+        return stations[0].get('tracks', [])
 
     def search_all_access(self, query, max_results=50):
         """Queries the server for All Access songs and albums.

@@ -20,7 +20,7 @@ from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
 # URL for sj service
-sj_url = 'https://www.googleapis.com/sj/v1.1/'
+sj_url = 'https://www.googleapis.com/sj/v1.5/'
 
 # shared schemas
 sj_track = {
@@ -56,6 +56,8 @@ sj_track = {
         'year': {'type': 'integer', 'required': False},
         'rating': {'type': 'string', 'required': False},
         'genre': {'type': 'string', 'required': False},
+        'trackAvailableForSubscription': {'type': 'boolean'},
+        'contentType': {'type': 'string'},
     }
 }
 
@@ -654,32 +656,23 @@ class ListStations(McListCall):
     static_url = sj_url + 'radio/station'
 
 
-class ListStationTracks(McListCall):
-    # this isn't really proper usage of the abc:
-    #  * there is no paging (assumed, not proven)
-    #  * the query interface is totally different
-
-    # clients.Mobileclient will
-    # just have to wire up the call itself
-
-    item_schema = {
+class ListStationTracks(McCall):
+    _res_schema = {
         'type': 'object',
         'additionalProperties': False,
         'properties': {
-            'radioId': {'type': 'string'},
-            'tracks': {'type': 'array', 'required': False, 'items': sj_track},
-        }
+            'kind': {'type': 'string'},
+            'data': {'type': 'object',
+                     'stations': {'type': 'array', 'items': sj_station},
+                     'required': False,
+                    },
+        },
     }
 
-    filter_text = 'stations'
-
+    static_headers = {'Content-Type': 'application/json'}
+    static_params = {'alt': 'json', 'include-tracks': 'true'}
     static_method = 'POST'
     static_url = sj_url + 'radio/stationfeed'
-
-    @staticmethod
-    def dynamic_params(*args, **kwargs):
-        # override the parent (which has params for paging support)
-        return {}
 
     @staticmethod
     def dynamic_data(station_id, num_entries, recently_played):
@@ -705,9 +698,9 @@ class ListStationTracks(McListCall):
     @staticmethod
     def filter_response(msg):
         filtered = copy.deepcopy(msg)
-        if 'tracks' in filtered['data']['items']:
-            filtered['data']['items']['tracks'] = \
-                    ["<%s tracks>" % len(filtered['data']['items']['tracks'])]
+        if 'stations' in filtered['data']:
+            filtered['data']['stations'] = \
+                    ["<%s stations>" % len(filtered['data']['stations'])]
         return filtered
 
 
