@@ -883,3 +883,40 @@ class GetAlbum(McCall):
     @staticmethod
     def dynamic_params(album_id, tracks):
         return {'nid': album_id, 'include-tracks': tracks}
+
+
+class IncrementPlayCount(McCall):
+    static_method = 'POST'
+    static_url = sj_url + 'trackstats'
+    static_params = {'alt': 'json'}
+    static_headers = {'Content-Type': 'application/json'}
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'responses': {
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'additionalProperties': False,
+                    'properties': {
+                        'id': {'type': 'string',
+                               'required': False},  # not provided for AA tracks?
+                        'response_code': {'type': 'string'},
+                    }
+                }
+            }
+        }
+    }
+
+    @staticmethod
+    def dynamic_data(sid, plays, playtime):
+        #TODO this can support multiple
+        return json.dumps({'track_stats': [{
+            'id': sid,
+            'incremental_plays': plays,
+            'last_play_time_millis': str(utils.datetime_to_microseconds(playtime)),
+            'type': 2 if sid.startswith('T') else 1,
+            'track_events': [],
+        }]})

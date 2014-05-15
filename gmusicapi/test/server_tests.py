@@ -607,6 +607,30 @@ class ClientTests(object):
 
         self._assert_song_key_equal_to(self.mc.get_all_songs, song['id'], 'rating', '1')
 
+    def _test_increment_playcount(self, sid):
+        matching = [t for t in self.mc.get_all_songs()
+                    if t['id'] == sid]
+        assert_equal(len(matching), 1)
+
+        initial_playcount = matching[0]['playCount']
+
+        self.mc.increment_song_playcount(sid, 2)
+
+        self._assert_song_key_equal_to(
+            self.mc.get_all_songs,
+            sid,
+            'playCount',
+            initial_playcount + 2)
+
+    @song_test
+    def mc_increment_uploaded_song_playcount(self):
+        self._test_increment_playcount(self.all_songs[0].sid)
+
+    @song_test
+    @all_access
+    def mc_increment_aa_song_playcount(self):
+        self._test_increment_playcount(self.all_songs[1].sid)
+
     @song_test
     def mc_change_uploaded_song_title_fails(self):
         # this used to work, but now only ratings can be changed.

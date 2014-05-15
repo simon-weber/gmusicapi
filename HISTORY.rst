@@ -16,6 +16,7 @@ released XXXX-XX-XX
 - breaking: webclient.upload_album_art now returns a url to the uploaded image
 - breaking: due to backend changes, mobileclient.change_song_metadata can only change ratings
 - add webclient.create_playlist, which is capable of creating public playlists
+- add mobileclient.increment_song_playcount
 
 3.1.0
 +++++

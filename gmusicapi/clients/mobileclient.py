@@ -1,3 +1,4 @@
+import datetime
 from operator import itemgetter
 import re
 
@@ -137,6 +138,28 @@ class Mobileclient(_Base):
         # store tracks don't send back their id, so we're
         # forced to spoof this
         return [utils.id_or_nid(d) for d in songs]
+
+    def increment_song_playcount(self, song_id, plays=1, playtime=None):
+        """Increments a song's playcount and returns its song id.
+
+        :params song_id: a song id. Providing the id of an AA track
+          that has been added to the library will *not* increment the
+          corresponding library song's playcount. To do this, use the
+          'id' field (which looks like a uuid and doesn't begin with 'T'),
+          not the 'nid' field.
+        :params plays: (optional) positive number of plays to increment by.
+          The default is 1.
+        :params playtime: (optional) a datetime.datetime of the
+          time the song was played.
+          It will default to the time of the call.
+         """
+
+        if playtime is None:
+            playtime = datetime.datetime.now()
+
+        self._make_call(mobileclient.IncrementPlayCount, song_id, plays, playtime)
+
+        return song_id
 
     @utils.enforce_id_param
     def add_aa_track(self, aa_song_id):
