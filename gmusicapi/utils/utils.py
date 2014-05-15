@@ -424,7 +424,7 @@ def pb_set(msg, field_name, val):
     return True
 
 
-def transcode_to_mp3(filepath, quality=3, slice_start=None, slice_duration=None):
+def transcode_to_mp3(filepath, quality='320k', slice_start=None, slice_duration=None):
     """Return the bytestring result of transcoding the file at *filepath* to mp3.
     An ID3 header is not included in the result.
 
