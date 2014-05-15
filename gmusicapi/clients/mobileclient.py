@@ -177,16 +177,22 @@ class Mobileclient(_Base):
         """Returns a url that will point to an mp3 file.
 
         :param song_id: a single song id
-        :param device_id: a registered Android device id, as a 16 digit string.
+        :param device_id: a mobile device id as a string.
+          Android device ids are 16 characters, while iOS ids
+          are uuids with 'ios:' prepended.
+
           If you have already used Google Music on a mobile device,
           :func:`Webclient.get_registered_devices
           <gmusicapi.clients.Webclient.get_registered_devices>` will provide
-          at least one working id. Omit ``'0x'`` from the start of the string.
+          at least one working id. Omit ``'0x'`` from the start of the string if present.
 
-          Note that this id must be from a mobile device; a registered computer
-          id (as a MAC address) will not be accepted.
+          Registered computer ids (a MAC address) will not be accepted and will 403.
 
-          Providing an invalid id will result in an http 403.
+          Providing an unregistered mobile device id will register it to your account,
+          subject to Google's `device limits
+          <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1230356>`__.
+          **Registering a device id that you do not own is likely a violation of the TOS.**
+
 
         When handling the resulting url, keep in mind that:
             * you will likely need to handle redirects
