@@ -257,6 +257,13 @@ class UploadMetadata(MmCall):
             else:
                 track_set('year', datetime.year)
 
+        for null_field in ['artist', 'album']:
+            # If these fields aren't provided, they'll render as "undefined" in the web interface;
+            # see https://github.com/simon-weber/Unofficial-Google-Music-API/issues/236.
+            # Defaulting them to an empty string fixes this.
+            if null_field not in audio:
+                track_set(null_field, '')
+
         #Mass-populate the rest of the simple fields.
         #Merge shared and unshared fields into {mutagen: Track}.
         fields = dict(
