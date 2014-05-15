@@ -379,7 +379,7 @@ class Musicmanager(_Base):
 
         :param filepaths: a list of filepaths, or a single filepath.
         :param transcode_quality: if int, pass to ffmpeg/avconv ``-q:a`` for libmp3lame
-          (lower-better int,
+          (`lower-better int,
           <http://trac.ffmpeg.org/wiki/Encoding%20VBR%20(Variable%20Bit%20Rate)%20mp3%20audio>`__).
           If string, pass to avconv ``-b:a`` (eg ``'128k'`` for an average bitrate of 128k). The
           default is 320kbps cbr (the highest possible quality).
