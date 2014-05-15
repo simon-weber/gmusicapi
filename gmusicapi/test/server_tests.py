@@ -248,8 +248,8 @@ class ClientTests(object):
 
         if len(not_uploaded) == 1 and 'ALREADY_EXISTS' in not_uploaded[fname]:
             # delete the song if it exists already because a previous test failed
-            mc.delete_songs(re.search(r'\(.*\)', not_uploaded[fname]).group().strip('()'))
-            
+            self.mc.delete_songs(re.search(r'\(.*\)', not_uploaded[fname]).group().strip('()'))
+
             # and retry the upload
             uploaded, matched, not_uploaded = self.mm.upload(fname)
 
