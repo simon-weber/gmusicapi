@@ -117,7 +117,7 @@ sj_album = {
         'albumId': {'type': 'string'},
         'artist': {'type': 'string'},
         'artistId': {'type': 'array', 'items': {'type': 'string', 'blank': True}},
-        'year': {'type': 'integer'},
+        'year': {'type': 'integer', 'required': False},
         'tracks': {'type': 'array', 'items': sj_track, 'required': False},
         'description': {'type': 'string', 'required': False},
     }
