@@ -515,7 +515,7 @@ class ClientTests(object):
         url = urls[0]
 
         assert_is_not_none(url)
-        assert_equal(url[:7], 'http://')
+        assert_equal(url.split(':')[0], 'https')
 
     @song_test
     def wc_upload_album_art(self):
