@@ -27,6 +27,7 @@ That said, it's actively maintained, and powers a bunch of cool projects:
    `a command line client <https://github.com/mstill/thunner>`__
    and `FUSE filesystem <https://github.com/EnigmaCurry/GMusicFS>`__
 -  `syncing tools <https://github.com/thebigmunch/gmusicapi-scripts>`__ for library management
+-  `playlist tools <https://github.com/soulfx/gmusic-playlist>`__ for playlist management
 -  proxies for media players, such as
    `gmusicproxy <http://gmusicproxy.net>`__ and
    `gmusicprocurator <https://github.com/malept/gmusicprocurator>`__,
