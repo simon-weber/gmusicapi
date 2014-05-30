@@ -648,6 +648,14 @@ class BatchMutatePlaylistEntries(McBatchMutateCall):
         return mutations
 
 
+class ListThumbsUpTracks(McListCall):
+    item_schema = sj_track
+    filter_text = 'tracks'
+
+    static_method = 'POST'
+    static_url = sj_url + 'ephemeral/top'
+
+
 class ListStations(McListCall):
     item_schema = sj_station
     filter_text = 'stations'
