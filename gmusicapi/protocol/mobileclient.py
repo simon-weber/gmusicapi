@@ -828,11 +828,16 @@ class GetGenres(McCall):
                     'properties': {
                         'url': {'type': 'string'}
                     },
-                }
-            },
+                },
+                'required': False,
+           },
             'children': {
                 'type': 'array',
                 'items': {'type': 'string'},
+                'required': False,
+            },
+            'parentId': {
+                'type': 'string',
                 'required': False,
             }
         }
