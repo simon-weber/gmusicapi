@@ -550,7 +550,7 @@ class Mobileclient(_Base):
     #        if e_after_new_pos:
     #            self._mc_assert_ple_position(e_after_new_pos, to_pos + 1)
 
-    def get_thumbs_up_tracks(self):
+    def get_thumbs_up_songs(self):
         """Returns a list of dictionaries that each represent a track.
 
         See :func:`get_all_songs` for the format of a track dictionary.
