@@ -999,8 +999,10 @@ class Mobileclient(_Base):
 
         return self._make_call(mobileclient.GetStoreTrack, store_track_id)
 
-    def get_genres(self):
+    def get_genres(self, parent_genre_id=None):
         """Retrieves information on Google Music genres.
+
+        :param parent_genre_id: An optional ID of the parent genre
 
         Using this method without an All Access subscription will always result in
         CallFailure being raised.
@@ -1029,4 +1031,4 @@ class Mobileclient(_Base):
         to seed an All Access radio station.
         """
 
-        return self._make_call(mobileclient.GetGenres)
+        return self._make_call(mobileclient.GetGenres, parent_genre_id)

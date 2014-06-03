@@ -850,6 +850,10 @@ class GetGenres(McCall):
         }
     }
 
+    @staticmethod
+    def dynamic_params(parent_genre_id):
+        return {'parent-genre': parent_genre_id}
+
 
 class GetArtist(McCall):
     static_method = 'GET'
