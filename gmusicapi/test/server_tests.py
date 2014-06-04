@@ -837,3 +837,4 @@ class ClientTests(object):
     @all_access
     def mc_genres(self):
         self.mc.get_genres()  # just for the schema
+        self.mc.get_genres('METAL')  # just for the schema

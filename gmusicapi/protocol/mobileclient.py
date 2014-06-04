@@ -828,11 +828,16 @@ class GetGenres(McCall):
                     'properties': {
                         'url': {'type': 'string'}
                     },
-                }
-            },
+                },
+                'required': False,
+           },
             'children': {
                 'type': 'array',
                 'items': {'type': 'string'},
+                'required': False,
+            },
+            'parentId': {
+                'type': 'string',
                 'required': False,
             }
         }
@@ -849,6 +854,10 @@ class GetGenres(McCall):
             }
         }
     }
+
+    @staticmethod
+    def dynamic_params(parent_genre_id):
+        return {'parent-genre': parent_genre_id}
 
 
 class GetArtist(McCall):
