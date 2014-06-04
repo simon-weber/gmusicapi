@@ -553,7 +553,9 @@ class Mobileclient(_Base):
     def get_thumbs_up_songs(self):
         """Returns a list of dictionaries that each represent a track.
 
-        See :func:`get_all_songs` for the format of a track dictionary.
+        Only applies to All Access tracks being rated up thumb.
+
+        See :func:`get_track_info` for the format of a track dictionary.
         """
 
         return self._get_all_items(mobileclient.ListThumbsUpTracks,
