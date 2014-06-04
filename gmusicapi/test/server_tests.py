@@ -610,13 +610,11 @@ class ClientTests(object):
         song['rating'] = '0'
         self.mc.change_song_metadata(song)
 
+        
     @song_test
+    @all_access
     def mc_get_thumbs_up_songs(self):
-        song = self._assert_song_key_equal_to(
-            self.mc.get_all_songs,
-            self.all_songs[0].sid,
-            'rating',
-            '0')  # initially unrated
+        song = self.mc.get_track_info(TEST_AA_SONG_ID)
 
         song['rating'] = '5'
         self.mc.change_song_metadata(song)
@@ -624,7 +622,7 @@ class ClientTests(object):
         thumbs_up_songs = self.mc.get_thumbs_up_songs()
 
         found = [e for e in thumbs_up_songs
-                 if e['id'] == song['id']]
+                 if e['nid'] == song['nid']]
 
         assert_equal(len(found), 1)
 
