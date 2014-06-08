@@ -607,6 +607,28 @@ class ClientTests(object):
 
         self._assert_song_key_equal_to(self.mc.get_all_songs, song['id'], 'rating', '1')
 
+        song['rating'] = '0'
+        self.mc.change_song_metadata(song)
+
+        
+    @song_test
+    @all_access
+    def mc_get_thumbs_up_songs(self):
+        song = self.mc.get_track_info(TEST_AA_SONG_ID)
+
+        song['rating'] = '5'
+        self.mc.change_song_metadata(song)
+
+        thumbs_up_songs = self.mc.get_thumbs_up_songs()
+
+        found = [e for e in thumbs_up_songs
+                 if e['nid'] == song['nid']]
+
+        assert_equal(len(found), 1)
+
+        song['rating'] = '0'
+        self.mc.change_song_metadata(song)
+
     def _test_increment_playcount(self, sid):
         matching = [t for t in self.mc.get_all_songs()
                     if t['id'] == sid]

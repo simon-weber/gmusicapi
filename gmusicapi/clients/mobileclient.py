@@ -550,6 +550,18 @@ class Mobileclient(_Base):
     #        if e_after_new_pos:
     #            self._mc_assert_ple_position(e_after_new_pos, to_pos + 1)
 
+    def get_thumbs_up_songs(self):
+        """Returns a list of dictionaries that each represent a track.
+
+        Only applies to All Access tracks being rated up thumb.
+
+        See :func:`get_track_info` for the format of a track dictionary.
+        """
+
+        return self._get_all_items(mobileclient.ListThumbsUpTracks,
+                                   incremental=False, include_deleted=False,
+                                   updated_after=None)
+
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
                        genre_id=None):
