@@ -17,6 +17,7 @@ released XXXX-XX-XX
 - breaking: due to backend changes, mobileclient.change_song_metadata can only change ratings
 - add webclient.create_playlist, which is capable of creating public playlists
 - add mobileclient.increment_song_playcount
+- add mobileclient.get_thumbs_up_songs
 
 3.1.0
 +++++
