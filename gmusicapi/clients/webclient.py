@@ -17,10 +17,14 @@ class Webclient(_Base):
     to upload).
 
     Any methods in this class that are duplicated by
-    the :class:`Mobileclient` should be considered deprecated.
+    the :class:`Mobileclient` are deprecated, and will generate a
+    warning at runtime.
+
     The following methods are *not* deprecated:
 
+        * :func:`create_playlist`
         * :func:`get_registered_devices`
+        * :func:`get_shared_playlist_info`
         * :func:`get_song_download_info`
         * :func:`get_stream_urls`
         * :func:`get_stream_audio`
@@ -59,6 +63,40 @@ class Webclient(_Base):
     def logout(self):
         return super(Webclient, self).logout()
 
+    def create_playlist(self, name, description, public=False):
+        """
+        Creates a playlist and returns its id.
+
+        :param name: the name of the playlist.
+        :param description: the description of the playlist.
+        :param public: if True and the user has All Access, create a shared playlist.
+        """
+        res = self._make_call(webclient.CreatePlaylist, name, description, public)
+
+        return res[1][0]
+
+    def get_shared_playlist_info(self, share_token):
+        """
+        Returns a dictionary with four keys: author, description, num_tracks, and title.
+
+        :param share_token: from ``playlist['shareToken']``, or a playlist share
+          url (``https://play.google.com/music/playlist/<token>``).
+
+          Note that tokens from urls will need to be url-decoded,
+          eg ``AM...%3D%3D`` becomes ``AM...==``.
+        """
+
+        res = self._make_call(webclient.GetSharedPlaylist, '', share_token)
+        num_tracks = len(res[1][0])
+        md = res[1][1]
+
+        return {
+            u'author': md[8],
+            u'description': md[7],
+            u'num_tracks': num_tracks,
+            u'title': md[1],
+        }
+
     def get_registered_devices(self):
         """
         Returns a list of dictionaries representing devices associated with the account.
@@ -76,18 +114,25 @@ class Webclient(_Base):
               {
                 u'date': 1367470393588,           # utc-millisecond
                 u'id':   u'AA:BB:CC:11:22:33',
+                u'lastUsedMs': 1394138679694,
                 u'name': u'my-hostname',
                 u'type': u'DESKTOP_APP'
-               },
-               {
+              },
+              {
                 u'carrier':      u'Google',
                 u'date':         1344808742774,
-                u'id':           u'0x00112233aabbccdd',
+                u'id':           u'0x00112233aabbccdd',  # remove 0x when streaming
                 u'manufacturer': u'Asus',
                 u'model':        u'Nexus 7',
                 u'name':         u'',
-                u'type':         u'PHONE',
-               }
+                u'type':         u'PHONE'
+              },
+              {
+                u'date': 1394133624308,
+                u'id': u'ios:01234567-0123-0123-0123-0123456789AB',
+                u'lastUsedMs': 1394138679694,
+                u'type': u'IOS'
+              }
             ]
 
         """
@@ -238,13 +283,14 @@ class Webclient(_Base):
     @utils.empty_arg_shortcircuit
     def upload_album_art(self, song_ids, image_filepath):
         """Uploads an image and sets it as the album art for songs.
+        Returns a url to the image on Google's servers.
 
         :param song_ids: a list of song ids, or a single song id.
         :param image_filepath: filepath of the art to use. jpg and png are known to work.
 
         This function will *always* upload the provided image, even if it's already uploaded.
         If the art is already uploaded and set for another song, copy over the
-        value of the ``'albumArtUrl'`` key using :func:`change_song_metadata` instead.
+        value of the ``'albumArtUrl'`` key using :func:`Mobileclient.change_song_metadata` instead.
         """
 
         res = self._make_call(webclient.UploadImage, image_filepath)
@@ -252,43 +298,20 @@ class Webclient(_Base):
 
         song_dicts = [dict((('id', id), ('albumArtUrl', url))) for id in song_ids]
 
-        return self.change_song_metadata(song_dicts)
+        self._make_call(webclient.ChangeSongMetadata, song_dicts)
 
-    @utils.accept_singleton(dict)
-    @utils.empty_arg_shortcircuit
-    def change_song_metadata(self, songs):
-        """Changes the metadata for some :ref:`song dictionaries <songdict-format>`.
-        Returns a list of the song ids changed.
+        return url
 
-        :param songs: a list of :ref:`song dictionaries <songdict-format>`,
-          or a single :ref:`song dictionary <songdict-format>`.
-
-        Generally, stick to these metadata keys:
-
-        * ``rating``: set to 0 (no thumb), 1 (down thumb), or 5 (up thumb)
-        * ``name``: use this instead of ``title``
-        * ``album``
-        * ``albumArtist``
-        * ``artist``
-        * ``composer``
-        * ``disc``
-        * ``genre``
-        * ``playCount``
-        * ``totalDiscs``
-        * ``totalTracks``
-        * ``track``
-        * ``year``
-        """
-
-        res = self._make_call(webclient.ChangeSongMetadata, songs)
-
-        return [s['id'] for s in res['songs']]
+    # deprecated methods follow:
 
     @utils.accept_singleton(basestring)
     @utils.enforce_ids_param
     @utils.empty_arg_shortcircuit
+    @utils.deprecated('prefer Mobileclient.delete_songs')
     def delete_songs(self, song_ids):
-        """Deletes songs from the entire library. Returns a list of deleted song ids.
+        """**Deprecated**: prefer :func:`Mobileclient.delete_songs`.
+
+        Deletes songs from the entire library. Returns a list of deleted song ids.
 
         :param song_ids: a list of song ids, or a single song id.
         """
@@ -297,130 +320,21 @@ class Webclient(_Base):
 
         return res['deleteIds']
 
-    def get_all_songs(self, incremental=False):
-        """Returns a list of :ref:`song dictionaries <songdict-format>`.
-
-        :param incremental: if True, return a generator that yields lists
-          of at most 2500 :ref:`song dictionaries <songdict-format>`
-          as they are retrieved from the server. This can be useful for
-          presenting a loading bar to a user.
-        """
-
-        to_return = self._get_all_songs()
-
-        if not incremental:
-            to_return = [song for chunk in to_return for song in chunk]
-
-        return to_return
-
-    def _get_all_songs(self):
-        """Return a generator of song chunks."""
-
-        get_next_chunk = True
-        lib_chunk = {'continuationToken': None}
-
-        while get_next_chunk:
-            lib_chunk = self._make_call(webclient.GetLibrarySongs,
-                                        lib_chunk['continuationToken'])
-
-            yield lib_chunk['playlist']  # list of songs of the chunk
-
-            get_next_chunk = 'continuationToken' in lib_chunk
-
-    @utils.enforce_id_param
-    def get_playlist_songs(self, playlist_id):
-        """Returns a list of :ref:`song dictionaries <songdict-format>`,
-        which include ``playlistEntryId`` keys for the given playlist.
-
-        :param playlist_id: id of the playlist to load.
-
-        This will return ``[]`` if the playlist id does not exist.
-        """
-
-        res = self._make_call(webclient.GetPlaylistSongs, playlist_id)
-        return res['playlist']
-
-    def get_all_playlist_ids(self, auto=True, user=True):
-        """Returns a dictionary that maps playlist types to dictionaries.
-
-        :param auto: create an ``'auto'`` subdictionary entry.
-          Currently, this will just map to ``{}``; support for 'Shared with me' and
-          'Google Play recommends' is on the way (
-          `#102 <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/102>`__).
-
-          Other auto playlists are not stored on the server, but calculated by the client.
-          See `this gist <https://gist.github.com/simon-weber/5007769>`__ for sample code for
-          'Thumbs Up', 'Last Added', and 'Free and Purchased'.
-
-        :param user: create a user ``'user'`` subdictionary entry for user-created playlists.
-          This includes anything that appears on the left side 'Playlists' bar (notably, saved
-          instant mixes).
-
-        User playlist names will be unicode strings.
-
-        Google Music allows multiple user playlists with the same name, so the ``'user'`` dictionary
-        will map onto lists of ids. Here's an example response::
-
-            {
-                'auto':{},
-
-                'user':{
-                    u'Some Song Mix':[
-                        u'14814747-efbf-4500-93a1-53291e7a5919'
-                    ],
-
-                    u'Two playlists have this name':[
-                        u'c89078a6-0c35-4f53-88fe-21afdc51a414',
-                        u'86c69009-ea5b-4474-bd2e-c0fe34ff5484'
-                    ]
-                }
-            }
-
-        There is currently no support for retrieving automatically-created instant mixes
-        (see issue `#67 <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/67>`__).
-
-        """
-
-        playlists = {}
-
-        if auto:
-            #playlists['auto'] = self._get_auto_playlists()
-            playlists['auto'] = {}
-        if user:
-            res = self._make_call(webclient.GetPlaylistSongs, 'all')
-            playlists['user'] = self._playlist_list_to_dict(res['playlists'])
-
-        return playlists
-
-    def _playlist_list_to_dict(self, pl_list):
-        ret = {}
-
-        for name, pid in ((p["title"], p["playlistId"]) for p in pl_list):
-            if not name in ret:
-                ret[name] = []
-            ret[name].append(pid)
-
-        return ret
-
-    def _get_auto_playlists(self):
-        """For auto playlists, returns a dictionary which maps autoplaylist name to id."""
-
-        #Auto playlist ids are hardcoded in the wc javascript.
-        #When testing, an incorrect name here will be caught.
-        return {u'Thumbs up': u'auto-playlist-thumbs-up',
-                u'Last added': u'auto-playlist-recent',
-                u'Free and purchased': u'auto-playlist-promo'}
-
     @utils.accept_singleton(basestring, 2)
     @utils.enforce_ids_param(2)
     @utils.enforce_id_param
     @utils.empty_arg_shortcircuit(position=2)
+    @utils.deprecated('prefer Mobileclient.add_songs_to_playlist')
     def add_songs_to_playlist(self, playlist_id, song_ids):
-        """Appends songs to a playlist.
+        """**Deprecated**: prefer :func:`Mobileclient.add_songs_to_playlist`.
+
+        Appends songs to a playlist.
         Returns a list of (song id, playlistEntryId) tuples that were added.
 
         :param playlist_id: id of the playlist to add to.
         :param song_ids: a list of song ids, or a single song id.
+
+        Playlists have a maximum size of 1000 songs.
         """
 
         res = self._make_call(webclient.AddToPlaylist, playlist_id, song_ids)
@@ -432,8 +346,11 @@ class Webclient(_Base):
     @utils.enforce_ids_param(2)
     @utils.enforce_id_param
     @utils.empty_arg_shortcircuit(position=2)
+    @utils.deprecated('prefer Mobileclient.remove_entries_from_playlist')
     def remove_songs_from_playlist(self, playlist_id, sids_to_match):
-        """Removes all copies of the given song ids from a playlist.
+        """**Deprecated**: prefer :func:`Mobileclient.remove_entries_from_playlist`.
+
+        Removes all copies of the given song ids from a playlist.
         Returns a list of removed (sid, eid) pairs.
 
         :param playlist_id: id of the playlist to remove songs from.

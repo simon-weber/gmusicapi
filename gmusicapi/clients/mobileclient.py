@@ -1,4 +1,6 @@
+import datetime
 from operator import itemgetter
+import re
 
 from gmusicapi import session
 from gmusicapi.clients.shared import _Base
@@ -14,7 +16,7 @@ class Mobileclient(_Base):
     to upload).
     """
 
-    _session_class = session.Webclient  # ie mobileclient uses clientlogin, too
+    _session_class = session.Mobileclient
 
     def __init__(self, debug_logging=True, validate=True, verify_ssl=True):
         super(Mobileclient, self).__init__(self.__class__.__name__,
@@ -115,25 +117,9 @@ class Mobileclient(_Base):
         :param songs: a list of song dictionaries
           or a single song dictionary.
 
-        Not all keys can be changed.
-        These keys are known to work:
-
-        * ``rating``: this is a string!
-                      set to '0' (no thumb), '1' (down thumb), or '5' (up thumb)
-                      unless you're using the 5-star ratings lab
-        * ``album``
-        * ``albumArtist``
-        * ``artist``
-        * ``comment``
-        * ``composer``
-        * ``discNumber``
-        * ``genre``
-        * ``playCount``
-        * ``title``
-        * ``totalDiscCount``
-        * ``totalTrackCount``
-        * ``trackNumber``
-        * ``year``
+        Currently, only the ``rating`` key can be changed.
+        Set it to ``'0'`` (no thumb), ``'1'`` (down thumb), or ``'5'`` (up thumb)
+        unless you're using the 5-star ratings lab.
 
         You can also use this to rate All Access tracks
         that aren't in your library, eg::
@@ -152,6 +138,28 @@ class Mobileclient(_Base):
         # store tracks don't send back their id, so we're
         # forced to spoof this
         return [utils.id_or_nid(d) for d in songs]
+
+    def increment_song_playcount(self, song_id, plays=1, playtime=None):
+        """Increments a song's playcount and returns its song id.
+
+        :params song_id: a song id. Providing the id of an AA track
+          that has been added to the library will *not* increment the
+          corresponding library song's playcount. To do this, use the
+          'id' field (which looks like a uuid and doesn't begin with 'T'),
+          not the 'nid' field.
+        :params plays: (optional) positive number of plays to increment by.
+          The default is 1.
+        :params playtime: (optional) a datetime.datetime of the
+          time the song was played.
+          It will default to the time of the call.
+         """
+
+        if playtime is None:
+            playtime = datetime.datetime.now()
+
+        self._make_call(mobileclient.IncrementPlayCount, song_id, plays, playtime)
+
+        return song_id
 
     @utils.enforce_id_param
     def add_aa_track(self, aa_song_id):
@@ -192,16 +200,22 @@ class Mobileclient(_Base):
         """Returns a url that will point to an mp3 file.
 
         :param song_id: a single song id
-        :param device_id: a registered Android device id, as a 16 digit string.
+        :param device_id: a mobile device id as a string.
+          Android device ids are 16 characters, while iOS ids
+          are uuids with 'ios:' prepended.
+
           If you have already used Google Music on a mobile device,
           :func:`Webclient.get_registered_devices
           <gmusicapi.clients.Webclient.get_registered_devices>` will provide
-          at least one working id. Omit ``'0x'`` from the start of the string.
+          at least one working id. Omit ``'0x'`` from the start of the string if present.
 
-          Note that this id must be from a mobile device; a registered computer
-          id (as a MAC address) will not be accepted.
+          Registered computer ids (a MAC address) will not be accepted and will 403.
 
-          Providing an invalid id will result in an http 403.
+          Providing an unregistered mobile device id will register it to your account,
+          subject to Google's `device limits
+          <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1230356>`__.
+          **Registering a device id that you do not own is likely a violation of the TOS.**
+
 
         When handling the resulting url, keep in mind that:
             * you will likely need to handle redirects
@@ -217,6 +231,10 @@ class Mobileclient(_Base):
         <gmusicapi.clients.Musicmanager.download_song>`
         to download files with metadata.
         """
+
+        if len(device_id) == 16 and re.match('^[a-z0-9]*$', device_id):
+            # android device ids are now sent in base 10
+            device_id = str(int(device_id, 16))
 
         return self._make_call(mobileclient.GetStreamUrl, song_id, device_id)
 
@@ -256,15 +274,17 @@ class Mobileclient(_Base):
 
     # these could trivially support multiple creation/deletion, but
     # I chose to match the old webclient interface (at least for now).
-    def create_playlist(self, name):
+    def create_playlist(self, name, public=False):
         """Creates a new empty playlist and returns its id.
 
         :param name: the desired title.
           Creating multiple playlists with the same name is allowed.
+        :param public: if True, create a public All Access playlist.
         """
 
         mutate_call = mobileclient.BatchMutatePlaylists
-        add_mutations = mutate_call.build_playlist_adds([name])
+        add_mutations = mutate_call.build_playlist_adds([{'name': name,
+                                                          'public': public}])
         res = self._make_call(mutate_call, add_mutations)
 
         return res['mutate_response'][0]['id']
@@ -359,6 +379,7 @@ class Mobileclient(_Base):
 
         For example, to retrieve the contents of a playlist that the user is
         subscribed to::
+
             subscribed_to = [p for p in mc.get_all_playlists() if p.get('type') == 'SHARED']
             share_tok = subscribed_to[0]['shareToken']
             tracks = mc.get_shared_playlist_contents(share_tok)
@@ -389,6 +410,11 @@ class Mobileclient(_Base):
 
         :param playlist_id: the id of the playlist to add to.
         :param song_ids: a list of song ids, or a single song id.
+
+        Playlists have a maximum size of 1000 songs.
+        Calls may fail before that point (presumably) due to
+        an error on Google's end (see `#239
+        <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/239>`__).
         """
         mutate_call = mobileclient.BatchMutatePlaylistEntries
         add_mutations = mutate_call.build_plentry_adds(playlist_id, song_ids)
@@ -524,6 +550,18 @@ class Mobileclient(_Base):
     #        if e_after_new_pos:
     #            self._mc_assert_ple_position(e_after_new_pos, to_pos + 1)
 
+    def get_thumbs_up_songs(self):
+        """Returns a list of dictionaries that each represent a track.
+
+        Only applies to All Access tracks being rated up thumb.
+
+        See :func:`get_track_info` for the format of a track dictionary.
+        """
+
+        return self._get_all_items(mobileclient.ListThumbsUpTracks,
+                                   incremental=False, include_deleted=False,
+                                   updated_after=None)
+
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
                        genre_id=None):
@@ -608,14 +646,14 @@ class Mobileclient(_Base):
         return self._get_all_items(mobileclient.ListStations, incremental, include_deleted,
                                    updated_after=updated_after)
 
-    @utils.enforce_id_param
     def get_station_tracks(self, station_id, num_tracks=25):
         """Returns a list of dictionaries that each represent a track.
 
         Each call performs a separate sampling (with replacement?)
         from all possible tracks for the station.
 
-        :param station_id: the id of a radio station to retrieve tracks from
+        :param station_id: the id of a radio station to retrieve tracks from.
+          Use the special id ``'IFL'`` for the "I'm Feeling Lucky" station.
         :param num_tracks: the number of tracks to retrieve
 
         See :func:`get_all_songs` for the format of a track dictionary.
@@ -626,10 +664,11 @@ class Mobileclient(_Base):
         res = self._make_call(mobileclient.ListStationTracks,
                               station_id, num_tracks, recently_played=[])
 
-        if not res['data']['items']:
+        stations = res.get('data', {}).get('stations')
+        if not stations:
             return []
 
-        return res['data']['items'][0].get('tracks', [])
+        return stations[0].get('tracks', [])
 
     def search_all_access(self, query, max_results=50):
         """Queries the server for All Access songs and albums.
@@ -972,8 +1011,10 @@ class Mobileclient(_Base):
 
         return self._make_call(mobileclient.GetStoreTrack, store_track_id)
 
-    def get_genres(self):
+    def get_genres(self, parent_genre_id=None):
         """Retrieves information on Google Music genres.
+
+        :param parent_genre_id: An optional ID of the parent genre
 
         Using this method without an All Access subscription will always result in
         CallFailure being raised.
@@ -1002,4 +1043,4 @@ class Mobileclient(_Base):
         to seed an All Access radio station.
         """
 
-        return self._make_call(mobileclient.GetGenres)
+        return self._make_call(mobileclient.GetGenres, parent_genre_id)

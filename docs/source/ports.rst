@@ -17,6 +17,8 @@ Here are the ports I'm currently aware of:
 -  Javascript: `My Google Music Turntable uploader
    <https://github.com/simon-weber/Google-Music-Turntable-Uploader>`__
    (not a full port, just an example)
+-  Javascript (nodejs): "npm install playmusic" (https://github.com/jamon/playmusic)
+-  Ruby: `Loic Nageleisen <https://github.com/lloeki/ruby-skyjam>`__
 
 They're in various states of completion and maintenance because,
 well, building a port is tough.

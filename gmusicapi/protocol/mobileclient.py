@@ -20,7 +20,7 @@ from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
 # URL for sj service
-sj_url = 'https://www.googleapis.com/sj/v1.1/'
+sj_url = 'https://www.googleapis.com/sj/v1.5/'
 
 # shared schemas
 sj_track = {
@@ -35,7 +35,8 @@ sj_track = {
         'trackNumber': {'type': 'integer'},
         'durationMillis': {'type': 'string'},
         'albumArtRef': {'type': 'array',
-                        'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}}},
+                        'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}},
+                        'required': False},
         'artistArtRef': {'type': 'array',
                          'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}},
                          'required': False,
@@ -55,6 +56,8 @@ sj_track = {
         'year': {'type': 'integer', 'required': False},
         'rating': {'type': 'string', 'required': False},
         'genre': {'type': 'string', 'required': False},
+        'trackAvailableForSubscription': {'type': 'boolean'},
+        'contentType': {'type': 'string'},
     }
 }
 
@@ -116,7 +119,7 @@ sj_album = {
         'albumId': {'type': 'string'},
         'artist': {'type': 'string'},
         'artistId': {'type': 'array', 'items': {'type': 'string', 'blank': True}},
-        'year': {'type': 'integer'},
+        'year': {'type': 'integer', 'required': False},
         'tracks': {'type': 'array', 'items': sj_track, 'required': False},
         'description': {'type': 'string', 'required': False},
     }
@@ -536,8 +539,6 @@ class BatchMutatePlaylists(McBatchMutateCall):
     static_method = 'POST'
     static_url = sj_url + 'playlistbatch'
 
-    #TODO is it possible to mutate name through this?
-
     @staticmethod
     def build_playlist_deletes(playlist_ids):
         #TODO can probably pull this up one
@@ -555,18 +556,19 @@ class BatchMutatePlaylists(McBatchMutateCall):
                 (pl_id, new_name) in pl_id_name_pairs]
 
     @staticmethod
-    def build_playlist_adds(names):
+    def build_playlist_adds(pl_descriptions):
         """
-        :param names
+        :param pl_descriptions: [{'name': '', 'public': <bool>}]
         """
 
         return [{'create': {
             'creationTimestamp': '-1',
             'deleted': False,
             'lastModifiedTimestamp': '0',
-            'name': name,
-            'type': 'USER_GENERATED'
-        }} for name in names]
+            'name': pl_desc['name'],
+            'type': 'USER_GENERATED',
+            'accessControlled': pl_desc['public'],
+        }} for pl_desc in pl_descriptions]
 
 
 class BatchMutatePlaylistEntries(McBatchMutateCall):
@@ -646,6 +648,14 @@ class BatchMutatePlaylistEntries(McBatchMutateCall):
         return mutations
 
 
+class ListThumbsUpTracks(McListCall):
+    item_schema = sj_track
+    filter_text = 'tracks'
+
+    static_method = 'POST'
+    static_url = sj_url + 'ephemeral/top'
+
+
 class ListStations(McListCall):
     item_schema = sj_station
     filter_text = 'stations'
@@ -654,32 +664,23 @@ class ListStations(McListCall):
     static_url = sj_url + 'radio/station'
 
 
-class ListStationTracks(McListCall):
-    # this isn't really proper usage of the abc:
-    #  * there is no paging (assumed, not proven)
-    #  * the query interface is totally different
-
-    # clients.Mobileclient will
-    # just have to wire up the call itself
-
-    item_schema = {
+class ListStationTracks(McCall):
+    _res_schema = {
         'type': 'object',
         'additionalProperties': False,
         'properties': {
-            'radioId': {'type': 'string'},
-            'tracks': {'type': 'array', 'required': False, 'items': sj_track},
-        }
+            'kind': {'type': 'string'},
+            'data': {'type': 'object',
+                     'stations': {'type': 'array', 'items': sj_station},
+                     'required': False,
+                    },
+        },
     }
 
-    filter_text = 'stations'
-
+    static_headers = {'Content-Type': 'application/json'}
+    static_params = {'alt': 'json', 'include-tracks': 'true'}
     static_method = 'POST'
     static_url = sj_url + 'radio/stationfeed'
-
-    @staticmethod
-    def dynamic_params(*args, **kwargs):
-        # override the parent (which has params for paging support)
-        return {}
 
     @staticmethod
     def dynamic_data(station_id, num_entries, recently_played):
@@ -705,9 +706,9 @@ class ListStationTracks(McListCall):
     @staticmethod
     def filter_response(msg):
         filtered = copy.deepcopy(msg)
-        if 'tracks' in filtered['data']['items']:
-            filtered['data']['items']['tracks'] = \
-                    ["<%s tracks>" % len(filtered['data']['items']['tracks'])]
+        if 'stations' in filtered['data']:
+            filtered['data']['stations'] = \
+                    ["<%s stations>" % len(filtered['data']['stations'])]
         return filtered
 
 
@@ -835,11 +836,16 @@ class GetGenres(McCall):
                     'properties': {
                         'url': {'type': 'string'}
                     },
-                }
-            },
+                },
+                'required': False,
+           },
             'children': {
                 'type': 'array',
                 'items': {'type': 'string'},
+                'required': False,
+            },
+            'parentId': {
+                'type': 'string',
                 'required': False,
             }
         }
@@ -856,6 +862,10 @@ class GetGenres(McCall):
             }
         }
     }
+
+    @staticmethod
+    def dynamic_params(parent_genre_id):
+        return {'parent-genre': parent_genre_id}
 
 
 class GetArtist(McCall):
@@ -890,3 +900,40 @@ class GetAlbum(McCall):
     @staticmethod
     def dynamic_params(album_id, tracks):
         return {'nid': album_id, 'include-tracks': tracks}
+
+
+class IncrementPlayCount(McCall):
+    static_method = 'POST'
+    static_url = sj_url + 'trackstats'
+    static_params = {'alt': 'json'}
+    static_headers = {'Content-Type': 'application/json'}
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'responses': {
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'additionalProperties': False,
+                    'properties': {
+                        'id': {'type': 'string',
+                               'required': False},  # not provided for AA tracks?
+                        'response_code': {'type': 'string'},
+                    }
+                }
+            }
+        }
+    }
+
+    @staticmethod
+    def dynamic_data(sid, plays, playtime):
+        #TODO this can support multiple
+        return json.dumps({'track_stats': [{
+            'id': sid,
+            'incremental_plays': plays,
+            'last_play_time_millis': str(utils.datetime_to_microseconds(playtime)),
+            'type': 2 if sid.startswith('T') else 1,
+            'track_events': [],
+        }]})

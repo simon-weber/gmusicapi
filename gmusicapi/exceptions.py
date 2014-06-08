@@ -34,3 +34,7 @@ class AlreadyLoggedIn(Exception):
 
 class NotLoggedIn(Exception):
     pass
+
+
+class GmusicapiWarning(UserWarning):
+    pass

@@ -156,6 +156,7 @@ _all_expts = [
         ('matchedId', 'string', 'meaning unknown; related to scan and match?'),
         ('previewToken', 'string', 'meaning unknown'),
         ('lastPlaybackTimestamp', 'integer', 'UTC/microseconds: last time the track was played'),
+        ('lastRatingChangeTimestamp', 'integer', 'UTC/microseconds: last time the track was rated'),
     )
 ] + [
     Expectation(name + 'Norm', 'string', mutable=False, optional=False,

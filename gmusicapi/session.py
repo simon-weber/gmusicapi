@@ -4,6 +4,7 @@
 Sessions handle the details of authentication and transporting requests.
 """
 from contextlib import closing
+import cookielib
 
 import oauth2client
 import httplib2  # included with oauth2client
@@ -139,6 +140,18 @@ class Webclient(_Base):
             req_kwargs['params'].update({'u': 0, 'xt': rsession.cookies['xt']})
 
         return rsession.request(**req_kwargs)
+
+
+class Mobileclient(Webclient):
+    def login(self, email, password, *args, **kwargs):
+        success = super(Mobileclient, self).login(email, password, *args, **kwargs)
+
+        # Remove any webclient-specific cookies.
+        # As of Feb 2014, sending these will cause a 403 when
+        #  getting the stream url of an AA song.
+        self._rsession.cookies = cookielib.CookieJar()
+
+        return success
 
 
 class Musicmanager(_Base):

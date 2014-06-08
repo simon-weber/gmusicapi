@@ -8,11 +8,12 @@ an extra test playlist or song may result.
 """
 
 from collections import namedtuple
+from hashlib import md5
 import itertools
 import os
 import re
 import types
-from hashlib import md5
+import warnings
 
 from decorator import decorator
 from proboscis.asserts import (
@@ -40,8 +41,8 @@ TEST_AA_GENRE_ID = 'METAL'
 TEST_AA_SONG_ID = 'Tqqufr34tuqojlvkolsrwdwx7pe'
 
 # used for testing streaming.
-# differences between clients are from stream quality.
-TEST_AA_SONG_WC_HASH = '78d789b3e36820206da29d23c239171b'
+# differences between clients are presumably from stream quality.
+TEST_AA_SONG_WC_HASH = '731fc03139a6aa9e4fa2f970b4d6d64f'
 TEST_AA_SONG_MC_HASH = 'c1dcdf2b69fe809f717c0fc1f7303a27'
 
 # Amorphis
@@ -117,7 +118,7 @@ class ClientTests(object):
     user_songs = None
     aa_songs = None
 
-    playlist_id = None
+    playlist_ids = None
     plentry_ids = None
     station_ids = None
 
@@ -219,7 +220,7 @@ class ClientTests(object):
 
     @staticmethod
     @retry
-    def assert_list_with_deleted(method):
+    def assert_listing_contains_deleted_items(method):
         """
         Assert that some listing method includes deleted tracks.
 
@@ -246,20 +247,18 @@ class ClientTests(object):
         uploaded, matched, not_uploaded = self.mm.upload(fname)
 
         if len(not_uploaded) == 1 and 'ALREADY_EXISTS' in not_uploaded[fname]:
-            # If a previous test went wrong, the track might be there already.
-            #TODO This build will fail because of the warning - is that what we want?
-            assert_equal(matched, {})
-            assert_equal(uploaded, {})
+            # delete the song if it exists already because a previous test failed
+            self.mc.delete_songs(re.search(r'\(.*\)', not_uploaded[fname]).group().strip('()'))
 
-            # this matches the sid from the error message
-            user_sids.append(re.search(r'\(.*\)', not_uploaded[fname]).group().strip('()'))
-        else:
-            # Otherwise, it should have been uploaded normally.
-            assert_equal(not_uploaded, {})
-            assert_equal(matched, {})
-            assert_equal(uploaded.keys(), [fname])
+            # and retry the upload
+            uploaded, matched, not_uploaded = self.mm.upload(fname)
 
-            user_sids.append(uploaded[fname])
+        # Otherwise, it should have been uploaded normally.
+        assert_equal(not_uploaded, {})
+        assert_equal(matched, {})
+        assert_equal(uploaded.keys(), [fname])
+
+        user_sids.append(uploaded[fname])
 
         if test_all_access_features():
             aa_sids.append(self.mc.add_aa_track(TEST_AA_SONG_ID))
@@ -272,18 +271,19 @@ class ClientTests(object):
 
     @test
     def playlist_create(self):
-        playlist_id = self.mc.create_playlist(TEST_PLAYLIST_NAME)
+        mc_id = self.mc.create_playlist(TEST_PLAYLIST_NAME)
+        wc_id = self.wc.create_playlist(TEST_PLAYLIST_NAME, "", public=True)
 
         # like song_create, retry until the playlist appears
         @retry
-        def assert_playlist_exists(plid):
+        def assert_playlist_exists(plids):
             found = [p for p in self.mc.get_all_playlists()
-                     if p['id'] == plid]
+                     if p['id'] in plids]
 
-            assert_equal(len(found), 1)
+            assert_equal(len(found), 2)
 
-        assert_playlist_exists(playlist_id)
-        self.playlist_id = playlist_id
+        assert_playlist_exists([mc_id, wc_id])
+        self.playlist_ids = [mc_id, wc_id]
 
     @test(depends_on=[playlist_create, song_create],
           runs_after_groups=['playlist.exists', 'song.exists'])
@@ -300,7 +300,7 @@ class ClientTests(object):
 
         song_ids += [double_id] * 2
 
-        plentry_ids = self.mc.add_songs_to_playlist(self.playlist_id, song_ids)
+        plentry_ids = self.mc.add_songs_to_playlist(self.playlist_ids[0], song_ids)
 
         @retry
         def assert_plentries_exist(plid, plentry_ids):
@@ -310,7 +310,7 @@ class ClientTests(object):
 
             assert_equal(len(found), len(plentry_ids))
 
-        assert_plentries_exist(self.playlist_id, plentry_ids)
+        assert_plentries_exist(self.playlist_ids[0], plentry_ids)
         self.plentry_ids = plentry_ids
 
     @test(groups=['plentry'], depends_on=[plentry_create],
@@ -330,19 +330,20 @@ class ClientTests(object):
 
             assert_equal(len(found), 0)
 
-        assert_plentries_removed(self.playlist_id, self.plentry_ids)
-        #self.assert_list_with_deleted(self.mc_get_playlist_songs)
+        assert_plentries_removed(self.playlist_ids[0], self.plentry_ids)
+        #self.assert_listing_contains_deleted_items(self.mc_get_playlist_songs)
 
     @test(groups=['playlist'], depends_on=[playlist_create],
           runs_after=[plentry_delete],
           runs_after_groups=['playlist.exists'],
           always_run=True)
     def playlist_delete(self):
-        if self.playlist_id is None:
-            raise SkipTest('did not store self.playlist_id')
+        if self.playlist_ids is None:
+            raise SkipTest('did not store self.playlist_ids')
 
-        res = self.mc.delete_playlist(self.playlist_id)
-        assert_equal(res, self.playlist_id)
+        for plid in self.playlist_ids:
+            res = self.mc.delete_playlist(plid)
+            assert_equal(res, plid)
 
         @retry
         def assert_playlist_does_not_exist(plid):
@@ -351,8 +352,9 @@ class ClientTests(object):
 
             assert_equal(len(found), 0)
 
-        assert_playlist_does_not_exist(self.playlist_id)
-        self.assert_list_with_deleted(self.mc.get_all_playlists)
+        for plid in self.playlist_ids:
+            assert_playlist_does_not_exist(plid)
+            self.assert_listing_contains_deleted_items(self.mc.get_all_playlists)
 
     @test
     def station_create(self):
@@ -404,7 +406,7 @@ class ClientTests(object):
 
         for station_id in self.station_ids:
             assert_station_deleted(station_id)
-        self.assert_list_with_deleted(self.mc.get_all_stations)
+        self.assert_listing_contains_deleted_items(self.mc.get_all_stations)
 
     @test(groups=['song'], depends_on=[song_create],
           runs_after=[plentry_delete, station_delete],
@@ -418,11 +420,13 @@ class ClientTests(object):
                 if i % 2 == 0:
                     res = self.mc.delete_songs(testsong.sid)
                 else:
-                    res = self.wc.delete_songs(testsong.sid)
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        res = self.wc.delete_songs(testsong.sid)
                 check.equal(res, [testsong.sid])
 
         self.assert_songs_state(self.mc.get_all_songs, sids(self.all_songs), present=False)
-        self.assert_list_with_deleted(self.mc.get_all_songs)
+        self.assert_listing_contains_deleted_items(self.mc.get_all_songs)
 
     ## These decorators just prevent setting groups and depends_on over and over.
     ## They won't work right with additional settings; if that's needed this
@@ -470,18 +474,24 @@ class ClientTests(object):
     ## WC tests
     ##---------
 
-    @song_test
-    def wc_list_new_songs(self):
-        self.assert_songs_state(self.wc.get_all_songs, sids(self.all_songs), present=True)
-
-    @test
-    def wc_list_songs_inc_equal(self):
-        self.assert_list_inc_equivalence(self.wc.get_all_songs)
-
     @test
     def wc_get_registered_devices(self):
         # no logic; just checking schema
         self.wc.get_registered_devices()
+
+    @test
+    def wc_get_shared_playlist_info(self):
+        expected = {
+            u'author': u'gmusic api',
+            u'description': u'description here',
+            u'title': u'public title here',
+            u'num_tracks': 2
+        }
+
+        assert_equal(
+            self.wc.get_shared_playlist_info(TEST_PLAYLIST_SHARETOKEN),
+            expected
+        )
 
     @test
     @all_access
@@ -519,80 +529,13 @@ class ClientTests(object):
         url = urls[0]
 
         assert_is_not_none(url)
-        assert_equal(url[:7], 'http://')
+        assert_equal(url.split(':')[0], 'https')
 
     @song_test
     def wc_upload_album_art(self):
-        self.wc.upload_album_art(self.user_songs[0].sid, test_utils.image_filename)
-
-        self.wc.change_song_metadata(self.user_songs[0].full_data)
-        #TODO redownload and verify against original?
-
-    # is this worth the trouble?
-    #@song_test
-    #def wc_change_metadata(self):
-    #    orig_md = self.song.full_data
-
-    #    # Change all mutable entries.
-
-    #    new_md = orig_md.copy()
-
-    #    for name, expt in md_expectations.items():
-    #        if name in orig_md and expt.mutable:
-    #            old_val = orig_md[name]
-    #            new_val = test_utils.modify_md(name, old_val)
-
-    #            assert_not_equal(new_val, old_val)
-    #            new_md[name] = new_val
-
-    #    #TODO check into attempting to mutate non mutables
-    #    self.wc.change_song_metadata(new_md)
-
-    #    #Recreate the dependent md to what they should be (based on how orig_md was changed)
-    #    correct_dependent_md = {}
-    #    for name, expt in md_expectations.items():
-    #        if expt.depends_on and name in orig_md:
-    #            master_name = expt.depends_on
-    #            correct_dependent_md[name] = expt.dependent_transformation(new_md[master_name])
-
-    #    @retry
-    #    def assert_metadata_is(sid, orig_md, correct_dependent_md):
-    #        result_md = self._assert_get_song(sid)
-
-    #        with Check() as check:
-    #            for name, expt in md_expectations.items():
-    #                if name in orig_md:
-    #                    #TODO really need to factor out to test_utils?
-
-    #                    #Check mutability if it's not volatile or dependent.
-    #                    if not expt.volatile and expt.depends_on is None:
-    #                        same, message = test_utils.md_entry_same(name, orig_md, result_md)
-    #                        check.equal(not expt.mutable, same,
-    #                                    "metadata mutability incorrect: " + message)
-
-    #                    #Check dependent md.
-    #                    if expt.depends_on is not None:
-    #                        same, message = test_utils.md_entry_same(
-    #                            name, correct_dependent_md, result_md
-    #                        )
-    #                        check.true(same, "dependent metadata incorrect: " + message)
-
-    #    assert_metadata_is(self.song.sid, orig_md, correct_dependent_md)
-
-    #    #Revert the metadata.
-    #    self.wc.change_song_metadata(orig_md)
-
-    #    @retry
-    #    def assert_metadata_reverted(sid, orig_md):
-    #        result_md = self._assert_get_song(sid)
-
-    #        with Check() as check:
-    #            for name in orig_md:
-    #                #If it's not volatile, it should be back to what it was.
-    #                if not md_expectations[name].volatile:
-    #                    same, message = test_utils.md_entry_same(name, orig_md, result_md)
-    #                    check.true(same, "failed to revert: " + message)
-    #    assert_metadata_reverted(self.song.sid, orig_md)
+        url = self.wc.upload_album_art(self.user_songs[0].sid, test_utils.image_filename)
+        assert_equal(url[:7], 'http://')
+        #TODO download the track and verify the metadata changed
 
     ##---------
     ## MC tests
@@ -618,13 +561,21 @@ class ClientTests(object):
         audio = self.mc.session._rsession.get(url).content
         assert_equal(md5(audio).hexdigest(), TEST_AA_SONG_MC_HASH)
 
+    @song_test
+    def mc_get_uploaded_track_stream_url(self):
+        url = self.mc.get_stream_url(self.user_songs[0].sid)
+
+        assert_is_not_none(url)
+        assert_equal(url[:7], 'http://')
+
     @staticmethod
     @retry
-    def _assert_song_rating(method, sid, rating):
+    def _assert_song_key_equal_to(method, sid, key, value):
         """
         :param method: eg self.mc.get_all_songs
         :param sid: song id
-        :param rating: a string
+        :param key: eg 'rating'
+        :param value: eg '1'
         """
         songs = method()
 
@@ -636,7 +587,7 @@ class ClientTests(object):
 
         assert_equal(len(found), 1)
 
-        assert_equal(found[0]['rating'], rating)
+        assert_equal(found[0][key], value)
         return found[0]
 
     # how can I get the rating key to show up for store tracks?
@@ -653,20 +604,81 @@ class ClientTests(object):
 
     #     self.mc.change_song_metadata(song)
 
-    #     self._assert_song_rating(lambda: self.mc.get_track_info(TEST_AA_SONG_ID),
+    #     self._assert_song_key_equal_to(lambda: self.mc.get_track_info(TEST_AA_SONG_ID),
     #                              id_or_nid(song),
     #                              song['rating'])
 
     @song_test
     def mc_change_uploaded_song_rating(self):
-        song = self._assert_song_rating(self.mc.get_all_songs,
-                                        self.all_songs[0].sid,
-                                        '0')  # initially unrated
+        song = self._assert_song_key_equal_to(
+            self.mc.get_all_songs,
+            self.all_songs[0].sid,
+            'rating',
+            '0')  # initially unrated
 
         song['rating'] = '1'
         self.mc.change_song_metadata(song)
 
-        self._assert_song_rating(self.mc.get_all_songs, song['id'], '1')
+        self._assert_song_key_equal_to(self.mc.get_all_songs, song['id'], 'rating', '1')
+
+        song['rating'] = '0'
+        self.mc.change_song_metadata(song)
+
+    @song_test
+    @all_access
+    def mc_get_thumbs_up_songs(self):
+        song = self.mc.get_track_info(TEST_AA_SONG_ID)
+
+        song['rating'] = '5'
+        self.mc.change_song_metadata(song)
+
+        thumbs_up_songs = self.mc.get_thumbs_up_songs()
+
+        found = [e for e in thumbs_up_songs
+                 if e['nid'] == song['nid']]
+
+        assert_equal(len(found), 1)
+
+        song['rating'] = '0'
+        self.mc.change_song_metadata(song)
+
+    def _test_increment_playcount(self, sid):
+        matching = [t for t in self.mc.get_all_songs()
+                    if t['id'] == sid]
+        assert_equal(len(matching), 1)
+
+        # playCount is an optional field.
+        initial_playcount = matching[0].get('playCount', 0)
+
+        self.mc.increment_song_playcount(sid, 2)
+
+        self._assert_song_key_equal_to(
+            self.mc.get_all_songs,
+            sid,
+            'playCount',
+            initial_playcount + 2)
+
+    @song_test
+    def mc_increment_uploaded_song_playcount(self):
+        self._test_increment_playcount(self.all_songs[0].sid)
+
+    @song_test
+    @all_access
+    def mc_increment_aa_song_playcount(self):
+        self._test_increment_playcount(self.all_songs[1].sid)
+
+    @song_test
+    def mc_change_uploaded_song_title_fails(self):
+        # this used to work, but now only ratings can be changed.
+        # this test is here so I can tell if this starts working again.
+        song = self.assert_songs_state(self.mc.get_all_songs, [self.all_songs[0].sid],
+                                       present=True)[0]
+
+        old_title = song.title
+        new_title = old_title + '_mod'
+        self.mc.change_song_metadata({'id': song.sid, 'title': new_title})
+
+        self._assert_song_key_equal_to(self.mc.get_all_songs, song.sid, 'title', old_title)
 
     @song_test
     def mc_list_songs_inc_equal(self):
@@ -687,8 +699,8 @@ class ClientTests(object):
     @playlist_test
     def mc_change_playlist_name(self):
         new_name = TEST_PLAYLIST_NAME + '_mod'
-        plid = self.mc.change_playlist_name(self.playlist_id, new_name)
-        assert_equal(self.playlist_id, plid)
+        plid = self.mc.change_playlist_name(self.playlist_ids[0], new_name)
+        assert_equal(self.playlist_ids[0], plid)
 
         @retry  # change takes time to propogate
         def assert_name_equal(plid, name):
@@ -699,11 +711,11 @@ class ClientTests(object):
             assert_equal(len(found), 1)
             assert_equal(found[0]['name'], name)
 
-        assert_name_equal(self.playlist_id, new_name)
+        assert_name_equal(self.playlist_ids[0], new_name)
 
         # revert
-        self.mc.change_playlist_name(self.playlist_id, TEST_PLAYLIST_NAME)
-        assert_name_equal(self.playlist_id, TEST_PLAYLIST_NAME)
+        self.mc.change_playlist_name(self.playlist_ids[0], TEST_PLAYLIST_NAME)
+        assert_name_equal(self.playlist_ids[0], TEST_PLAYLIST_NAME)
 
     @retry
     def _mc_assert_ple_position(self, entry, pos):
@@ -726,7 +738,7 @@ class ClientTests(object):
         for from_pos, to_pos in [pair for pair in
                                  itertools.product(range(playlist_len), repeat=2)
                                  if pair[0] < pair[1]]:
-            pl = self.mc_get_playlist_songs(self.playlist_id)
+            pl = self.mc_get_playlist_songs(self.playlist_ids[0])
 
             from_e = pl[from_pos]
 
@@ -755,7 +767,7 @@ class ClientTests(object):
         for from_pos, to_pos in [pair for pair in
                                  itertools.product(range(playlist_len), repeat=2)
                                  if pair[0] > pair[1]]:
-            pl = self.mc_get_playlist_songs(self.playlist_id)
+            pl = self.mc_get_playlist_songs(self.playlist_ids[0])
 
             from_e = pl[from_pos]
 
@@ -782,7 +794,7 @@ class ClientTests(object):
     # separate calls in the general case.
     #@plentry_test
     #def mc_reorder_ples_forwards(self):
-    #    pl = self.mc_get_playlist_songs(self.playlist_id)
+    #    pl = self.mc_get_playlist_songs(self.playlist_ids[0])
     #    # rot2, eg 0123 -> 2301
     #    pl.append(pl.pop(0))
     #    pl.append(pl.pop(0))
@@ -806,6 +818,11 @@ class ClientTests(object):
             self.mc.get_station_tracks(station_id, num_tracks=1)
             # used to assert that at least 1 track came back, but
             # our dummy uploaded track won't match anything
+
+    @all_access
+    def mc_list_IFL_station_tracks(self):
+        assert_equal(len(self.mc.get_station_tracks('IFL', num_tracks=1)),
+                     1)
 
     @test
     @all_access
@@ -861,3 +878,4 @@ class ClientTests(object):
     @all_access
     def mc_genres(self):
         self.mc.get_genres()  # just for the schema
+        self.mc.get_genres('METAL')  # just for the schema

@@ -15,6 +15,7 @@ docs/build
 dist
 __pycache__
 gmusicapi.log
+*egg-info
 
 bin
 lib

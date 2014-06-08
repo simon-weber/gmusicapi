@@ -4,4 +4,5 @@ include docs/Makefile
 recursive-include docs/source *.py *.rst
 include gmusicapi/test/audiotest*
 include gmusicapi/test/imagetest*
+include gmusicapi/test/*.jsarray
 global-exclude _local_*.py

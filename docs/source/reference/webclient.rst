@@ -12,12 +12,6 @@ Setup and login
 .. automethod:: Webclient.login
 .. automethod:: Webclient.logout
 
-Getting songs and playlists
----------------------------
-.. automethod:: Webclient.get_all_songs
-.. automethod:: Webclient.get_all_playlist_ids
-.. automethod:: Webclient.get_playlist_songs
-
 Song downloading and streaming
 ------------------------------
 .. automethod:: Webclient.get_song_download_info
@@ -27,14 +21,15 @@ Song downloading and streaming
 
 Song manipulation
 -----------------
-.. automethod:: Webclient.change_song_metadata
 .. automethod:: Webclient.upload_album_art
 .. automethod:: Webclient.delete_songs
 
-Playlist content manipulation
------------------------------
+Playlist manipulation
+---------------------
+.. automethod:: Webclient.create_playlist
 .. automethod:: Webclient.add_songs_to_playlist
 .. automethod:: Webclient.remove_songs_from_playlist
+.. automethod:: Webclient.get_shared_playlist_info
 
 Other
 -----

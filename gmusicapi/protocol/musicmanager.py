@@ -161,9 +161,7 @@ class UploadMetadata(MmCall):
     #these collections define how locker_pb2.Track fields align to mutagen's.
     shared_fields = ('album', 'artist', 'composer', 'genre')
     field_map = {  # mutagen: Track
-        #albumartist is 'performer' according to:
-        # http://goo.gl/5i18X
-        'performer': 'album_artist',
+        'albumartist': 'album_artist',
         'bpm': 'beats_per_minute',
     }
     count_fields = {  # mutagen: (part, total)
@@ -258,6 +256,13 @@ class UploadMetadata(MmCall):
                 log.warning("could not parse date md for '%s': (%s)", filepath, e)
             else:
                 track_set('year', datetime.year)
+
+        for null_field in ['artist', 'album']:
+            # If these fields aren't provided, they'll render as "undefined" in the web interface;
+            # see https://github.com/simon-weber/Unofficial-Google-Music-API/issues/236.
+            # Defaulting them to an empty string fixes this.
+            if null_field not in audio:
+                track_set(null_field, '')
 
         #Mass-populate the rest of the simple fields.
         #Merge shared and unshared fields into {mutagen: Track}.

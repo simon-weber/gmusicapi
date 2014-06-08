@@ -16,7 +16,7 @@ from gmusicapi.compat import json
 from gmusicapi.exceptions import CallFailure, ValidationException
 from gmusicapi.protocol.metadata import md_expectations
 from gmusicapi.protocol.shared import Call, authtypes
-from gmusicapi.utils import utils
+from gmusicapi.utils import utils, jsarray
 
 base_url = 'https://play.google.com/music/'
 service_url = base_url + 'services/'
@@ -122,6 +122,25 @@ class WcCall(Call):
     @classmethod
     def parse_response(cls, response):
         return cls._parse_json(response.text)
+
+
+class CreatePlaylist(WcCall):
+    """Adds songs to a playlist."""
+    static_method = 'POST'
+    static_url = service_url + 'createplaylist'
+    static_params = {'format': 'jsarray'}
+
+    _res_schema = {
+        "type": "array",
+        # eg:
+        # [[0,2]
+        # ,["id","sharetoken",[]
+        #  ,<millis>]]
+    }
+
+    @staticmethod
+    def dynamic_data(name, description, public, session_id=""):
+        return json.dumps([[session_id, 1], [public, name, description, []]])
 
 
 class AddToPlaylist(WcCall):
@@ -294,131 +313,33 @@ class DeleteSongs(WcCall):
         return filtered
 
 
-class GetLibrarySongs(WcCall):
-    """Loads tracks from the library.
-
-    Libraries can have many tracks, so GM gives them back in chunks.
-
-    Chunks will send a continuation token to get the next chunk.
-
-    The first request needs no continuation token.
-    The last response will not send a token.
-    """
-
-    static_method = 'POST'
-    static_url = service_url + 'loadalltracks'
-
-    _res_schema = {
-        "type": "object",
-        "properties": {
-            "continuation": {"type": "boolean"},
-            "differentialUpdate": {"type": "boolean"},
-            "playlistId": {"type": "string"},
-            "requestTime": {"type": "integer"},
-            "playlist": song_array,
-        },
-        "additionalProperties": {
-            "continuationToken": {"type": "string"}}
-    }
-
-    @staticmethod
-    def dynamic_data(cont_token=None):
-        """:param cont_token: (optional) token to get the next library chunk."""
-        if not cont_token:
-            req = {}
-        else:
-            req = {"continuationToken": cont_token}
-
-        return {'json': json.dumps(req)}
-
-    @staticmethod
-    def filter_response(msg):
-        """Only log the number of songs."""
-        filtered = copy.copy(msg)
-        filtered['playlist'] = ["<%s songs>" % len(filtered.get('playlist', []))]
-
-        return filtered
-
-
-class GetPlaylistSongs(WcCall):
-    """Loads tracks from a playlist.
-    Tracks include playlistEntryIds.
-    """
-
-    static_method = 'POST'
-    static_url = service_url + 'loadplaylist'
-
-    @classmethod
-    def dynamic_data(cls, playlist_id):
-        """
-        :param playlist_id: id to retrieve from, or 'all' to get all playlists.
-        """
-
-        #This call has a dynamic response schema based on the request.
-        # TODO wow, this is a terrible idea
-
-        if playlist_id == 'all':
-            cls._res_schema = {
-                "type": "object",
-                "properties": {
-                    "playlists": pl_array,
-                },
-                "additionalProperties": False
-            }
-
-            return {'json': json.dumps({})}
-
-        else:
-            cls._res_schema = pl_schema
-            return {'json': json.dumps({'id': playlist_id})}
-
-    @staticmethod
-    def filter_response(msg):
-        """Log number of songs/playlists."""
-        filtered = copy.copy(msg)
-
-        if 'playlists' in msg:
-            filtered['playlists'] = ["<%s playlists>" % len(filtered['playlists'])]
-
-        else:
-            filtered['playlist'] = ["<%s songs>" % len(filtered['playlist'])]
-
-        return filtered
-
-
 class ChangeSongMetadata(WcCall):
     """Edit the metadata of songs."""
 
     static_method = 'POST'
-    static_url = service_url + 'modifyentries'
+    static_url = service_url + 'modifytracks'
+    static_params = {'format': 'jsarray'}
 
     _res_schema = {
-        "type": "object",
-        "properties": {
-            "success": {"type": "boolean"},
-            "songs": song_array
-        },
-        "additionalProperties": False
+        "type": "array",
+        # eg [[0,1],[1393706382978]]
     }
 
     @staticmethod
-    def dynamic_data(songs):
+    def dynamic_data(songs, session_id=""):
         """
-        :param songs: a list of dictionary representations of songs
+        :param songs: a list of dicts ``{'id': '...', 'albumArtUrl': '...'}``
         """
-        return {'json': json.dumps({'entries': songs})}
+        if any([s for s in songs if set(s.keys()) != set(['id', 'albumArtUrl'])]):
+            raise ValueError("ChangeSongMetadata only supports the 'id' and 'albumArtUrl' keys."
+                             " All other keys must be removed.")
 
-    @staticmethod
-    def filter_response(msg):
-        filtered = copy.copy(msg)
-        filtered['songs'] = ["<%s songs>" % len(filtered.get('songs', []))]
-        return filtered
+        # jsarray is just wonderful
+        jsarray = [[session_id, 1]]
+        song_arrays = [[s['id'], None, s['albumArtUrl']] + [None] * 36 + [[]] for s in songs]
+        jsarray.append([song_arrays])
 
-    @staticmethod
-    def validate(response, msg):
-        """The data that comes back doesn't follow normal metadata rules,
-        and is meaningless anyway; it'll lie about results."""
-        pass
+        return json.dumps(jsarray)
 
 
 class GetDownloadInfo(WcCall):
@@ -567,6 +488,7 @@ class GetSettings(WcCall):
             'id': {'type': 'string'},
             'name': {'type': 'string', 'blank': True},
             'type': {'type': 'string'},
+            'lastUsedMs': {'type': 'integer'},
 
             # only for type == PHONE:
             'model': {'type': 'string', 'blank': True, 'required': False},
@@ -634,3 +556,25 @@ class DeauthDevice(WcCall):
     def validate(cls, response, msg):
         if msg.text != '{}':
             raise ValidationException("expected an empty object; received %r" % msg.text)
+
+
+class GetSharedPlaylist(WcCall):
+    """Get the contents and metadata for a shared playlist."""
+    static_method = 'POST'
+    static_url = service_url + 'loadsharedplaylist'
+    static_params = {'format': 'jsarray'}
+
+    _res_schema = {
+        'type': 'array',
+    }
+
+    @classmethod
+    def parse_response(cls, response):
+        return cls._parse_json(jsarray.to_json(response.text))
+
+    @staticmethod
+    def dynamic_data(session_id, share_token):
+        return json.dumps([
+            [session_id, 1],
+            [share_token]
+        ])

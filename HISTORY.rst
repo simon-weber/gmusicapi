@@ -5,6 +5,21 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
+4.0.0
++++++
+released 2014-06-08
+
+- breaking: remove webclient.change_song_metadata; use mobileclient.change_song_metadata instead
+- breaking: remove webclient.get_all_songs; use mobileclient.get_all_songs instead
+- breaking: remove webclient.get_playlist_songs; use mobileclient.get_all_user_playlist_contents instead
+- breaking: remove webclient.get_all_playlist_ids; use mobileclient.get_all_user_playlists instead
+- breaking: webclient.upload_album_art now returns a url to the uploaded image
+- breaking: due to backend changes, mobileclient.change_song_metadata can only change ratings
+- add mobileclient.get_thumbs_up_songs
+- add mobileclient.increment_song_playcount
+- add webclient.create_playlist, which is capable of creating public playlists
+- add webclient.get_shared_playlist_info
+
 3.1.0
 +++++
 released 2014-01-20
@@ -31,7 +46,6 @@ released 2013-11-03
 - add Mobileclient.get_track_info
 - add Mobileclient.get_genres
 - compatibility fixes
-
 
 2.0.0
 +++++

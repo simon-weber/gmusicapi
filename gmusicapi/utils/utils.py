@@ -3,6 +3,7 @@
 """Utility functions used across api code."""
 
 from bisect import bisect_left
+from distutils import spawn
 import errno
 import functools
 import inspect
@@ -12,13 +13,14 @@ import re
 import subprocess
 import time
 import traceback
+import warnings
 
 from decorator import decorator
 from google.protobuf.descriptor import FieldDescriptor
 
 from gmusicapi import __version__
 from gmusicapi.compat import my_appdirs
-from gmusicapi.exceptions import CallFailure
+from gmusicapi.exceptions import CallFailure, GmusicapiWarning
 
 # this controls the crazy logging setup that checks the callstack;
 #  it should be monkey-patched to False after importing to disable it.
@@ -105,6 +107,27 @@ class DynamicClientLogger(object):
 
 
 log = DynamicClientLogger(__name__)
+
+
+def deprecated(instructions):
+    """Flags a method as deprecated.
+
+    :param instructions: human-readable note to assist migration.
+    """
+
+    @decorator
+    def wrapper(func, *args, **kwargs):
+        message = "{0} is deprecated and may break unexpectedly.\n{1}".format(
+            func.__name__,
+            instructions)
+
+        warnings.warn(message,
+                      GmusicapiWarning,
+                      stacklevel=2)
+
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
 def longest_increasing_subseq(seq):
@@ -401,15 +424,13 @@ def pb_set(msg, field_name, val):
     return True
 
 
-def transcode_to_mp3(filepath, quality=3, slice_start=None, slice_duration=None):
+def transcode_to_mp3(filepath, quality='320k', slice_start=None, slice_duration=None):
     """Return the bytestring result of transcoding the file at *filepath* to mp3.
     An ID3 header is not included in the result.
 
-    Currently, avconv is required to be installed and in the path when using this.
-
     :param filepath: location of file
-    :param quality: if int, pass to avconv -qscale. if string, pass to avconv -ab
-                    -qscale roughly corresponds to libmp3lame -V0, -V1...
+    :param quality: if int, pass to -q:a. if string, pass to -b:a
+                    -q:a roughly corresponds to libmp3lame -V0, -V1...
     :param slice_start: (optional) transcode a slice, starting at this many seconds
     :param slice_duration: (optional) when used with slice_start, the number of seconds in the slice
 
@@ -417,7 +438,12 @@ def transcode_to_mp3(filepath, quality=3, slice_start=None, slice_duration=None)
     """
 
     err_output = None
-    cmd = ['avconv', '-i', filepath]
+    cmd_path = spawn.find_executable('ffmpeg')
+    if cmd_path is None:
+        cmd_path = spawn.find_executable('avconv')
+        if cmd_path is None:
+            raise IOError('Neither ffmpeg nor avconv was found in your PATH')
+    cmd = [cmd_path, '-i', filepath]
 
     if slice_duration is not None:
         cmd.extend(['-t', str(slice_duration)])
@@ -425,9 +451,9 @@ def transcode_to_mp3(filepath, quality=3, slice_start=None, slice_duration=None)
         cmd.extend(['-ss', str(slice_start)])
 
     if isinstance(quality, int):
-        cmd.extend(['-qscale', str(quality)])
+        cmd.extend(['-q:a', str(quality)])
     elif isinstance(quality, basestring):
-        cmd.extend(['-ab', quality])
+        cmd.extend(['-b:a', quality])
     else:
         raise ValueError("quality must be int or string, but received %r" % quality)
 
