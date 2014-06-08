@@ -78,6 +78,12 @@ class Webclient(_Base):
     def get_shared_playlist_info(self, share_token):
         """
         Returns a dictionary with four keys: author, description, num_tracks, and title.
+
+        :param share_token: from ``playlist['shareToken']``, or a playlist share
+          url (``https://play.google.com/music/playlist/<token>``).
+
+          Note that tokens from urls will need to be url-decoded,
+          eg ``AM...%3D%3D`` becomes ``AM...==``.
         """
 
         res = self._make_call(webclient.GetSharedPlaylist, '', share_token)
