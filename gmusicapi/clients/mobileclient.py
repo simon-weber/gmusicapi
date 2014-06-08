@@ -646,14 +646,14 @@ class Mobileclient(_Base):
         return self._get_all_items(mobileclient.ListStations, incremental, include_deleted,
                                    updated_after=updated_after)
 
-    @utils.enforce_id_param
     def get_station_tracks(self, station_id, num_tracks=25):
         """Returns a list of dictionaries that each represent a track.
 
         Each call performs a separate sampling (with replacement?)
         from all possible tracks for the station.
 
-        :param station_id: the id of a radio station to retrieve tracks from
+        :param station_id: the id of a radio station to retrieve tracks from.
+          Use the special id ``'IFL'`` for the "I'm Feeling Lucky" station.
         :param num_tracks: the number of tracks to retrieve
 
         See :func:`get_all_songs` for the format of a track dictionary.

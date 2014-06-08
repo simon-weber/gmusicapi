@@ -610,7 +610,6 @@ class ClientTests(object):
         song['rating'] = '0'
         self.mc.change_song_metadata(song)
 
-        
     @song_test
     @all_access
     def mc_get_thumbs_up_songs(self):
@@ -804,6 +803,11 @@ class ClientTests(object):
             self.mc.get_station_tracks(station_id, num_tracks=1)
             # used to assert that at least 1 track came back, but
             # our dummy uploaded track won't match anything
+
+    @all_access
+    def mc_list_IFL_station_tracks(self):
+        assert_equal(len(self.mc.get_station_tracks('IFL', num_tracks=1)),
+                     1)
 
     @test
     @all_access
