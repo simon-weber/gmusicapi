@@ -16,7 +16,7 @@ from gmusicapi.compat import json
 from gmusicapi.exceptions import CallFailure, ValidationException
 from gmusicapi.protocol.metadata import md_expectations
 from gmusicapi.protocol.shared import Call, authtypes
-from gmusicapi.utils import utils
+from gmusicapi.utils import utils, jsarray
 
 base_url = 'https://play.google.com/music/'
 service_url = base_url + 'services/'
@@ -556,3 +556,25 @@ class DeauthDevice(WcCall):
     def validate(cls, response, msg):
         if msg.text != '{}':
             raise ValidationException("expected an empty object; received %r" % msg.text)
+
+
+class GetSharedPlaylist(WcCall):
+    """Get the contents and metadata for a shared playlist."""
+    static_method = 'POST'
+    static_url = service_url + 'loadsharedplaylist'
+    static_params = {'format': 'jsarray'}
+
+    _res_schema = {
+        'type': 'array',
+    }
+
+    @classmethod
+    def parse_response(cls, response):
+        return cls._parse_json(jsarray.to_json(response.text))
+
+    @staticmethod
+    def dynamic_data(session_id, share_token):
+        return json.dumps([
+            [session_id, 1],
+            [share_token]
+        ])

@@ -15,9 +15,10 @@ released XXXX-XX-XX
 - breaking: remove webclient.get_all_playlist_ids; use mobileclient.get_all_user_playlists instead
 - breaking: webclient.upload_album_art now returns a url to the uploaded image
 - breaking: due to backend changes, mobileclient.change_song_metadata can only change ratings
-- add webclient.create_playlist, which is capable of creating public playlists
-- add mobileclient.increment_song_playcount
 - add mobileclient.get_thumbs_up_songs
+- add mobileclient.increment_song_playcount
+- add webclient.create_playlist, which is capable of creating public playlists
+- add webclient.get_shared_playlist_info
 
 3.1.0
 +++++

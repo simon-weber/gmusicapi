@@ -480,6 +480,20 @@ class ClientTests(object):
         self.wc.get_registered_devices()
 
     @test
+    def wc_get_shared_playlist_info(self):
+        expected = {
+            u'author': u'gmusic api',
+            u'description': u'description here',
+            u'title': u'public title here',
+            u'num_tracks': 2
+        }
+
+        assert_equal(
+            self.wc.get_shared_playlist_info(TEST_PLAYLIST_SHARETOKEN),
+            expected
+        )
+
+    @test
     @all_access
     def wc_get_aa_stream_urls(self):
         urls = self.wc.get_stream_urls(TEST_AA_SONG_ID)

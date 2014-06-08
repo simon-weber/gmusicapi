@@ -74,6 +74,22 @@ class Webclient(_Base):
 
         return res[1][0]
 
+    def get_shared_playlist_info(self, share_token):
+        """
+        Returns a dictionary with four keys: author, description, num_tracks, and title.
+        """
+
+        res = self._make_call(webclient.GetSharedPlaylist, '', share_token)
+        num_tracks = len(res[1][0])
+        md = res[1][1]
+
+        return {
+            u'author': md[8],
+            u'description': md[7],
+            u'num_tracks': num_tracks,
+            u'title': md[1],
+        }
+
     def get_registered_devices(self):
         """
         Returns a list of dictionaries representing devices associated with the account.
