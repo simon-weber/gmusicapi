@@ -5,9 +5,9 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-4.0.0-dev
-+++++++++
-released XXXX-XX-XX
+4.0.0
++++++
+released 2014-06-08
 
 - breaking: remove webclient.change_song_metadata; use mobileclient.change_song_metadata instead
 - breaking: remove webclient.get_all_songs; use mobileclient.get_all_songs instead
