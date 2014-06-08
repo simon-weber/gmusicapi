@@ -1,15 +1,16 @@
 language: python
 python:
   - '2.6'
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq libav-tools libavcodec-extra-53
 install:
   - pip install coveralls
   - python setup.py sdist --formats=zip -k
   - find ./dist -iname "*.zip" -print0 | xargs -0 pip install
   - wget https://gist.github.com/simon-weber/8211306/raw/travis-secure-redefine.py
+before_script: rm -rf gmusicapi  # allow coverage to find installed package
 script: coverage run --source=gmusicapi travis-secure-redefine.py 'python -m gmusicapi.test.run_tests' IDARG GM_U GM_P GM_O GM_I GM_A
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq libav-tools libavcodec-extra-53
 after_success: coveralls
 after_failure: cat `python -c 'from gmusicapi.utils import utils; print utils.log_filepath'`
 branches:
