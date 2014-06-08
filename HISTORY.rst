@@ -47,7 +47,6 @@ released 2013-11-03
 - add Mobileclient.get_genres
 - compatibility fixes
 
-
 2.0.0
 +++++
 released 2013-08-01
