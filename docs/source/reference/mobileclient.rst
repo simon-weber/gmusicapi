@@ -21,6 +21,8 @@ with a 'song id' or 'track id' uuid.
 .. automethod:: Mobileclient.get_stream_url
 .. automethod:: Mobileclient.change_song_metadata
 .. automethod:: Mobileclient.delete_songs
+.. automethod:: Mobileclient.get_thumbs_up_songs
+.. automethod:: Mobileclient.increment_song_playcount
 
 Playlists
 ---------

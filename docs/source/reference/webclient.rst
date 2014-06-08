@@ -25,10 +25,11 @@ Song manipulation
 .. automethod:: Webclient.delete_songs
 
 Playlist manipulation
------------------------------
+---------------------
 .. automethod:: Webclient.create_playlist
 .. automethod:: Webclient.add_songs_to_playlist
 .. automethod:: Webclient.remove_songs_from_playlist
+.. automethod:: Webclient.get_shared_playlist_info
 
 Other
 -----
