@@ -633,7 +633,8 @@ class ClientTests(object):
                     if t['id'] == sid]
         assert_equal(len(matching), 1)
 
-        initial_playcount = matching[0]['playCount']
+        # playCount is an optional field.
+        initial_playcount = matching[0].get('playCount', 0)
 
         self.mc.increment_song_playcount(sid, 2)
 
