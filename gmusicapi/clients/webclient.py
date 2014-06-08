@@ -24,6 +24,7 @@ class Webclient(_Base):
 
         * :func:`create_playlist`
         * :func:`get_registered_devices`
+        * :func:`get_shared_playlist_info`
         * :func:`get_song_download_info`
         * :func:`get_stream_urls`
         * :func:`get_stream_audio`
