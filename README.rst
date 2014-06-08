@@ -51,8 +51,6 @@ Status and updates
         :target: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API
 
 * November 2013: I started working fulltime at Venmo, meaning this project is back to night and weekend development.
-* March 2014: a Google update broke much of the deprecated webclient interface and temporarily disrupted mobileclient streaming.
-
 
 For fine-grained development updates, follow me on Twitter:
 `@simonmweber <https://twitter.com/simonmweber>`__.
