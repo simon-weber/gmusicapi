@@ -534,7 +534,7 @@ class ClientTests(object):
     @song_test
     def wc_upload_album_art(self):
         url = self.wc.upload_album_art(self.user_songs[0].sid, test_utils.image_filename)
-        assert_equal(url[:7], 'http://')
+        assert_equal(url[:4], 'http')
         #TODO download the track and verify the metadata changed
 
     ##---------
@@ -566,7 +566,7 @@ class ClientTests(object):
         url = self.mc.get_stream_url(self.user_songs[0].sid)
 
         assert_is_not_none(url)
-        assert_equal(url[:7], 'http://')
+        assert_equal(url[:4], 'http')
 
     @staticmethod
     @retry
