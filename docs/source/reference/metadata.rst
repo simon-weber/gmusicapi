@@ -8,6 +8,8 @@ Format Example
 
 .. _songdict-format:
 
+**This information is outdated and only applies to the webclient.**
+
 Google Music sends song metadata in json objects, which are represented as Python dictionaries.
 
 The dictionary is a slightly misleading representation, since some keys cannot be modified.
