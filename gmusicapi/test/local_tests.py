@@ -30,9 +30,9 @@ for filepath in [os.path.join(test_file_dir, p) for p in jsarray_filenames]:
     with open(filepath, 'r') as f:
         jsarray_samples.append(f.read().decode('utf-8'))
 
-#TODO test gather_local, transcoding
+# TODO test gather_local, transcoding
 
-#All tests end up in the local group.
+# All tests end up in the local group.
 test = test(groups=['local'])
 
 
@@ -45,9 +45,9 @@ def longest_increasing_sub():
     assert_equal(lisi([3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9]),
                  [1, 2, 3, 5, 8, 9])
 
-##
+#
 # clients
-##
+#
 # this feels like a dumb pattern, but I can't think of a better way
 names = ('Webclient', 'Musicmanager')
 Clients = namedtuple('Clients', [n.lower() for n in names])
@@ -99,9 +99,9 @@ def mm_prevents_bad_mac_format():
 #     assert_equal(api.get_all_playlist_ids(auto=True, user=False),
 #                  {'auto': {}})
 
-##
+#
 # sessions
-##
+#
 Sessions = namedtuple('Sessions', [n.lower() for n in names])
 
 
@@ -167,9 +167,9 @@ def send_without_auth():
         mock_session.closed.called_once_with()
 
 
-##
+#
 # protocol
-##
+#
 
 @test
 def authtypes_factory_defaults():
@@ -194,9 +194,9 @@ def mc_url_signing():
     assert_equal(sig, "gua1gInBdaVo7_dSwF9y0kodua0")
 
 
-##
+#
 # utils
-##
+#
 
 @test
 def retry_failure_propogation():

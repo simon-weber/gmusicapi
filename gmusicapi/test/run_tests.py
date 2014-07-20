@@ -102,7 +102,7 @@ def freeze_login_details(wc_kwargs, mm_kwargs):
     for cls, kwargs in ((Musicmanager, mm_kwargs),
                         (Webclient, wc_kwargs),
                         (Mobileclient, wc_kwargs),
-                       ):
+                        ):
         freeze_method_kwargs(cls, 'login', **kwargs)
 
 

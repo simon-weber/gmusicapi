@@ -15,17 +15,17 @@ for fname in glob(u'audiotest*'):
         print 'could not open', fname
         continue
 
-    #clear existing tags
+    # clear existing tags
     for key in audio.tags.keys():
         del audio.tags[key]
 
-    #write
+    # write
     base = os.path.basename(fname)
     audio['title'] = base + ' title'
     audio['artist'] = base + ' artist'
     audio.save()
 
-    #read back to verify
+    # read back to verify
     audio = mutagen.File(fname, easy=True)  # assume it worked; it worked above
     print fname
     print '   ', audio.tags

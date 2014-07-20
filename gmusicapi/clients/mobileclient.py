@@ -44,7 +44,7 @@ class Mobileclient(_Base):
 
         return True
 
-    #TODO expose max/page-results, updated_after, etc for list operations
+    # TODO expose max/page-results, updated_after, etc for list operations
 
     def get_all_songs(self, incremental=False, include_deleted=False):
         """Returns a list of dictionaries that each represent a song.
@@ -134,7 +134,7 @@ class Mobileclient(_Base):
         mutations = [{'update': s} for s in songs]
         self._make_call(mutate_call, mutations)
 
-        #TODO
+        # TODO
         # store tracks don't send back their id, so we're
         # forced to spoof this
         return [utils.id_or_nid(d) for d in songs]
@@ -168,7 +168,7 @@ class Mobileclient(_Base):
 
         :param aa_song_id: All Access song id
         """
-        #TODO is there a way to do this on multiple tracks at once?
+        # TODO is there a way to do this on multiple tracks at once?
         # problem is with gathering aa track info
 
         aa_track_info = self.get_track_info(aa_song_id)
@@ -309,7 +309,7 @@ class Mobileclient(_Base):
 
         :param playlist_id: the id to delete.
         """
-        #TODO accept multiple?
+        # TODO accept multiple?
 
         mutate_call = mobileclient.BatchMutatePlaylists
         del_mutations = mutate_call.build_playlist_deletes([playlist_id])
@@ -358,7 +358,7 @@ class Mobileclient(_Base):
                                           updated_after=None)
 
         for playlist in user_playlists:
-            #TODO could use a dict to make this faster
+            # TODO could use a dict to make this faster
             entries = [e for e in all_entries
                        if e['playlistId'] == playlist['id']]
             entries.sort(key=itemgetter('absolutePosition'))
@@ -478,7 +478,7 @@ class Mobileclient(_Base):
         return [e['id'] for e in res['mutate_response']]
 
     # WIP, see issue #179
-    #def reorder_playlist(self, reordered_playlist, orig_playlist=None):
+    # def reorder_playlist(self, reordered_playlist, orig_playlist=None):
     #    """TODO"""
 
     #    if not reordered_playlist['tracks']:
@@ -514,8 +514,8 @@ class Mobileclient(_Base):
 
     #    return idx_pos_pairs
 
-    #@staticmethod
-    #def _create_ple_reorder_mutations(tracks, from_to_idx_pairs):
+    # @staticmethod
+    # def _create_ple_reorder_mutations(tracks, from_to_idx_pairs):
     #    """
     #    Return a list of mutations.
 
@@ -572,7 +572,7 @@ class Mobileclient(_Base):
           Exactly one of these params must be provided, or ValueError
           will be raised.
         """
-        #TODO could expose include_tracks
+        # TODO could expose include_tracks
 
         seed = {}
         if track_id is not None:
@@ -659,7 +659,7 @@ class Mobileclient(_Base):
         See :func:`get_all_songs` for the format of a track dictionary.
         """
 
-        #TODO recently played?
+        # TODO recently played?
 
         res = self._make_call(mobileclient.ListStationTracks,
                               station_id, num_tracks, recently_played=[])

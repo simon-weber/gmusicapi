@@ -40,7 +40,7 @@ sj_track = {
         'artistArtRef': {'type': 'array',
                          'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}},
                          'required': False,
-                       },
+                         },
         'discNumber': {'type': 'integer'},
         'estimatedSize': {'type': 'string'},
         'trackType': {'type': 'string'},
@@ -83,7 +83,7 @@ sj_playlist = {
         'albumArtRef': {'type': 'array',
                         'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}},
                         'required': False,
-                       },
+                        },
     }
 }
 
@@ -204,7 +204,7 @@ class McCall(Call):
 
     required_auth = authtypes(xt=False, sso=True)
 
-    #validictory schema for the response
+    # validictory schema for the response
     _res_schema = utils.NotImplementedField
 
     @classmethod
@@ -218,10 +218,10 @@ class McCall(Call):
 
     @classmethod
     def check_success(cls, response, msg):
-        #TODO not sure if this is still valid for mc
+        # TODO not sure if this is still valid for mc
         pass
 
-        #if 'success' in msg and not msg['success']:
+        # if 'success' in msg and not msg['success']:
         #    raise CallFailure(
         #        "the server reported failure. This is usually"
         #        " caused by bad arguments, but can also happen if requests"
@@ -252,7 +252,7 @@ class McListCall(McCall):
             'data': {'type': 'object',
                      'items': {'type': 'array', 'items': item_schema},
                      'required': False,
-                    },
+                     },
         },
     }
 
@@ -416,13 +416,13 @@ class GetStreamUrl(McCall):
     def dynamic_params(cls, song_id, device_id):
         sig, salt = cls.get_signature(song_id)
 
-        #TODO which of these should get exposed?
+        # TODO which of these should get exposed?
         params = {'opt': 'hi',
                   'net': 'wifi',
                   'pt': 'e',
                   'slt': salt,
                   'sig': sig,
-                 }
+                  }
         if song_id[0] == 'T':
             # all access
             params['mjck'] = song_id
@@ -481,7 +481,7 @@ class ListSharedPlaylistEntries(McListCall):
             'kind': {'type': 'string'},
             'entries': {'type': 'array',
                         'items': item_schema,
-                       },
+                        },
         },
     }
     filter_text = 'shared plentries'
@@ -541,7 +541,7 @@ class BatchMutatePlaylists(McBatchMutateCall):
 
     @staticmethod
     def build_playlist_deletes(playlist_ids):
-        #TODO can probably pull this up one
+        # TODO can probably pull this up one
         """
         :param playlist_ids
         """
@@ -673,7 +673,7 @@ class ListStationTracks(McCall):
             'data': {'type': 'object',
                      'stations': {'type': 'array', 'items': sj_station},
                      'required': False,
-                    },
+                     },
         },
     }
 
@@ -689,7 +689,7 @@ class ListStationTracks(McCall):
         :param num_entries: maximum number of tracks to return
         :param recently_played: a list of...song ids? never seen an example
         """
-        #TODO
+        # TODO
         # clearly, this supports more than one at a time,
         # but then that might introduce paging?
         # I'll leave it for someone else
@@ -780,7 +780,7 @@ class BatchMutateTracks(McBatchMutateCall):
         for key in ('kind', 'trackAvailableForPurchase',
                     'albumAvailableForPurchase', 'albumArtRef',
                     'artistId',
-                   ):
+                    ):
             del track_dict[key]
 
         for key, default in {
@@ -803,7 +803,7 @@ class BatchMutateTracks(McBatchMutateCall):
 
 
 class GetStoreTrack(McCall):
-    #TODO does this accept library ids, too?
+    # TODO does this accept library ids, too?
     static_method = 'GET'
     static_url = sj_url + 'fetchtrack'
     static_headers = {'Content-Type': 'application/json'}
@@ -838,7 +838,7 @@ class GetGenres(McCall):
                     },
                 },
                 'required': False,
-           },
+            },
             'children': {
                 'type': 'array',
                 'items': {'type': 'string'},
@@ -887,7 +887,7 @@ class GetArtist(McCall):
                 'include-albums': include_albums,
                 'num-top-tracks': num_top_tracks,
                 'num-related-artists': num_rel_artist,
-               }
+                }
 
 
 class GetAlbum(McCall):
@@ -929,7 +929,7 @@ class IncrementPlayCount(McCall):
 
     @staticmethod
     def dynamic_data(sid, plays, playtime):
-        #TODO this can support multiple
+        # TODO this can support multiple
         return json.dumps({'track_stats': [{
             'id': sid,
             'incremental_plays': plays,
