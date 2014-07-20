@@ -198,7 +198,7 @@ class Musicmanager(_Base):
                               ' sure to provide the same one on future runs).')
 
             else:
-                #distinguish us from a Music Manager on this machine
+                # distinguish us from a Music Manager on this machine
                 mac_int = (mac_int + 1) % (1 << 48)
 
             uploader_id = utils.create_mac_string(mac_int)
@@ -413,14 +413,14 @@ class Musicmanager(_Base):
                               " run Api.login(...perform_upload_auth=True...)"
                               " first.")
 
-        #TODO there is way too much code in this function.
+        # TODO there is way too much code in this function.
 
-        #To return.
+        # To return.
         uploaded = {}
         matched = {}
         not_uploaded = {}
 
-        #Gather local information on the files.
+        # Gather local information on the files.
         local_info = {}  # {clientid: (path, Track)}
         for path in filepaths:
             try:
@@ -431,8 +431,8 @@ class Musicmanager(_Base):
                 user_err_msg = str(e)
 
                 if 'Non-ASCII strings must be converted to unicode' in str(e):
-                    #This is a protobuf-specific error; they require either ascii or unicode.
-                    #To keep behavior consistent, make no effort to guess - require users
+                    # This is a protobuf-specific error; they require either ascii or unicode.
+                    # To keep behavior consistent, make no effort to guess - require users
                     # to decode first.
                     user_err_msg = ("nonascii bytestrings must be decoded to unicode"
                                     " (error: '%s')" % user_err_msg)
@@ -444,20 +444,20 @@ class Musicmanager(_Base):
         if not local_info:
             return uploaded, matched, not_uploaded
 
-        #TODO allow metadata faking
+        # TODO allow metadata faking
 
-        #Upload metadata; the server tells us what to do next.
+        # Upload metadata; the server tells us what to do next.
         res = self._make_call(musicmanager.UploadMetadata,
-                              [track for (path, track) in local_info.values()],
+                              [t for (path, t) in local_info.values()],
                               self.uploader_id)
 
-        #TODO checking for proper contents should be handled in verification
+        # TODO checking for proper contents should be handled in verification
         md_res = res.metadata_response
 
         responses = [r for r in md_res.track_sample_response]
         sample_requests = [req for req in md_res.signed_challenge_info]
 
-        #Send scan and match samples if requested.
+        # Send scan and match samples if requested.
         for sample_request in sample_requests:
             path, track = local_info[sample_request.challenge_info.client_track_id]
 
@@ -477,7 +477,7 @@ class Musicmanager(_Base):
             else:
                 responses.extend(res.sample_response.track_sample_response)
 
-        #Read sample responses and prep upload requests.
+        # Read sample responses and prep upload requests.
         to_upload = {}  # {serverid: (path, Track, do_not_rematch?)}
         for sample_res in responses:
             path, track = local_info[sample_res.client_track_id]
@@ -510,13 +510,13 @@ class Musicmanager(_Base):
                 self.logger.warning("upload of '%s' rejected: %s", path, err_msg)
                 not_uploaded[path] = err_msg
 
-        #Send upload requests.
+        # Send upload requests.
         if to_upload:
-            #TODO reordering requests could avoid wasting time waiting for reup sync
+            # TODO reordering requests could avoid wasting time waiting for reup sync
             self._make_call(musicmanager.UpdateUploadState, 'start', self.uploader_id)
 
             for server_id, (path, track, do_not_rematch) in to_upload.items():
-                #It can take a few tries to get an session.
+                # It can take a few tries to get an session.
                 should_retry = True
                 attempts = 0
 
@@ -538,8 +538,8 @@ class Musicmanager(_Base):
                                       reason, error_code, should_retry)
 
                     if error_code == 200 and do_not_rematch:
-                        #reupload requests need to wait on a server sync
-                        #200 == already uploaded, so force a retry in this case
+                        # reupload requests need to wait on a server sync
+                        # 200 == already uploaded, so force a retry in this case
                         should_retry = True
 
                     time.sleep(6)  # wait before retrying
@@ -551,8 +551,8 @@ class Musicmanager(_Base):
 
                     continue  # to next upload
 
-                #got a session, do the upload
-                #this terribly inconsistent naming isn't my fault: Google--
+                # got a session, do the upload
+                # this terribly inconsistent naming isn't my fault: Google--
                 session = session['sessionStatus']
                 external = session['externalFieldTransfers'][0]
 
@@ -578,7 +578,7 @@ class Musicmanager(_Base):
                 if success:
                     uploaded[path] = server_id
                 else:
-                    #404 == already uploaded? serverside check on clientid?
+                    # 404 == already uploaded? serverside check on clientid?
                     self.logger.debug("could not finalize upload of '%s'. response: %s",
                                       path, upload_response)
                     not_uploaded[path] = 'could not finalize upload; details in log'

@@ -42,7 +42,7 @@ class BuildRequestMeta(type):
     """Metaclass to create build_request from static/dynamic config."""
 
     def __new__(cls, name, bases, dct):
-        #To not mess with mro and inheritance, build the class first.
+        # To not mess with mro and inheritance, build the class first.
         new_cls = super(BuildRequestMeta, cls).__new__(cls, name, bases, dct)
 
         merge_keys = ('headers', 'params')
@@ -64,7 +64,7 @@ class BuildRequestMeta(type):
                 config[key] = get_key(stat(key))
 
         for key in merge_keys:
-            #merge case: dyn took precedence above, but stat also exists
+            # merge case: dyn took precedence above, but stat also exists
             if has_key(dyn(key)) and has_key(stat(key)):
                 def key_closure(stat_val=get_key(stat(key)), dyn_func=get_key(dyn(key))):
                     def build_key(*args, **kwargs):
@@ -75,10 +75,10 @@ class BuildRequestMeta(type):
                     return build_key
                 config[key] = key_closure()
 
-        #To explain some of the funkiness wrt closures, see:
+        # To explain some of the funkiness wrt closures, see:
         # http://stackoverflow.com/questions/233673/lexical-closures-in-python
 
-        #create the actual build_request method
+        # create the actual build_request method
         def req_closure(config=config):
             def build_request(cls, *args, **kwargs):
                 req_kwargs = {}
@@ -190,7 +190,7 @@ class Call(object):
         :param session: a PlaySession used to send this request.
         :param validate: if False, do not validate
         """
-        #TODO link up these docs
+        # TODO link up these docs
 
         call_name = cls.__name__
 
@@ -206,7 +206,7 @@ class Call(object):
         req_kwargs = cls.build_request(*args, **kwargs)
 
         response = session.send(req_kwargs, cls.required_auth)
-        #TODO trim the logged response if it's huge?
+        # TODO trim the logged response if it's huge?
 
         safe_req_kwargs = req_kwargs.copy()
         if safe_req_kwargs.get('headers', {}).get('Authorization', None) is not None:
@@ -242,7 +242,7 @@ class Call(object):
             log.debug(cls.filter_response(parsed_response))
 
         try:
-            #order is important; validate only has a schema for a successful response
+            # order is important; validate only has a schema for a successful response
             cls.check_success(response, parsed_response)
             if validate:
                 cls.validate(response, parsed_response)
@@ -261,7 +261,7 @@ class Call(object):
             raise CallFailure(err_msg, e.callname), None, trace
 
         except ValidationException as e:
-            #TODO shouldn't be using formatting
+            # TODO shouldn't be using formatting
             err_msg = "the response format for %s was not recognized." % call_name
             err_msg += "\n\n%s\n" % e
 
@@ -300,20 +300,20 @@ class Call(object):
 
         fields = filtered.ListFields()
 
-        #eg of filtering a specific field
-        #if any(fd.name == 'field_name' for fd, val in fields):
+        # eg of filtering a specific field
+        # if any(fd.name == 'field_name' for fd, val in fields):
         #    filtered.field_name = '<name>'
 
-        #Filter all byte fields.
+        # Filter all byte fields.
         for field_name, val in ((fd.name, val) for fd, val in fields
                                 if fd.type == FieldDescriptor.TYPE_BYTES):
             setattr(filtered, field_name, "<%s bytes>" % len(val))
 
-        #Filter submessages.
+        # Filter submessages.
         for field in (val for fd, val in fields
                       if fd.type == FieldDescriptor.TYPE_MESSAGE):
 
-            #protobuf repeated api is bad for reflection
+            # protobuf repeated api is bad for reflection
             is_repeated = hasattr(field, '__len__')
 
             if not is_repeated:
@@ -321,7 +321,7 @@ class Call(object):
 
             else:
                 for i in range(len(field)):
-                    #repeatedComposite does not allow setting
+                    # repeatedComposite does not allow setting
                     old_fields = [f for f in field]
                     del field[:]
 
@@ -338,7 +338,7 @@ class ClientLogin(Call):
     gets_logged = False
 
     static_method = 'POST'
-    #static_headers = {'User-agent': 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1'}
+    # static_headers = {'User-agent': 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1'}
     static_url = 'https://www.google.com/accounts/ClientLogin'
 
     @classmethod

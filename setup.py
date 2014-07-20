@@ -5,10 +5,10 @@ import re
 from setuptools import setup, find_packages
 import sys
 
-#Only 2.6-2.7 are supported.
+# Only 2.6-2.7 are supported.
 if not ((2, 6, 0) <= sys.version_info[:3] < (2, 8)):
     sys.stderr.write('gmusicapi does not officially support this Python version.\n')
-    #try to continue anyway
+    # try to continue anyway
 
 dynamic_requires = []
 
@@ -19,7 +19,7 @@ if sys.version_info[:2] == (2, 6):
     ]
 
 
-#This hack is from http://stackoverflow.com/a/7071358/1231454;
+# This hack is from http://stackoverflow.com/a/7071358/1231454;
 # the version is kept in a seperate file and gets parsed - this
 # way, setup.py doesn't have to import the package.
 

@@ -20,7 +20,7 @@ def to_json(s):
     for t in generate_tokens(StringIO(s).readline):
         if out and any(((',' == t[1] == out[-1]),  # double comma
                         (out[-1] == '[' and t[1] == ','),  # comma opening array
-                       )):
+                        )):
             out.append('null')
 
         out.append(t[1])

@@ -25,9 +25,9 @@ import requests
 from requests.exceptions import SSLError
 
 from gmusicapi import Webclient, Musicmanager, Mobileclient
-#from gmusicapi.protocol import mobileclient
+# from gmusicapi.protocol import mobileclient
 from gmusicapi.protocol.shared import authtypes
-#from gmusicapi.protocol.metadata import md_expectations
+# from gmusicapi.protocol.metadata import md_expectations
 from gmusicapi.utils.utils import retry, id_or_nid
 import gmusicapi.test.utils as test_utils
 
@@ -112,7 +112,7 @@ class ClientTests(object):
     mm = None  # musicmanager
     mc = None  # mobileclient
 
-    #These are set on the instance in eg create_song.
+    # These are set on the instance in eg create_song.
 
     # both are [TestSong]
     user_songs = None
@@ -331,7 +331,7 @@ class ClientTests(object):
             assert_equal(len(found), 0)
 
         assert_plentries_removed(self.playlist_ids[0], self.plentry_ids)
-        #self.assert_listing_contains_deleted_items(self.mc_get_playlist_songs)
+        # self.assert_listing_contains_deleted_items(self.mc_get_playlist_songs)
 
     @test(groups=['playlist'], depends_on=[playlist_create],
           runs_after=[plentry_delete],
@@ -428,11 +428,11 @@ class ClientTests(object):
         self.assert_songs_state(self.mc.get_all_songs, sids(self.all_songs), present=False)
         self.assert_listing_contains_deleted_items(self.mc.get_all_songs)
 
-    ## These decorators just prevent setting groups and depends_on over and over.
-    ## They won't work right with additional settings; if that's needed this
-    ##  pattern should be factored out.
+    # These decorators just prevent setting groups and depends_on over and over.
+    # They won't work right with additional settings; if that's needed this
+    #  pattern should be factored out.
 
-    ##TODO it'd be nice to have per-client test groups
+    # TODO it'd be nice to have per-client test groups
     song_test = test(groups=['song', 'song.exists'], depends_on=[song_create])
     playlist_test = test(groups=['playlist', 'playlist.exists'],
                          depends_on=[playlist_create])
@@ -440,11 +440,11 @@ class ClientTests(object):
                         depends_on=[plentry_create])
     station_test = test(groups=['station', 'station.exists'], depends_on=[station_create])
 
-    ## Non-wonky tests resume down here.
+    # Non-wonky tests resume down here.
 
-    ##---------
-    ## MM tests
-    ##---------
+    # ---------
+    #  MM tests
+    # ---------
 
     @song_test
     def mm_list_new_songs(self):
@@ -463,16 +463,16 @@ class ClientTests(object):
         def assert_download(sid):
             filename, audio = self.mm.download_song(sid)
 
-            #TODO could use original filename to verify this
+            # TODO could use original filename to verify this
             # but, when manually checking, got modified title occasionally
             assert_true(filename.endswith('.mp3'))
             assert_is_not_none(audio)
 
         assert_download(self.user_songs[0].sid)
 
-    ##---------
-    ## WC tests
-    ##---------
+    # ---------
+    #  WC tests
+    # ---------
 
     @test
     def wc_get_registered_devices(self):
@@ -535,11 +535,11 @@ class ClientTests(object):
     def wc_upload_album_art(self):
         url = self.wc.upload_album_art(self.user_songs[0].sid, test_utils.image_filename)
         assert_equal(url[:4], 'http')
-        #TODO download the track and verify the metadata changed
+        # TODO download the track and verify the metadata changed
 
-    ##---------
-    ## MC tests
-    ##---------
+    # ---------
+    #  MC tests
+    # ---------
 
     @test
     def mc_list_stations_inc_equal(self):
@@ -792,8 +792,8 @@ class ClientTests(object):
 
     # This fails, unfortunately, which means n reorderings mean n
     # separate calls in the general case.
-    #@plentry_test
-    #def mc_reorder_ples_forwards(self):
+    # @plentry_test
+    # def mc_reorder_ples_forwards(self):
     #    pl = self.mc_get_playlist_songs(self.playlist_ids[0])
     #    # rot2, eg 0123 -> 2301
     #    pl.append(pl.pop(0))
