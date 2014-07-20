@@ -9,9 +9,12 @@ install:
   - find ./dist -iname "*.zip" -print0 | xargs -0 pip install
   - pip install --upgrade validictory==1.0.0a1
   - wget https://gist.github.com/simon-weber/8211306/raw/travis-secure-redefine.py
+  - pip install flake8
 before_script:
   - if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then export GROUP='--group=local'; fi
-script: python travis-secure-redefine.py "python -m gmusicapi.test.run_tests $GROUP" IDARG GM_U GM_P GM_O GM_I GM_A
+script:
+  - flake8 .
+  - python travis-secure-redefine.py "python -m gmusicapi.test.run_tests $GROUP" IDARG GM_U GM_P GM_O GM_I GM_A
 after_failure: cat `python -c 'from gmusicapi.utils import utils; print utils.log_filepath'`
 branches:
   only:
