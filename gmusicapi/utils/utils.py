@@ -439,7 +439,7 @@ def locate_mp3_transcoder():
             continue
 
         proc = subprocess.Popen(
-            [cmd_path, '-codecs'],
+            [cmd_path, '-formats'],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
 
@@ -451,23 +451,13 @@ def locate_mp3_transcoder():
             transcoder_details[transcoder] = 'no mp3 support'
             continue
 
-        assert len(mp3_lines) == 1
-        mp3_line = mp3_lines[0]
+        mp3_line = mp3_lines[0]  # avconv can output one under file formats and one under codecs
 
         mp3_support_details = mp3_line.split()[0]
-        # This string is of the form:
-        #   D..... = Decoding supported
-        #   .E.... = Encoding supported
-        #   ..V... = Video codec
-        #   ..A... = Audio codec
-        #   ..S... = Subtitle codec
-        #   ...I.. = Intra frame-only codec
-        #   ....L. = Lossy compression
-        #   .....S = Lossless compression
 
         transcoder_details[transcoder] = "mp3 support: %s" % mp3_support_details
-        if mp3_support_details[1] == 'E':
-            break  # mp3 encoding supported
+        if mp3_support_details == 'DE':
+            break  # mp3 decoding/encoding supported
 
     else:
         raise ValueError('ffmpeg or avconv must be in the path and support mp3 encoding'
