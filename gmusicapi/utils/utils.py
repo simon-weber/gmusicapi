@@ -424,6 +424,58 @@ def pb_set(msg, field_name, val):
     return True
 
 
+def locate_mp3_transcoder():
+    """Return the path to a transcoder (ffmpeg or avconv) with mp3 support.
+
+    Raise ValueError if none are suitable."""
+
+    transcoders = ['ffmpeg', 'avconv']
+    transcoder_details = {}
+
+    for transcoder in transcoders:
+        cmd_path = spawn.find_executable(transcoder)
+        if cmd_path is None:
+            transcoder_details[transcoder] = 'not installed'
+            continue
+
+        proc = subprocess.Popen(
+            [cmd_path, '-codecs'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+
+        stdout, stderr = proc.communicate()
+        mp3_lines = [line for line in stdout.split('\n')
+                     if (len(line.split()) > 2 and
+                         line.split()[1] == 'mp3')]
+        if not mp3_lines:
+            transcoder_details[transcoder] = 'no mp3 support'
+            continue
+
+        assert len(mp3_lines) == 1
+        mp3_line = mp3_lines[0]
+
+        mp3_support_details = mp3_line.split()[0]
+        # This string is of the form:
+        #   D..... = Decoding supported
+        #   .E.... = Encoding supported
+        #   ..V... = Video codec
+        #   ..A... = Audio codec
+        #   ..S... = Subtitle codec
+        #   ...I.. = Intra frame-only codec
+        #   ....L. = Lossy compression
+        #   .....S = Lossless compression
+
+        transcoder_details[transcoder] = "mp3 support: %s" % mp3_support_details
+        if mp3_support_details[1] == 'E':
+            break  # mp3 encoding supported
+
+    else:
+        raise ValueError('ffmpeg or avconv must be in the path and support mp3 encoding'
+                         "\ndetails: %r" % transcoder_details)
+
+    return cmd_path
+
+
 def transcode_to_mp3(filepath, quality='320k', slice_start=None, slice_duration=None):
     """Return the bytestring result of transcoding the file at *filepath* to mp3.
     An ID3 header is not included in the result.
@@ -434,15 +486,13 @@ def transcode_to_mp3(filepath, quality='320k', slice_start=None, slice_duration=
     :param slice_start: (optional) transcode a slice, starting at this many seconds
     :param slice_duration: (optional) when used with slice_start, the number of seconds in the slice
 
-    Raise IOError on transcoding problems, or ValueError on param problems.
+    Raise:
+      * IOError: problems during transcoding
+      * ValueError: invalid params, transcoder not found
     """
 
     err_output = None
-    cmd_path = spawn.find_executable('ffmpeg')
-    if cmd_path is None:
-        cmd_path = spawn.find_executable('avconv')
-        if cmd_path is None:
-            raise IOError('Neither ffmpeg nor avconv was found in your PATH')
+    cmd_path = locate_mp3_transcoder()
     cmd = [cmd_path, '-i', filepath]
 
     if slice_duration is not None:

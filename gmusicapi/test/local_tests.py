@@ -236,3 +236,8 @@ def jsarray_parsing():
     for raw in jsarray_samples:
         # should not raise an exception
         jsarray.loads(raw)
+
+
+@test
+def locate_transcoder():
+    utils.locate_mp3_transcoder()  # should not raise
