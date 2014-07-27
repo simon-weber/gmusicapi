@@ -859,6 +859,7 @@ class GetGenres(McCall):
             'genres': {
                 'type': 'array',
                 'items': genre_schema,
+                'required': False,  # only on errors
             }
         }
     }

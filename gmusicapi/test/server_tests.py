@@ -874,8 +874,33 @@ class ClientTests(object):
     def mc_track_info(self):
         self.mc.get_track_info(TEST_AA_SONG_ID)  # just for the schema
 
-    @test
+    @test(groups=['genres'])
     @all_access
-    def mc_genres(self):
-        self.mc.get_genres()  # just for the schema
-        self.mc.get_genres('METAL')  # just for the schema
+    def mc_all_genres(self):
+        expected_genres = set([
+            u'COMEDY_SPOKEN_WORD_OTHER', u'COUNTRY', u'HOLIDAY', u'R_B_SOUL', u'FOLK', u'LATIN',
+            u'CHRISTIAN_GOSPEL', u'ALTERNATIVE_INDIE', u'POP', u'ROCK', u'WORLD',
+            u'VOCAL_EASY_LISTENING', u'HIP_HOP_RAP', u'JAZZ', u'METAL', u'REGGAE_SKA',
+            u'SOUNDTRACKS_CAST_ALBUMS', u'DANCE_ELECTRONIC', u'CLASSICAL', u'NEW_AGE', u'BLUES',
+            u'CHILDREN_MUSIC'])
+        res = self.mc.get_genres()
+        assert_equal(set([e['id'] for e in res]), expected_genres)
+
+    @test(groups=['genres'])
+    @all_access
+    def mc_specific_genre(self):
+        expected_genres = set([
+            u'PROGRESSIVE_METAL', u'CLASSIC_METAL', u'HAIR_METAL', u'INDUSTRIAL', u'ALT_METAL',
+            u'THRASH', u'METALCORE', u'BLACK_DEATH_METAL', u'DOOM_METAL'])
+        res = self.mc.get_genres('METAL')
+        assert_equal(set([e['id'] for e in res]), expected_genres)
+
+    @test(groups=['genres'])
+    @all_access
+    def mc_leaf_parent_genre(self):
+        assert_equal(self.mc.get_genres('AFRICA'), [])
+
+    @test(groups=['genres'])
+    @all_access
+    def mc_invalid_parent_genre(self):
+        assert_equal(self.mc.get_genres('bogus genre'), [])

@@ -1014,7 +1014,9 @@ class Mobileclient(_Base):
     def get_genres(self, parent_genre_id=None):
         """Retrieves information on Google Music genres.
 
-        :param parent_genre_id: An optional ID of the parent genre
+        :param parent_genre_id: (optional) If provided, only child genres
+          will be returned. By default, all root genres are returned.
+          If this id is invalid, an empty list will be returned.
 
         Using this method without an All Access subscription will always result in
         CallFailure being raised.
@@ -1043,4 +1045,7 @@ class Mobileclient(_Base):
         to seed an All Access radio station.
         """
 
-        return self._make_call(mobileclient.GetGenres, parent_genre_id)
+        res = self._make_call(mobileclient.GetGenres, parent_genre_id)
+
+        # An invalid parent genre won't respond with a genres key.
+        return res.get('genres', [])
