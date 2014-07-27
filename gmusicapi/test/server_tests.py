@@ -824,13 +824,17 @@ class ClientTests(object):
         assert_equal(len(self.mc.get_station_tracks('IFL', num_tracks=1)),
                      1)
 
-    @test
+    @test(groups=['search'])
     @all_access
-    def mc_search_aa(self):
-        res = self.mc.search_all_access('amorphis')
+    def mc_search_aa_no_playlists(self):
+        res = self.mc.search_all_access('amorphis', max_results=100)
+
+        # TODO is there a search query that will consistently get playlist results?
+        res.pop('playlist_hits')
+
         with Check() as check:
-            for hits in res.values():
-                check.true(len(hits) > 0)
+            for type_, hits in res.items():
+                check.true(len(hits) > 0, "%s had %s hits, expected > 0" % (type_, len(hits)))
 
     @test
     @all_access

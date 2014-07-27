@@ -1,3 +1,4 @@
+from collections import defaultdict
 import datetime
 from operator import itemgetter
 import re
@@ -671,7 +672,7 @@ class Mobileclient(_Base):
         return stations[0].get('tracks', [])
 
     def search_all_access(self, query, max_results=50):
-        """Queries the server for All Access songs and albums.
+        """Queries the server for All Access songs, albums and shared playlists.
 
         Using this method without an All Access subscription will always result in
         CallFailure being raised.
@@ -791,15 +792,40 @@ class Mobileclient(_Base):
                      'type':'1'
                   },
                ]
+               'playlist_hits': [
+                  {
+                     'score': 0.0,
+                     'playlist':{
+                        'albumArtRef':[
+                           {
+                              'url':'http://lh4.ggpht.com/...'
+                           }
+                        ],
+                        'description': 'Krasnoyarsk concert setlist 29.09.2013',
+                        'kind': 'sj#playlist',
+                        'name': 'Amorphis Setlist',
+                        'ownerName': 'Ilya Makarov',
+                        'ownerProfilePhotoUrl': 'http://lh6.googleusercontent.com/...',
+                        'shareToken': 'AMaBXymmMfeA8iwoEWWI9Z1A...',
+                        'type': 'SHARED'
+                     },
+                     'type': '4'
+                  }
+               ]
             }
         """
         res = self._make_call(mobileclient.Search, query, max_results)
 
         hits = res.get('entries', [])
 
-        return {'album_hits': [hit for hit in hits if hit['type'] == '3'],
-                'artist_hits': [hit for hit in hits if hit['type'] == '2'],
-                'song_hits': [hit for hit in hits if hit['type'] == '1']}
+        hits_by_type = defaultdict(list)
+        for hit in hits:
+            hits_by_type[hit['type']].append(hit)
+
+        return {'album_hits': hits_by_type['3'],
+                'artist_hits': hits_by_type['2'],
+                'song_hits': hits_by_type['1'],
+                'playlist_hits': hits_by_type['4']}
 
     @utils.enforce_id_param
     def get_artist_info(self, artist_id, include_albums=True, max_top_tracks=5, max_rel_artist=5):

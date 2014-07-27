@@ -5,11 +5,12 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-4.0.1-dev
+4.1.0-dev
 +++++++++
 released XXXX-XX-XX
 
 - fix mobileclient.get_genres: return a list and handle invalid parent genres.
+- add public playlist results to mobileclient.search_all_access
 
 
 4.0.0

@@ -67,23 +67,32 @@ sj_playlist = {
     'properties': {
         'kind': {'type': 'string'},
         'name': {'type': 'string'},
-        'deleted': {'type': 'boolean'},
+        'deleted': {'type': 'boolean',
+                    'required': False},  # for public
         'type': {'type': 'string',
                  'pattern': r'MAGIC|SHARED|USER_GENERATED',
                  'required': False,
                  },
-        'lastModifiedTimestamp': {'type': 'string'},
-        'recentTimestamp': {'type': 'string'},
+        'lastModifiedTimestamp': {'type': 'string',
+                                  'required': False},  # for public
+        'recentTimestamp': {'type': 'string',
+                            'required': False},  # for public
         'shareToken': {'type': 'string'},
         'ownerProfilePhotoUrl': {'type': 'string'},
         'ownerName': {'type': 'string'},
-        'accessControlled': {'type': 'boolean'},
-        'creationTimestamp': {'type': 'string'},
-        'id': {'type': 'string'},
+        'accessControlled': {'type': 'boolean',
+                             'required': False},  # for public
+        'creationTimestamp': {'type': 'string',
+                              'required': False},  # for public
+        'id': {'type': 'string',
+               'required': False},  # for public
         'albumArtRef': {'type': 'array',
                         'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}},
                         'required': False,
                         },
+        'description': {'type': 'string',
+                        'blank': True,
+                        'required': False},
     }
 }
 
@@ -159,12 +168,14 @@ sj_result = {
         'artist': sj_artist.copy(),
         'album': sj_album.copy(),
         'track': sj_track.copy(),
+        'playlist': sj_playlist.copy(),
     }
 }
 
 sj_result['properties']['artist']['required'] = False
 sj_result['properties']['album']['required'] = False
 sj_result['properties']['track']['required'] = False
+sj_result['properties']['playlist']['required'] = False
 
 sj_station_seed = {
     'type': 'object',
