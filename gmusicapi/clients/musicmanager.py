@@ -53,7 +53,7 @@ class Musicmanager(_Base):
           or ``None``
           to not write the credentials to disk (which is not recommended).
 
-          `Appdirs <https://pypi.python.org/pypi/appdirs/1.2.0>`__
+          `Appdirs <https://pypi.python.org/pypi/appdirs>`__
           ``user_data_dir`` is used by default. Users can run::
 
               import gmusicapi.clients
