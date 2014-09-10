@@ -15,19 +15,38 @@ If you're upgrading from a date-versioned release (eg ``2013.03.04``),
 do ``$ pip uninstall gmusicapi; pip install gmusicapi`` instead.
 
 If you're going to be uploading music,
-you'll likely want
-`Libav's avconv <http://libav.org/avconv.html>`__
+you'll likely need
+`avconv <http://libav.org/avconv.html>`__ or
+`ffmpeg <http://ffmpeg.org/ffmpeg.html>`__
 installed and in your system path, along with at least libmp3lame.
 
- - Ubuntu/Debian users:
-   ``$ sudo apt-get install libav-tools libavcodec-extra-53``.
- - Windows users, get `the most recent static binaries <http://win32.libav.org/releases/>`__
-   and then `edit your path <http://www.computerhope.com/issues/ch000549.htm>`__
-   to include the directory that contains avconv.exe.
+ - Linux
 
-The only time avconv is not required is when uploading mp3s without scan-and-match enabled.
+   - Use your distro's package manager:
+     e.g ``$ sudo apt-get install libav-tools libavcodec-extra-53``
+     (ffmpeg requires extra steps on
+     `Debian <http://www.deb-multimedia.org>`__/`Ubuntu <https://launchpad.net/~jon-severinsson/+archive/ubuntu/ffmpeg/>`__).
+   - Download pre-built binaries of
+     `avconv <http://johnvansickle.com/libav/>`__ or `ffmpeg <http://johnvansickle.com/ffmpeg/>`__
+     and `edit your path <http://www.troubleshooters.com/linux/prepostpath.htm>`__
+     to include the directory that contains avconv.exe/ffmpeg.exe.
+
+ - Mac
+
+   - Use `Homebrew <http://brew.sh/>`__ to install
+     `libav (avconv) <http://braumeister.org/formula/libav>`__ or
+     `ffmpeg <http://braumeister.org/formula/ffmpeg>`__.
+
+ - Windows
+
+   - Download pre-built binaries of
+     `avconv <http://win32.libav.org/releases/>`__ or `ffmpeg <http://ffmpeg.zeranoe.com/builds/>`__
+     and `edit your path <http://www.computerhope.com/issues/ch000549.htm>`__
+     to include the directory that contains avconv.exe/ffmpeg.exe.
+
+The only time avconv or ffmpeg is not required is when uploading mp3s without scan-and-match enabled.
    
-If you need to install avconv from source, be sure to use
+If you need to install avconv/ffmpeg from source, be sure to use
 ``$ ./configure --enable-gpl --enable-nonfree --enable-libmp3lame``.
 
 Quickstart
