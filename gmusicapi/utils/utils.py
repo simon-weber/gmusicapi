@@ -439,26 +439,17 @@ def locate_mp3_transcoder():
             continue
 
         proc = subprocess.Popen(
-            [cmd_path, '-formats'],
+            [cmd_path, '-codecs'],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
 
         stdout, stderr = proc.communicate()
-        mp3_lines = [line for line in stdout.split('\n')
-                     if (len(line.split()) > 2 and
-                         line.split()[1] == 'mp3')]
-        if not mp3_lines:
-            transcoder_details[transcoder] = 'no mp3 support'
-            continue
-
-        mp3_line = mp3_lines[0]  # avconv can output one under file formats and one under codecs
-
-        mp3_support_details = mp3_line.split()[0]
-
-        transcoder_details[transcoder] = "mp3 support: %s" % mp3_support_details
-        if mp3_support_details == 'DE':
+        mp3_encoding_support = ('libmp3lame' in stdout and 'disable-libmp3lame' not in stdout)
+        if mp3_encoding_support:
+            transcoder_details[transcoder] = "mp3 encoding support"
             break  # mp3 decoding/encoding supported
-
+        else:
+            transcoder_details[transcoder] = 'no mp3 encoding support'
     else:
         raise ValueError('ffmpeg or avconv must be in the path and support mp3 encoding'
                          "\ndetails: %r" % transcoder_details)
