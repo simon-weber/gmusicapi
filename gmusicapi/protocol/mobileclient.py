@@ -78,7 +78,7 @@ sj_playlist = {
         'recentTimestamp': {'type': 'string',
                             'required': False},  # for public
         'shareToken': {'type': 'string'},
-        'ownerProfilePhotoUrl': {'type': 'string'},
+        'ownerProfilePhotoUrl': {'type': 'string', 'required': False},
         'ownerName': {'type': 'string'},
         'accessControlled': {'type': 'boolean',
                              'required': False},  # for public
