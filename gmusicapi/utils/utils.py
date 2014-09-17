@@ -518,7 +518,7 @@ def transcode_to_mp3(filepath, quality='320k', slice_start=None, slice_duration=
         err_msg = "transcoding command (%s) failed: %s. " % (' '.join(cmd), e)
 
         if 'No such file or directory' in str(e):
-            err_msg += '\navconv must be installed and in the system path.'
+            err_msg += '\nffmpeg or avconv must be installed and in the system path.'
 
         if err_output is not None:
             err_msg += "\nstderr: '%s'" % err_output
