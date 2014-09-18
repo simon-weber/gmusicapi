@@ -364,7 +364,7 @@ class Musicmanager(_Base):
         All non-mp3 files will be transcoded before being uploaded.
         This is a limitation of Google's backend.
 
-        An available installation of avconv is required in most cases:
+        An available installation of ffmpeg or avconv is required in most cases:
         see `the installation page
         <https://unofficial-google-music-api.readthedocs.org/en
         /latest/usage.html?#installation>`__ for details.
@@ -381,13 +381,13 @@ class Musicmanager(_Base):
         :param transcode_quality: if int, pass to ffmpeg/avconv ``-q:a`` for libmp3lame
           (`lower-better int,
           <http://trac.ffmpeg.org/wiki/Encoding%20VBR%20(Variable%20Bit%20Rate)%20mp3%20audio>`__).
-          If string, pass to avconv ``-b:a`` (eg ``'128k'`` for an average bitrate of 128k). The
-          default is 320kbps cbr (the highest possible quality).
+          If string, pass to ffmpeg/avconv ``-b:a`` (eg ``'128k'`` for an average bitrate of 128k).
+          The default is 320kbps cbr (the highest possible quality).
 
         :param enable_matching: if ``True``, attempt to use `scan and match
           <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=2920799&topic=2450455>`__
           to avoid uploading every song.
-          This requires avconv.
+          This requires ffmpeg or avconv.
           **WARNING**: currently, mismatched songs can *not* be fixed with the 'Fix Incorrect Match'
           button nor :py:func:`report_incorrect_match
           <gmusicapi.clients.Webclient.report_incorrect_match>`.
