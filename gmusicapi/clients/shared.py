@@ -21,7 +21,7 @@ class _Base(object):
           If this param is ``True``, handlers will be configured to send
           this client's debug log output to disk,
           with warnings and above printed to stderr.
-          `Appdirs <https://pypi.python.org/pypi/appdirs/1.2.0>`__
+          `Appdirs <https://pypi.python.org/pypi/appdirs>`__
           ``user_log_dir`` is used by default. Users can run::
 
               from gmusicapi.utils import utils
