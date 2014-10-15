@@ -6,6 +6,7 @@ Support for Other Languages
 Here are the ports I'm currently aware of:
 
 
+-  C++: `Greg Wicks <https://github.com/gwicks/gmusicapi-curl>`__
 -  C#:
    `Taylor Finnell <https://github.com/taylorfinnell/GoogleMusicAPI.NET>`__
 -  Java: `Jens Villadsen <https://github.com/jkiddo/gmusic.api>`__
