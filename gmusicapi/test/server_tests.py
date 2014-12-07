@@ -818,6 +818,8 @@ class ClientTests(object):
             self.mc.get_station_tracks(station_id, num_tracks=1)
             # used to assert that at least 1 track came back, but
             # our dummy uploaded track won't match anything
+            self.mc.get_station_tracks(station_id, num_tracks=1, [TEST_AA_SONG_ID])
+            self.mc.get_station_tracks(station_id, num_tracks=1, [self.user_songs[0].sid])
 
     @all_access
     def mc_list_IFL_station_tracks(self):
