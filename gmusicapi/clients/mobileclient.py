@@ -647,7 +647,7 @@ class Mobileclient(_Base):
         return self._get_all_items(mobileclient.ListStations, incremental, include_deleted,
                                    updated_after=updated_after)
 
-    def get_station_tracks(self, station_id, num_tracks=25):
+    def get_station_tracks(self, station_id, num_tracks=25, recently_played_ids=None):
         """Returns a list of dictionaries that each represent a track.
 
         Each call performs a separate sampling (with replacement?)
@@ -656,14 +656,26 @@ class Mobileclient(_Base):
         :param station_id: the id of a radio station to retrieve tracks from.
           Use the special id ``'IFL'`` for the "I'm Feeling Lucky" station.
         :param num_tracks: the number of tracks to retrieve
+        :param recently_played_ids: a list of recently played track
+          ids retrieved from this station. This avoids playing
+          duplicates.
 
         See :func:`get_all_songs` for the format of a track dictionary.
         """
 
-        # TODO recently played?
+        if recently_played_ids is None:
+            recently_played_ids = []
+
+        def add_track_type(track_id):
+            if track_id[0] == 'T':
+                return {'id': track_id, 'type': 1}
+            else:
+                return {'id': track_id, 'type': 0}
+
+        recently_played = [add_track_type(track_id) for track_id in recently_played_ids]
 
         res = self._make_call(mobileclient.ListStationTracks,
-                              station_id, num_tracks, recently_played=[])
+                              station_id, num_tracks, recently_played=recently_played)
 
         stations = res.get('data', {}).get('stations')
         if not stations:
