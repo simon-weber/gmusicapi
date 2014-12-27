@@ -20,9 +20,24 @@ from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
 # URL for sj service
-sj_url = 'https://www.googleapis.com/sj/v1.5/'
+sj_url = 'https://www.googleapis.com/sj/v1.9/'
 
 # shared schemas
+sj_video = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'kind': {'type': 'string'},
+        'id': {'type': 'string'},
+        'thumbnails': {'type': 'array',
+                       'items': {'type': 'object', 'properties': {
+                           'url': {'type': 'string'},
+                           'width': {'type': 'integer'},
+                           'height': {'type': 'integer'},
+                       }}},
+    }
+}
+
 sj_track = {
     'type': 'object',
     'additionalProperties': False,
@@ -58,8 +73,10 @@ sj_track = {
         'genre': {'type': 'string', 'required': False},
         'trackAvailableForSubscription': {'type': 'boolean'},
         'contentType': {'type': 'string'},
+        'primaryVideo': sj_video.copy(),
     }
 }
+sj_track['properties']['primaryVideo']['required'] = False
 
 sj_playlist = {
     'type': 'object',
