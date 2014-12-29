@@ -626,18 +626,15 @@ class ClientTests(object):
 
     @song_test
     @all_access
-    def mc_get_thumbs_up_songs(self):
+    @retry
+    def mc_get_promoted_songs(self):
         song = self.mc.get_track_info(TEST_AA_SONG_ID)
 
         song['rating'] = '5'
         self.mc.change_song_metadata(song)
 
-        thumbs_up_songs = self.mc.get_thumbs_up_songs()
-
-        found = [e for e in thumbs_up_songs
-                 if e['nid'] == song['nid']]
-
-        assert_equal(len(found), 1)
+        promoted = self.mc.get_promoted_songs()
+        assert_true(len(promoted))
 
         song['rating'] = '0'
         self.mc.change_song_metadata(song)

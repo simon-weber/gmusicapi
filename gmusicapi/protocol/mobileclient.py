@@ -677,7 +677,7 @@ class BatchMutatePlaylistEntries(McBatchMutateCall):
         return mutations
 
 
-class ListThumbsUpTracks(McListCall):
+class ListPromotedTracks(McListCall):
     item_schema = sj_track
     filter_text = 'tracks'
 

@@ -5,10 +5,11 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-4.1.0-dev
+5.0.0-dev
 +++++++++
 released XXXX-XX-XX
 
+- breaking: mobileclient.get_thumbs_up_songs renamed to mobileclient.get_promoted_songs
 - add support for filtering out recently played station tracks
 - fix mobileclient.get_genres: return a list and handle invalid parent genres
 - add public playlist results to mobileclient.search_all_access
