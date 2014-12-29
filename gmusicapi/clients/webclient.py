@@ -48,6 +48,11 @@ class Webclient(_Base):
         :param password: password or app-specific password for 2-factor users.
           This is not stored locally, and is sent securely over SSL.
 
+        Users who don't use two-factor auth will likely need to enable
+        `less secure login <https://www.google.com/settings/security/lesssecureapps>`__.
+        If this is needed, a warning will be logged during login (which will print to stderr
+        in the default logging configuration).
+
         Users of two-factor authentication will need to set an application-specific password
         to log in.
         """

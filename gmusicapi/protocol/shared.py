@@ -151,6 +151,7 @@ class Call(object):
     __metaclass__ = BuildRequestMeta
 
     gets_logged = True
+    fail_on_non_200 = True
 
     required_auth = authtypes()  # all false by default
 
@@ -212,17 +213,17 @@ class Call(object):
         if safe_req_kwargs.get('headers', {}).get('Authorization', None) is not None:
             safe_req_kwargs['headers']['Authorization'] = '<omitted>'
 
-        # check response code
-        try:
-            response.raise_for_status()
-        except requests.HTTPError as e:
-            err_msg = str(e)
+        if cls.fail_on_non_200:
+            try:
+                response.raise_for_status()
+            except requests.HTTPError as e:
+                err_msg = str(e)
 
-            if cls.gets_logged:
-                err_msg += "\n(requests kwargs: %r)" % (safe_req_kwargs)
-                err_msg += "\n(response was: %r)" % response.content
+                if cls.gets_logged:
+                    err_msg += "\n(requests kwargs: %r)" % (safe_req_kwargs)
+                    err_msg += "\n(response was: %r)" % response.content
 
-            raise CallFailure(err_msg, call_name)
+                raise CallFailure(err_msg, call_name)
 
         try:
             parsed_response = cls.parse_response(response)
@@ -337,6 +338,11 @@ class ClientLogin(Call):
 
     gets_logged = False
 
+    fail_on_non_200 = False
+    # The protocol does return 200 and 403 when it makes sense,
+    # but shortcircuiting on non-200s won't allow us to attach error
+    # context in check_success.
+
     static_method = 'POST'
     # static_headers = {'User-agent': 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1'}
     static_url = 'https://www.google.com/accounts/ClientLogin'
@@ -389,6 +395,15 @@ class ClientLogin(Call):
         return ret
 
     @classmethod
-    def check_succes(cls, response, msg):
-        if response.status_code == 200:
-            raise CallFailure("status code %s != 200" % response.status_code, cls.__name__)
+    def check_success(cls, response, msg):
+        if response.status_code != 200:
+            if msg == {'Error': 'BadAuthentication'}:
+                raise CallFailure('Invalid login credentials', cls.__name__)
+
+            log.warning("Received strange login response: %r"
+                        "\n\nYou may need to enable less secure logins:\n"
+                        "  https://www.google.com/settings/security/lesssecureapps", msg)
+
+            raise CallFailure(
+                "status code %s != 200, full response: %r " % (response.status_code, msg),
+                cls.__name__)

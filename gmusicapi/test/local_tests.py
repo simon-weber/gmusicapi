@@ -8,7 +8,7 @@ from collections import namedtuple
 import time
 import os
 
-from mock import MagicMock as Mock
+from mock import MagicMock
 from proboscis.asserts import (
     assert_raises, assert_true, assert_false, assert_equal,
     assert_is_not, Check
@@ -17,8 +17,8 @@ from proboscis import test
 
 import gmusicapi.session
 from gmusicapi.clients import Webclient, Musicmanager
-from gmusicapi.exceptions import AlreadyLoggedIn  # ,NotLoggedIn
-from gmusicapi.protocol.shared import authtypes
+from gmusicapi.exceptions import AlreadyLoggedIn, CallFailure
+from gmusicapi.protocol.shared import authtypes, ClientLogin
 from gmusicapi.protocol import mobileclient
 from gmusicapi.utils import utils, jsarray
 
@@ -60,7 +60,7 @@ def create_clients():
         c = cls()
 
         # mock out the underlying session
-        c.session = Mock()
+        c.session = MagicMock()
         clients.append(c)
 
     return Clients(*clients)
@@ -112,7 +112,7 @@ def create_sessions():
         s = cls()
 
         # mock out the underlying requests.session
-        s._rsession = Mock()
+        s._rsession = MagicMock()
         sessions.append(s)
 
     return Sessions(*sessions)
@@ -154,7 +154,7 @@ def send_without_auth():
     for s in create_sessions():
         s.is_authenticated = True
 
-        mock_session = Mock()
+        mock_session = MagicMock()
         mock_req_kwargs = {'fake': 'kwargs'}
 
         s.send(mock_req_kwargs, authtypes(), mock_session)
@@ -170,6 +170,23 @@ def send_without_auth():
 #
 # protocol
 #
+
+@test
+def clientlogin_raises_on_strange_response():
+    mock_session = MagicMock()
+    mock_res = MagicMock()
+    mock_res.status_code = 403
+    mock_res.text = (
+        'Error=BadAuthentication'
+        '\nUrl=https://www.google.com/accounts/...'
+        '\nInfo=WebLoginRequired')
+
+    mock_session.send = MagicMock(return_value=mock_res)
+
+    assert_raises(CallFailure,
+                  ClientLogin.perform,
+                  mock_session, False, 'email', 'pass')
+
 
 @test
 def authtypes_factory_defaults():
