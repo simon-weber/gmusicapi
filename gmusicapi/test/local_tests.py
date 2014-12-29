@@ -5,10 +5,11 @@ Tests that don't hit the Google Music servers.
 """
 
 from collections import namedtuple
-import time
+import logging
 import os
+import time
 
-from mock import MagicMock
+from mock import MagicMock, patch
 from proboscis.asserts import (
     assert_raises, assert_true, assert_false, assert_equal,
     assert_is_not, Check
@@ -20,6 +21,7 @@ from gmusicapi.clients import Webclient, Musicmanager
 from gmusicapi.exceptions import AlreadyLoggedIn, CallFailure
 from gmusicapi.protocol.shared import authtypes, ClientLogin
 from gmusicapi.protocol import mobileclient
+from gmusicapi.test.utils import NoticeLogging
 from gmusicapi.utils import utils, jsarray
 
 jsarray_samples = []
@@ -183,9 +185,16 @@ def clientlogin_raises_on_strange_response():
 
     mock_session.send = MagicMock(return_value=mock_res)
 
-    assert_raises(CallFailure,
-                  ClientLogin.perform,
-                  mock_session, False, 'email', 'pass')
+    root_logger = logging.getLogger('gmusicapi')
+    noticer = [h for h in root_logger.handlers
+               if isinstance(h, NoticeLogging)][0]
+    with patch.object(noticer, 'emit', return_value=None) as mock_emit:
+        # This call should generate a warning.
+        # We don't want it to fail the build, though.
+        assert_raises(CallFailure,
+                      ClientLogin.perform,
+                      mock_session, False, 'email', 'pass')
+        assert_true(mock_emit.called)
 
 
 @test
