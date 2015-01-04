@@ -20,7 +20,7 @@ from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
 # URL for sj service
-sj_url = 'https://www.googleapis.com/sj/v1.9/'
+sj_url = 'https://mclients.googleapis.com/sj/v1.10/'
 
 # shared schemas
 sj_video = {
@@ -134,6 +134,17 @@ sj_plentry = {
 
 sj_plentry['properties']['track']['required'] = False
 
+sj_attribution = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'kind': {'type': 'string'},
+        'license_url': {'type': 'string'},
+        'license_title': {'type': 'string'},
+        'source_title': {'type': 'string'},
+        'source_url': {'type': 'string'},
+    }
+}
 
 sj_album = {
     'type': 'object',
@@ -149,8 +160,10 @@ sj_album = {
         'year': {'type': 'integer', 'required': False},
         'tracks': {'type': 'array', 'items': sj_track, 'required': False},
         'description': {'type': 'string', 'required': False},
+        'description_attribution': sj_attribution.copy(),
     }
 }
+sj_album['properties']['description_attribution']['required'] = False
 
 sj_artist = {
     'type': 'object',
@@ -165,9 +178,11 @@ sj_artist = {
         'topTracks': {'type': 'array', 'items': sj_track, 'required': False},
         'total_albums': {'type': 'integer', 'required': False},
         'artistBio': {'type': 'string', 'required': False},
+        'artist_bio_attribution': sj_attribution.copy(),
     }
 }
 
+sj_artist['properties']['artist_bio_attribution']['required'] = False
 sj_artist['properties']['related_artists'] = {
     'type': 'array',
     'items': sj_artist,  # note the recursion
