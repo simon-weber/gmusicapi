@@ -140,9 +140,9 @@ sj_attribution = {
     'properties': {
         'kind': {'type': 'string'},
         'license_url': {'type': 'string'},
-        'license_title': {'type': 'string'},
+        'license_title': {'type': 'string', 'required': False},
         'source_title': {'type': 'string'},
-        'source_url': {'type': 'string'},
+        'source_url': {'type': 'string', 'blank': True},
     }
 }
 
