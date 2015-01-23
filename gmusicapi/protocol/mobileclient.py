@@ -73,6 +73,7 @@ sj_track = {
         'genre': {'type': 'string', 'required': False},
         'trackAvailableForSubscription': {'type': 'boolean'},
         'contentType': {'type': 'string'},
+        'lastRatingChangeTimestamp': {'type': 'string', 'required': False},
         'primaryVideo': sj_video.copy(),
     }
 }
