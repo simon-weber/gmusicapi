@@ -406,6 +406,8 @@ class Search(McCall):
             'kind': {'type': 'string'},
             'entries': {'type': 'array',
                         'items': sj_result,
+                        'required': False},
+            'suggestedQuery': {'type':'string',
                         'required': False}
         },
     }
