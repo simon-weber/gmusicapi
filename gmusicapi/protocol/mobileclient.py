@@ -827,7 +827,8 @@ class BatchMutateTracks(McBatchMutateCall):
                     'albumAvailableForPurchase', 'albumArtRef',
                     'artistId',
                     ):
-            del track_dict[key]
+            if key in track_dict:
+                del track_dict[key]
 
         for key, default in {
             'playCount': 0,
