@@ -154,7 +154,7 @@ sj_album = {
         'kind': {'type': 'string'},
         'name': {'type': 'string'},
         'albumArtist': {'type': 'string'},
-        'albumArtRef': {'type': 'string'},
+        'albumArtRef': {'type': 'string', 'required': False},
         'albumId': {'type': 'string'},
         'artist': {'type': 'string'},
         'artistId': {'type': 'array', 'items': {'type': 'string', 'blank': True}},
