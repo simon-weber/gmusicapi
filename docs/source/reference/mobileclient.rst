@@ -42,6 +42,10 @@ entire library (not just their containing playlist).
 .. automethod:: Mobileclient.remove_entries_from_playlist
 .. automethod:: Mobileclient.get_shared_playlist_contents
 
+Other
+-----
+.. automethod:: Mobileclient.get_registered_devices
+
 All Access Radio
 ----------------
 .. automethod:: Mobileclient.get_all_stations
