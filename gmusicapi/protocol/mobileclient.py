@@ -694,6 +694,40 @@ class BatchMutatePlaylistEntries(McBatchMutateCall):
         return mutations
 
 
+class GetDeviceManagementInfo(McCall):
+    """Get registered device information."""
+
+    static_method = 'GET'
+    static_url = sj_url + "devicemanagementinfo"
+    static_params = {'alt': 'json'}
+
+    _device_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'id': {'type': 'string'},
+            'friendlyName': {'type': 'string', 'blank': True},
+            'type': {'type': 'string'},
+            'lastAccessedTimeMs': {'type': 'integer'},
+
+            # only for mobile devices
+            'smartPhone': {'type': 'boolean', 'required': False},
+        }
+    }
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'kind': {'type': 'string'},
+            'data': {'type': 'object',
+                     'items': {'type': 'array', 'items': _device_schema},
+                     'required': False,
+                     },
+        },
+    }
+
+
 class ListPromotedTracks(McListCall):
     item_schema = sj_track
     filter_text = 'tracks'

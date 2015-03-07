@@ -211,8 +211,8 @@ class Mobileclient(_Base):
           are uuids with 'ios:' prepended.
 
           If you have already used Google Music on a mobile device,
-          :func:`Webclient.get_registered_devices
-          <gmusicapi.clients.Webclient.get_registered_devices>` will provide
+          :func:`Mobileclient.get_registered_devices
+          <gmusicapi.clients.Mobileclient.get_registered_devices>` will provide
           at least one working id. Omit ``'0x'`` from the start of the string if present.
 
           Registered computer ids (a MAC address) will not be accepted and will 403.
@@ -555,6 +555,58 @@ class Mobileclient(_Base):
 
     #        if e_after_new_pos:
     #            self._mc_assert_ple_position(e_after_new_pos, to_pos + 1)
+
+    def get_registered_devices(self):
+        """
+        Returns a list of dictionaries representing devices associated with the account.
+
+        Performing the :class:`Musicmanager` OAuth flow will register a device
+        of type ``'DESKTOP_APP'``.
+
+        Installing the Android or iOS Google Music app and logging into it will
+        register a device of type ``'ANDROID'`` or ``'IOS'`` respectively, which is
+        required for streaming with the :class:`Mobileclient`.
+
+        Here is an example response::
+
+            [
+              {
+                u'kind':               u'sj#devicemanagementinfo',
+                u'friendlyName':       u'my-hostname',
+                u'id':                 u'AA:BB:CC:11:22:33',
+                u'lastAccessedTimeMs': u'1394138679694',
+                u'type':               u'DESKTOP_APP'
+              },
+              {
+                u"kind":               u"sj#devicemanagementinfo",
+                u'friendlyName':       u'Nexus 7',
+                u'id':                 u'0x00112233aabbccdd',  # remove 0x when streaming
+                u'lastAccessedTimeMs': u'1344808742774',
+                u'type':               u'ANDROID'
+                u'smartPhone':         True
+              },
+              {
+                u"kind":               u"sj#devicemanagementinfo",
+                u'friendlyName':       u'iPhone 6',
+                u'id':                 u'ios:01234567-0123-0123-0123-0123456789AB',
+                u'lastAccessedTimeMs': 1394138679694,
+                u'type':               u'IOS'
+                u'smartPhone':         True
+              }
+              {
+                u'kind':               u'sj#devicemanagementinfo',
+                u'friendlyName':       u'Google Play Music for Chrome on Windows',
+                u'id':                 u'rt2qfkh0qjhos4bxrgc0oaebzdrsf7ofa5heeqf39frozhqclugmntl0ojm9ogzb',
+                u'lastAccessedTimeMs': u'1425602805052',
+                u'type':               u'DESKTOP_APP'
+              },
+            ]
+
+        """
+
+        res = self._make_call(mobileclient.GetDeviceManagementInfo)
+
+        return res['data']['items'] if 'data' in res else []
 
     def get_promoted_songs(self):
         """Returns a list of dictionaries that each represent a track.
