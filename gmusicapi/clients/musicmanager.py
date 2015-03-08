@@ -294,7 +294,7 @@ class Musicmanager(_Base):
         # need to spoof .continuation_token access, and
         # can't add attrs to object(). Can with functions.
 
-        lib_chunk = lambda: 0
+        lib_chunk = lambda: 0  # noqa
         lib_chunk.continuation_token = None
 
         while get_next_chunk:

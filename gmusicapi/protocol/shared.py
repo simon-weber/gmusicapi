@@ -49,10 +49,10 @@ class BuildRequestMeta(type):
         all_keys = ('method', 'url', 'files', 'data', 'verify', 'allow_redirects') + merge_keys
 
         config = {}  # stores key: val for static or f(*args, **kwargs) -> val for dyn
-        dyn = lambda key: 'dynamic_' + key
-        stat = lambda key: 'static_' + key
-        has_key = lambda key: hasattr(new_cls, key)
-        get_key = lambda key: getattr(new_cls, key)
+        dyn = lambda key: 'dynamic_' + key  # noqa
+        stat = lambda key: 'static_' + key  # noqa
+        has_key = lambda key: hasattr(new_cls, key)  # noqa
+        get_key = lambda key: getattr(new_cls, key)  # noqa
 
         for key in all_keys:
             if not has_key(dyn(key)) and not has_key(stat(key)):

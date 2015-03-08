@@ -262,8 +262,8 @@ def dual_decorator(func):
     """
     @functools.wraps(func)
     def inner(*args, **kw):
-        if ((len(args) == 1 and not kw and callable(args[0])
-             and not (type(args[0]) == type and issubclass(args[0], BaseException)))):
+        if ((len(args) == 1 and not kw and callable(args[0]) and
+             not (type(args[0]) == type and issubclass(args[0], BaseException)))):
             return func()(args[0])
         else:
             return func(*args, **kw)

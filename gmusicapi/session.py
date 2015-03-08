@@ -29,7 +29,7 @@ class _Base(object):
         self._rsession = requests.Session()
 
         if rsession_setup is None:
-            rsession_setup = lambda x: x
+            rsession_setup = lambda x: x  # noqa
         self._rsession_setup = rsession_setup
         self._rsession_setup(self._rsession)
 

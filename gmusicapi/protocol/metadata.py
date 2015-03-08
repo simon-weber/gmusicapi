@@ -189,7 +189,7 @@ _all_expts = [
 
 # Create the dict for client code. If they look up something we don't know about,
 # give them a flexible immutable key.
-_immutable_key = lambda: Expectation('unknown', 'any', mutable=False, optional=True)
+_immutable_key = lambda: Expectation('unknown', 'any', mutable=False, optional=True)  # noqa
 md_expectations = defaultdict(_immutable_key)
 for expt in _all_expts:
     md_expectations[expt.name] = expt

@@ -235,9 +235,9 @@ class SongMatcher(object):
 
         for song in results:
             menu_lines.append(
-                str(key)
-                + ": "
-                + build_song_rep(song).encode('utf-8'))
+                str(key) +
+                ": " +
+                build_song_rep(song).encode('utf-8'))
 
             key += 1
 
@@ -418,9 +418,9 @@ class SongMatcher(object):
             if res:
                 for song in res:
                     self.log_lines.append(
-                        (extra_info if extra_info else (' ' * len(alert)))
-                        + " "
-                        + self.build_song_for_log(song))
+                        (extra_info if extra_info else (' ' * len(alert))) +
+                        " " +
+                        self.build_song_for_log(song))
 
             elif extra_info:
                 self.log_lines.append(extra_info)

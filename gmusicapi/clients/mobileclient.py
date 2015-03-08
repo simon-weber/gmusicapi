@@ -596,7 +596,7 @@ class Mobileclient(_Base):
               {
                 u'kind':               u'sj#devicemanagementinfo',
                 u'friendlyName':       u'Google Play Music for Chrome on Windows',
-                u'id':                 u'rt2qfkh0qjhos4bxrgc0oaebzdrsf7ofa5heeqf39frozhqclugmntl0ojm9ogzb',
+                u'id':                 u'rt2qfkh0qjhos4bxrgc0oae...',  # 64 characters, alphanumeric
                 u'lastAccessedTimeMs': u'1425602805052',
                 u'type':               u'DESKTOP_APP'
               },
