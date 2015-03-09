@@ -455,16 +455,16 @@ class GetStreamUrl(McCall):
         return sig, salt
 
     @staticmethod
-    def dynamic_headers(song_id, device_id):
+    def dynamic_headers(song_id, device_id, quality):
         return {'X-Device-ID': device_id}
 
     @classmethod
-    def dynamic_params(cls, song_id, device_id):
+    def dynamic_params(cls, song_id, device_id, quality):
         sig, salt = cls.get_signature(song_id)
 
         # TODO which of these should get exposed?
-        params = {'opt': 'hi',
-                  'net': 'wifi',
+        params = {'opt': quality,
+                  'net': 'mob',
                   'pt': 'e',
                   'slt': salt,
                   'sig': sig,
