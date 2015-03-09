@@ -462,7 +462,6 @@ class GetStreamUrl(McCall):
     def dynamic_params(cls, song_id, device_id, quality):
         sig, salt = cls.get_signature(song_id)
 
-        # TODO which of these should get exposed?
         params = {'opt': quality,
                   'net': 'mob',
                   'pt': 'e',
