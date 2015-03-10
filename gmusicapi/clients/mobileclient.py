@@ -202,7 +202,7 @@ class Mobileclient(_Base):
         return [d['id'] for d in res['mutate_response']]
 
     @utils.enforce_id_param
-    def get_stream_url(self, song_id, device_id):
+    def get_stream_url(self, song_id, device_id, quality='hi'):
         """Returns a url that will point to an mp3 file.
 
         :param song_id: a single song id
@@ -221,7 +221,9 @@ class Mobileclient(_Base):
           subject to Google's `device limits
           <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1230356>`__.
           **Registering a device id that you do not own is likely a violation of the TOS.**
-
+        :param quality: (optional) stream bits per second quality
+          One of three possible values, hi: 320kbps, med: 160kbps, low: 128kbps.
+          The default is hi
 
         When handling the resulting url, keep in mind that:
             * you will likely need to handle redirects
@@ -242,7 +244,7 @@ class Mobileclient(_Base):
             # android device ids are now sent in base 10
             device_id = str(int(device_id, 16))
 
-        return self._make_call(mobileclient.GetStreamUrl, song_id, device_id)
+        return self._make_call(mobileclient.GetStreamUrl, song_id, device_id, quality)
 
     def get_all_playlists(self, incremental=False, include_deleted=False):
         """Returns a list of dictionaries that each represent a playlist.
