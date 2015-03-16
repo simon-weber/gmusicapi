@@ -101,6 +101,9 @@ sj_playlist = {
                       'required': False},
         'accessControlled': {'type': 'boolean',
                              'required': False},  # for public
+        'shareState': {'type': 'string',
+                       'pattern': r'PRIVATE|PUBLIC',
+                       'required': False},  # for public
         'creationTimestamp': {'type': 'string',
                               'required': False},  # for public
         'id': {'type': 'string',
