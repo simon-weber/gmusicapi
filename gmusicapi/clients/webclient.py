@@ -68,12 +68,12 @@ class Webclient(_Base):
     def logout(self):
         return super(Webclient, self).logout()
 
-    def create_playlist(self, name, description, public=False):
+    def create_playlist(self, name, description=None, public=False):
         """
         Creates a playlist and returns its id.
 
         :param name: the name of the playlist.
-        :param description: the description of the playlist.
+        :param description: (optional) the description of the playlist.
         :param public: if True and the user has All Access, create a shared playlist.
         """
         res = self._make_call(webclient.CreatePlaylist, name, description, public)
