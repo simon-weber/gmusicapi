@@ -282,16 +282,18 @@ class Mobileclient(_Base):
 
     # these could trivially support multiple creation/deletion, but
     # I chose to match the old webclient interface (at least for now).
-    def create_playlist(self, name, public=False):
+    def create_playlist(self, name, description=None, public=False):
         """Creates a new empty playlist and returns its id.
 
         :param name: the desired title.
           Creating multiple playlists with the same name is allowed.
+        :param description: (optional) the desired description
         :param public: if True, create a public All Access playlist.
         """
 
         mutate_call = mobileclient.BatchMutatePlaylists
         add_mutations = mutate_call.build_playlist_adds([{'name': name,
+                                                          'description': description,
                                                           'public': public}])
         res = self._make_call(mutate_call, add_mutations)
 

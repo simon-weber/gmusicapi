@@ -606,7 +606,7 @@ class BatchMutatePlaylists(McBatchMutateCall):
     @staticmethod
     def build_playlist_adds(pl_descriptions):
         """
-        :param pl_descriptions: [{'name': '', 'public': <bool>}]
+        :param pl_descriptions: [{'name': '', 'description': '','public': <bool>}]
         """
 
         return [{'create': {
@@ -614,6 +614,7 @@ class BatchMutatePlaylists(McBatchMutateCall):
             'deleted': False,
             'lastModifiedTimestamp': '0',
             'name': pl_desc['name'],
+            'description': pl_desc['description'],
             'type': 'USER_GENERATED',
             'accessControlled': pl_desc['public'],
         }} for pl_desc in pl_descriptions]

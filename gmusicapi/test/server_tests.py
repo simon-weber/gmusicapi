@@ -271,7 +271,7 @@ class ClientTests(object):
 
     @test
     def playlist_create(self):
-        mc_id = self.mc.create_playlist(TEST_PLAYLIST_NAME)
+        mc_id = self.mc.create_playlist(TEST_PLAYLIST_NAME, "")
         wc_id = self.wc.create_playlist(TEST_PLAYLIST_NAME, "", public=True)
 
         # like song_create, retry until the playlist appears
