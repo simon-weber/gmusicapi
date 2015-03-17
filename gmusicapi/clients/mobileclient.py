@@ -291,10 +291,12 @@ class Mobileclient(_Base):
         :param public: if True, create a public All Access playlist.
         """
 
+        share_state = 'PUBLIC' if public else 'PRIVATE'
+
         mutate_call = mobileclient.BatchMutatePlaylists
         add_mutations = mutate_call.build_playlist_adds([{'name': name,
                                                           'description': description,
-                                                          'public': public}])
+                                                          'public': share_state}])
         res = self._make_call(mutate_call, add_mutations)
 
         return res['mutate_response'][0]['id']
