@@ -280,7 +280,7 @@ class Mobileclient(_Base):
 
         return playlists
 
-    # these could trivially support multiple creation/deletion, but
+    # these could trivially support multiple creation/edits/deletion, but
     # I chose to match the old webclient interface (at least for now).
     def create_playlist(self, name, description=None, public=False):
         """Creates a new empty playlist and returns its id.
@@ -302,15 +302,28 @@ class Mobileclient(_Base):
         return res['mutate_response'][0]['id']
 
     @utils.enforce_id_param
-    def change_playlist_name(self, playlist_id, new_name):
+    def edit_playlist(self, playlist_id, new_name=None, new_description=None, public=None):
         """Changes the name of a playlist and returns its id.
 
         :param playlist_id: the id of the playlist
-        :param new_name: desired title
+        :param new_name: (optional) desired title
+        :param new_description: (optional) desired description
+        :param public: (optional) if True and the user has All Access, share playlist.
         """
 
+        if all(value is None for value in (new_name, new_description, public)):
+            raise ValueError('new_name, new_description, or public must be provided')
+
+        if public is None:
+            share_state = public
+        else:
+            share_state = 'PUBLIC' if public else 'PRIVATE'
+
         mutate_call = mobileclient.BatchMutatePlaylists
-        update_mutations = mutate_call.build_playlist_updates([(playlist_id, new_name)])
+        update_mutations = mutate_call.build_playlist_updates([
+            {'id': playlist_id, 'name': new_name,
+             'description': new_description, 'public': share_state}
+        ])
         res = self._make_call(mutate_call, update_mutations)
 
         return res['mutate_response'][0]['id']

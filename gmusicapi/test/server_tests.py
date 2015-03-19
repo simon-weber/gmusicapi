@@ -32,6 +32,7 @@ from gmusicapi.utils.utils import retry, id_or_nid
 import gmusicapi.test.utils as test_utils
 
 TEST_PLAYLIST_NAME = 'gmusicapi_test_playlist'
+TEST_PLAYLIST_DESCRIPTION = 'gmusicapi test playlist'
 TEST_STATION_NAME = 'gmusicapi_test_station'
 
 TEST_AA_GENRE_ID = 'METAL'
@@ -271,7 +272,7 @@ class ClientTests(object):
 
     @test
     def playlist_create(self):
-        mc_id = self.mc.create_playlist(TEST_PLAYLIST_NAME, "")
+        mc_id = self.mc.create_playlist(TEST_PLAYLIST_NAME, "", public=True)
         wc_id = self.wc.create_playlist(TEST_PLAYLIST_NAME, "", public=True)
 
         # like song_create, retry until the playlist appears
@@ -699,9 +700,9 @@ class ClientTests(object):
         self.assert_list_inc_equivalence(self.mc.get_all_playlists, include_deleted=True)
 
     @playlist_test
-    def mc_change_playlist_name(self):
+    def mc_edit_playlist_name(self):
         new_name = TEST_PLAYLIST_NAME + '_mod'
-        plid = self.mc.change_playlist_name(self.playlist_ids[0], new_name)
+        plid = self.mc.edit_playlist(self.playlist_ids[0], new_name=new_name)
         assert_equal(self.playlist_ids[0], plid)
 
         @retry  # change takes time to propogate
@@ -716,8 +717,50 @@ class ClientTests(object):
         assert_name_equal(self.playlist_ids[0], new_name)
 
         # revert
-        self.mc.change_playlist_name(self.playlist_ids[0], TEST_PLAYLIST_NAME)
+        self.mc.edit_playlist(self.playlist_ids[0], new_name=TEST_PLAYLIST_NAME)
         assert_name_equal(self.playlist_ids[0], TEST_PLAYLIST_NAME)
+
+    @playlist_test
+    def mc_edit_playlist_description(self):
+        new_description = TEST_PLAYLIST_DESCRIPTION + '_mod'
+        plid = self.mc.edit_playlist(self.playlist_ids[0], new_description=new_description)
+        assert_equal(self.playlist_ids[0], plid)
+
+        @retry  # change takes time to propogate
+        def assert_description_equal(plid, description):
+            playlists = self.mc.get_all_playlists()
+
+            found = [p for p in playlists if p['id'] == plid]
+
+            assert_equal(len(found), 1)
+            assert_equal(found[0]['description'], description)
+
+        assert_description_equal(self.playlist_ids[0], new_description)
+
+        # revert
+        self.mc.edit_playlist(self.playlist_ids[0], new_description=TEST_PLAYLIST_DESCRIPTION)
+        assert_description_equal(self.playlist_ids[0], TEST_PLAYLIST_DESCRIPTION)
+
+    @playlist_test
+    def mc_edit_playlist_public(self):
+        new_public = False
+        plid = self.mc.edit_playlist(self.playlist_ids[0], public=new_public)
+        assert_equal(self.playlist_ids[0], plid)
+
+        @retry  # change takes time to propogate
+        def assert_public_equal(plid, public):
+            playlists = self.mc.get_all_playlists()
+
+            found = [p for p in playlists if p['id'] == plid]
+
+            assert_equal(len(found), 1)
+            assert_equal(found[0]['accessControlled'], public)
+
+        assert_public_equal(self.playlist_ids[0], new_public)
+
+        # revert
+        self.mc.edit_playlist(self.playlist_ids[0], public=True)
+        assert_public_equal(self.playlist_ids[0], True)
 
     @retry(tries=3)
     def _mc_assert_ple_position(self, entry, pos):

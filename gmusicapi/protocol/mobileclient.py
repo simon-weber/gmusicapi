@@ -596,12 +596,16 @@ class BatchMutatePlaylists(McBatchMutateCall):
         return [{'delete': id} for id in playlist_ids]
 
     @staticmethod
-    def build_playlist_updates(pl_id_name_pairs):
+    def build_playlist_updates(pl_updates):
         """
-        :param pl_id_name_pairs: [(playlist_id, new_name)]
+        :param pl_updates: [{'id': '', name': '', 'description': '', 'public': ''}]
         """
-        return [{'update': {'id': pl_id, 'name': new_name}} for
-                (pl_id, new_name) in pl_id_name_pairs]
+        return [{'update': {
+            'id': pl_update['id'],
+            'name': pl_update['name'],
+            'description': pl_update['description'],
+            'shareState': pl_update['public']
+        }} for pl_update in pl_updates]
 
     @staticmethod
     def build_playlist_adds(pl_descriptions):
