@@ -101,6 +101,9 @@ sj_playlist = {
                       'required': False},
         'accessControlled': {'type': 'boolean',
                              'required': False},  # for public
+        'shareState': {'type': 'string',
+                       'pattern': r'PRIVATE|PUBLIC',
+                       'required': False},  # for public
         'creationTimestamp': {'type': 'string',
                               'required': False},  # for public
         'id': {'type': 'string',
@@ -593,17 +596,21 @@ class BatchMutatePlaylists(McBatchMutateCall):
         return [{'delete': id} for id in playlist_ids]
 
     @staticmethod
-    def build_playlist_updates(pl_id_name_pairs):
+    def build_playlist_updates(pl_updates):
         """
-        :param pl_id_name_pairs: [(playlist_id, new_name)]
+        :param pl_updates: [{'id': '', name': '', 'description': '', 'public': ''}]
         """
-        return [{'update': {'id': pl_id, 'name': new_name}} for
-                (pl_id, new_name) in pl_id_name_pairs]
+        return [{'update': {
+            'id': pl_update['id'],
+            'name': pl_update['name'],
+            'description': pl_update['description'],
+            'shareState': pl_update['public']
+        }} for pl_update in pl_updates]
 
     @staticmethod
     def build_playlist_adds(pl_descriptions):
         """
-        :param pl_descriptions: [{'name': '', 'public': <bool>}]
+        :param pl_descriptions: [{'name': '', 'description': '','public': ''}]
         """
 
         return [{'create': {
@@ -611,8 +618,9 @@ class BatchMutatePlaylists(McBatchMutateCall):
             'deleted': False,
             'lastModifiedTimestamp': '0',
             'name': pl_desc['name'],
+            'description': pl_desc['description'],
             'type': 'USER_GENERATED',
-            'accessControlled': pl_desc['public'],
+            'shareState': pl_desc['public'],
         }} for pl_desc in pl_descriptions]
 
 
