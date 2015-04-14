@@ -161,7 +161,6 @@ class UploadMetadata(MmCall):
     # these collections define how locker_pb2.Track fields align to mutagen's.
     shared_fields = ('album', 'artist', 'composer', 'genre')
     field_map = {  # mutagen: Track
-        'albumartist': 'album_artist',
         'bpm': 'beats_per_minute',
     }
     count_fields = {  # mutagen: (part, total)
@@ -263,6 +262,15 @@ class UploadMetadata(MmCall):
             # Defaulting them to an empty string fixes this.
             if null_field not in audio:
                 track_set(null_field, '')
+
+        if isinstance(audio, mutagen.mp3.EasyMP3):
+            # Mutagen tags the album artist as `performer` in EasyMP3 tags.
+            # https://bitbucket.org/lazka/mutagen/issue/19
+            if 'performer' in audio:
+                track_set('album_artist', audio['performer'][0])
+        else:
+            if 'albumartist' in audio:
+                track_set('album_artist', audio['albumartist'][0])
 
         # Mass-populate the rest of the simple fields.
         # Merge shared and unshared fields into {mutagen: Track}.
