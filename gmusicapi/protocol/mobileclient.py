@@ -1018,11 +1018,21 @@ class IncrementPlayCount(McCall):
 
     @staticmethod
     def dynamic_data(sid, plays, playtime):
-        # TODO this can support multiple
+        #TODO this can support multiple tracks at a time
+
+        play_timestamp = utils.datetime_to_microseconds(playtime)
+        event = {
+            'context_type': 1,
+            'event_timestamp_micros': str(play_timestamp),
+            'event_type': 2,
+            # This can also send a context_id which is the album/artist id
+            # the song was found from.
+        }
+
         return json.dumps({'track_stats': [{
             'id': sid,
             'incremental_plays': plays,
-            'last_play_time_millis': str(utils.datetime_to_microseconds(playtime)),
+            'last_play_time_millis': str(play_timestamp / 1000),
             'type': 2 if sid.startswith('T') else 1,
-            'track_events': [],
+            'track_events': [event] * plays,
         }]})
