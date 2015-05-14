@@ -247,7 +247,7 @@ sj_station = {
 class McCall(Call):
     """Abstract base for mobile client calls."""
 
-    required_auth = authtypes(xt=False, sso=True)
+    required_auth = authtypes(oauth=True)
 
     # validictory schema for the response
     _res_schema = utils.NotImplementedField

@@ -6,6 +6,7 @@ Sessions handle the details of authentication and transporting requests.
 from contextlib import closing
 import cookielib
 
+import gpsoauth
 import oauth2client
 import httplib2  # included with oauth2client
 import requests
@@ -142,16 +143,49 @@ class Webclient(_Base):
         return rsession.request(**req_kwargs)
 
 
-class Mobileclient(Webclient):
-    def login(self, email, password, *args, **kwargs):
-        success = super(Mobileclient, self).login(email, password, *args, **kwargs)
+class Mobileclient(_Base):
+    def __init__(self, *args, **kwargs):
+        super(Mobileclient, self).__init__(*args, **kwargs)
+        self._master_token = None
+        self._authtoken = None
 
-        # Remove any webclient-specific cookies.
-        # As of Feb 2014, sending these will cause a 403 when
-        #  getting the stream url of an AA song.
-        self._rsession.cookies = cookielib.CookieJar()
+    def login(self, email, password, android_id, *args, **kwargs):
+        """
+        Get a master token, then use it to get a skyjam OAuth token.
 
-        return success
+        :param email:
+        :param password:
+        :param android_id:
+        """
+
+        super(Mobileclient, self).login(email, password, android_id, *args, **kwargs)
+
+        res = gpsoauth.perform_master_login(email, password, android_id)
+        if 'Token' not in res:
+            return False
+        self._master_token = res['Token']
+
+        res = gpsoauth.perform_oauth(
+            email, self._master_token, android_id,
+            service='sj', app='com.google.android.music',
+            client_sig='38918a453d07199354f8b19af05ec6562ced5788')
+        if 'Auth' not in res:
+            return False
+        self._authtoken = res['Auth']
+
+        self.is_authenticated = True
+
+        return True
+
+    def _send_with_auth(self, req_kwargs, desired_auth, rsession):
+        if desired_auth.oauth:
+            req_kwargs.setdefault('headers', {})
+
+            # does this expire?
+            req_kwargs['headers']['Authorization'] = \
+                'GoogleLogin auth=' + self._authtoken
+
+        return rsession.request(**req_kwargs)
 
 
 class Musicmanager(_Base):
