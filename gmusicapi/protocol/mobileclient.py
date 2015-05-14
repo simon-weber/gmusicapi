@@ -20,7 +20,7 @@ from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
 # URL for sj service
-sj_url = 'https://mclients.googleapis.com/sj/v1.10/'
+sj_url = 'https://mclients.googleapis.com/sj/v1.11/'
 
 # shared schemas
 sj_video = {
@@ -815,7 +815,7 @@ class BatchMutateStations(McBatchMutateCall):
     def build_add(name, seed, include_tracks, num_tracks, recent_datetime=None):
         """
         :param name: the title
-        :param seed: a dict with a single pair, {'itemId': id}
+        :param seed: a dict {'itemId': id, 'seedType': int}
         :param include_tracks: if True, return `num_tracks` tracks in the response
         :param num_tracks:
         :param recent_datetime: purpose unknown. defaults to now.
@@ -827,7 +827,7 @@ class BatchMutateStations(McBatchMutateCall):
         recent_timestamp = utils.datetime_to_microseconds(recent_datetime)
 
         return {
-            "create": {
+            "createOrGet": {
                 "clientId": str(uuid1()),
                 "deleted": False,
                 "imageType": 1,
@@ -1018,7 +1018,7 @@ class IncrementPlayCount(McCall):
 
     @staticmethod
     def dynamic_data(sid, plays, playtime):
-        #TODO this can support multiple tracks at a time
+        # TODO this can support multiple tracks at a time
 
         play_timestamp = utils.datetime_to_microseconds(playtime)
         event = {
