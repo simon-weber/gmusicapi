@@ -25,27 +25,23 @@ class Mobileclient(_Base):
                                            validate,
                                            verify_ssl)
 
-    def login(self, email, password):
+    def login(self, email, password, android_id):
         """Authenticates the Mobileclient.
         Returns ``True`` on success, ``False`` on failure.
 
         :param email: eg ``'test@gmail.com'`` or just ``'test'``.
         :param password: password or app-specific password for 2-factor users.
           This is not stored locally, and is sent securely over SSL.
+        :param android_id: 16 hex digits, eg ``'1234567890abcdef'``
 
-        Users who don't use two-factor auth will likely need to enable
-        `less secure login <https://www.google.com/settings/security/lesssecureapps>`__.
-        If this is needed, a warning will be logged during login (which will print to stderr
-        in the default logging configuration).
-
-        Users of two-factor authentication will need to set an application-specific password
-        to log in.
+        #TODO 2fa
         """
 
-        if not self.session.login(email, password):
+        if not self.session.login(email, password, android_id):
             self.logger.info("failed to authenticate")
             return False
 
+        self.android_id = android_id
         self.logger.info("authenticated")
 
         return True
@@ -202,11 +198,13 @@ class Mobileclient(_Base):
         return [d['id'] for d in res['mutate_response']]
 
     @utils.enforce_id_param
-    def get_stream_url(self, song_id, device_id, quality='hi'):
+    def get_stream_url(self, song_id, device_id=None, quality='hi'):
         """Returns a url that will point to an mp3 file.
 
         :param song_id: a single song id
-        :param device_id: a mobile device id as a string.
+        :param device_id: (optional) defaults to ``android_id`` from login.
+
+          Otherwise, provide a mobile device id as a string.
           Android device ids are 16 characters, while iOS ids
           are uuids with 'ios:' prepended.
 
@@ -239,6 +237,9 @@ class Mobileclient(_Base):
         <gmusicapi.clients.Musicmanager.download_song>`
         to download files with metadata.
         """
+
+        if device_id is None:
+            device_id = self.android_id
 
         if len(device_id) == 16 and re.match('^[a-z0-9]*$', device_id):
             # android device ids are now sent in base 10

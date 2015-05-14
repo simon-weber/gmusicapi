@@ -24,7 +24,7 @@ _auth_names = ('xt', 'sso', 'oauth')
   AuthTypes has fields for each type of auth, each of which store a bool:
     xt: webclient xsrf param/cookie
     sso: webclient Authorization header
-    oauth: musicmanager oauth header
+    oauth: musicmanager/mobileclient oauth header
 """
 AuthTypes = namedtuple('AuthTypes', _auth_names)
 
