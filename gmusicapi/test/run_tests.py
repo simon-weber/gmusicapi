@@ -87,12 +87,7 @@ def retrieve_auth():
         mm_kwargs['oauth_credentials'] = \
             credentials_from_refresh_token(mm_kwargs['oauth_credentials'])
 
-    if 'GM_AA_D_ID' not in os.environ:
-        print 'an android id must be provided in the env var GM_AA_D_ID'
-        sys.exit(1)
-
     mc_kwargs = wc_kwargs.copy()
-    mc_kwargs['android_id'] = os.environ['GM_AA_D_ID']
 
     return (wc_kwargs, mc_kwargs, mm_kwargs)
 
