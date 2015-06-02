@@ -1028,7 +1028,8 @@ class Mobileclient(_Base):
             items = lib_chunk['data']['items']
 
             if not include_deleted:
-                items = [item for item in items if not item['deleted']]
+                items = [item for item in items
+                         if not item.get('deleted', False)]
 
             yield items
 
