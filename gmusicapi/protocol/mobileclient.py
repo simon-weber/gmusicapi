@@ -408,6 +408,9 @@ class Search(McCall):
         'additionalProperties': False,
         'properties': {
             'kind': {'type': 'string'},
+            'clusterOrder': {'type': 'array',
+                             'items': {'type': 'string'},
+                             'required': False},
             'entries': {'type': 'array',
                         'items': sj_result,
                         'required': False},
