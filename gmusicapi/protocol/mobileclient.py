@@ -145,7 +145,7 @@ sj_attribution = {
         'kind': {'type': 'string'},
         'license_url': {'type': 'string', 'required': False},
         'license_title': {'type': 'string', 'required': False},
-        'source_title': {'type': 'string', 'blank': True},
+        'source_title': {'type': 'string', 'blank': True, 'required': False},
         'source_url': {'type': 'string', 'blank': True, 'required': False},
     }
 }
