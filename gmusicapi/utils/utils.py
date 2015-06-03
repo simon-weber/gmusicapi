@@ -27,7 +27,7 @@ from gmusicapi.exceptions import CallFailure, GmusicapiWarning
 # when False, static code will simply log in the standard way under the root.
 per_client_logging = True
 
-#Map descriptor.CPPTYPE -> python type.
+# Map descriptor.CPPTYPE -> python type.
 _python_to_cpp_types = {
     long: ('int32', 'int64', 'uint32', 'uint64'),
     float: ('double', 'float'),
@@ -145,8 +145,8 @@ def longest_increasing_subseq(seq):
     # at seq[j], in reverse order
     predecessor = [-1]
     for i in xrange(1, len(seq)):
-        ## Find j such that:  seq[head[j - 1]] < seq[i] <= seq[head[j]]
-        ## seq[head[j]] is increasing, so use binary search.
+        # Find j such that:  seq[head[j - 1]] < seq[i] <= seq[head[j]]
+        # seq[head[j]] is increasing, so use binary search.
         j = bisect_left([seq[head[idx]] for idx in xrange(len(head))], seq[i])
 
         if j == len(head):
@@ -156,7 +156,7 @@ def longest_increasing_subseq(seq):
 
         predecessor.append(head[j - 1] if j > 0 else -1)
 
-    ## trace subsequence back to output
+    # trace subsequence back to output
     result = []
     trace_idx = head[-1]
     while (trace_idx >= 0):
@@ -262,8 +262,8 @@ def dual_decorator(func):
     """
     @functools.wraps(func)
     def inner(*args, **kw):
-        if ((len(args) == 1 and not kw and callable(args[0])
-             and not (type(args[0]) == type and issubclass(args[0], BaseException)))):
+        if ((len(args) == 1 and not kw and callable(args[0]) and
+             not (type(args[0]) == type and issubclass(args[0], BaseException)))):
             return func()(args[0])
         else:
             return func(*args, **kw)
@@ -336,7 +336,7 @@ def configure_debug_log_handlers(logger):
     logger.addHandler(important_handler)
 
     if not printed_log_start_message:
-        #print out startup message without verbose formatting
+        # print out startup message without verbose formatting
         logger.info("!-- begin debug log --!")
         logger.info("version: " + __version__)
         if logging_to_file:
@@ -402,12 +402,12 @@ def pb_set(msg, field_name, val):
     :param val
     """
 
-    #Find the proper type.
+    # Find the proper type.
     field_desc = msg.DESCRIPTOR.fields_by_name[field_name]
     proper_type = cpp_type_to_python[field_desc.cpp_type]
 
-    #Try with the given type first.
-    #Their set hooks will automatically coerce.
+    # Try with the given type first.
+    # Their set hooks will automatically coerce.
     try_types = (type(val), proper_type)
 
     for t in try_types:
@@ -424,6 +424,39 @@ def pb_set(msg, field_name, val):
     return True
 
 
+def locate_mp3_transcoder():
+    """Return the path to a transcoder (ffmpeg or avconv) with mp3 support.
+
+    Raise ValueError if none are suitable."""
+
+    transcoders = ['ffmpeg', 'avconv']
+    transcoder_details = {}
+
+    for transcoder in transcoders:
+        cmd_path = spawn.find_executable(transcoder)
+        if cmd_path is None:
+            transcoder_details[transcoder] = 'not installed'
+            continue
+
+        proc = subprocess.Popen(
+            [cmd_path, '-codecs'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+
+        stdout, stderr = proc.communicate()
+        mp3_encoding_support = ('libmp3lame' in stdout and 'disable-libmp3lame' not in stdout)
+        if mp3_encoding_support:
+            transcoder_details[transcoder] = "mp3 encoding support"
+            break  # mp3 decoding/encoding supported
+        else:
+            transcoder_details[transcoder] = 'no mp3 encoding support'
+    else:
+        raise ValueError('ffmpeg or avconv must be in the path and support mp3 encoding'
+                         "\ndetails: %r" % transcoder_details)
+
+    return cmd_path
+
+
 def transcode_to_mp3(filepath, quality='320k', slice_start=None, slice_duration=None):
     """Return the bytestring result of transcoding the file at *filepath* to mp3.
     An ID3 header is not included in the result.
@@ -434,15 +467,13 @@ def transcode_to_mp3(filepath, quality='320k', slice_start=None, slice_duration=
     :param slice_start: (optional) transcode a slice, starting at this many seconds
     :param slice_duration: (optional) when used with slice_start, the number of seconds in the slice
 
-    Raise IOError on transcoding problems, or ValueError on param problems.
+    Raise:
+      * IOError: problems during transcoding
+      * ValueError: invalid params, transcoder not found
     """
 
     err_output = None
-    cmd_path = spawn.find_executable('ffmpeg')
-    if cmd_path is None:
-        cmd_path = spawn.find_executable('avconv')
-        if cmd_path is None:
-            raise IOError('Neither ffmpeg nor avconv was found in your PATH')
+    cmd_path = locate_mp3_transcoder()
     cmd = [cmd_path, '-i', filepath]
 
     if slice_duration is not None:
@@ -478,7 +509,7 @@ def transcode_to_mp3(filepath, quality='320k', slice_start=None, slice_duration=
         err_msg = "transcoding command (%s) failed: %s. " % (' '.join(cmd), e)
 
         if 'No such file or directory' in str(e):
-            err_msg += '\navconv must be installed and in the system path.'
+            err_msg += '\nffmpeg or avconv must be installed and in the system path.'
 
         if err_output is not None:
             err_msg += "\nstderr: '%s'" % err_output
@@ -496,7 +527,7 @@ def truncate(x, max_els=100, recurse_levels=0):
     recurse_levels is only valid for homogeneous lists/tuples.
     max_els ignored for song dictionaries."""
 
-    #Coerce tuple to list to ease truncation.
+    # Coerce tuple to list to ease truncation.
     is_tuple = False
     if isinstance(x, tuple):
         is_tuple = True
@@ -509,7 +540,7 @@ def truncate(x, max_els=100, recurse_levels=0):
 
             if isinstance(x, dict):
                 if 'id' in x and 'titleNorm' in x:
-                    #assume to be a song dict
+                    # assume to be a song dict
                     trunc = dict((k, x.get(k)) for k in ['title', 'artist', 'album'])
                     trunc['...'] = '...'
                     return trunc
@@ -525,7 +556,7 @@ def truncate(x, max_els=100, recurse_levels=0):
                 return trunc
 
     except TypeError:
-        #does not have len
+        # does not have len
         pass
 
     return x
@@ -540,18 +571,18 @@ def empty_arg_shortcircuit(return_code='[]', position=1):
     :param position: (optional) the position of the expected list - default is 1.
     """
 
-    #The normal pattern when making a collection an optional arg is to use
+    # The normal pattern when making a collection an optional arg is to use
     # a sentinel (like None). Otherwise, you run the risk of the collection
     # being mutated - there's only one, not a new one on each call.
-    #Here we've got multiple things we'd like to
+    # Here we've got multiple things we'd like to
     # return, so we can't do that. Rather than make some kind of enum for
     # 'accepted return values' I'm just allowing freedom to return anything.
-    #Less safe? Yes. More convenient? Definitely.
+    # Less safe? Yes. More convenient? Definitely.
 
     @decorator
     def wrapper(function, *args, **kw):
         if len(args[position]) == 0:
-            #avoid polluting our namespace
+            # avoid polluting our namespace
             ns = {}
             exec 'retval = ' + return_code in ns
             return ns['retval']
@@ -574,7 +605,7 @@ def accept_singleton(expected_type, position=1):
     def wrapper(function, *args, **kw):
 
         if isinstance(args[position], expected_type):
-            #args are a tuple, can't assign into them
+            # args are a tuple, can't assign into them
             args = list(args)
             args[position] = [args[position]]
             args = tuple(args)
@@ -584,7 +615,7 @@ def accept_singleton(expected_type, position=1):
     return wrapper
 
 
-#Used to mark a field as unimplemented.
+# Used to mark a field as unimplemented.
 @property
 def NotImplementedField(self):
     raise NotImplementedError

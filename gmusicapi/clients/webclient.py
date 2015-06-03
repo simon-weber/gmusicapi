@@ -48,6 +48,11 @@ class Webclient(_Base):
         :param password: password or app-specific password for 2-factor users.
           This is not stored locally, and is sent securely over SSL.
 
+        Users who don't use two-factor auth will likely need to enable
+        `less secure login <https://www.google.com/settings/security/lesssecureapps>`__.
+        If this is needed, a warning will be logged during login (which will print to stderr
+        in the default logging configuration).
+
         Users of two-factor authentication will need to set an application-specific password
         to log in.
         """
@@ -63,12 +68,12 @@ class Webclient(_Base):
     def logout(self):
         return super(Webclient, self).logout()
 
-    def create_playlist(self, name, description, public=False):
+    def create_playlist(self, name, description=None, public=False):
         """
         Creates a playlist and returns its id.
 
         :param name: the name of the playlist.
-        :param description: the description of the playlist.
+        :param description: (optional) the description of the playlist.
         :param public: if True and the user has All Access, create a shared playlist.
         """
         res = self._make_call(webclient.CreatePlaylist, name, description, public)
@@ -137,7 +142,7 @@ class Webclient(_Base):
 
         """
 
-        #TODO sessionid stuff
+        # TODO sessionid stuff
         res = self._make_call(webclient.GetSettings, '')
         return res['settings']['devices']
 
@@ -156,7 +161,7 @@ class Webclient(_Base):
         the count is incremented when ``url`` is retrieved.
         """
 
-        #TODO the protocol expects a list of songs - could extend with accept_singleton
+        # TODO the protocol expects a list of songs - could extend with accept_singleton
         info = self._make_call(webclient.GetDownloadInfo, [song_id])
         url = info.get('url')
 
@@ -217,7 +222,7 @@ class Webclient(_Base):
 
         urls = self.get_stream_urls(song_id)
 
-        #TODO shouldn't session.send be used throughout?
+        # TODO shouldn't session.send be used throughout?
 
         if len(urls) == 1:
             return self.session._rsession.get(urls[0]).content
@@ -241,7 +246,7 @@ class Webclient(_Base):
             audio = self.session._rsession.get(url, headers=headers).content
 
             if end - prev_end != len(audio) - 1:
-                #content length is not in the right range
+                # content length is not in the right range
 
                 if use_range_header:
                     # the user didn't want automatic response fixup
@@ -368,7 +373,7 @@ class Webclient(_Base):
                          if t["id"] in sid_set]
 
         if matching_eids:
-            #Call returns "sid_eid" strings.
+            # Call returns "sid_eid" strings.
             sid_eids = self._remove_entries_from_playlist(playlist_id,
                                                           matching_eids)
             return [s.split("_") for s in sid_eids]
@@ -384,7 +389,7 @@ class Webclient(_Base):
         :param entry_ids: a list of entry ids, or a single entry id.
         """
 
-        #GM requires the song ids in the call as well; find them.
+        # GM requires the song ids in the call as well; find them.
         playlist_tracks = self.get_playlist_songs(playlist_id)
         remove_eid_set = set(entry_ids_to_remove)
 
@@ -397,7 +402,7 @@ class Webclient(_Base):
             self.logger.warning("when removing, %d entry ids could not be found in playlist id %s",
                                 num_not_found, playlist_id)
 
-        #Unzip the pairs.
+        # Unzip the pairs.
         sids, eids = zip(*e_s_id_pairs)
 
         res = self._make_call(webclient.DeleteSongs, sids, playlist_id, eids)

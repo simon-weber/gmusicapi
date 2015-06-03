@@ -23,7 +23,7 @@ from gmusicapi.utils import utils
 log = utils.DynamicClientLogger(__name__)
 
 
-#This url has SSL issues, hence the static_verify=False.
+# This url has SSL issues, hence the static_verify=False.
 _android_url = 'https://android.clients.google.com/upsj/'
 
 OAuthInfo = namedtuple('OAuthInfo', 'client_id client_secret scope redirect')
@@ -140,17 +140,17 @@ class UploadMetadata(MmCall):
 
     @staticmethod
     def get_track_clientid(filepath):
-        #The id is a 22 char hash of the file. It is found by:
+        # The id is a 22 char hash of the file. It is found by:
         # stripping tags
         # getting an md5 sum
         # converting sum to base64
         # removing trailing ===
 
-        #My implementation is _not_ the same hash the music manager will send;
+        # My implementation is _not_ the same hash the music manager will send;
         # they strip tags first. But files are differentiated across accounts,
         # so this shouldn't cause problems.
 
-        #This will attempt to reupload files if their tags change.
+        # This will attempt to reupload files if their tags change.
 
         m = hashlib.md5()
         with open(filepath, 'rb') as f:
@@ -158,7 +158,7 @@ class UploadMetadata(MmCall):
 
         return base64.encodestring(m.digest())[:-3]
 
-    #these collections define how locker_pb2.Track fields align to mutagen's.
+    # these collections define how locker_pb2.Track fields align to mutagen's.
     shared_fields = ('album', 'artist', 'composer', 'genre')
     field_map = {  # mutagen: Track
         'albumartist': 'album_artist',
@@ -179,11 +179,11 @@ class UploadMetadata(MmCall):
 
         extension = os.path.splitext(filepath)[1].upper()
         if extension:
-            #Trim leading period if it exists (ie extension not empty).
+            # Trim leading period if it exists (ie extension not empty).
             extension = extension[1:]
 
         if extension.upper() == 'M4B':
-            #M4B are supported by the music manager, and transcoded like normal.
+            # M4B are supported by the music manager, and transcoded like normal.
             extension = 'M4A'
 
         if not hasattr(locker_pb2.Track, extension):
@@ -194,19 +194,19 @@ class UploadMetadata(MmCall):
         track.estimated_size = os.path.getsize(filepath)
         track.last_modified_timestamp = int(os.path.getmtime(filepath))
 
-        #These are typically zeroed in my examples.
+        # These are typically zeroed in my examples.
         track.play_count = 0
         track.client_date_added = 0
         track.recent_timestamp = 0
         track.rating = locker_pb2.Track.NOT_RATED  # star rating
 
-        #Populate information about the encoding.
+        # Populate information about the encoding.
         audio = mutagen.File(filepath, easy=True)
         if audio is None:
             raise ValueError("could not open to read metadata")
         elif isinstance(audio, mutagen.asf.ASF):
-            #WMA entries store more info than just the value.
-            #Monkeypatch in a dict {key: value} to keep interface the same for all filetypes.
+            # WMA entries store more info than just the value.
+            # Monkeypatch in a dict {key: value} to keep interface the same for all filetypes.
             asf_dict = dict((k, [ve.value for ve in v]) for (k, v) in audio.tags.as_dict().items())
             audio.tags = asf_dict
 
@@ -215,14 +215,14 @@ class UploadMetadata(MmCall):
         try:
             bitrate = int(audio.info.bitrate / 1000)
         except AttributeError:
-            #mutagen doesn't provide bitrate for some lossless formats (eg FLAC), so
+            # mutagen doesn't provide bitrate for some lossless formats (eg FLAC), so
             # provide an estimation instead. This shouldn't matter too much;
             # the bitrate will always be > 320, which is the highest scan and match quality.
             bitrate = (track.estimated_size * 8) / track.duration_millis
 
         track.original_bit_rate = bitrate
 
-        #Populate metadata.
+        # Populate metadata.
 
         def track_set(field_name, val, msg=track):
             """Returns result of utils.pb_set and logs on failures.
@@ -234,8 +234,8 @@ class UploadMetadata(MmCall):
 
             return success
 
-        #Title is required.
-        #If it's not in the metadata, the filename will be used.
+        # Title is required.
+        # If it's not in the metadata, the filename will be used.
         if "title" in audio:
             title = audio['title'][0]
             if isinstance(title, mutagen.asf.ASFUnicodeAttribute):
@@ -243,7 +243,7 @@ class UploadMetadata(MmCall):
 
             track_set('title', title)
         else:
-            #Assume ascii or unicode.
+            # Assume ascii or unicode.
             track.title = os.path.basename(filepath)
 
         if "date" in audio:
@@ -264,8 +264,8 @@ class UploadMetadata(MmCall):
             if null_field not in audio:
                 track_set(null_field, '')
 
-        #Mass-populate the rest of the simple fields.
-        #Merge shared and unshared fields into {mutagen: Track}.
+        # Mass-populate the rest of the simple fields.
+        # Merge shared and unshared fields into {mutagen: Track}.
         fields = dict(
             dict((shared, shared) for shared in cls.shared_fields).items() +
             cls.field_map.items()
@@ -307,7 +307,7 @@ class UploadMetadata(MmCall):
 
 
 class GetUploadJobs(MmCall):
-    #TODO
+    # TODO
     static_url = _android_url + 'getjobs'
     static_verify = False
 
@@ -350,8 +350,8 @@ class GetUploadSession(MmCall):
     def dynamic_data(uploader_id, num_already_uploaded,
                      track, filepath, server_id, do_not_rematch=False):
         """track is a locker_pb2.Track, and the server_id is from a metadata upload."""
-        #small info goes inline, big things get their own external PUT.
-        #still not sure as to thresholds - I've seen big album art go inline.
+        # small info goes inline, big things get their own external PUT.
+        # still not sure as to thresholds - I've seen big album art go inline.
         inlined = {
             "title": "jumper-uploader-title-42",
             "ClientId": track.client_id,
@@ -374,8 +374,8 @@ class GetUploadSession(MmCall):
                             "filename": os.path.basename(filepath),
                             "name": os.path.abspath(filepath),
                             "put": {},
-                            #used to use this; don't see it in examples
-                            #"size": track.estimated_size,
+                            # used to use this; don't see it in examples
+                            # "size": track.estimated_size,
                         }
                     }
                 ]
@@ -383,7 +383,7 @@ class GetUploadSession(MmCall):
             "protocolVersion": "0.8"
         }
 
-        #Insert the inline info.
+        # Insert the inline info.
         for key in inlined:
             payload = inlined[key]
             if not isinstance(payload, basestring):
@@ -409,7 +409,7 @@ class GetUploadSession(MmCall):
             return (True, None)
 
         if 'errorMessage' in res:
-            #This terribly nested structure is Google's doing.
+            # This terribly nested structure is Google's doing.
             error_code = (res['errorMessage']['additionalInfo']
                           ['uploader_service.GoogleRupioAdditionalInfo']
                           ['completionInfo']['customerSpecificInfo']['ResponseCode'])
@@ -420,7 +420,7 @@ class GetUploadSession(MmCall):
                 should_retry = True
                 reason = 'upload servers still syncing'
 
-            #TODO unsure about these codes
+            # TODO unsure about these codes
             elif error_code == 200:
                 should_retry = False
                 reason = 'this song is already uploaded'
@@ -440,7 +440,7 @@ class GetUploadSession(MmCall):
 
 class UploadFile(MmCall):
     """Called after getting a session to actually upload a file."""
-    #TODO recent protocols use multipart encoding
+    # TODO recent protocols use multipart encoding
 
     static_method = 'PUT'
 
@@ -458,7 +458,7 @@ class UploadFile(MmCall):
 
     @staticmethod
     def dynamic_url(session_url, content_type, audio):
-        #this actually includes params, but easier to pass them straight through
+        # this actually includes params, but easier to pass them straight through
         return session_url
 
     @staticmethod
@@ -494,7 +494,7 @@ class ProvideSample(MmCall):
         sample_spec = server_challenge.challenge_info  # convenience
 
         if mock_sample is None:
-            #The sample is simply a small (usually 15 second) clip of the song,
+            # The sample is simply a small (usually 15 second) clip of the song,
             # transcoded into 128kbs mp3. The server dictates where the cut should be made.
             sample_msg.sample = utils.transcode_to_mp3(
                 filepath, quality='128k',
@@ -504,7 +504,7 @@ class ProvideSample(MmCall):
         else:
             sample_msg.sample = mock_sample
 
-        #You can provide multiple samples; I just provide one at a time.
+        # You can provide multiple samples; I just provide one at a time.
         msg.track_sample.extend([sample_msg])
 
         return msg
@@ -626,7 +626,7 @@ class ListTracks(MmCall):
                 ), cls.__name__
             )
 
-    #TODO
+    # TODO
     @staticmethod
     def filter_response(msg):
         """Only log a summary."""

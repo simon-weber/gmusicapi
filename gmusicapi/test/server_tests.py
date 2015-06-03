@@ -25,13 +25,14 @@ import requests
 from requests.exceptions import SSLError
 
 from gmusicapi import Webclient, Musicmanager, Mobileclient
-#from gmusicapi.protocol import mobileclient
+# from gmusicapi.protocol import mobileclient
 from gmusicapi.protocol.shared import authtypes
-#from gmusicapi.protocol.metadata import md_expectations
+# from gmusicapi.protocol.metadata import md_expectations
 from gmusicapi.utils.utils import retry, id_or_nid
 import gmusicapi.test.utils as test_utils
 
 TEST_PLAYLIST_NAME = 'gmusicapi_test_playlist'
+TEST_PLAYLIST_DESCRIPTION = 'gmusicapi test playlist'
 TEST_STATION_NAME = 'gmusicapi_test_station'
 
 TEST_AA_GENRE_ID = 'METAL'
@@ -42,8 +43,8 @@ TEST_AA_SONG_ID = 'Tqqufr34tuqojlvkolsrwdwx7pe'
 
 # used for testing streaming.
 # differences between clients are presumably from stream quality.
-TEST_AA_SONG_WC_HASH = '731fc03139a6aa9e4fa2f970b4d6d64f'
-TEST_AA_SONG_MC_HASH = 'c1dcdf2b69fe809f717c0fc1f7303a27'
+TEST_AA_SONG_WC_HASH = '56c3598149bada50cfcf325382c21169'
+TEST_AA_SONG_MC_HASH = '815c49d3e49eea675d198a2e00aa4c40'
 
 # Amorphis
 TEST_AA_ARTIST_ID = 'Apoecs6off3y6k4h5nvqqos4b5e'
@@ -112,7 +113,7 @@ class ClientTests(object):
     mm = None  # musicmanager
     mc = None  # mobileclient
 
-    #These are set on the instance in eg create_song.
+    # These are set on the instance in eg create_song.
 
     # both are [TestSong]
     user_songs = None
@@ -271,7 +272,7 @@ class ClientTests(object):
 
     @test
     def playlist_create(self):
-        mc_id = self.mc.create_playlist(TEST_PLAYLIST_NAME)
+        mc_id = self.mc.create_playlist(TEST_PLAYLIST_NAME, "", public=True)
         wc_id = self.wc.create_playlist(TEST_PLAYLIST_NAME, "", public=True)
 
         # like song_create, retry until the playlist appears
@@ -331,7 +332,7 @@ class ClientTests(object):
             assert_equal(len(found), 0)
 
         assert_plentries_removed(self.playlist_ids[0], self.plentry_ids)
-        #self.assert_listing_contains_deleted_items(self.mc_get_playlist_songs)
+        # self.assert_listing_contains_deleted_items(self.mc_get_playlist_songs)
 
     @test(groups=['playlist'], depends_on=[playlist_create],
           runs_after=[plentry_delete],
@@ -428,11 +429,11 @@ class ClientTests(object):
         self.assert_songs_state(self.mc.get_all_songs, sids(self.all_songs), present=False)
         self.assert_listing_contains_deleted_items(self.mc.get_all_songs)
 
-    ## These decorators just prevent setting groups and depends_on over and over.
-    ## They won't work right with additional settings; if that's needed this
-    ##  pattern should be factored out.
+    # These decorators just prevent setting groups and depends_on over and over.
+    # They won't work right with additional settings; if that's needed this
+    #  pattern should be factored out.
 
-    ##TODO it'd be nice to have per-client test groups
+    # TODO it'd be nice to have per-client test groups
     song_test = test(groups=['song', 'song.exists'], depends_on=[song_create])
     playlist_test = test(groups=['playlist', 'playlist.exists'],
                          depends_on=[playlist_create])
@@ -440,11 +441,11 @@ class ClientTests(object):
                         depends_on=[plentry_create])
     station_test = test(groups=['station', 'station.exists'], depends_on=[station_create])
 
-    ## Non-wonky tests resume down here.
+    # Non-wonky tests resume down here.
 
-    ##---------
-    ## MM tests
-    ##---------
+    # ---------
+    #  MM tests
+    # ---------
 
     @song_test
     def mm_list_new_songs(self):
@@ -463,16 +464,16 @@ class ClientTests(object):
         def assert_download(sid):
             filename, audio = self.mm.download_song(sid)
 
-            #TODO could use original filename to verify this
+            # TODO could use original filename to verify this
             # but, when manually checking, got modified title occasionally
             assert_true(filename.endswith('.mp3'))
             assert_is_not_none(audio)
 
         assert_download(self.user_songs[0].sid)
 
-    ##---------
-    ## WC tests
-    ##---------
+    # ---------
+    #  WC tests
+    # ---------
 
     @test
     def wc_get_registered_devices(self):
@@ -534,12 +535,17 @@ class ClientTests(object):
     @song_test
     def wc_upload_album_art(self):
         url = self.wc.upload_album_art(self.user_songs[0].sid, test_utils.image_filename)
-        assert_equal(url[:7], 'http://')
-        #TODO download the track and verify the metadata changed
+        assert_equal(url[:4], 'http')
+        # TODO download the track and verify the metadata changed
 
-    ##---------
-    ## MC tests
-    ##---------
+    # ---------
+    #  MC tests
+    # ---------
+
+    @test
+    def mc_get_registered_devices(self):
+        # no logic; just checking schema
+        self.mc.get_registered_devices()
 
     @test
     def mc_list_stations_inc_equal(self):
@@ -566,7 +572,7 @@ class ClientTests(object):
         url = self.mc.get_stream_url(self.user_songs[0].sid)
 
         assert_is_not_none(url)
-        assert_equal(url[:7], 'http://')
+        assert_equal(url[:4], 'http')
 
     @staticmethod
     @retry
@@ -626,18 +632,15 @@ class ClientTests(object):
 
     @song_test
     @all_access
-    def mc_get_thumbs_up_songs(self):
+    @retry
+    def mc_get_promoted_songs(self):
         song = self.mc.get_track_info(TEST_AA_SONG_ID)
 
         song['rating'] = '5'
         self.mc.change_song_metadata(song)
 
-        thumbs_up_songs = self.mc.get_thumbs_up_songs()
-
-        found = [e for e in thumbs_up_songs
-                 if e['nid'] == song['nid']]
-
-        assert_equal(len(found), 1)
+        promoted = self.mc.get_promoted_songs()
+        assert_true(len(promoted))
 
         song['rating'] = '0'
         self.mc.change_song_metadata(song)
@@ -697,9 +700,9 @@ class ClientTests(object):
         self.assert_list_inc_equivalence(self.mc.get_all_playlists, include_deleted=True)
 
     @playlist_test
-    def mc_change_playlist_name(self):
+    def mc_edit_playlist_name(self):
         new_name = TEST_PLAYLIST_NAME + '_mod'
-        plid = self.mc.change_playlist_name(self.playlist_ids[0], new_name)
+        plid = self.mc.edit_playlist(self.playlist_ids[0], new_name=new_name)
         assert_equal(self.playlist_ids[0], plid)
 
         @retry  # change takes time to propogate
@@ -714,10 +717,52 @@ class ClientTests(object):
         assert_name_equal(self.playlist_ids[0], new_name)
 
         # revert
-        self.mc.change_playlist_name(self.playlist_ids[0], TEST_PLAYLIST_NAME)
+        self.mc.edit_playlist(self.playlist_ids[0], new_name=TEST_PLAYLIST_NAME)
         assert_name_equal(self.playlist_ids[0], TEST_PLAYLIST_NAME)
 
-    @retry
+    @playlist_test
+    def mc_edit_playlist_description(self):
+        new_description = TEST_PLAYLIST_DESCRIPTION + '_mod'
+        plid = self.mc.edit_playlist(self.playlist_ids[0], new_description=new_description)
+        assert_equal(self.playlist_ids[0], plid)
+
+        @retry  # change takes time to propogate
+        def assert_description_equal(plid, description):
+            playlists = self.mc.get_all_playlists()
+
+            found = [p for p in playlists if p['id'] == plid]
+
+            assert_equal(len(found), 1)
+            assert_equal(found[0]['description'], description)
+
+        assert_description_equal(self.playlist_ids[0], new_description)
+
+        # revert
+        self.mc.edit_playlist(self.playlist_ids[0], new_description=TEST_PLAYLIST_DESCRIPTION)
+        assert_description_equal(self.playlist_ids[0], TEST_PLAYLIST_DESCRIPTION)
+
+    @playlist_test
+    def mc_edit_playlist_public(self):
+        new_public = False
+        plid = self.mc.edit_playlist(self.playlist_ids[0], public=new_public)
+        assert_equal(self.playlist_ids[0], plid)
+
+        @retry  # change takes time to propogate
+        def assert_public_equal(plid, public):
+            playlists = self.mc.get_all_playlists()
+
+            found = [p for p in playlists if p['id'] == plid]
+
+            assert_equal(len(found), 1)
+            assert_equal(found[0]['accessControlled'], public)
+
+        assert_public_equal(self.playlist_ids[0], new_public)
+
+        # revert
+        self.mc.edit_playlist(self.playlist_ids[0], public=True)
+        assert_public_equal(self.playlist_ids[0], True)
+
+    @retry(tries=3)
     def _mc_assert_ple_position(self, entry, pos):
         """
         :param entry: entry dict
@@ -732,34 +777,45 @@ class ClientTests(object):
 
         assert_equal(indices[0], pos)
 
+    @retry
+    def _mc_test_ple_reodering(self, from_pos, to_pos):
+        if from_pos == to_pos:
+            raise ValueError('Will not test no-op reordering.')
+
+        pl = self.mc_get_playlist_songs(self.playlist_ids[0])
+
+        from_e = pl[from_pos]
+
+        e_before_new_pos, e_after_new_pos = None, None
+
+        if from_pos < to_pos:
+            adj = 0
+        else:
+            adj = -1
+
+        if to_pos - 1 >= 0:
+            e_before_new_pos = pl[to_pos + adj]
+
+        if to_pos + 1 < len(self.plentry_ids):
+            e_after_new_pos = pl[to_pos + adj + 1]
+
+        self.mc.reorder_playlist_entry(from_e,
+                                       to_follow_entry=e_before_new_pos,
+                                       to_precede_entry=e_after_new_pos)
+        self._mc_assert_ple_position(from_e, to_pos)
+
+        if e_before_new_pos:
+            self._mc_assert_ple_position(e_before_new_pos, to_pos - 1)
+
+        if e_after_new_pos:
+            self._mc_assert_ple_position(e_after_new_pos, to_pos + 1)
+
     @plentry_test
     def mc_reorder_ple_forwards(self):
-        playlist_len = len(self.plentry_ids)
         for from_pos, to_pos in [pair for pair in
-                                 itertools.product(range(playlist_len), repeat=2)
+                                 itertools.product(range(len(self.plentry_ids)), repeat=2)
                                  if pair[0] < pair[1]]:
-            pl = self.mc_get_playlist_songs(self.playlist_ids[0])
-
-            from_e = pl[from_pos]
-
-            e_before_new_pos, e_after_new_pos = None, None
-
-            if to_pos - 1 >= 0:
-                e_before_new_pos = pl[to_pos]
-
-            if to_pos + 1 < playlist_len:
-                e_after_new_pos = pl[to_pos + 1]
-
-            self.mc.reorder_playlist_entry(from_e,
-                                           to_follow_entry=e_before_new_pos,
-                                           to_precede_entry=e_after_new_pos)
-            self._mc_assert_ple_position(from_e, to_pos)
-
-            if e_before_new_pos:
-                self._mc_assert_ple_position(e_before_new_pos, to_pos - 1)
-
-            if e_after_new_pos:
-                self._mc_assert_ple_position(e_after_new_pos, to_pos + 1)
+            self._mc_test_ple_reodering(from_pos, to_pos)
 
     @plentry_test
     def mc_reorder_ple_backwards(self):
@@ -767,33 +823,12 @@ class ClientTests(object):
         for from_pos, to_pos in [pair for pair in
                                  itertools.product(range(playlist_len), repeat=2)
                                  if pair[0] > pair[1]]:
-            pl = self.mc_get_playlist_songs(self.playlist_ids[0])
-
-            from_e = pl[from_pos]
-
-            e_before_new_pos, e_after_new_pos = None, None
-
-            if to_pos - 1 >= 0:
-                e_before_new_pos = pl[to_pos - 1]
-
-            if to_pos + 1 < playlist_len:
-                e_after_new_pos = pl[to_pos]
-
-            self.mc.reorder_playlist_entry(from_e,
-                                           to_follow_entry=e_before_new_pos,
-                                           to_precede_entry=e_after_new_pos)
-            self._mc_assert_ple_position(from_e, to_pos)
-
-            if e_before_new_pos:
-                self._mc_assert_ple_position(e_before_new_pos, to_pos - 1)
-
-            if e_after_new_pos:
-                self._mc_assert_ple_position(e_after_new_pos, to_pos + 1)
+            self._mc_test_ple_reodering(from_pos, to_pos)
 
     # This fails, unfortunately, which means n reorderings mean n
     # separate calls in the general case.
-    #@plentry_test
-    #def mc_reorder_ples_forwards(self):
+    # @plentry_test
+    # def mc_reorder_ples_forwards(self):
     #    pl = self.mc_get_playlist_songs(self.playlist_ids[0])
     #    # rot2, eg 0123 -> 2301
     #    pl.append(pl.pop(0))
@@ -818,19 +853,27 @@ class ClientTests(object):
             self.mc.get_station_tracks(station_id, num_tracks=1)
             # used to assert that at least 1 track came back, but
             # our dummy uploaded track won't match anything
+            self.mc.get_station_tracks(station_id, num_tracks=1,
+                                       recently_played_ids=[TEST_AA_SONG_ID])
+            self.mc.get_station_tracks(station_id, num_tracks=1,
+                                       recently_played_ids=[self.user_songs[0].sid])
 
     @all_access
     def mc_list_IFL_station_tracks(self):
         assert_equal(len(self.mc.get_station_tracks('IFL', num_tracks=1)),
                      1)
 
-    @test
+    @test(groups=['search'])
     @all_access
-    def mc_search_aa(self):
-        res = self.mc.search_all_access('amorphis')
+    def mc_search_aa_no_playlists(self):
+        res = self.mc.search_all_access('amorphis', max_results=100)
+
+        # TODO is there a search query that will consistently get playlist results?
+        res.pop('playlist_hits')
+
         with Check() as check:
-            for hits in res.values():
-                check.true(len(hits) > 0)
+            for type_, hits in res.items():
+                check.true(len(hits) > 0, "%s had %s hits, expected > 0" % (type_, len(hits)))
 
     @test
     @all_access
@@ -874,8 +917,33 @@ class ClientTests(object):
     def mc_track_info(self):
         self.mc.get_track_info(TEST_AA_SONG_ID)  # just for the schema
 
-    @test
+    @test(groups=['genres'])
     @all_access
-    def mc_genres(self):
-        self.mc.get_genres()  # just for the schema
-        self.mc.get_genres('METAL')  # just for the schema
+    def mc_all_genres(self):
+        expected_genres = set([
+            u'COMEDY_SPOKEN_WORD_OTHER', u'COUNTRY', u'HOLIDAY', u'R_B_SOUL', u'FOLK', u'LATIN',
+            u'CHRISTIAN_GOSPEL', u'ALTERNATIVE_INDIE', u'POP', u'ROCK', u'WORLD',
+            u'VOCAL_EASY_LISTENING', u'HIP_HOP_RAP', u'JAZZ', u'METAL', u'REGGAE_SKA',
+            u'SOUNDTRACKS_CAST_ALBUMS', u'DANCE_ELECTRONIC', u'CLASSICAL', u'NEW_AGE', u'BLUES',
+            u'CHILDREN_MUSIC'])
+        res = self.mc.get_genres()
+        assert_equal(set([e['id'] for e in res]), expected_genres)
+
+    @test(groups=['genres'])
+    @all_access
+    def mc_specific_genre(self):
+        expected_genres = set([
+            u'PROGRESSIVE_METAL', u'CLASSIC_METAL', u'HAIR_METAL', u'INDUSTRIAL', u'ALT_METAL',
+            u'THRASH', u'METALCORE', u'BLACK_DEATH_METAL', u'DOOM_METAL'])
+        res = self.mc.get_genres('METAL')
+        assert_equal(set([e['id'] for e in res]), expected_genres)
+
+    @test(groups=['genres'])
+    @all_access
+    def mc_leaf_parent_genre(self):
+        assert_equal(self.mc.get_genres('AFRICA'), [])
+
+    @test(groups=['genres'])
+    @all_access
+    def mc_invalid_parent_genre(self):
+        assert_equal(self.mc.get_genres('bogus genre'), [])

@@ -6,6 +6,7 @@ Support for Other Languages
 Here are the ports I'm currently aware of:
 
 
+-  C++: `Greg Wicks <https://github.com/gwicks/gmusicapi-curl>`__
 -  C#:
    `Taylor Finnell <https://github.com/taylorfinnell/GoogleMusicAPI.NET>`__
 -  Java: `Jens Villadsen <https://github.com/jkiddo/gmusic.api>`__
@@ -14,10 +15,12 @@ Here are the ports I'm currently aware of:
    `raydanhk <http://code.google.com/p/unofficial-google-music-api-php/>`__
 -  Objective-C:
    `Gregory Wicks <https://github.com/gwicks/gmusicapi-objc>`__
--  Javascript: `My Google Music Turntable uploader
-   <https://github.com/simon-weber/Google-Music-Turntable-Uploader>`__
-   (not a full port, just an example)
--  Javascript (nodejs): "npm install playmusic" (https://github.com/jamon/playmusic)
+-  Javascript:
+   `Lari Rasku <https://code.google.com/p/google-musicmanager-js/>`__.
+   There's also my `Google Music Turntable uploader
+   <https://github.com/simon-weber/Google-Music-Turntable-Uploader>`__;
+   it's not a port, but may be useful as an example.
+-  Node: `Jamon Terrell <https://github.com/jamon/playmusic>`__
 -  Ruby: `Loic Nageleisen <https://github.com/lloeki/ruby-skyjam>`__
 
 They're in various states of completion and maintenance because,
@@ -28,21 +31,12 @@ Alternatively, consider using `GMusicProxy <http://gmusicproxy.net/>`__ or copyi
 Building a Port
 ---------------
 
-It's a good idea to get in touch if you're going to be working on a port;
-I can point you to relevant code or otherwise clarify things. Some generally
-helpful information follows.
+Get in touch if you're working on a port.
+I'm happy to answer questions and point you to relevant bits of code.
 
-There are basically two clients to Google Music: the webclient, which handles
-library management and playback, and the Music Manager, which handles uploads.
-Music Manager features are *much* more difficult to support - I'd highly
-recommend you ignore them to get started.
-
-Auth is the biggest barrier to getting started. I'm using a little-known trick
-where I log into the Music Manager with clientlogin, then upgrade to full SSO
-credentials with tokenauth. `This link
-<http://nelenkov.blogspot.com/2012/11/sso-using-account-manager.html>`__ might
-be helpful.
-
-The :ref:`protocol docs <protocol>` are where you want to look for specific information.
-
-Lastly, keep the license in mind, and, again, be sure to respect Google.
+Generally, though, the `protocol package
+<https://github.com/simon-weber/Unofficial-Google-Music-API/tree/develop/gmusicapi/protocol>`__
+is what you'll want to look at.
+It contains all of the call schemas in a psuedo-dsl that's explained
+`here
+<https://github.com/simon-weber/Unofficial-Google-Music-API/blob/develop/gmusicapi/protocol/shared.py>`__.

@@ -26,8 +26,10 @@ That said, it's actively maintained, and powers a bunch of cool projects:
 -  alternate clients, including
    `a command line client <https://github.com/mstill/thunner>`__
    and `FUSE filesystem <https://github.com/EnigmaCurry/GMusicFS>`__
--  `syncing tools <https://github.com/thebigmunch/gmusicapi-scripts>`__ for library management
--  `playlist tools <https://github.com/soulfx/gmusic-playlist>`__ for playlist management
+-  library management tools for
+   `syncing tracks <https://github.com/thebigmunch/gmusicapi-scripts>`__,
+   `syncing playlists <https://github.com/soulfx/gmusic-playlist>`__,
+   and `migrating to a different account <https://github.com/brettcoburn/gmusic-migrate>`__
 -  proxies for media players, such as
    `gmusicproxy <http://gmusicproxy.net>`__ and
    `gmusicprocurator <https://github.com/malept/gmusicprocurator>`__,
@@ -50,6 +52,8 @@ Status and updates
 .. image:: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API.png?branch=develop
         :target: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API
 
+* May 2015: Limited mobileclient functionality was restored.
+* April 2015: Google deprecated clientlogin, breaking both the webclient and mobileclient.
 * November 2013: I started working fulltime at Venmo, meaning this project is back to night and weekend development.
 
 For fine-grained development updates, follow me on Twitter:

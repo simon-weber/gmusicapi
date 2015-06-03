@@ -21,7 +21,7 @@ with a 'song id' or 'track id' uuid.
 .. automethod:: Mobileclient.get_stream_url
 .. automethod:: Mobileclient.change_song_metadata
 .. automethod:: Mobileclient.delete_songs
-.. automethod:: Mobileclient.get_thumbs_up_songs
+.. automethod:: Mobileclient.get_promoted_songs
 .. automethod:: Mobileclient.increment_song_playcount
 
 Playlists
@@ -37,10 +37,15 @@ entire library (not just their containing playlist).
 .. automethod:: Mobileclient.get_all_user_playlist_contents
 .. automethod:: Mobileclient.create_playlist
 .. automethod:: Mobileclient.delete_playlist
+.. automethod:: Mobileclient.edit_playlist
 .. automethod:: Mobileclient.add_songs_to_playlist
 .. automethod:: Mobileclient.reorder_playlist_entry
 .. automethod:: Mobileclient.remove_entries_from_playlist
 .. automethod:: Mobileclient.get_shared_playlist_contents
+
+Other
+-----
+.. automethod:: Mobileclient.get_registered_devices
 
 All Access Radio
 ----------------

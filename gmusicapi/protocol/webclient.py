@@ -21,14 +21,14 @@ from gmusicapi.utils import utils, jsarray
 base_url = 'https://play.google.com/music/'
 service_url = base_url + 'services/'
 
-#Shared response schemas, built to include metadata expectations.
+# Shared response schemas, built to include metadata expectations.
 song_schema = {
     "type": "object",
     "properties": dict(
         (name, expt.get_schema()) for
         name, expt in md_expectations.items()
     ),
-    #don't allow metadata not in expectations
+    # don't allow metadata not in expectations
     "additionalProperties": False
 }
 
@@ -46,7 +46,7 @@ pl_schema = {
         "unavailableTrackCount": {"type": "integer"},
         # unsure what this field does. sometimes it's not there.
         "token": {"type": "string", "required": False},
-        #only appears when loading multiple playlists
+        # only appears when loading multiple playlists
         "title": {"type": "string", "required": False},
         "continuationToken": {"type": "string", "required": False},
     },
@@ -75,7 +75,7 @@ class Init(Call):
 
     required_auth = authtypes(sso=True)
 
-    #This call doesn't actually request/return anything useful aside from cookies.
+    # This call doesn't actually request/return anything useful aside from cookies.
     @staticmethod
     def parse_response(response):
         return response.text
@@ -93,7 +93,7 @@ class WcCall(Call):
 
     required_auth = authtypes(xt=True, sso=True)
 
-    #validictory schema for the response
+    # validictory schema for the response
     _res_schema = utils.NotImplementedField
 
     @classmethod
@@ -107,9 +107,9 @@ class WcCall(Call):
 
     @classmethod
     def check_success(cls, response, msg):
-        #Failed responses always have a success=False key.
-        #Some successful responses do not have a success=True key, however.
-        #TODO remove utils.call_succeeded
+        # Failed responses always have a success=False key.
+        # Some successful responses do not have a success=True key, however.
+        # TODO remove utils.call_succeeded
 
         if 'success' in msg and not msg['success']:
             raise CallFailure(
@@ -172,7 +172,7 @@ class AddToPlaylist(WcCall):
         :param playlist_id: id of the playlist to add to.
         :param song_ids: a list of song ids
         """
-        #TODO unsure what type means here. Likely involves uploaded vs store/free.
+        # TODO unsure what type means here. Likely involves uploaded vs store/free.
         song_refs = [{'id': sid, 'type': 1} for sid in song_ids]
 
         return {
@@ -297,7 +297,7 @@ class DeleteSongs(WcCall):
         """
 
         if entry_ids is None:
-            #this is strange, but apparently correct
+            # this is strange, but apparently correct
             entry_ids = [''] * len(song_ids)
 
         return {
@@ -388,6 +388,7 @@ class GetStreamUrl(WcCall):
             "urls": {"type": "array", "required": False},
             'now': {'type': 'integer', 'required': False},
             'tier': {'type': 'integer', 'required': False},
+            'replayGain': {'type': 'integer'},
         },
         "additionalProperties": False
     }
@@ -431,13 +432,13 @@ class ReportBadSongMatch(WcCall):
     static_url = service_url + 'fixsongmatch'
     static_params = {'format': 'jsarray'}
 
-    #This no longer holds.
+    # This no longer holds.
     expected_response = [[0], []]
 
     @classmethod
     def validate(cls, response, msg):
         pass
-        #if msg != cls.expected_response:
+        # if msg != cls.expected_response:
         #    raise ValidationException("response != %r" % cls.expected_response)
 
     @staticmethod

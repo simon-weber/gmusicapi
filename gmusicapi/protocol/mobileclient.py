@@ -20,9 +20,24 @@ from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
 # URL for sj service
-sj_url = 'https://www.googleapis.com/sj/v1.5/'
+sj_url = 'https://mclients.googleapis.com/sj/v1.11/'
 
 # shared schemas
+sj_video = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'kind': {'type': 'string'},
+        'id': {'type': 'string'},
+        'thumbnails': {'type': 'array',
+                       'items': {'type': 'object', 'properties': {
+                           'url': {'type': 'string'},
+                           'width': {'type': 'integer'},
+                           'height': {'type': 'integer'},
+                       }}},
+    }
+}
+
 sj_track = {
     'type': 'object',
     'additionalProperties': False,
@@ -40,7 +55,7 @@ sj_track = {
         'artistArtRef': {'type': 'array',
                          'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}},
                          'required': False,
-                       },
+                         },
         'discNumber': {'type': 'integer'},
         'estimatedSize': {'type': 'string'},
         'trackType': {'type': 'string'},
@@ -58,8 +73,11 @@ sj_track = {
         'genre': {'type': 'string', 'required': False},
         'trackAvailableForSubscription': {'type': 'boolean'},
         'contentType': {'type': 'string'},
+        'lastRatingChangeTimestamp': {'type': 'string', 'required': False},
+        'primaryVideo': sj_video.copy(),
     }
 }
+sj_track['properties']['primaryVideo']['required'] = False
 
 sj_playlist = {
     'type': 'object',
@@ -67,23 +85,36 @@ sj_playlist = {
     'properties': {
         'kind': {'type': 'string'},
         'name': {'type': 'string'},
-        'deleted': {'type': 'boolean'},
+        'deleted': {'type': 'boolean',
+                    'required': False},  # for public
         'type': {'type': 'string',
                  'pattern': r'MAGIC|SHARED|USER_GENERATED',
                  'required': False,
                  },
-        'lastModifiedTimestamp': {'type': 'string'},
-        'recentTimestamp': {'type': 'string'},
+        'lastModifiedTimestamp': {'type': 'string',
+                                  'required': False},  # for public
+        'recentTimestamp': {'type': 'string',
+                            'required': False},  # for public
         'shareToken': {'type': 'string'},
-        'ownerProfilePhotoUrl': {'type': 'string'},
-        'ownerName': {'type': 'string'},
-        'accessControlled': {'type': 'boolean'},
-        'creationTimestamp': {'type': 'string'},
-        'id': {'type': 'string'},
+        'ownerProfilePhotoUrl': {'type': 'string', 'required': False},
+        'ownerName': {'type': 'string',
+                      'required': False},
+        'accessControlled': {'type': 'boolean',
+                             'required': False},  # for public
+        'shareState': {'type': 'string',
+                       'pattern': r'PRIVATE|PUBLIC',
+                       'required': False},  # for public
+        'creationTimestamp': {'type': 'string',
+                              'required': False},  # for public
+        'id': {'type': 'string',
+               'required': False},  # for public
         'albumArtRef': {'type': 'array',
                         'items': {'type': 'object', 'properties': {'url': {'type': 'string'}}},
                         'required': False,
-                       },
+                        },
+        'description': {'type': 'string',
+                        'blank': True,
+                        'required': False},
     }
 }
 
@@ -107,6 +138,17 @@ sj_plentry = {
 
 sj_plentry['properties']['track']['required'] = False
 
+sj_attribution = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'kind': {'type': 'string'},
+        'license_url': {'type': 'string', 'required': False},
+        'license_title': {'type': 'string', 'required': False},
+        'source_title': {'type': 'string', 'blank': True, 'required': False},
+        'source_url': {'type': 'string', 'blank': True, 'required': False},
+    }
+}
 
 sj_album = {
     'type': 'object',
@@ -115,15 +157,17 @@ sj_album = {
         'kind': {'type': 'string'},
         'name': {'type': 'string'},
         'albumArtist': {'type': 'string'},
-        'albumArtRef': {'type': 'string'},
+        'albumArtRef': {'type': 'string', 'required': False},
         'albumId': {'type': 'string'},
         'artist': {'type': 'string'},
         'artistId': {'type': 'array', 'items': {'type': 'string', 'blank': True}},
         'year': {'type': 'integer', 'required': False},
         'tracks': {'type': 'array', 'items': sj_track, 'required': False},
         'description': {'type': 'string', 'required': False},
+        'description_attribution': sj_attribution.copy(),
     }
 }
+sj_album['properties']['description_attribution']['required'] = False
 
 sj_artist = {
     'type': 'object',
@@ -138,9 +182,11 @@ sj_artist = {
         'topTracks': {'type': 'array', 'items': sj_track, 'required': False},
         'total_albums': {'type': 'integer', 'required': False},
         'artistBio': {'type': 'string', 'required': False},
+        'artist_bio_attribution': sj_attribution.copy(),
     }
 }
 
+sj_artist['properties']['artist_bio_attribution']['required'] = False
 sj_artist['properties']['related_artists'] = {
     'type': 'array',
     'items': sj_artist,  # note the recursion
@@ -159,12 +205,14 @@ sj_result = {
         'artist': sj_artist.copy(),
         'album': sj_album.copy(),
         'track': sj_track.copy(),
+        'playlist': sj_playlist.copy(),
     }
 }
 
 sj_result['properties']['artist']['required'] = False
 sj_result['properties']['album']['required'] = False
 sj_result['properties']['track']['required'] = False
+sj_result['properties']['playlist']['required'] = False
 
 sj_station_seed = {
     'type': 'object',
@@ -202,9 +250,9 @@ sj_station = {
 class McCall(Call):
     """Abstract base for mobile client calls."""
 
-    required_auth = authtypes(xt=False, sso=True)
+    required_auth = authtypes(oauth=True)
 
-    #validictory schema for the response
+    # validictory schema for the response
     _res_schema = utils.NotImplementedField
 
     @classmethod
@@ -218,10 +266,10 @@ class McCall(Call):
 
     @classmethod
     def check_success(cls, response, msg):
-        #TODO not sure if this is still valid for mc
+        # TODO not sure if this is still valid for mc
         pass
 
-        #if 'success' in msg and not msg['success']:
+        # if 'success' in msg and not msg['success']:
         #    raise CallFailure(
         #        "the server reported failure. This is usually"
         #        " caused by bad arguments, but can also happen if requests"
@@ -252,7 +300,7 @@ class McListCall(McCall):
             'data': {'type': 'object',
                      'items': {'type': 'array', 'items': item_schema},
                      'required': False,
-                    },
+                     },
         },
     }
 
@@ -360,9 +408,13 @@ class Search(McCall):
         'additionalProperties': False,
         'properties': {
             'kind': {'type': 'string'},
+            'clusterOrder': {'type': 'array',
+                             'items': {'type': 'string'},
+                             'required': False},
             'entries': {'type': 'array',
                         'items': sj_result,
-                        'required': False}
+                        'required': False},
+            'suggestedQuery': {'type': 'string', 'required': False}
         },
     }
 
@@ -409,20 +461,19 @@ class GetStreamUrl(McCall):
         return sig, salt
 
     @staticmethod
-    def dynamic_headers(song_id, device_id):
+    def dynamic_headers(song_id, device_id, quality):
         return {'X-Device-ID': device_id}
 
     @classmethod
-    def dynamic_params(cls, song_id, device_id):
+    def dynamic_params(cls, song_id, device_id, quality):
         sig, salt = cls.get_signature(song_id)
 
-        #TODO which of these should get exposed?
-        params = {'opt': 'hi',
-                  'net': 'wifi',
+        params = {'opt': quality,
+                  'net': 'mob',
                   'pt': 'e',
                   'slt': salt,
                   'sig': sig,
-                 }
+                  }
         if song_id[0] == 'T':
             # all access
             params['mjck'] = song_id
@@ -481,7 +532,7 @@ class ListSharedPlaylistEntries(McListCall):
             'kind': {'type': 'string'},
             'entries': {'type': 'array',
                         'items': item_schema,
-                       },
+                        },
         },
     }
     filter_text = 'shared plentries'
@@ -541,24 +592,28 @@ class BatchMutatePlaylists(McBatchMutateCall):
 
     @staticmethod
     def build_playlist_deletes(playlist_ids):
-        #TODO can probably pull this up one
+        # TODO can probably pull this up one
         """
         :param playlist_ids
         """
         return [{'delete': id} for id in playlist_ids]
 
     @staticmethod
-    def build_playlist_updates(pl_id_name_pairs):
+    def build_playlist_updates(pl_updates):
         """
-        :param pl_id_name_pairs: [(playlist_id, new_name)]
+        :param pl_updates: [{'id': '', name': '', 'description': '', 'public': ''}]
         """
-        return [{'update': {'id': pl_id, 'name': new_name}} for
-                (pl_id, new_name) in pl_id_name_pairs]
+        return [{'update': {
+            'id': pl_update['id'],
+            'name': pl_update['name'],
+            'description': pl_update['description'],
+            'shareState': pl_update['public']
+        }} for pl_update in pl_updates]
 
     @staticmethod
     def build_playlist_adds(pl_descriptions):
         """
-        :param pl_descriptions: [{'name': '', 'public': <bool>}]
+        :param pl_descriptions: [{'name': '', 'description': '','public': ''}]
         """
 
         return [{'create': {
@@ -566,8 +621,9 @@ class BatchMutatePlaylists(McBatchMutateCall):
             'deleted': False,
             'lastModifiedTimestamp': '0',
             'name': pl_desc['name'],
+            'description': pl_desc['description'],
             'type': 'USER_GENERATED',
-            'accessControlled': pl_desc['public'],
+            'shareState': pl_desc['public'],
         }} for pl_desc in pl_descriptions]
 
 
@@ -648,7 +704,41 @@ class BatchMutatePlaylistEntries(McBatchMutateCall):
         return mutations
 
 
-class ListThumbsUpTracks(McListCall):
+class GetDeviceManagementInfo(McCall):
+    """Get registered device information."""
+
+    static_method = 'GET'
+    static_url = sj_url + "devicemanagementinfo"
+    static_params = {'alt': 'json'}
+
+    _device_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'id': {'type': 'string'},
+            'friendlyName': {'type': 'string', 'blank': True},
+            'type': {'type': 'string'},
+            'lastAccessedTimeMs': {'type': 'integer'},
+
+            # only for mobile devices
+            'smartPhone': {'type': 'boolean', 'required': False},
+        }
+    }
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'kind': {'type': 'string'},
+            'data': {'type': 'object',
+                     'items': {'type': 'array', 'items': _device_schema},
+                     'required': False,
+                     },
+        },
+    }
+
+
+class ListPromotedTracks(McListCall):
     item_schema = sj_track
     filter_text = 'tracks'
 
@@ -673,7 +763,7 @@ class ListStationTracks(McCall):
             'data': {'type': 'object',
                      'stations': {'type': 'array', 'items': sj_station},
                      'required': False,
-                    },
+                     },
         },
     }
 
@@ -689,7 +779,7 @@ class ListStationTracks(McCall):
         :param num_entries: maximum number of tracks to return
         :param recently_played: a list of...song ids? never seen an example
         """
-        #TODO
+        # TODO
         # clearly, this supports more than one at a time,
         # but then that might introduce paging?
         # I'll leave it for someone else
@@ -728,7 +818,7 @@ class BatchMutateStations(McBatchMutateCall):
     def build_add(name, seed, include_tracks, num_tracks, recent_datetime=None):
         """
         :param name: the title
-        :param seed: a dict with a single pair, {'itemId': id}
+        :param seed: a dict {'itemId': id, 'seedType': int}
         :param include_tracks: if True, return `num_tracks` tracks in the response
         :param num_tracks:
         :param recent_datetime: purpose unknown. defaults to now.
@@ -740,7 +830,7 @@ class BatchMutateStations(McBatchMutateCall):
         recent_timestamp = utils.datetime_to_microseconds(recent_datetime)
 
         return {
-            "create": {
+            "createOrGet": {
                 "clientId": str(uuid1()),
                 "deleted": False,
                 "imageType": 1,
@@ -780,8 +870,9 @@ class BatchMutateTracks(McBatchMutateCall):
         for key in ('kind', 'trackAvailableForPurchase',
                     'albumAvailableForPurchase', 'albumArtRef',
                     'artistId',
-                   ):
-            del track_dict[key]
+                    ):
+            if key in track_dict:
+                del track_dict[key]
 
         for key, default in {
             'playCount': 0,
@@ -803,7 +894,7 @@ class BatchMutateTracks(McBatchMutateCall):
 
 
 class GetStoreTrack(McCall):
-    #TODO does this accept library ids, too?
+    # TODO does this accept library ids, too?
     static_method = 'GET'
     static_url = sj_url + 'fetchtrack'
     static_headers = {'Content-Type': 'application/json'}
@@ -838,7 +929,7 @@ class GetGenres(McCall):
                     },
                 },
                 'required': False,
-           },
+            },
             'children': {
                 'type': 'array',
                 'items': {'type': 'string'},
@@ -859,6 +950,7 @@ class GetGenres(McCall):
             'genres': {
                 'type': 'array',
                 'items': genre_schema,
+                'required': False,  # only on errors
             }
         }
     }
@@ -887,7 +979,7 @@ class GetArtist(McCall):
                 'include-albums': include_albums,
                 'num-top-tracks': num_top_tracks,
                 'num-related-artists': num_rel_artist,
-               }
+                }
 
 
 class GetAlbum(McCall):
@@ -929,11 +1021,21 @@ class IncrementPlayCount(McCall):
 
     @staticmethod
     def dynamic_data(sid, plays, playtime):
-        #TODO this can support multiple
+        # TODO this can support multiple tracks at a time
+
+        play_timestamp = utils.datetime_to_microseconds(playtime)
+        event = {
+            'context_type': 1,
+            'event_timestamp_micros': str(play_timestamp),
+            'event_type': 2,
+            # This can also send a context_id which is the album/artist id
+            # the song was found from.
+        }
+
         return json.dumps({'track_stats': [{
             'id': sid,
             'incremental_plays': plays,
-            'last_play_time_millis': str(utils.datetime_to_microseconds(playtime)),
+            'last_play_time_millis': str(play_timestamp / 1000),
             'type': 2 if sid.startswith('T') else 1,
-            'track_events': [],
+            'track_events': [event] * plays,
         }]})

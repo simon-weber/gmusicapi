@@ -80,7 +80,7 @@ _Expectation = namedtuple(
 
 class Expectation(_Expectation):
     """Instantiated to represent information about a single metadata key."""
-    #This class just wraps the namedtuple to provide easy construction and some methods.
+    # This class just wraps the namedtuple to provide easy construction and some methods.
 
     def __new__(cls, name, type, mutable, optional, volatile=False,
                 depends_on=None, dependent_transformation=None,
@@ -187,19 +187,19 @@ _all_expts = [
                 explanation='misleading! automatically set to lowercase of *name*.'),
 ]
 
-#Create the dict for client code. If they look up something we don't know about,
+# Create the dict for client code. If they look up something we don't know about,
 # give them a flexible immutable key.
-_immutable_key = lambda: Expectation('unknown', 'any', mutable=False, optional=True)
+_immutable_key = lambda: Expectation('unknown', 'any', mutable=False, optional=True)  # noqa
 md_expectations = defaultdict(_immutable_key)
 for expt in _all_expts:
     md_expectations[expt.name] = expt
 
 
-#This code is a super-hack. KnownMetadataFields exists _purely_ for documentation.
+# This code is a super-hack. KnownMetadataFields exists _purely_ for documentation.
 
-#We want dynamic documentation based on _all_expts, but __doc__ isn't a writable field
-#for non-{function, class, module} objects. So, we create a dummy class and dynamically
-#create its docstring to be arbitrary reST that documents our expectations.
+# We want dynamic documentation based on _all_expts, but __doc__ isn't a writable field
+# for non-{function, class, module} objects. So, we create a dummy class and dynamically
+# create its docstring to be arbitrary reST that documents our expectations.
 
 def detail_line(e):
     """Given an expectation, return a readable one-line explanation of it."""
@@ -215,7 +215,7 @@ def detail_line(e):
 
     return line
 
-#Note the hackiness of this class.
+# Note the hackiness of this class.
 dynamic_docs = """
 **This class exists only for documentation; do not try to import it.**
 
@@ -227,16 +227,16 @@ Ideas to clean this up are welcomed.
 
 """
 
-#Create a reST definition list dynamically.
+# Create a reST definition list dynamically.
 dynamic_docs += '\n\n'.join(
     ("*{name}*\n"
      "  {type} {details}\n\n"
      "  {explanation}").format(
-         name=e.name,
-         type=e.type,
-         details=detail_line(e),
-         explanation=e.explanation,
-     ) for e in sorted(_all_expts, key=lambda e: e.name)
+        name=e.name,
+        type=e.type,
+        details=detail_line(e),
+        explanation=e.explanation,
+    ) for e in sorted(_all_expts, key=lambda e: e.name)
 )
 
 

@@ -5,10 +5,11 @@ Tests that don't hit the Google Music servers.
 """
 
 from collections import namedtuple
-import time
+import logging
 import os
+import time
 
-from mock import MagicMock as Mock
+from mock import MagicMock, patch
 from proboscis.asserts import (
     assert_raises, assert_true, assert_false, assert_equal,
     assert_is_not, Check
@@ -17,9 +18,10 @@ from proboscis import test
 
 import gmusicapi.session
 from gmusicapi.clients import Webclient, Musicmanager
-from gmusicapi.exceptions import AlreadyLoggedIn  # ,NotLoggedIn
-from gmusicapi.protocol.shared import authtypes
+from gmusicapi.exceptions import AlreadyLoggedIn, CallFailure
+from gmusicapi.protocol.shared import authtypes, ClientLogin
 from gmusicapi.protocol import mobileclient
+from gmusicapi.test.utils import NoticeLogging
 from gmusicapi.utils import utils, jsarray
 
 jsarray_samples = []
@@ -30,9 +32,9 @@ for filepath in [os.path.join(test_file_dir, p) for p in jsarray_filenames]:
     with open(filepath, 'r') as f:
         jsarray_samples.append(f.read().decode('utf-8'))
 
-#TODO test gather_local, transcoding
+# TODO test gather_local, transcoding
 
-#All tests end up in the local group.
+# All tests end up in the local group.
 test = test(groups=['local'])
 
 
@@ -45,9 +47,9 @@ def longest_increasing_sub():
     assert_equal(lisi([3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9]),
                  [1, 2, 3, 5, 8, 9])
 
-##
+#
 # clients
-##
+#
 # this feels like a dumb pattern, but I can't think of a better way
 names = ('Webclient', 'Musicmanager')
 Clients = namedtuple('Clients', [n.lower() for n in names])
@@ -60,7 +62,7 @@ def create_clients():
         c = cls()
 
         # mock out the underlying session
-        c.session = Mock()
+        c.session = MagicMock()
         clients.append(c)
 
     return Clients(*clients)
@@ -99,9 +101,9 @@ def mm_prevents_bad_mac_format():
 #     assert_equal(api.get_all_playlist_ids(auto=True, user=False),
 #                  {'auto': {}})
 
-##
+#
 # sessions
-##
+#
 Sessions = namedtuple('Sessions', [n.lower() for n in names])
 
 
@@ -112,7 +114,7 @@ def create_sessions():
         s = cls()
 
         # mock out the underlying requests.session
-        s._rsession = Mock()
+        s._rsession = MagicMock()
         sessions.append(s)
 
     return Sessions(*sessions)
@@ -154,7 +156,7 @@ def send_without_auth():
     for s in create_sessions():
         s.is_authenticated = True
 
-        mock_session = Mock()
+        mock_session = MagicMock()
         mock_req_kwargs = {'fake': 'kwargs'}
 
         s.send(mock_req_kwargs, authtypes(), mock_session)
@@ -167,9 +169,33 @@ def send_without_auth():
         mock_session.closed.called_once_with()
 
 
-##
+#
 # protocol
-##
+#
+
+@test
+def clientlogin_raises_on_strange_response():
+    mock_session = MagicMock()
+    mock_res = MagicMock()
+    mock_res.status_code = 403
+    mock_res.text = (
+        'Error=BadAuthentication'
+        '\nUrl=https://www.google.com/accounts/...'
+        '\nInfo=WebLoginRequired')
+
+    mock_session.send = MagicMock(return_value=mock_res)
+
+    root_logger = logging.getLogger('gmusicapi')
+    noticer = [h for h in root_logger.handlers
+               if isinstance(h, NoticeLogging)][0]
+    with patch.object(noticer, 'emit', return_value=None) as mock_emit:
+        # This call should generate a warning.
+        # We don't want it to fail the build, though.
+        assert_raises(CallFailure,
+                      ClientLogin.perform,
+                      mock_session, False, 'email', 'pass')
+        assert_true(mock_emit.called)
+
 
 @test
 def authtypes_factory_defaults():
@@ -194,9 +220,9 @@ def mc_url_signing():
     assert_equal(sig, "gua1gInBdaVo7_dSwF9y0kodua0")
 
 
-##
+#
 # utils
-##
+#
 
 @test
 def retry_failure_propogation():
@@ -236,3 +262,8 @@ def jsarray_parsing():
     for raw in jsarray_samples:
         # should not raise an exception
         jsarray.loads(raw)
+
+
+@test
+def locate_transcoder():
+    utils.locate_mp3_transcoder()  # should not raise

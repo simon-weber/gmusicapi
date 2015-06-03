@@ -1,3 +1,4 @@
+from collections import defaultdict
 import datetime
 from operator import itemgetter
 import re
@@ -32,8 +33,7 @@ class Mobileclient(_Base):
         :param password: password or app-specific password for 2-factor users.
           This is not stored locally, and is sent securely over SSL.
 
-        Users of two-factor authentication will need to set an application-specific password
-        to log in.
+        #TODO 2fa
         """
 
         if not self.session.login(email, password):
@@ -44,7 +44,7 @@ class Mobileclient(_Base):
 
         return True
 
-    #TODO expose max/page-results, updated_after, etc for list operations
+    # TODO expose max/page-results, updated_after, etc for list operations
 
     def get_all_songs(self, incremental=False, include_deleted=False):
         """Returns a list of dictionaries that each represent a song.
@@ -134,7 +134,7 @@ class Mobileclient(_Base):
         mutations = [{'update': s} for s in songs]
         self._make_call(mutate_call, mutations)
 
-        #TODO
+        # TODO
         # store tracks don't send back their id, so we're
         # forced to spoof this
         return [utils.id_or_nid(d) for d in songs]
@@ -168,7 +168,7 @@ class Mobileclient(_Base):
 
         :param aa_song_id: All Access song id
         """
-        #TODO is there a way to do this on multiple tracks at once?
+        # TODO is there a way to do this on multiple tracks at once?
         # problem is with gathering aa track info
 
         aa_track_info = self.get_track_info(aa_song_id)
@@ -196,17 +196,17 @@ class Mobileclient(_Base):
         return [d['id'] for d in res['mutate_response']]
 
     @utils.enforce_id_param
-    def get_stream_url(self, song_id, device_id):
+    def get_stream_url(self, song_id, device_id, quality='hi'):
         """Returns a url that will point to an mp3 file.
 
         :param song_id: a single song id
-        :param device_id: a mobile device id as a string.
+        :param device_id: A mobile device id as a string.
           Android device ids are 16 characters, while iOS ids
           are uuids with 'ios:' prepended.
 
           If you have already used Google Music on a mobile device,
-          :func:`Webclient.get_registered_devices
-          <gmusicapi.clients.Webclient.get_registered_devices>` will provide
+          :func:`Mobileclient.get_registered_devices
+          <gmusicapi.clients.Mobileclient.get_registered_devices>` will provide
           at least one working id. Omit ``'0x'`` from the start of the string if present.
 
           Registered computer ids (a MAC address) will not be accepted and will 403.
@@ -215,7 +215,9 @@ class Mobileclient(_Base):
           subject to Google's `device limits
           <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1230356>`__.
           **Registering a device id that you do not own is likely a violation of the TOS.**
-
+        :param quality: (optional) stream bits per second quality
+          One of three possible values, hi: 320kbps, med: 160kbps, low: 128kbps.
+          The default is hi
 
         When handling the resulting url, keep in mind that:
             * you will likely need to handle redirects
@@ -236,7 +238,7 @@ class Mobileclient(_Base):
             # android device ids are now sent in base 10
             device_id = str(int(device_id, 16))
 
-        return self._make_call(mobileclient.GetStreamUrl, song_id, device_id)
+        return self._make_call(mobileclient.GetStreamUrl, song_id, device_id, quality)
 
     def get_all_playlists(self, incremental=False, include_deleted=False):
         """Returns a list of dictionaries that each represent a playlist.
@@ -272,33 +274,50 @@ class Mobileclient(_Base):
 
         return playlists
 
-    # these could trivially support multiple creation/deletion, but
+    # these could trivially support multiple creation/edits/deletion, but
     # I chose to match the old webclient interface (at least for now).
-    def create_playlist(self, name, public=False):
+    def create_playlist(self, name, description=None, public=False):
         """Creates a new empty playlist and returns its id.
 
         :param name: the desired title.
           Creating multiple playlists with the same name is allowed.
+        :param description: (optional) the desired description
         :param public: if True, create a public All Access playlist.
         """
 
+        share_state = 'PUBLIC' if public else 'PRIVATE'
+
         mutate_call = mobileclient.BatchMutatePlaylists
         add_mutations = mutate_call.build_playlist_adds([{'name': name,
-                                                          'public': public}])
+                                                          'description': description,
+                                                          'public': share_state}])
         res = self._make_call(mutate_call, add_mutations)
 
         return res['mutate_response'][0]['id']
 
     @utils.enforce_id_param
-    def change_playlist_name(self, playlist_id, new_name):
+    def edit_playlist(self, playlist_id, new_name=None, new_description=None, public=None):
         """Changes the name of a playlist and returns its id.
 
         :param playlist_id: the id of the playlist
-        :param new_name: desired title
+        :param new_name: (optional) desired title
+        :param new_description: (optional) desired description
+        :param public: (optional) if True and the user has All Access, share playlist.
         """
 
+        if all(value is None for value in (new_name, new_description, public)):
+            raise ValueError('new_name, new_description, or public must be provided')
+
+        if public is None:
+            share_state = public
+        else:
+            share_state = 'PUBLIC' if public else 'PRIVATE'
+
         mutate_call = mobileclient.BatchMutatePlaylists
-        update_mutations = mutate_call.build_playlist_updates([(playlist_id, new_name)])
+        update_mutations = mutate_call.build_playlist_updates([
+            {'id': playlist_id, 'name': new_name,
+             'description': new_description, 'public': share_state}
+        ])
         res = self._make_call(mutate_call, update_mutations)
 
         return res['mutate_response'][0]['id']
@@ -309,7 +328,7 @@ class Mobileclient(_Base):
 
         :param playlist_id: the id to delete.
         """
-        #TODO accept multiple?
+        # TODO accept multiple?
 
         mutate_call = mobileclient.BatchMutatePlaylists
         del_mutations = mutate_call.build_playlist_deletes([playlist_id])
@@ -358,7 +377,7 @@ class Mobileclient(_Base):
                                           updated_after=None)
 
         for playlist in user_playlists:
-            #TODO could use a dict to make this faster
+            # TODO could use a dict to make this faster
             entries = [e for e in all_entries
                        if e['playlistId'] == playlist['id']]
             entries.sort(key=itemgetter('absolutePosition'))
@@ -478,7 +497,7 @@ class Mobileclient(_Base):
         return [e['id'] for e in res['mutate_response']]
 
     # WIP, see issue #179
-    #def reorder_playlist(self, reordered_playlist, orig_playlist=None):
+    # def reorder_playlist(self, reordered_playlist, orig_playlist=None):
     #    """TODO"""
 
     #    if not reordered_playlist['tracks']:
@@ -514,8 +533,8 @@ class Mobileclient(_Base):
 
     #    return idx_pos_pairs
 
-    #@staticmethod
-    #def _create_ple_reorder_mutations(tracks, from_to_idx_pairs):
+    # @staticmethod
+    # def _create_ple_reorder_mutations(tracks, from_to_idx_pairs):
     #    """
     #    Return a list of mutations.
 
@@ -550,15 +569,70 @@ class Mobileclient(_Base):
     #        if e_after_new_pos:
     #            self._mc_assert_ple_position(e_after_new_pos, to_pos + 1)
 
-    def get_thumbs_up_songs(self):
+    def get_registered_devices(self):
+        """
+        Returns a list of dictionaries representing devices associated with the account.
+
+        Performing the :class:`Musicmanager` OAuth flow will register a device
+        of type ``'DESKTOP_APP'``.
+
+        Installing the Android or iOS Google Music app and logging into it will
+        register a device of type ``'ANDROID'`` or ``'IOS'`` respectively, which is
+        required for streaming with the :class:`Mobileclient`.
+
+        Here is an example response::
+
+            [
+              {
+                u'kind':               u'sj#devicemanagementinfo',
+                u'friendlyName':       u'my-hostname',
+                u'id':                 u'AA:BB:CC:11:22:33',
+                u'lastAccessedTimeMs': u'1394138679694',
+                u'type':               u'DESKTOP_APP'
+              },
+              {
+                u"kind":               u"sj#devicemanagementinfo",
+                u'friendlyName':       u'Nexus 7',
+                u'id':                 u'0x00112233aabbccdd',  # remove 0x when streaming
+                u'lastAccessedTimeMs': u'1344808742774',
+                u'type':               u'ANDROID'
+                u'smartPhone':         True
+              },
+              {
+                u"kind":               u"sj#devicemanagementinfo",
+                u'friendlyName':       u'iPhone 6',
+                u'id':                 u'ios:01234567-0123-0123-0123-0123456789AB',
+                u'lastAccessedTimeMs': 1394138679694,
+                u'type':               u'IOS'
+                u'smartPhone':         True
+              }
+              {
+                u'kind':               u'sj#devicemanagementinfo',
+                u'friendlyName':       u'Google Play Music for Chrome on Windows',
+                u'id':                 u'rt2qfkh0qjhos4bxrgc0oae...',  # 64 characters, alphanumeric
+                u'lastAccessedTimeMs': u'1425602805052',
+                u'type':               u'DESKTOP_APP'
+              },
+            ]
+
+        """
+
+        res = self._make_call(mobileclient.GetDeviceManagementInfo)
+
+        return res['data']['items'] if 'data' in res else []
+
+    def get_promoted_songs(self):
         """Returns a list of dictionaries that each represent a track.
 
-        Only applies to All Access tracks being rated up thumb.
+        Only All Access tracks will be returned.
+
+        Promoted tracks are determined in an unknown fashion,
+        but positively-rated library tracks are common.
 
         See :func:`get_track_info` for the format of a track dictionary.
         """
 
-        return self._get_all_items(mobileclient.ListThumbsUpTracks,
+        return self._get_all_items(mobileclient.ListPromotedTracks,
                                    incremental=False, include_deleted=False,
                                    updated_after=None)
 
@@ -572,23 +646,28 @@ class Mobileclient(_Base):
           Exactly one of these params must be provided, or ValueError
           will be raised.
         """
-        #TODO could expose include_tracks
+        # TODO could expose include_tracks
 
         seed = {}
         if track_id is not None:
             if track_id[0] == 'T':
                 seed['trackId'] = track_id
+                seed['seedType'] = 2
             else:
                 seed['trackLockerId'] = track_id
+                seed['seedType'] = 1
 
         if artist_id is not None:
             seed['artistId'] = artist_id
+            seed['seedType'] = 3
         if album_id is not None:
             seed['albumId'] = album_id
+            seed['seedType'] = 4
         if genre_id is not None:
             seed['genreId'] = genre_id
+            seed['seedType'] = 5
 
-        if len(seed) != 1:
+        if len(seed) > 2:
             raise ValueError('exactly one {track,artist,album,genre}_id must be provided')
 
         mutate_call = mobileclient.BatchMutateStations
@@ -646,7 +725,7 @@ class Mobileclient(_Base):
         return self._get_all_items(mobileclient.ListStations, incremental, include_deleted,
                                    updated_after=updated_after)
 
-    def get_station_tracks(self, station_id, num_tracks=25):
+    def get_station_tracks(self, station_id, num_tracks=25, recently_played_ids=None):
         """Returns a list of dictionaries that each represent a track.
 
         Each call performs a separate sampling (with replacement?)
@@ -655,14 +734,26 @@ class Mobileclient(_Base):
         :param station_id: the id of a radio station to retrieve tracks from.
           Use the special id ``'IFL'`` for the "I'm Feeling Lucky" station.
         :param num_tracks: the number of tracks to retrieve
+        :param recently_played_ids: a list of recently played track
+          ids retrieved from this station. This avoids playing
+          duplicates.
 
         See :func:`get_all_songs` for the format of a track dictionary.
         """
 
-        #TODO recently played?
+        if recently_played_ids is None:
+            recently_played_ids = []
+
+        def add_track_type(track_id):
+            if track_id[0] == 'T':
+                return {'id': track_id, 'type': 1}
+            else:
+                return {'id': track_id, 'type': 0}
+
+        recently_played = [add_track_type(track_id) for track_id in recently_played_ids]
 
         res = self._make_call(mobileclient.ListStationTracks,
-                              station_id, num_tracks, recently_played=[])
+                              station_id, num_tracks, recently_played=recently_played)
 
         stations = res.get('data', {}).get('stations')
         if not stations:
@@ -671,7 +762,7 @@ class Mobileclient(_Base):
         return stations[0].get('tracks', [])
 
     def search_all_access(self, query, max_results=50):
-        """Queries the server for All Access songs and albums.
+        """Queries the server for All Access songs, albums and shared playlists.
 
         Using this method without an All Access subscription will always result in
         CallFailure being raised.
@@ -791,15 +882,40 @@ class Mobileclient(_Base):
                      'type':'1'
                   },
                ]
+               'playlist_hits': [
+                  {
+                     'score': 0.0,
+                     'playlist':{
+                        'albumArtRef':[
+                           {
+                              'url':'http://lh4.ggpht.com/...'
+                           }
+                        ],
+                        'description': 'Krasnoyarsk concert setlist 29.09.2013',
+                        'kind': 'sj#playlist',
+                        'name': 'Amorphis Setlist',
+                        'ownerName': 'Ilya Makarov',
+                        'ownerProfilePhotoUrl': 'http://lh6.googleusercontent.com/...',
+                        'shareToken': 'AMaBXymmMfeA8iwoEWWI9Z1A...',
+                        'type': 'SHARED'
+                     },
+                     'type': '4'
+                  }
+               ]
             }
         """
         res = self._make_call(mobileclient.Search, query, max_results)
 
         hits = res.get('entries', [])
 
-        return {'album_hits': [hit for hit in hits if hit['type'] == '3'],
-                'artist_hits': [hit for hit in hits if hit['type'] == '2'],
-                'song_hits': [hit for hit in hits if hit['type'] == '1']}
+        hits_by_type = defaultdict(list)
+        for hit in hits:
+            hits_by_type[hit['type']].append(hit)
+
+        return {'album_hits': hits_by_type['3'],
+                'artist_hits': hits_by_type['2'],
+                'song_hits': hits_by_type['1'],
+                'playlist_hits': hits_by_type['4']}
 
     @utils.enforce_id_param
     def get_artist_info(self, artist_id, include_albums=True, max_top_tracks=5, max_rel_artist=5):
@@ -912,7 +1028,8 @@ class Mobileclient(_Base):
             items = lib_chunk['data']['items']
 
             if not include_deleted:
-                items = [item for item in items if not item['deleted']]
+                items = [item for item in items
+                         if not item.get('deleted', False)]
 
             yield items
 
@@ -1014,7 +1131,9 @@ class Mobileclient(_Base):
     def get_genres(self, parent_genre_id=None):
         """Retrieves information on Google Music genres.
 
-        :param parent_genre_id: An optional ID of the parent genre
+        :param parent_genre_id: (optional) If provided, only child genres
+          will be returned. By default, all root genres are returned.
+          If this id is invalid, an empty list will be returned.
 
         Using this method without an All Access subscription will always result in
         CallFailure being raised.
@@ -1043,4 +1162,7 @@ class Mobileclient(_Base):
         to seed an All Access radio station.
         """
 
-        return self._make_call(mobileclient.GetGenres, parent_genre_id)
+        res = self._make_call(mobileclient.GetGenres, parent_genre_id)
+
+        # An invalid parent genre won't respond with a genres key.
+        return res.get('genres', [])

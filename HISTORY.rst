@@ -5,6 +5,24 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
+5.0.0
++++++
+released 2015-06-02
+
+- breaking: Webclient.login temporarily broken after clientlogin deprecation
+- breaking: Mobileclient.get_thumbs_up_songs renamed to mobileclient.get_promoted_songs
+- breaking: Mobileclient.change_playlist_name is now edit_playlist
+- fix Mobileclient.login breakage due to clientlogin deprecation
+- fix Mobileclient.get_genres: return a list and handle invalid parent genres
+- add support for filtering out recently played station tracks to Mobileclient.get_station_tracks
+- add public playlist results to Mobileclient.search_all_access
+- add Mobileclient.get_registered_devices
+- add quality option to Mobileclient.get_stream_url
+- add support for public playlist creation to Mobileclient.create_playlist
+- make optional description param for Webclient.create_playlist
+- better handle locating mp3 transcoder
+
+
 4.0.0
 +++++
 released 2014-06-08

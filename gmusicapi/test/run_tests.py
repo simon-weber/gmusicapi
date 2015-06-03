@@ -61,10 +61,11 @@ def prompt_for_wc_auth():
 def retrieve_auth():
     """Searches the env for auth, prompting the user if necessary.
 
-    On success, return (wc_kwargs, mm_kwargs). On failure, raise ValueError."""
+    On success, return (wc_kwargs, mc_kwargs, mm_kwargs). On failure, raise ValueError."""
 
-    get_kwargs = lambda envargs: dict([(arg.kwarg, os.environ.get(arg.envarg))
-                                       for arg in envargs])
+    def get_kwargs(envargs):
+        return dict([(arg.kwarg, os.environ.get(arg.envarg))
+                     for arg in envargs])
 
     wc_kwargs = get_kwargs(wc_envargs)
     mm_kwargs = get_kwargs(mm_envargs)
@@ -86,7 +87,9 @@ def retrieve_auth():
         mm_kwargs['oauth_credentials'] = \
             credentials_from_refresh_token(mm_kwargs['oauth_credentials'])
 
-    return (wc_kwargs, mm_kwargs)
+    mc_kwargs = wc_kwargs.copy()
+
+    return (wc_kwargs, mc_kwargs, mm_kwargs)
 
 
 def freeze_method_kwargs(klass, method_name, **kwargs):
@@ -97,12 +100,12 @@ def freeze_method_kwargs(klass, method_name, **kwargs):
         None, klass))
 
 
-def freeze_login_details(wc_kwargs, mm_kwargs):
+def freeze_login_details(wc_kwargs, mc_kwargs, mm_kwargs):
     """Set the given kwargs to be the default for client login methods."""
     for cls, kwargs in ((Musicmanager, mm_kwargs),
                         (Webclient, wc_kwargs),
-                        (Mobileclient, wc_kwargs),
-                       ):
+                        (Mobileclient, mc_kwargs),
+                        ):
         freeze_method_kwargs(cls, 'login', **kwargs)
 
 
