@@ -5,9 +5,9 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-5.0.0-dev
-+++++++++
-released XXXX-XX-XX
+5.0.0
++++++
+released 2015-06-02
 
 - breaking: Webclient.login temporarily broken after clientlogin deprecation
 - breaking: Mobileclient.get_thumbs_up_songs renamed to mobileclient.get_promoted_songs
