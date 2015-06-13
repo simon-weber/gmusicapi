@@ -2,6 +2,7 @@ from collections import defaultdict
 import datetime
 from operator import itemgetter
 import re
+from uuid import getnode as getmac
 
 from gmusicapi import session
 from gmusicapi.clients.shared import _Base
@@ -18,6 +19,7 @@ class Mobileclient(_Base):
     """
 
     _session_class = session.Mobileclient
+    FROM_MAC_ADDRESS = object()
 
     def __init__(self, debug_logging=True, validate=True, verify_ssl=True):
         super(Mobileclient, self).__init__(self.__class__.__name__,
@@ -25,21 +27,44 @@ class Mobileclient(_Base):
                                            validate,
                                            verify_ssl)
 
-    def login(self, email, password):
+    def login(self, email, password, android_id):
         """Authenticates the Mobileclient.
         Returns ``True`` on success, ``False`` on failure.
 
         :param email: eg ``'test@gmail.com'`` or just ``'test'``.
         :param password: password or app-specific password for 2-factor users.
           This is not stored locally, and is sent securely over SSL.
+        :param android_id: 16 hex digits, eg ``'1234567890abcdef'``.
+
+          Pass Mobileclient.FROM_MAC_ADDRESS instead to attempt to use
+          this machine's MAC address as an android id.
+          **Use this at your own risk**:
+          the id will be a non-standard 12 characters,
+          but appears to work fine in testing.
+          If a valid MAC address cannot be determined on this machine
+          (which is often the case when running on a VPS), raise OSError.
 
         #TODO 2fa
         """
 
-        if not self.session.login(email, password):
+        if android_id is None:
+            raise ValueError("android_id cannot be None.")
+
+        if android_id is self.FROM_MAC_ADDRESS:
+            mac_int = getmac()
+            if (mac_int >> 40) % 2:
+                raise OSError("a valid MAC could not be determined."
+                              " Provide an android_id (and be"
+                              " sure to provide the same one on future runs).")
+
+            android_id = utils.create_mac_string(mac_int)
+            android_id = android_id.replace(':', '')
+
+        if not self.session.login(email, password, android_id):
             self.logger.info("failed to authenticate")
             return False
 
+        self.android_id = android_id
         self.logger.info("authenticated")
 
         return True
@@ -196,11 +221,13 @@ class Mobileclient(_Base):
         return [d['id'] for d in res['mutate_response']]
 
     @utils.enforce_id_param
-    def get_stream_url(self, song_id, device_id, quality='hi'):
+    def get_stream_url(self, song_id, device_id=None, quality='hi'):
         """Returns a url that will point to an mp3 file.
 
         :param song_id: a single song id
-        :param device_id: A mobile device id as a string.
+        :param device_id: (optional) defaults to ``android_id`` from login.
+
+          Otherwise, provide a mobile device id as a string.
           Android device ids are 16 characters, while iOS ids
           are uuids with 'ios:' prepended.
 
@@ -233,6 +260,9 @@ class Mobileclient(_Base):
         <gmusicapi.clients.Musicmanager.download_song>`
         to download files with metadata.
         """
+
+        if device_id is None:
+            device_id = self.android_id
 
         if len(device_id) == 16 and re.match('^[a-z0-9]*$', device_id):
             # android device ids are now sent in base 10

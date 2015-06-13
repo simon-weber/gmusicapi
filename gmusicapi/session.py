@@ -149,23 +149,24 @@ class Mobileclient(_Base):
         self._master_token = None
         self._authtoken = None
 
-    def login(self, email, password, *args, **kwargs):
+    def login(self, email, password, android_id, *args, **kwargs):
         """
         Get a master token, then use it to get a skyjam OAuth token.
 
         :param email:
         :param password:
+        :param android_id:
         """
 
-        super(Mobileclient, self).login(email, password, *args, **kwargs)
+        super(Mobileclient, self).login(email, password, android_id, *args, **kwargs)
 
-        res = gpsoauth.perform_master_login(email, password)
+        res = gpsoauth.perform_master_login(email, password, android_id)
         if 'Token' not in res:
             return False
         self._master_token = res['Token']
 
         res = gpsoauth.perform_oauth(
-            email, self._master_token,
+            email, self._master_token, android_id,
             service='sj', app='com.google.android.music',
             client_sig='38918a453d07199354f8b19af05ec6562ced5788')
         if 'Auth' not in res:
