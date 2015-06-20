@@ -33,5 +33,5 @@ python-gflags==2.0
 requests==2.3.0
 six==1.7.3
 tox==1.8.1
-validictory==1.0.0a1
+validictory==1.0.0
 wsgiref==0.1.2
