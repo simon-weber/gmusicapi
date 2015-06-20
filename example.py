@@ -21,7 +21,7 @@ def ask_for_credentials():
         email = raw_input('Email: ')
         password = getpass()
 
-        logged_in = api.login(email, password)
+        logged_in = api.login(email, password, Mobileclient.FROM_MAC_ADDRESS)
         attempts += 1
 
     return api
