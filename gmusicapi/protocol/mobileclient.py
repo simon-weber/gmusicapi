@@ -75,6 +75,7 @@ sj_track = {
         'contentType': {'type': 'string'},
         'lastRatingChangeTimestamp': {'type': 'string', 'required': False},
         'primaryVideo': sj_video.copy(),
+        'lastModifiedTimestamp': {'type': 'string', 'required': False},
     }
 }
 sj_track['properties']['primaryVideo']['required'] = False
