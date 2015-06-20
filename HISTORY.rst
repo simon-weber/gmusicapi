@@ -5,6 +5,13 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
+6.0.0
++++++
+released 2015-06-20
+
+- fix creation of multiple android devices from android_id=None; support creating device ids from mac address.
+- android_id is now optional for mobileclient.get_stream_url, defaulting to android_id from login()
+
 5.0.0
 +++++
 released 2015-06-02
