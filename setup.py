@@ -57,6 +57,7 @@ setup(
         'mock >= 0.7.0',                          # MagicMock
         'appdirs >= 1.1.0',                       # user_log_dir
         'gpsoauth == 0.0.3',                      # mac -> android_id
+        'MechanicalSoup',
     ] + dynamic_requires,
     classifiers=[
         'Development Status :: 4 - Beta',

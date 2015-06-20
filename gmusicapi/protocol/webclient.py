@@ -389,6 +389,7 @@ class GetStreamUrl(WcCall):
             'now': {'type': 'integer', 'required': False},
             'tier': {'type': 'integer', 'required': False},
             'replayGain': {'type': 'integer'},
+            'streamAuthId': {'type': 'string'},
         },
         "additionalProperties": False
     }
