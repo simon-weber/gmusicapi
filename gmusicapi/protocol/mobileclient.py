@@ -435,7 +435,6 @@ class ListTracks(McListCall):
 class GetStreamUrl(McCall):
     static_method = 'GET'
     static_url = 'https://android.clients.google.com/music/mplay'
-    static_verify = False
 
     # this call will redirect to the mp3
     static_allow_redirects = False

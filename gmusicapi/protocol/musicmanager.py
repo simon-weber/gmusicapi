@@ -23,7 +23,6 @@ from gmusicapi.utils import utils
 log = utils.DynamicClientLogger(__name__)
 
 
-# This url has SSL issues, hence the static_verify=False.
 _android_url = 'https://android.clients.google.com/upsj/'
 
 OAuthInfo = namedtuple('OAuthInfo', 'client_id client_secret scope redirect')
@@ -102,7 +101,6 @@ class AuthenticateUploader(MmCall):
     """Sent to auth, reauth, or register our upload client."""
 
     static_url = _android_url + 'upauth'
-    static_verify = False
 
     @classmethod
     def check_success(cls, response, msg):
@@ -134,7 +132,6 @@ class AuthenticateUploader(MmCall):
 
 class UploadMetadata(MmCall):
     static_url = _android_url + 'metadata'
-    static_verify = False
 
     static_params = {'version': 1}
 
@@ -309,7 +306,6 @@ class UploadMetadata(MmCall):
 class GetUploadJobs(MmCall):
     # TODO
     static_url = _android_url + 'getjobs'
-    static_verify = False
 
     static_params = {'version': 1}
 
@@ -473,7 +469,6 @@ class ProvideSample(MmCall):
     static_method = 'POST'
     static_params = {'version': 1}
     static_url = _android_url + 'sample'
-    static_verify = False
 
     @staticmethod
     @pb
@@ -520,7 +515,6 @@ class UpdateUploadState(MmCall):
     static_method = 'POST'
     static_params = {'version': 1}
     static_url = _android_url + 'sample'
-    static_verify = False
 
     @staticmethod
     @pb
@@ -551,7 +545,6 @@ class CancelUploadJobs(MmCall):
 
     static_method = 'POST'
     static_url = _android_url + 'deleteuploadrequested'
-    static_verify = False
 
     @staticmethod
     @pb
