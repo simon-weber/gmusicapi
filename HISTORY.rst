@@ -5,9 +5,13 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-6.0.1
+7.0.0
 +++++
 released ...
+
+- breaking: python 2.6 is no longer supported
+- fix Webclient authentication and get_stream_urls
+- fix certificate validation
 
 6.0.0
 +++++
