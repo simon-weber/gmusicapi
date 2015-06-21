@@ -4,7 +4,6 @@
 Sessions handle the details of authentication and transporting requests.
 """
 from contextlib import closing
-import cookielib
 
 import gpsoauth
 import httplib2  # included with oauth2client
@@ -15,7 +14,6 @@ import requests
 from gmusicapi.exceptions import (
     AlreadyLoggedIn, NotLoggedIn, CallFailure
 )
-from gmusicapi.protocol.shared import ClientLogin
 from gmusicapi.protocol import webclient
 from gmusicapi.utils import utils
 
@@ -93,7 +91,7 @@ class _Base(object):
 class Webclient(_Base):
     def login(self, email, password, *args, **kwargs):
         """
-        Perform clientlogin then retrieve webclient cookies.
+        Perform serviceloginauth then retrieve webclient cookies.
 
         :param email:
         :param password:

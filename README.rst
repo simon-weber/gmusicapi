@@ -52,6 +52,7 @@ Status and updates
 .. image:: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API.png?branch=develop
         :target: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API
 
+* June 2015: Full mobileclient and webclient functionality was restored.
 * May 2015: Limited mobileclient functionality was restored.
 * April 2015: Google deprecated clientlogin, breaking both the webclient and mobileclient.
 * November 2013: I started working fulltime at Venmo, meaning this project is back to night and weekend development.
