@@ -122,8 +122,10 @@ class Webclient(_Base):
             log.exception("submitting login form failed")
             return False
 
-        if 'SID' not in browser.session.cookies:
-            # invalid credentials. Google doesn't return a 403.
+        # We can't use in without .keys(), since international users will see a
+        # CookieConflictError.
+        if 'SID' not in browser.session.cookies.keys():
+            # Invalid auth.
             return False
 
         self._rsession.cookies.update(browser.session.cookies)
