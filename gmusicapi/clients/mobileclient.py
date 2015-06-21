@@ -463,7 +463,7 @@ class Mobileclient(_Base):
         Playlists have a maximum size of 1000 songs.
         Calls may fail before that point (presumably) due to
         an error on Google's end (see `#239
-        <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/239>`__).
+        <https://github.com/simon-weber/gmusicapi/issues/239>`__).
         """
         mutate_call = mobileclient.BatchMutatePlaylistEntries
         add_mutations = mutate_call.build_plentry_adds(playlist_id, song_ids)

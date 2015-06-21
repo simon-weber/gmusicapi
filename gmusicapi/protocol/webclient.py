@@ -359,7 +359,7 @@ class GetStreamUrl(WcCall):
     @staticmethod
     def dynamic_params(song_id):
 
-        # https://github.com/simon-weber/Unofficial-Google-Music-API/issues/137
+        # https://github.com/simon-weber/gmusicapi/issues/137
         # there are three cases when streaming:
         #   | track type              | guid songid? | slt/sig needed? |
         #    user-uploaded              yes            no

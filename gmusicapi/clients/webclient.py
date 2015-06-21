@@ -274,7 +274,7 @@ class Webclient(_Base):
 
         Note that if you uploaded a song through gmusicapi, it won't be reuploaded
         automatically - this currently only works for songs uploaded with the Music Manager.
-        See issue `#89 <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/89>`__.
+        See issue `#89 <https://github.com/simon-weber/gmusicapi/issues/89>`__.
 
         This should only be used on matched tracks (``song['type'] == 6``).
         """

@@ -664,7 +664,7 @@ class ClientTests(object):
     def mc_increment_uploaded_song_playcount(self):
         self._test_increment_playcount(self.all_songs[0].sid)
 
-    # Fails silently. See https://github.com/simon-weber/Unofficial-Google-Music-API/issues/349.
+    # Fails silently. See https://github.com/simon-weber/gmusicapi/issues/349.
     # @song_test
     # @all_access
     # def mc_increment_aa_song_playcount(self):

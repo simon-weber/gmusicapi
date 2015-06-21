@@ -394,7 +394,7 @@ class Musicmanager(_Base):
           They would have to be deleted and reuploaded with matching disabled
           (or with the Music Manager).
           Fixing matches from gmusicapi may be supported in a future release; see issue `#89
-          <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/89>`__.
+          <https://github.com/simon-weber/gmusicapi/issues/89>`__.
 
         All Google-supported filetypes are supported; see `Google's documentation
         <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1100462>`__.

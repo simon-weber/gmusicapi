@@ -18,7 +18,7 @@ However, any of the definitions listed here can be called by using the
 It's tough to generate the exact schema of every call in a readable fashion,
 so this information is left out.
 If you need exact specifications, look at `the code
-<https://github.com/simon-weber/Unofficial-Google-Music-API/tree/develop/gmusicapi/protocol>`__
+<https://github.com/simon-weber/gmusicapi/tree/develop/gmusicapi/protocol>`__
 - or submit a pull request to generate the docs =)
 
 Android Client

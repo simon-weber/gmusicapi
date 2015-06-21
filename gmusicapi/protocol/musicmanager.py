@@ -256,7 +256,7 @@ class UploadMetadata(MmCall):
 
         for null_field in ['artist', 'album']:
             # If these fields aren't provided, they'll render as "undefined" in the web interface;
-            # see https://github.com/simon-weber/Unofficial-Google-Music-API/issues/236.
+            # see https://github.com/simon-weber/gmusicapi/issues/236.
             # Defaulting them to an empty string fixes this.
             if null_field not in audio:
                 track_set(null_field, '')

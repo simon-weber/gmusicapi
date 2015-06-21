@@ -49,8 +49,8 @@ in touch, either `drop by #gmusicapi on Freenode
 Status and updates
 ------------------
 
-.. image:: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API.png?branch=develop
-        :target: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API
+.. image:: https://travis-ci.org/simon-weber/gmusicapi.png?branch=develop
+        :target: https://travis-ci.org/simon-weber/gmusicapi
 
 * June 2015: Full mobileclient and webclient functionality was restored.
 * May 2015: Limited mobileclient functionality was restored.
