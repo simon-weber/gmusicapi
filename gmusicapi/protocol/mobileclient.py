@@ -594,7 +594,7 @@ class BatchMutatePlaylists(McBatchMutateCall):
     def build_playlist_deletes(playlist_ids):
         # TODO can probably pull this up one
         """
-        :param playlist_ids
+        :param playlist_ids:
         """
         return [{'delete': id} for id in playlist_ids]
 
@@ -637,7 +637,7 @@ class BatchMutatePlaylistEntries(McBatchMutateCall):
     @staticmethod
     def build_plentry_deletes(entry_ids):
         """
-        :param entry_ids
+        :param entry_ids:
         """
         return [{'delete': id} for id in entry_ids]
 
@@ -671,8 +671,8 @@ class BatchMutatePlaylistEntries(McBatchMutateCall):
     @staticmethod
     def build_plentry_adds(playlist_id, song_ids):
         """
-        :param playlist_id
-        :param song_ids
+        :param playlist_id:
+        :param song_ids:
         """
 
         mutations = []
@@ -775,7 +775,7 @@ class ListStationTracks(McCall):
     @staticmethod
     def dynamic_data(station_id, num_entries, recently_played):
         """
-        :param station_id
+        :param station_id:
         :param num_entries: maximum number of tracks to return
         :param recently_played: a list of...song ids? never seen an example
         """
@@ -809,7 +809,7 @@ class BatchMutateStations(McBatchMutateCall):
     @staticmethod
     def build_deletes(station_ids):
         """
-        :param station_ids
+        :param station_ids:
         """
         return [{'delete': id, 'includeFeed': False, 'numEntries': 0}
                 for id in station_ids]
@@ -857,7 +857,7 @@ class BatchMutateTracks(McBatchMutateCall):
     @staticmethod
     def build_track_deletes(track_ids):
         """
-        :param track_ids
+        :param track_ids:
         """
         return [{'delete': id} for id in track_ids]
 

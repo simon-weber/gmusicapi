@@ -21,14 +21,13 @@ If you need exact specifications, look at `the code
 <https://github.com/simon-weber/Unofficial-Google-Music-API/tree/develop/gmusicapi/protocol>`__
 - or submit a pull request to generate the docs =)
 
-Web Client
-----------
+Android Client
+-------------
 
-.. automodule:: gmusicapi.protocol.webclient
+.. automodule:: gmusicapi.protocol.mobileclient
    :members:
    :undoc-members:
-   :exclude-members: WcCall, build_request, filter_response, validate, expected_response
-
+   :exclude-members: McCall, build_request, filter_response, validate, filter_text, item_schema, genre_schema, shared_plentry
 
 Music Manager
 -------------
@@ -36,4 +35,12 @@ Music Manager
 .. automodule:: gmusicapi.protocol.musicmanager
    :members:
    :undoc-members:
-   :exclude-members: MmCall, build_request, filter_response, validate, send_xt
+   :exclude-members: MmCall, build_request, filter_response, validate
+
+Web Client
+----------
+
+.. automodule:: gmusicapi.protocol.webclient
+   :members:
+   :undoc-members:
+   :exclude-members: WcCall, build_request, filter_response, validate, expected_response
