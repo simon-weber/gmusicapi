@@ -848,6 +848,7 @@ class ClientTests(object):
     #    self._mc_assert_ple_position(pl[-2], len(pl) - 2)
 
     @station_test
+    @retry  # sometimes this comes back with no data key
     @all_access
     def mc_list_station_tracks(self):
         for station_id in self.station_ids:
