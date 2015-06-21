@@ -27,7 +27,6 @@ from requests.exceptions import SSLError
 from gmusicapi import Webclient, Musicmanager, Mobileclient
 # from gmusicapi.protocol import mobileclient
 from gmusicapi.protocol.shared import authtypes
-# from gmusicapi.protocol.metadata import md_expectations
 from gmusicapi.utils.utils import retry, id_or_nid
 import gmusicapi.test.utils as test_utils
 

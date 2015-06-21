@@ -14,49 +14,11 @@ import validictory
 
 from gmusicapi.compat import json
 from gmusicapi.exceptions import CallFailure, ValidationException
-from gmusicapi.protocol.metadata import md_expectations
 from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils, jsarray
 
 base_url = 'https://play.google.com/music/'
 service_url = base_url + 'services/'
-
-# Shared response schemas, built to include metadata expectations.
-song_schema = {
-    "type": "object",
-    "properties": dict(
-        (name, expt.get_schema()) for
-        name, expt in md_expectations.items()
-    ),
-    # don't allow metadata not in expectations
-    "additionalProperties": False
-}
-
-song_array = {
-    "type": "array",
-    "items": song_schema
-}
-
-pl_schema = {
-    "type": "object",
-    "properties": {
-        "continuation": {"type": "boolean"},
-        "playlist": song_array,
-        "playlistId": {"type": "string"},
-        "unavailableTrackCount": {"type": "integer"},
-        # unsure what this field does. sometimes it's not there.
-        "token": {"type": "string", "required": False},
-        # only appears when loading multiple playlists
-        "title": {"type": "string", "required": False},
-        "continuationToken": {"type": "string", "required": False},
-    },
-    "additionalProperties": False
-}
-
-pl_array = {
-    "type": "array",
-    "items": pl_schema
-}
 
 
 class Init(Call):

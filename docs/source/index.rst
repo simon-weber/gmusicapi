@@ -66,7 +66,6 @@ information on the Google Music data you'll encounter:
    :maxdepth: 2
 
    reference/api
-   reference/metadata
    reference/protocol
 
 Making gmusicapi better
