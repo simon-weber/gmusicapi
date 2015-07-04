@@ -199,6 +199,7 @@ sj_station_seed = {
     'additionalProperties': False,
     'properties': {
         'kind': {'type': 'string'},
+        'seedType': {'type': 'string'},
         # one of these will be present
         'albumId': {'type': 'string', 'required': False},
         'artistId': {'type': 'string', 'required': False},
@@ -212,17 +213,30 @@ sj_station = {
     'type': 'object',
     'additionalProperties': False,
     'properties': {
-        'imageUrl': {'type': 'string'},
+        'imageUrl': {'type': 'string', 'required': False},
         'kind': {'type': 'string'},
         'name': {'type': 'string'},
-        'deleted': {'type': 'boolean'},
-        'lastModifiedTimestamp': {'type': 'string'},
-        'recentTimestamp': {'type': 'string'},
-        'clientId': {'type': 'string'},
+        'deleted': {'type': 'boolean',
+                    'required': False},  # for public
+        'lastModifiedTimestamp': {'type': 'string',
+                                  'required': False},
+        'recentTimestamp': {'type': 'string',
+                            'required': False},  # for public
+        'clientId': {'type': 'string',
+                     'required': False},  # for public
         'seed': sj_station_seed,
-        'id': {'type': 'string'},
+        'id': {'type': 'string',
+               'required': False},  # for public
         'description': {'type': 'string', 'required': False},
         'tracks': {'type': 'array', 'required': False, 'items': sj_track},
+        'imageUrls': {'type': 'array',
+                      'items': {
+                          'type': 'object',
+                          'additionalProperties': False,
+                          'properties': {
+                              'url': {'type': 'string'}},
+                          'required': False,
+                      }},
     }
 }
 
