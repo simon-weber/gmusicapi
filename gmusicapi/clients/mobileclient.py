@@ -32,8 +32,9 @@ class Mobileclient(_Base):
         Returns ``True`` on success, ``False`` on failure.
 
         :param email: eg ``'test@gmail.com'`` or just ``'test'``.
-        :param password: password or app-specific password for 2-factor users.
+        :param password: the account's password.
           This is not stored locally, and is sent securely over SSL.
+          App-specific passwords are not supported.
         :param android_id: 16 hex digits, eg ``'1234567890abcdef'``.
 
           Pass Mobileclient.FROM_MAC_ADDRESS instead to attempt to use

@@ -45,8 +45,9 @@ class Webclient(_Base):
         Returns ``True`` on success, ``False`` on failure.
 
         :param email: eg ``'test@gmail.com'`` or just ``'test'``.
-        :param password: password or app-specific password for 2-factor users.
+        :param password: the account's password password.
           This is not stored locally, and is sent securely over SSL.
+          App-specific passwords are not supported.
 
         Users who don't use two-factor auth will likely need to enable
         `less secure login <https://www.google.com/settings/security/lesssecureapps>`__.
