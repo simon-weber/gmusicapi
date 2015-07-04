@@ -268,8 +268,8 @@ class Call(object):
             if cls.gets_logged:
                 raw_response = response.content
 
-                if len(raw_response) > 1000:
-                    raw_response = raw_response[:1000] + '...'
+                if len(raw_response) > 10000:
+                    raw_response = raw_response[:10000] + '...'
 
                 err_msg += ("\nFirst, try the develop branch."
                             " If you can recreate this error with the most recent code"
