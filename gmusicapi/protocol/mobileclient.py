@@ -230,7 +230,7 @@ sj_search_result = {
     'type': 'object',
     'additionalProperties': False,
     'properties': {
-        'score': {'type': 'number'},
+        'score': {'type': 'number', 'required': False},
         'type': {'type': 'string'},
         'best_result': {'type': 'boolean', 'required': False},
         'navigational_result': {'type': 'boolean', 'required': False},
