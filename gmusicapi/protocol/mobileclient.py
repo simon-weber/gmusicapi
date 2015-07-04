@@ -194,27 +194,6 @@ sj_artist['properties']['related_artists'] = {
     'required': False
 }
 
-sj_result = {
-    'type': 'object',
-    'additionalProperties': False,
-    'properties': {
-        'score': {'type': 'number'},
-        'type': {'type': 'string'},
-        'best_result': {'type': 'boolean', 'required': False},
-        'navigational_result': {'type': 'boolean', 'required': False},
-        'navigational_confidence': {'type': 'number', 'required': False},
-        'artist': sj_artist.copy(),
-        'album': sj_album.copy(),
-        'track': sj_track.copy(),
-        'playlist': sj_playlist.copy(),
-    }
-}
-
-sj_result['properties']['artist']['required'] = False
-sj_result['properties']['album']['required'] = False
-sj_result['properties']['track']['required'] = False
-sj_result['properties']['playlist']['required'] = False
-
 sj_station_seed = {
     'type': 'object',
     'additionalProperties': False,
@@ -246,6 +225,29 @@ sj_station = {
         'tracks': {'type': 'array', 'required': False, 'items': sj_track},
     }
 }
+
+sj_search_result = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'score': {'type': 'number'},
+        'type': {'type': 'string'},
+        'best_result': {'type': 'boolean', 'required': False},
+        'navigational_result': {'type': 'boolean', 'required': False},
+        'navigational_confidence': {'type': 'number', 'required': False},
+        'artist': sj_artist.copy(),
+        'album': sj_album.copy(),
+        'track': sj_track.copy(),
+        'playlist': sj_playlist.copy(),
+        'station': sj_station.copy(),
+    }
+}
+
+sj_search_result['properties']['artist']['required'] = False
+sj_search_result['properties']['album']['required'] = False
+sj_search_result['properties']['track']['required'] = False
+sj_search_result['properties']['playlist']['required'] = False
+sj_search_result['properties']['station']['required'] = False
 
 
 class McCall(Call):
@@ -413,7 +415,7 @@ class Search(McCall):
                              'items': {'type': 'string'},
                              'required': False},
             'entries': {'type': 'array',
-                        'items': sj_result,
+                        'items': sj_search_result,
                         'required': False},
             'suggestedQuery': {'type': 'string', 'required': False}
         },
