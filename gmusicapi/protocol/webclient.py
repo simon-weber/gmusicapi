@@ -352,6 +352,7 @@ class GetStreamUrl(WcCall):
             'tier': {'type': 'integer', 'required': False},
             'replayGain': {'type': 'integer'},
             'streamAuthId': {'type': 'string'},
+            'isFreeRadioUser': {'type': 'boolean'},
         },
         "additionalProperties": False
     }
