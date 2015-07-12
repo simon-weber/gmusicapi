@@ -230,12 +230,12 @@ sj_station = {
         'description': {'type': 'string', 'required': False},
         'tracks': {'type': 'array', 'required': False, 'items': sj_track},
         'imageUrls': {'type': 'array',
+                      'required': False,
                       'items': {
                           'type': 'object',
                           'additionalProperties': False,
                           'properties': {
                               'url': {'type': 'string'}},
-                          'required': False,
                       }},
     }
 }
