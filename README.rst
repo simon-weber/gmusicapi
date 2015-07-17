@@ -24,6 +24,7 @@ gmusicapi allows control of
 That said, it's actively maintained, and powers a bunch of cool projects:
 
 -  alternate clients, including
+   `one designed for the visually impaired <https://github.com/chrisnorman7/gmp>`__,
    `a command line client <https://github.com/mstill/thunner>`__
    and `FUSE filesystem <https://github.com/EnigmaCurry/GMusicFS>`__
 -  library management tools for
