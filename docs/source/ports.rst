@@ -8,7 +8,8 @@ Here are the ports I'm currently aware of:
 
 -  C++: `Greg Wicks <https://github.com/gwicks/gmusicapi-curl>`__
 -  C#:
-   `Taylor Finnell <https://github.com/taylorfinnell/GoogleMusicAPI.NET>`__
+   `ffleischer <https://github.com/ffleischer/gmusicapiCSharp/tree/master>`__
+   and `Taylor Finnell <https://github.com/taylorfinnell/GoogleMusicAPI.NET>`__
 -  Java: `Jens Villadsen <https://github.com/jkiddo/gmusic.api>`__
    and `Nick Martin <https://github.com/xnickmx/google-play-client>`__
 -  PHP:
