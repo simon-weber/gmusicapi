@@ -12,6 +12,7 @@ released ...
 - breaking: python 2.6 is no longer supported
 - fix Webclient authentication and get_stream_urls
 - fix certificate validation
+- fix album artist metadata not being upload
 
 6.0.0
 +++++
