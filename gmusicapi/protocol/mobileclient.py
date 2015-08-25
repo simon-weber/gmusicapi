@@ -160,7 +160,7 @@ sj_album = {
         'albumArtist': {'type': 'string'},
         'albumArtRef': {'type': 'string', 'required': False},
         'albumId': {'type': 'string'},
-        'artist': {'type': 'string'},
+        'artist': {'type': 'string', 'blank': True},
         'artistId': {'type': 'array', 'items': {'type': 'string', 'blank': True}},
         'year': {'type': 'integer', 'required': False},
         'tracks': {'type': 'array', 'items': sj_track, 'required': False},
