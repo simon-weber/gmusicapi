@@ -8,7 +8,8 @@ Here are the ports I'm currently aware of:
 
 -  C++: `Greg Wicks <https://github.com/gwicks/gmusicapi-curl>`__
 -  C#:
-   `Taylor Finnell <https://github.com/taylorfinnell/GoogleMusicAPI.NET>`__
+   `ffleischer <https://github.com/ffleischer/gmusicapiCSharp/tree/master>`__
+   and `Taylor Finnell <https://github.com/taylorfinnell/GoogleMusicAPI.NET>`__
 -  Java: `Jens Villadsen <https://github.com/jkiddo/gmusic.api>`__
    and `Nick Martin <https://github.com/xnickmx/google-play-client>`__
 -  PHP:
@@ -35,8 +36,8 @@ Get in touch if you're working on a port.
 I'm happy to answer questions and point you to relevant bits of code.
 
 Generally, though, the `protocol package
-<https://github.com/simon-weber/Unofficial-Google-Music-API/tree/develop/gmusicapi/protocol>`__
+<https://github.com/simon-weber/gmusicapi/tree/develop/gmusicapi/protocol>`__
 is what you'll want to look at.
 It contains all of the call schemas in a psuedo-dsl that's explained
 `here
-<https://github.com/simon-weber/Unofficial-Google-Music-API/blob/develop/gmusicapi/protocol/shared.py>`__.
+<https://github.com/simon-weber/gmusicapi/blob/develop/gmusicapi/protocol/shared.py>`__.
