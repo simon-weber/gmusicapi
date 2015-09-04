@@ -10,18 +10,19 @@ Here are the ports I'm currently aware of:
 -  C#:
    `ffleischer <https://github.com/ffleischer/gmusicapiCSharp/tree/master>`__
    and `Taylor Finnell <https://github.com/taylorfinnell/GoogleMusicAPI.NET>`__
+-  Go: `Lari Rasku <https://github.com/lxr/go.google.musicmanager>`__
 -  Java: `Jens Villadsen <https://github.com/jkiddo/gmusic.api>`__
    and `Nick Martin <https://github.com/xnickmx/google-play-client>`__
--  PHP:
-   `raydanhk <http://code.google.com/p/unofficial-google-music-api-php/>`__
--  Objective-C:
-   `Gregory Wicks <https://github.com/gwicks/gmusicapi-objc>`__
 -  Javascript:
-   `Lari Rasku <https://code.google.com/p/google-musicmanager-js/>`__.
+   `Lari Rasku <https://github.com/lxr/google.musicmanager.js>`__.
    There's also my `Google Music Turntable uploader
    <https://github.com/simon-weber/Google-Music-Turntable-Uploader>`__;
    it's not a port, but may be useful as an example.
 -  Node: `Jamon Terrell <https://github.com/jamon/playmusic>`__
+-  Objective-C:
+   `Gregory Wicks <https://github.com/gwicks/gmusicapi-objc>`__
+-  PHP:
+   `raydanhk <http://code.google.com/p/unofficial-google-music-api-php/>`__
 -  Ruby: `Loic Nageleisen <https://github.com/lloeki/ruby-skyjam>`__
 
 They're in various states of completion and maintenance because,
