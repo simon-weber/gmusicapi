@@ -39,7 +39,7 @@ All major functionality is supported:
 
 
 See `the changelog
-<https://github.com/simon-weber/Unofficial-Google-Music-API/blob/develop/HISTORY.rst>`__
+<https://github.com/simon-weber/gmusicapi/blob/develop/HISTORY.rst>`__
 for changes by version.
 
 Using gmusicapi
@@ -66,7 +66,6 @@ information on the Google Music data you'll encounter:
    :maxdepth: 2
 
    reference/api
-   reference/metadata
    reference/protocol
 
 Making gmusicapi better
@@ -75,7 +74,7 @@ Contributions are always welcome!
 The :ref:`contributing section <contributing>` has more details.
 
 `The code
-<https://github.com/simon-weber/Unofficial-Google-Music-API>`__
+<https://github.com/simon-weber/gmusicapi>`__
 might also be useful.
 
 Ports and other languages

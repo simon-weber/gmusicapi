@@ -5,6 +5,17 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
+7.0.0
++++++
+released 2015-09-19
+
+- breaking: python 2.6 is no longer supported
+- breaking: webclient.get_registered_devices has a slightly different schema
+- fix Webclient authentication and get_stream_urls
+- fix MusicManager uploading: Google shut down the rupio endpoint
+- fix certificate validation
+- fix album artist metadata not being upload
+
 6.0.0
 +++++
 released 2015-06-20

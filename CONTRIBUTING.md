@@ -17,8 +17,8 @@ One exception: the docs are built dynamically against the current state of `mast
 
 ### Checking out a dev environment
 You can do this however you like, but generally you want to use [virtualenv](http://www.virtualenv.org/en/latest/):
-* `$ git clone https://github.com/simon-weber/Unofficial-Google-Music-API.git`
-* `$ cd Unofficial-Google-Music-API/`
+* `$ git clone https://github.com/simon-weber/gmusicapi.git`
+* `$ cd gmusicapi/`
 * `$ virtualenv --no-site-packages venv-gmapi`
 * `$ source venv-gmapi/bin/activate`
 * `$ pip install -e .` # this installs the package as editable; changes to the source are reflected when running 

@@ -5,19 +5,12 @@ import re
 from setuptools import setup, find_packages
 import sys
 
-# Only 2.6-2.7 are supported.
-if not ((2, 6, 0) <= sys.version_info[:3] < (2, 8)):
+# Only 2.7 is supported.
+if not ((2, 7, 0) <= sys.version_info[:3] < (2, 8)):
     sys.stderr.write('gmusicapi does not officially support this Python version.\n')
     # try to continue anyway
 
 dynamic_requires = []
-
-if sys.version_info[:2] == (2, 6):
-    dynamic_requires += [
-        'unittest2 == 0.5.1',   # parity with 2.7
-        'simplejson >= 3.0.6',  # ensure_ascii
-    ]
-
 
 # This hack is from http://stackoverflow.com/a/7071358/1231454;
 # the version is kept in a seperate file and gets parsed - this
@@ -56,7 +49,11 @@ setup(
         'oauth2client >= 1.1',                    # TokenRevokeError
         'mock >= 0.7.0',                          # MagicMock
         'appdirs >= 1.1.0',                       # user_log_dir
-        'gpsoauth == 0.0.3',                      # mac -> android_id
+        'gpsoauth == 0.0.4',                      # mac -> android_id, validation
+        'MechanicalSoup',
+        'pyopenssl',
+        'ndg-httpsclient',
+        'pyasn1',
     ] + dynamic_requires,
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -64,7 +61,6 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Multimedia :: Sound/Audio',

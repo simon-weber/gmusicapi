@@ -75,6 +75,7 @@ sj_track = {
         'contentType': {'type': 'string'},
         'lastRatingChangeTimestamp': {'type': 'string', 'required': False},
         'primaryVideo': sj_video.copy(),
+        'lastModifiedTimestamp': {'type': 'string', 'required': False},
     }
 }
 sj_track['properties']['primaryVideo']['required'] = False
@@ -159,7 +160,7 @@ sj_album = {
         'albumArtist': {'type': 'string'},
         'albumArtRef': {'type': 'string', 'required': False},
         'albumId': {'type': 'string'},
-        'artist': {'type': 'string'},
+        'artist': {'type': 'string', 'blank': True},
         'artistId': {'type': 'array', 'items': {'type': 'string', 'blank': True}},
         'year': {'type': 'integer', 'required': False},
         'tracks': {'type': 'array', 'items': sj_track, 'required': False},
@@ -193,32 +194,12 @@ sj_artist['properties']['related_artists'] = {
     'required': False
 }
 
-sj_result = {
-    'type': 'object',
-    'additionalProperties': False,
-    'properties': {
-        'score': {'type': 'number'},
-        'type': {'type': 'string'},
-        'best_result': {'type': 'boolean', 'required': False},
-        'navigational_result': {'type': 'boolean', 'required': False},
-        'navigational_confidence': {'type': 'number', 'required': False},
-        'artist': sj_artist.copy(),
-        'album': sj_album.copy(),
-        'track': sj_track.copy(),
-        'playlist': sj_playlist.copy(),
-    }
-}
-
-sj_result['properties']['artist']['required'] = False
-sj_result['properties']['album']['required'] = False
-sj_result['properties']['track']['required'] = False
-sj_result['properties']['playlist']['required'] = False
-
 sj_station_seed = {
     'type': 'object',
     'additionalProperties': False,
     'properties': {
         'kind': {'type': 'string'},
+        'seedType': {'type': 'string'},
         # one of these will be present
         'albumId': {'type': 'string', 'required': False},
         'artistId': {'type': 'string', 'required': False},
@@ -232,19 +213,55 @@ sj_station = {
     'type': 'object',
     'additionalProperties': False,
     'properties': {
-        'imageUrl': {'type': 'string'},
+        'imageUrl': {'type': 'string', 'required': False},
         'kind': {'type': 'string'},
         'name': {'type': 'string'},
-        'deleted': {'type': 'boolean'},
-        'lastModifiedTimestamp': {'type': 'string'},
-        'recentTimestamp': {'type': 'string'},
-        'clientId': {'type': 'string'},
+        'deleted': {'type': 'boolean',
+                    'required': False},  # for public
+        'lastModifiedTimestamp': {'type': 'string',
+                                  'required': False},
+        'recentTimestamp': {'type': 'string',
+                            'required': False},  # for public
+        'clientId': {'type': 'string',
+                     'required': False},  # for public
         'seed': sj_station_seed,
-        'id': {'type': 'string'},
+        'id': {'type': 'string',
+               'required': False},  # for public
         'description': {'type': 'string', 'required': False},
         'tracks': {'type': 'array', 'required': False, 'items': sj_track},
+        'imageUrls': {'type': 'array',
+                      'required': False,
+                      'items': {
+                          'type': 'object',
+                          'additionalProperties': False,
+                          'properties': {
+                              'url': {'type': 'string'}},
+                      }},
     }
 }
+
+sj_search_result = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'score': {'type': 'number', 'required': False},
+        'type': {'type': 'string'},
+        'best_result': {'type': 'boolean', 'required': False},
+        'navigational_result': {'type': 'boolean', 'required': False},
+        'navigational_confidence': {'type': 'number', 'required': False},
+        'artist': sj_artist.copy(),
+        'album': sj_album.copy(),
+        'track': sj_track.copy(),
+        'playlist': sj_playlist.copy(),
+        'station': sj_station.copy(),
+    }
+}
+
+sj_search_result['properties']['artist']['required'] = False
+sj_search_result['properties']['album']['required'] = False
+sj_search_result['properties']['track']['required'] = False
+sj_search_result['properties']['playlist']['required'] = False
+sj_search_result['properties']['station']['required'] = False
 
 
 class McCall(Call):
@@ -412,7 +429,7 @@ class Search(McCall):
                              'items': {'type': 'string'},
                              'required': False},
             'entries': {'type': 'array',
-                        'items': sj_result,
+                        'items': sj_search_result,
                         'required': False},
             'suggestedQuery': {'type': 'string', 'required': False}
         },
@@ -434,7 +451,6 @@ class ListTracks(McListCall):
 class GetStreamUrl(McCall):
     static_method = 'GET'
     static_url = 'https://android.clients.google.com/music/mplay'
-    static_verify = False
 
     # this call will redirect to the mp3
     static_allow_redirects = False
@@ -594,7 +610,7 @@ class BatchMutatePlaylists(McBatchMutateCall):
     def build_playlist_deletes(playlist_ids):
         # TODO can probably pull this up one
         """
-        :param playlist_ids
+        :param playlist_ids:
         """
         return [{'delete': id} for id in playlist_ids]
 
@@ -637,7 +653,7 @@ class BatchMutatePlaylistEntries(McBatchMutateCall):
     @staticmethod
     def build_plentry_deletes(entry_ids):
         """
-        :param entry_ids
+        :param entry_ids:
         """
         return [{'delete': id} for id in entry_ids]
 
@@ -671,8 +687,8 @@ class BatchMutatePlaylistEntries(McBatchMutateCall):
     @staticmethod
     def build_plentry_adds(playlist_id, song_ids):
         """
-        :param playlist_id
-        :param song_ids
+        :param playlist_id:
+        :param song_ids:
         """
 
         mutations = []
@@ -775,7 +791,7 @@ class ListStationTracks(McCall):
     @staticmethod
     def dynamic_data(station_id, num_entries, recently_played):
         """
-        :param station_id
+        :param station_id:
         :param num_entries: maximum number of tracks to return
         :param recently_played: a list of...song ids? never seen an example
         """
@@ -809,7 +825,7 @@ class BatchMutateStations(McBatchMutateCall):
     @staticmethod
     def build_deletes(station_ids):
         """
-        :param station_ids
+        :param station_ids:
         """
         return [{'delete': id, 'includeFeed': False, 'numEntries': 0}
                 for id in station_ids]
@@ -857,7 +873,7 @@ class BatchMutateTracks(McBatchMutateCall):
     @staticmethod
     def build_track_deletes(track_ids):
         """
-        :param track_ids
+        :param track_ids:
         """
         return [{'delete': id} for id in track_ids]
 

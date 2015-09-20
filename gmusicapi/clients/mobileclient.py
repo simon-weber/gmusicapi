@@ -32,8 +32,9 @@ class Mobileclient(_Base):
         Returns ``True`` on success, ``False`` on failure.
 
         :param email: eg ``'test@gmail.com'`` or just ``'test'``.
-        :param password: password or app-specific password for 2-factor users.
+        :param password: the account's password.
           This is not stored locally, and is sent securely over SSL.
+          App-specific passwords are not supported.
         :param android_id: 16 hex digits, eg ``'1234567890abcdef'``.
 
           Pass Mobileclient.FROM_MAC_ADDRESS instead to attempt to use
@@ -463,7 +464,7 @@ class Mobileclient(_Base):
         Playlists have a maximum size of 1000 songs.
         Calls may fail before that point (presumably) due to
         an error on Google's end (see `#239
-        <https://github.com/simon-weber/Unofficial-Google-Music-API/issues/239>`__).
+        <https://github.com/simon-weber/gmusicapi/issues/239>`__).
         """
         mutate_call = mobileclient.BatchMutatePlaylistEntries
         add_mutations = mutate_call.build_plentry_adds(playlist_id, song_ids)

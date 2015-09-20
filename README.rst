@@ -24,6 +24,7 @@ gmusicapi allows control of
 That said, it's actively maintained, and powers a bunch of cool projects:
 
 -  alternate clients, including
+   `one designed for the visually impaired <https://github.com/chrisnorman7/gmp>`__,
    `a command line client <https://github.com/mstill/thunner>`__
    and `FUSE filesystem <https://github.com/EnigmaCurry/GMusicFS>`__
 -  library management tools for
@@ -49,9 +50,11 @@ in touch, either `drop by #gmusicapi on Freenode
 Status and updates
 ------------------
 
-.. image:: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API.png?branch=develop
-        :target: https://travis-ci.org/simon-weber/Unofficial-Google-Music-API
+.. image:: https://travis-ci.org/simon-weber/gmusicapi.png?branch=develop
+        :target: https://travis-ci.org/simon-weber/gmusicapi
 
+* September 2015: Google switched to a new music uploading endpoint, breaking uploading for outdated versions of gmusicapi.
+* June 2015: Full mobileclient and webclient functionality was restored.
 * May 2015: Limited mobileclient functionality was restored.
 * April 2015: Google deprecated clientlogin, breaking both the webclient and mobileclient.
 * November 2013: I started working fulltime at Venmo, meaning this project is back to night and weekend development.
@@ -61,5 +64,5 @@ For fine-grained development updates, follow me on Twitter:
 
 ------------
 
-Copyright 2014 `Simon Weber <http://www.simonmweber.com>`__.
+Copyright 2015 `Simon Weber <http://www.simonmweber.com>`__.
 Licensed under the 3-clause BSD. See LICENSE.

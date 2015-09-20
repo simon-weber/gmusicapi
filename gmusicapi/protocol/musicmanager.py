@@ -23,7 +23,6 @@ from gmusicapi.utils import utils
 log = utils.DynamicClientLogger(__name__)
 
 
-# This url has SSL issues, hence the static_verify=False.
 _android_url = 'https://android.clients.google.com/upsj/'
 
 OAuthInfo = namedtuple('OAuthInfo', 'client_id client_secret scope redirect')
@@ -102,7 +101,6 @@ class AuthenticateUploader(MmCall):
     """Sent to auth, reauth, or register our upload client."""
 
     static_url = _android_url + 'upauth'
-    static_verify = False
 
     @classmethod
     def check_success(cls, response, msg):
@@ -134,7 +132,6 @@ class AuthenticateUploader(MmCall):
 
 class UploadMetadata(MmCall):
     static_url = _android_url + 'metadata'
-    static_verify = False
 
     static_params = {'version': 1}
 
@@ -259,10 +256,16 @@ class UploadMetadata(MmCall):
 
         for null_field in ['artist', 'album']:
             # If these fields aren't provided, they'll render as "undefined" in the web interface;
-            # see https://github.com/simon-weber/Unofficial-Google-Music-API/issues/236.
+            # see https://github.com/simon-weber/gmusicapi/issues/236.
             # Defaulting them to an empty string fixes this.
             if null_field not in audio:
                 track_set(null_field, '')
+
+        if isinstance(audio, mutagen.mp3.EasyMP3):
+            # Mutagen tags the album artist as `performer` in EasyMP3 tags.
+            # https://bitbucket.org/lazka/mutagen/issue/195
+            if 'performer' in audio:
+                track_set('album_artist', audio['performer'][0])
 
         # Mass-populate the rest of the simple fields.
         # Merge shared and unshared fields into {mutagen: Track}.
@@ -309,7 +312,6 @@ class UploadMetadata(MmCall):
 class GetUploadJobs(MmCall):
     # TODO
     static_url = _android_url + 'getjobs'
-    static_verify = False
 
     static_params = {'version': 1}
 
@@ -336,7 +338,7 @@ class GetUploadSession(MmCall):
     This is a json call, and doesn't share much with the other calls."""
 
     static_method = 'POST'
-    static_url = 'https://uploadsj.clients.google.com/uploadsj/rupio'
+    static_url = 'https://uploadsj.clients.google.com/uploadsj/scottyagent'
 
     @classmethod
     def parse_response(cls, response):
@@ -473,7 +475,6 @@ class ProvideSample(MmCall):
     static_method = 'POST'
     static_params = {'version': 1}
     static_url = _android_url + 'sample'
-    static_verify = False
 
     @staticmethod
     @pb
@@ -520,7 +521,6 @@ class UpdateUploadState(MmCall):
     static_method = 'POST'
     static_params = {'version': 1}
     static_url = _android_url + 'sample'
-    static_verify = False
 
     @staticmethod
     @pb
@@ -551,7 +551,6 @@ class CancelUploadJobs(MmCall):
 
     static_method = 'POST'
     static_url = _android_url + 'deleteuploadrequested'
-    static_verify = False
 
     @staticmethod
     @pb

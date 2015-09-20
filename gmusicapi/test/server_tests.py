@@ -27,7 +27,6 @@ from requests.exceptions import SSLError
 from gmusicapi import Webclient, Musicmanager, Mobileclient
 # from gmusicapi.protocol import mobileclient
 from gmusicapi.protocol.shared import authtypes
-# from gmusicapi.protocol.metadata import md_expectations
 from gmusicapi.utils.utils import retry, id_or_nid
 import gmusicapi.test.utils as test_utils
 
@@ -43,7 +42,7 @@ TEST_AA_SONG_ID = 'Tqqufr34tuqojlvkolsrwdwx7pe'
 
 # used for testing streaming.
 # differences between clients are presumably from stream quality.
-TEST_AA_SONG_WC_HASH = '56c3598149bada50cfcf325382c21169'
+TEST_AA_SONG_WC_HASH = 'c3302fe6bd54ce9b310f92da1904f3b9'
 TEST_AA_SONG_MC_HASH = '815c49d3e49eea675d198a2e00aa4c40'
 
 # Amorphis
@@ -665,10 +664,11 @@ class ClientTests(object):
     def mc_increment_uploaded_song_playcount(self):
         self._test_increment_playcount(self.all_songs[0].sid)
 
-    @song_test
-    @all_access
-    def mc_increment_aa_song_playcount(self):
-        self._test_increment_playcount(self.all_songs[1].sid)
+    # Fails silently. See https://github.com/simon-weber/gmusicapi/issues/349.
+    # @song_test
+    # @all_access
+    # def mc_increment_aa_song_playcount(self):
+    #     self._test_increment_playcount(self.all_songs[1].sid)
 
     @song_test
     def mc_change_uploaded_song_title_fails(self):
@@ -847,6 +847,7 @@ class ClientTests(object):
     #    self._mc_assert_ple_position(pl[-2], len(pl) - 2)
 
     @station_test
+    @retry  # sometimes this comes back with no data key
     @all_access
     def mc_list_station_tracks(self):
         for station_id in self.station_ids:

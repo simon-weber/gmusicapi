@@ -1,13 +1,12 @@
 language: python
 python:
-  - '2.6'
+  - '2.7'
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libav-tools libavcodec-extra-53
 install:
   - python setup.py sdist --formats=zip -k
   - find ./dist -iname "*.zip" -print0 | xargs -0 pip install
-  - pip install --upgrade validictory==1.0.0a1
   - wget https://gist.github.com/simon-weber/8211306/raw/travis-secure-redefine.py
   - pip install flake8
 before_script:
@@ -25,14 +24,16 @@ env:
   - GM_N="Travis-CI (gmusicapi)"
   - GM_AA_D_ID="30da8b7f1d8cab94"
     # AA: u, p, o, i, a
+    # append 1 to vars
   - secure: end65RuZTJF3GMk/MK5u9V0/9zMAOuHfSZW5Bu5kOchhJdNFYgx44vs3qXJovkDy4EooIT45Pjt9uPBbqcgINvvJmm60T4ICpoBaC/gvG23vynCATxQ4qp2lOni7YiVGQvXp/uSuYRocLxxE/hToqmANrNSsAa1ksc7jmHkZC80=
-  - secure: JR5ffjUQ190qIh0ElYoB4LvQtJ7eBPD9q7qjLP2zYCjO1EgefggHMMfYrHu7rTMEN7xHpI2CjsSkNvFjGNMPjWgk2OVAVP62UQBRK/O3lbCJPi6FHkELgxIkzs0I5q9bLUomIxCdi4a0pIDZLc6dBmgDAXRmouIE6jqabBTE4p4=
+  - secure: "LerpEkIUGXQBuUE6nYeGifGzMGChtFyssE3DiixAa/eDoS3s+Fuma3TVqrBmH7W+IQK2GvHdUFuTjV7uVQkzKiBPD1QiqQaZEBCSf2udPlVj6WFOEGpBn0c/e82AQ7RlJeRMnqqpfI7Ai+550zv63RAsXTxirNuLhBbw0r3oAL0="
   - secure: S/5tCA8KZpevd0Yw3ol4/Z3YKcftIIlQthIruHwBIelyD0COCBHMkYe7vmb5+UTwbaEmkoSDguNNPZa48r1ZQNrUNNX9MWVkse8rZrtCYFKivlML5W9KVDFvzMLg2M4rhkhG3Kq695sswP/BupBi9EGn8jJDZ6gOafzfNODnQk8=
   - secure: cQ/KaEOW73kmT5NwvQnT+H3w0yMtxhJWvBCnGahzmYMUlr7UjW5XkF4FpYiLX0MfKYbPLIIxGe7knwNznbFEGPjwwYhsQjhgikY+ufvF5l3VN2zvC04QjD3SWTz3oYGdhQSHakbMwRT+UFkQPXswZ+dxp3DsqD253eVNmybgn9c=
   - secure: QYItohH4sbVkSFKBpKUQl+a4ONMJjNHg/YIyDpLkVh68qBuJ2ZiT1ufjD9drt4a2K/hyD2wmnwvovcM6kXJiFdLsEIthJG8gW7GUyIzXQZMH85dfl8BUBqY/JPUNiRibX8JYxxkz3e6QKq6uQ0NIc1Df6P10IJib3ZdXw94ybSg=
     # non-AA: u, p, o, i
+    # append 2 to vars
   - secure: UxA3zMQStTnCqX+Jq0isjpDBHjTWs5r2wVPtDve5OEqVqW3hHwjHVz/Y37YDhZrHP8sVIsQloT2THDiGj8nN8irGzVeuyPbjgUCXylNqXRZ+dlF1G3P/73Qxe3wSCEy+mvqXb9oVvQorK83ZxgZeYPFo0f0UTvs900z3CExbQMY=
-  - secure: JNIV7qY12Eoh5TMM3mM0Sh01icnRN0dAB2l/yek9agtJIQANb+h2+pb3RaMMFaI+fcL2zVwcXw9MjnNj6QqXMPKAGc6TyJ8FYj9O9+wcPupxU3AM5YhpU0UYNdGOWSGX9wK91XPNnIXJXoDG59SaWnATRdgNS6gabg493kvOJLU=
+  - secure: "MoldmYW5VxOG2NsuBppOg41BQMib7V7BsIyjNKST5s2ynkAEIQml5CEEMYUDLgBlSTy/J5ICtdLjeikYrg6kNEBYSk0FBID/CFHmr03GHzt+s1eY+1WbDDhOOl4WjlSUOgoq+FYQztXU0iSKQfJ/XqtFbSv6VIS5QD5YqMVl0QY="
   - secure: dd2r60smGAK4LOnBmrRIU3PypQ7fv3ieOkqZgBup8tAN2I0nAN4GVmc5IWOVHhSUrUzyaFsX8eRxoH0a5JP423mch6aAmpYm1/xptEUxOGsU2yAda/kU0l/i6OFupd7MrNgnoTJ2KXWl4RGOTJEX3m9tRtHPzRYmKXhGwW7uUTQ=
   - secure: GVFTMs8TGOunR+eNR7VCQNkKVDWtCZ6siyB2KfgPPzeRKduUFhJA5VhhV+Vl+uhmL3767nM8Tv+ypX7C6mg2qZNcm9EJkAZzXg4f5qQJjTfxXC6lJfBn3i0S1Q9qBhwyQ1Jx+mHfth3TTXEq8sBgTuZcu+G0V8Lb4zzr83bLxto=
   matrix:
