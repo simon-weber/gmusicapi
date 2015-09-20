@@ -338,7 +338,7 @@ class GetUploadSession(MmCall):
     This is a json call, and doesn't share much with the other calls."""
 
     static_method = 'POST'
-    static_url = 'https://uploadsj.clients.google.com/uploadsj/rupio'
+    static_url = 'https://uploadsj.clients.google.com/uploadsj/scottyagent'
 
     @classmethod
     def parse_response(cls, response):
