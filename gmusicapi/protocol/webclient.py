@@ -442,35 +442,26 @@ class GetSettings(WcCall):
     """Get data that populates the settings tab: labs and devices."""
 
     static_method = 'POST'
-    static_url = service_url + 'loadsettings'
+    static_url = service_url + 'fetchsettings'
 
     _device_schema = {
         'type': 'object',
         'additionalProperties': False,
         'properties': {
-            'date': {'type': 'integer',
-                     'format': 'utc-millisec'},
+            'deviceType': {'type': 'integer'},
             'id': {'type': 'string'},
-            'name': {'type': 'string', 'blank': True},
-            'type': {'type': 'string'},
-            'lastUsedMs': {'type': 'integer'},
+            'lastAccessedFormatted': {'type': 'string'},
+            'lastAccessedTimeMillis': {'type': 'integer',
+                                       'format': 'utc-millisec'},
+            'lastEventTimeMillis': {'type': 'integer',
+                                    'format': 'utc-millisec'},
 
-            # only for type == PHONE:
+            'name': {'type': 'string', 'blank': True},
+
+            # only for type == 2 (android phone?):
             'model': {'type': 'string', 'blank': True, 'required': False},
             'manufacturer': {'type': 'string', 'blank': True, 'required': False},
-
             'carrier': {'type': 'string', 'blank': True, 'required': False},
-        },
-    }
-
-    _lab_schema = {
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {
-            'description': {'type': 'string'},
-            'enabled': {'type': 'boolean'},
-            'name': {'type': 'string'},
-            'title': {'type': 'string'},
         },
     }
 
@@ -482,21 +473,34 @@ class GetSettings(WcCall):
                 'type': 'object',
                 'additionalProperties': False,
                 'properties': {
-                    'devices': {'type': 'array', 'items': _device_schema},
-                    'labs': {'type': 'array', 'items': _lab_schema},
-                    'maxTracks': {'type': 'integer'},
-                    'expirationMillis': {
-                        'type': 'integer',
-                        'format': 'utc-millisec',
-                        'required': False,
-                    },
-                    'isSubscription': {'type': 'boolean', 'required': False},
-                    'isTrial': {'type': 'boolean', 'required': False},
-                    'hasFreeTrial': {'type': 'boolean', 'required': False},
+                    'entitlementInfo': {
+                        'type': 'object',
+                        'additionalProperties': False,
+                        'properties': {
+                            'expirationMillis': {'type': 'integer'},
+                            'isCanceled': {'type': 'boolean'},
+                            'isSubscription': {'type': 'boolean'},
+                            'isTrial':  {'type': 'boolean'},
+                        }},
+                    'lab': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'additionalProperties': False,
+                            'properties': {
+                                'description': {'type': 'string'},
+                                'enabled': {'type': 'boolean'},
+                                'displayName': {'type': 'string'},
+                                'experimentName': {'type': 'string'},
+                            },
+                        }},
+                    'maxUploadedTracks': {'type': 'integer'},
                     'subscriptionNewsletter': {'type': 'boolean'},
-                    'isCanceled': {'type': 'boolean', 'required': False},
-                },
-            },
+                    'uploadDevice': {
+                        'type': 'array',
+                        'items': _device_schema,
+                    }},
+            }
         },
     }
 

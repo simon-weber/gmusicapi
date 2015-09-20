@@ -108,44 +108,48 @@ class Webclient(_Base):
         Returns a list of dictionaries representing devices associated with the account.
 
         Performing the :class:`Musicmanager` OAuth flow will register a device
-        of type ``'DESKTOP_APP'``.
+        of type 1.
 
-        Installing the Android Google Music app and logging into it will
-        register a device of type ``'PHONE'``, which is required for streaming with
-        the :class:`Mobileclient`.
+        Installing the Google Music app on an android or ios device
+        and logging into it will register a device of type 2 or 3,
+        which is used for streaming with the :class:`Mobileclient`.
 
         Here is an example response::
 
             [
               {
-                u'date': 1367470393588,           # utc-millisecond
-                u'id':   u'AA:BB:CC:11:22:33',
-                u'lastUsedMs': 1394138679694,
-                u'name': u'my-hostname',
-                u'type': u'DESKTOP_APP'
+                u'deviceType': 1,  # laptop/desktop
+                u'id': u'00:11:22:33:AA:BB',
+                u'lastAccessedFormatted': u'May 24, 2015',
+                u'lastAccessedTimeMillis': 1432468588200,  # utc-millisecond
+                u'lastEventTimeMillis': 1434211605335,
+                u'name': u'my computer'},
               },
               {
-                u'carrier':      u'Google',
-                u'date':         1344808742774,
-                u'id':           u'0x00112233aabbccdd',  # remove 0x when streaming
+                u'deviceType': 2,  # android device
+                u'carrier': u'Google',
+                u'id': u'0x00112233aabbccdd',  # remove 0x when streaming
+                u'lastAccessedFormatted': u'September 19, 2015',
+                u'lastAccessedTimeMillis': 1442706069906,
+                u'lastEventTimeMillis': 1435271137193,
                 u'manufacturer': u'Asus',
-                u'model':        u'Nexus 7',
-                u'name':         u'',
-                u'type':         u'PHONE'
+                u'model': u'Nexus 7',
+                u'name': u'my nexus 7'
               },
               {
-                u'date': 1394133624308,
+                u'deviceType': 3,  # ios device
                 u'id': u'ios:01234567-0123-0123-0123-0123456789AB',
-                u'lastUsedMs': 1394138679694,
-                u'type': u'IOS'
+                u'lastAccessedFormatted': u'June 25, 2015',
+                u'lastAccessedTimeMillis': 1435271588780,
+                u'lastEventTimeMillis': 1435271442417,
+                u'name': u'my iphone'
               }
             ]
-
         """
 
         # TODO sessionid stuff
         res = self._make_call(webclient.GetSettings, '')
-        return res['settings']['devices']
+        return res['settings']['uploadDevice']
 
     @utils.enforce_id_param
     def get_song_download_info(self, song_id):

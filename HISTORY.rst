@@ -10,6 +10,7 @@ As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 released ...
 
 - breaking: python 2.6 is no longer supported
+- breaking: webclient.get_registered_devices has a slightly different schema
 - fix Webclient authentication and get_stream_urls
 - fix certificate validation
 - fix album artist metadata not being upload
