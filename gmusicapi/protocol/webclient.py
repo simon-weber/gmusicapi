@@ -451,11 +451,8 @@ class GetSettings(WcCall):
             'deviceType': {'type': 'integer'},
             'id': {'type': 'string'},
             'lastAccessedFormatted': {'type': 'string'},
-            'lastAccessedTimeMillis': {'type': 'integer',
-                                       'format': 'utc-millisec'},
-            'lastEventTimeMillis': {'type': 'integer',
-                                    'format': 'utc-millisec'},
-
+            'lastAccessedTimeMillis': {'type': 'integer'},
+            'lastEventTimeMillis': {'type': 'integer'},
             'name': {'type': 'string', 'blank': True},
 
             # only for type == 2 (android phone?):
@@ -477,7 +474,7 @@ class GetSettings(WcCall):
                         'type': 'object',
                         'additionalProperties': False,
                         'properties': {
-                            'expirationMillis': {'type': 'integer'},
+                            'expirationMillis': {'type': 'integer', 'required': False},
                             'isCanceled': {'type': 'boolean'},
                             'isSubscription': {'type': 'boolean'},
                             'isTrial':  {'type': 'boolean'},
