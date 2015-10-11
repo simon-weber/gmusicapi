@@ -14,7 +14,7 @@ docutils==0.11
 enum34==1.0.4
 flake8==2.4.0
 future==0.14.3
-gpsoauth==0.0.4
+gpsoauth==0.0.5
 httplib2==0.9
 mccabe==0.3
 mock==1.0.1
