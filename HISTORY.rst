@@ -8,6 +8,8 @@ As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 7.0.1
 +++++
 released ...
+- fix various packaging problems
+- fix KeyError in Mobileclient.get_station_tracks
 
 7.0.0
 +++++

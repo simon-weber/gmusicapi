@@ -812,7 +812,7 @@ class ListStationTracks(McCall):
     @staticmethod
     def filter_response(msg):
         filtered = copy.deepcopy(msg)
-        if 'stations' in filtered['data']:
+        if 'stations' in filtered.get('data', {}):
             filtered['data']['stations'] = \
                     ["<%s stations>" % len(filtered['data']['stations'])]
         return filtered

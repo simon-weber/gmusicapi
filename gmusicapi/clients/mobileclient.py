@@ -762,6 +762,8 @@ class Mobileclient(_Base):
         Each call performs a separate sampling (with replacement?)
         from all possible tracks for the station.
 
+        Nonexistent stations will return an empty list.
+
         :param station_id: the id of a radio station to retrieve tracks from.
           Use the special id ``'IFL'`` for the "I'm Feeling Lucky" station.
         :param num_tracks: the number of tracks to retrieve
