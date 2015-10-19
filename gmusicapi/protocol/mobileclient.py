@@ -73,8 +73,9 @@ sj_track = {
         'genre': {'type': 'string', 'required': False},
         'trackAvailableForSubscription': {'type': 'boolean'},
         'contentType': {'type': 'string'},
-        # Only availabel when rating differs from '0'
-        # when using :change_song_metadata:, specifying this value will cause all clients to properly update (web/mobile). As value int(round(time.time() * 1000000)) works quite well
+        # Only available when rating differs from '0'
+        # when using :change_song_metadata:, specifying this value will cause all clients to
+        # properly update (web/mobile). As value int(round(time.time() * 1000000)) works quite well
         'lastRatingChangeTimestamp': {'type': 'string', 'required': False},
         'primaryVideo': sj_video.copy(),
         'lastModifiedTimestamp': {'type': 'string', 'required': False},
