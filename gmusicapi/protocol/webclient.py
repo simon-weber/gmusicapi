@@ -492,7 +492,7 @@ class GetSettings(WcCall):
                             },
                         }},
                     'maxUploadedTracks': {'type': 'integer'},
-                    'subscriptionNewsletter': {'type': 'boolean'},
+                    'subscriptionNewsletter': {'type': 'boolean', 'required': False},
                     'uploadDevice': {
                         'type': 'array',
                         'items': _device_schema,
