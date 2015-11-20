@@ -37,6 +37,7 @@ That said, it's actively maintained, and powers a bunch of cool projects:
    as well as plugins for 
    `Mopidy <https://github.com/hechtus/mopidy-gmusic>`__ and
    `Squeezebox <https://github.com/hechtus/squeezebox-googlemusic>`__.
+-  enhancements like `autoplaylists <https://github.com/simon-weber/Autoplaylists-for-Google-Music>`__
 
 
 Getting started
