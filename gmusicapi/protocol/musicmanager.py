@@ -13,6 +13,7 @@ from decorator import decorator
 from google.protobuf.message import DecodeError
 import mutagen
 from oauth2client.client import OAuth2Credentials
+from google.protobuf.descriptor import FieldDescriptor
 
 from gmusicapi.compat import json
 from gmusicapi.exceptions import CallFailure
@@ -58,10 +59,47 @@ def credentials_from_refresh_token(token):
     return OAuth2Credentials.new_from_json(json.dumps(cred_json))
 
 
+def filter_proto(msg, make_copy=True):
+    """Return a version of msg appropriate for logging."""
+    filtered = msg
+    if make_copy:
+        filtered = msg.__class__()
+        filtered.CopyFrom(msg)
+
+    fields = filtered.ListFields()
+
+    for field_name, val in ((fd.name, val) for fd, val in fields
+                            if fd.type == FieldDescriptor.TYPE_BYTES):
+        if field_name != 'signature':
+            setattr(filtered, field_name, '<%s bytes>' % len(val))
+
+    # filter our subfields
+    for field in (val for fd, val in fields
+                  if fd.type == FieldDescriptor.TYPE_MESSAGE):
+
+        # protobuf repeated api is terrible
+        is_repeated = hasattr(field, '__len__')
+
+        if not is_repeated:
+            filter_proto(field, make_copy=False)
+
+        else:
+            for i in range(len(field)):
+                # repeatedComposite does not allow setting
+                old_fields = [f for f in field]
+                del field[:]
+
+                field.extend([filter_proto(f, make_copy=False)
+                              for f in old_fields])
+
+    return filtered
+
+
 @decorator
 def pb(f, *args, **kwargs):
     """Decorator to serialize a protobuf message."""
     msg = f(*args, **kwargs)
+    log.debug(filter_proto(msg))
     return msg.SerializeToString()
 
 
@@ -400,6 +438,7 @@ class GetUploadSession(MmCall):
                 }
             )
 
+        log.debug(json.dumps(message, sort_keys=True, indent=2))
         return json.dumps(message)
 
     @staticmethod
