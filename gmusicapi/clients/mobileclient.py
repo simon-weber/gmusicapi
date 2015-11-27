@@ -795,7 +795,7 @@ class Mobileclient(_Base):
         return stations[0].get('tracks', [])
 
     def search_all_access(self, query, max_results=50):
-        """Queries the server for All Access songs, albums and shared playlists.
+        """Queries the server for All Access songs, artists, albums, shared playlists and stations.
 
         Using this method without an All Access subscription will always result in
         CallFailure being raised.
@@ -935,6 +935,25 @@ class Mobileclient(_Base):
                      'type': '4'
                   }
                ]
+               'station_hits': [
+                  {
+                     'station': {
+                        'imageUrls': [
+                            {
+                               'url': u'http://lh5.ggpht.com/...'
+                            }
+                        ],
+                        'kind': 'sj#radioStation',
+                        'name': 'Capricho Espanol',
+                        'seed': {
+                             'kind': u'sj#radioSeed',
+                             'seedType': '2',
+                             'trackId': 'T35ilrlthmmc4movyawx6eqqzsy'
+                        }
+                     },
+                     'type': '6'
+                  }
+               ]
             }
         """
         res = self._make_call(mobileclient.Search, query, max_results)
@@ -948,7 +967,8 @@ class Mobileclient(_Base):
         return {'album_hits': hits_by_type['3'],
                 'artist_hits': hits_by_type['2'],
                 'song_hits': hits_by_type['1'],
-                'playlist_hits': hits_by_type['4']}
+                'playlist_hits': hits_by_type['4'],
+                'station_hits': hits_by_type['6']}
 
     @utils.enforce_id_param
     def get_artist_info(self, artist_id, include_albums=True, max_top_tracks=5, max_rel_artist=5):
