@@ -53,9 +53,6 @@ class Webclient(_Base):
         `less secure login <https://www.google.com/settings/security/lesssecureapps>`__.
         If this is needed, a warning will be logged during login (which will print to stderr
         in the default logging configuration).
-
-        Users of two-factor authentication will need to set an application-specific password
-        to log in.
         """
 
         if not self.session.login(email, password):
