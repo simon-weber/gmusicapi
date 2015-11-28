@@ -3,6 +3,7 @@
 """
 Tests that don't hit the Google Music servers.
 """
+from __future__ import print_function, division, absolute_import, unicode_literals
 
 from collections import namedtuple
 import os

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
 """Tools for manipulating client-received Google Music data."""
+from __future__ import print_function, division, absolute_import, unicode_literals
 
 import operator
 import re
 import collections
 
 from gmusicapi.compat import Counter
+from functools import reduce
 
 
 def get_id_pairs(track_list):
@@ -222,13 +224,13 @@ class SongMatcher(object):
         :param results: list of results.
         """
 
-        print
-        print "Manual tiebreak for query:"
-        print build_query_rep(query).encode('utf-8')
-        print
-        print "Enter the number next to your choice:"
-        print
-        print "0: None of these."
+        print()
+        print("Manual tiebreak for query:")
+        print(build_query_rep(query).encode('utf-8'))
+        print()
+        print("Enter the number next to your choice:")
+        print()
+        print("0: None of these.")
 
         menu_lines = []
         key = 1
@@ -241,7 +243,7 @@ class SongMatcher(object):
 
             key += 1
 
-        print "\n".join(menu_lines)
+        print("\n".join(menu_lines))
 
         choice = -1
 
@@ -299,7 +301,7 @@ class SongMatcher(object):
 
                     if not results:
                         try:
-                            current_mods.append(future_mods.next())
+                            current_mods.append(next(future_mods))
                         except StopIteration:
                             return results
 
@@ -311,7 +313,7 @@ class SongMatcher(object):
                         # Branch; try more modifers to try and improve.
                         # If results, use them; otherwise tiebreak ours.
                         try:
-                            current_mods.append(future_mods.next())
+                            current_mods.append(next(future_mods))
                         except StopIteration:
                             raise self.TieBroken(tie_breaker(query, results))
 
