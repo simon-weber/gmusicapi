@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """Utility functions used across api code."""
+from __future__ import print_function, division, absolute_import, unicode_literals
 
 from bisect import bisect_left
 from distutils import spawn
@@ -584,7 +585,7 @@ def empty_arg_shortcircuit(return_code='[]', position=1):
         if len(args[position]) == 0:
             # avoid polluting our namespace
             ns = {}
-            exec 'retval = ' + return_code in ns
+            exec('retval = ' + return_code, ns)
             return ns['retval']
         else:
             return function(*args, **kw)

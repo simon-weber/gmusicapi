@@ -3,6 +3,7 @@
 """
 Single interface for code that varies across Python environments.
 """
+from __future__ import print_function, division, absolute_import, unicode_literals
 
 import sys
 
@@ -22,7 +23,7 @@ try:
     from appdirs import AppDirs
     my_appdirs = AppDirs('gmusicapi', 'Simon Weber')
 except ImportError:
-    print 'warning: could not import appdirs; will use current directory'
+    print('warning: could not import appdirs; will use current directory')
 
     class FakeAppDirs(object):
         to_spoof = set([base + '_dir' for base in

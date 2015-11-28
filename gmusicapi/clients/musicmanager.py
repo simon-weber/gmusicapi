@@ -1,3 +1,4 @@
+from __future__ import print_function, division, absolute_import, unicode_literals
 import os
 from socket import gethostname
 import time
@@ -74,16 +75,16 @@ class Musicmanager(_Base):
         flow = OAuth2WebServerFlow(*musicmanager.oauth)
 
         auth_uri = flow.step1_get_authorize_url()
-        print
-        print "Visit the following url:\n %s" % auth_uri
+        print()
+        print("Visit the following url:\n %s" % auth_uri)
 
         if open_browser:
-            print
-            print 'Opening your browser to it now...',
+            print()
+            print('Opening your browser to it now...', end=' ')
             webbrowser.open(auth_uri)
-            print 'done.'
-            print "If you don't see your browser, you can just copy and paste the url."
-            print
+            print('done.')
+            print("If you don't see your browser, you can just copy and paste the url.")
+            print()
 
         code = raw_input("Follow the prompts,"
                          " then paste the auth code here and hit enter: ")

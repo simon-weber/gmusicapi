@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function, division, absolute_import, unicode_literals
 from urlparse import urlparse, parse_qsl
 
 import gmusicapi

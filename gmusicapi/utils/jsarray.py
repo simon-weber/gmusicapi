@@ -3,6 +3,7 @@
 """
 Tools to handle Google's ridiculous interchange format.
 """
+from __future__ import print_function, division, absolute_import, unicode_literals
 
 from StringIO import StringIO
 from tokenize import generate_tokens
