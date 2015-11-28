@@ -24,5 +24,25 @@ You can do this however you like, but generally you want to use [virtualenv](htt
 * `$ pip install -e .` # this installs the package as editable; changes to the source are reflected when running 
 * `$ git checkout develop`
 *  # hack away
-* `$ python -m gmusicapi.test.run_tests`
+* `$ python -m gmusicapi.test.run_tests` # (see the next section for more info)
 * `$ deactivate` # when you're finished
+
+### Running tests
+###### See the beginning of test.run_tests for more information about environment variables to use
+There are two main sets of tests: local tests and server tests. The tests are powered by [proboscis](https://pythonhosted.org/proboscis/) and are contained in the test module.
+
+Running the local tests is easy. Inside a virtual environment:
+* `$ python -m gmusicapi.test.run_tests --group=local`
+
+The server tests are a bit more complicated, as they exercise the actual Google Music API. Before starting, you should be able to log in to each client (`Mobileclient`, `Webclient` and `Musicmanager`). In particular, the `Webclient` requires a Google account _without_ multi-factor authentication turned on (an app-specific password does not work!). The `Musicmanager` requires you to go through OAUTH:
+* `from gmusicapi import Musicmanager`
+* `Musicmanager.perform_oauth()`
+
+The server tests also require a device ID. Set this in the environment variable `GM_AA_D_ID`. This ideally should be the device ID of an Android device (use `Mobileclient.get_registered_devices()` to find the ID; strip out any leading `0x`). Using a desktop MAC address will work for most of the tests, but `mc_get_uploaded_track_stream_url` will fail.
+
+Once you have all that set up, run the server tests:
+* `$ python -m gmusicapi.test.run_tests --group=server`
+or together with the local tests:
+* `$ python -m gmusicapi.test.run_tests`
+
+Many of the server tests require a subscription to Google Music All-Access. If you have a subscription, set the environment variable `GM_A` (to anything).
