@@ -264,7 +264,7 @@ class Webclient(_Base):
 
             prev_end = end + 1
 
-        return ''.join(stream_pieces)
+        return b''.join(stream_pieces)
 
     @utils.accept_singleton(basestring)
     @utils.enforce_ids_param
