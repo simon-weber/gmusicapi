@@ -3,6 +3,7 @@
 """Utility functions used across api code."""
 from __future__ import print_function, division, absolute_import, unicode_literals
 
+import ast
 from bisect import bisect_left
 from distutils import spawn
 import errno
@@ -568,7 +569,7 @@ def empty_arg_shortcircuit(return_code='[]', position=1):
     """Decorate a function to shortcircuit and return something immediately if
     the length of a positional arg is 0.
 
-    :param return_code: (optional) code to exec as the return value - default is a list.
+    :param return_code: (optional) simple expression to eval as the return value - default is a list
     :param position: (optional) the position of the expected list - default is 1.
     """
 
@@ -577,16 +578,13 @@ def empty_arg_shortcircuit(return_code='[]', position=1):
     # being mutated - there's only one, not a new one on each call.
     # Here we've got multiple things we'd like to
     # return, so we can't do that. Rather than make some kind of enum for
-    # 'accepted return values' I'm just allowing freedom to return anything.
-    # Less safe? Yes. More convenient? Definitely.
+    # 'accepted return values' I'm just allowing freedom to return basic values.
+    # ast.literal_eval only can evaluate most literal expressions (e.g. [] and {})
 
     @decorator
     def wrapper(function, *args, **kw):
         if len(args[position]) == 0:
-            # avoid polluting our namespace
-            ns = {}
-            exec('retval = ' + return_code, ns)
-            return ns['retval']
+            return ast.literal_eval(return_code)
         else:
             return function(*args, **kw)
 
