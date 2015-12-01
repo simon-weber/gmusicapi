@@ -21,7 +21,7 @@ from decorator import decorator
 from google.protobuf.descriptor import FieldDescriptor
 
 from gmusicapi import __version__
-from gmusicapi.compat import my_appdirs
+from gmusicapi.appdirs import my_appdirs
 from gmusicapi.exceptions import CallFailure, GmusicapiWarning
 
 # this controls the crazy logging setup that checks the callstack;

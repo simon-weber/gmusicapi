@@ -12,7 +12,7 @@ from hashlib import sha1
 
 import validictory
 
-from gmusicapi.compat import json
+import json
 from gmusicapi.exceptions import CallFailure, ValidationException
 from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils, jsarray

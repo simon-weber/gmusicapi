@@ -14,7 +14,7 @@ from uuid import uuid1
 
 import validictory
 
-from gmusicapi.compat import json
+import json
 from gmusicapi.exceptions import ValidationException, CallFailure
 from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
