@@ -8,7 +8,7 @@ from __future__ import print_function, division, absolute_import, unicode_litera
 from StringIO import StringIO
 from tokenize import generate_tokens
 
-from gmusicapi.compat import json
+import json
 
 
 def to_json(s):

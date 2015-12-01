@@ -7,7 +7,7 @@ import sys
 
 from google.protobuf.descriptor import FieldDescriptor
 
-from gmusicapi.compat import json
+import json
 from gmusicapi.exceptions import (
     CallFailure, ParseException, ValidationException,
 )

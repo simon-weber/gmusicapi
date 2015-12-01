@@ -12,7 +12,7 @@ import oauth2client.file
 
 import gmusicapi
 from gmusicapi.clients.shared import _Base
-from gmusicapi.compat import my_appdirs
+from gmusicapi.appdirs import my_appdirs
 from gmusicapi.exceptions import CallFailure, NotLoggedIn
 from gmusicapi.protocol import musicmanager, upload_pb2, locker_pb2
 from gmusicapi.utils import utils

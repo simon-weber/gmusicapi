@@ -14,7 +14,7 @@ from google.protobuf.message import DecodeError
 import mutagen
 from oauth2client.client import OAuth2Credentials
 
-from gmusicapi.compat import json
+import json
 from gmusicapi.exceptions import CallFailure
 from gmusicapi.protocol import upload_pb2, locker_pb2, download_pb2
 from gmusicapi.protocol.shared import Call, ParseException, authtypes

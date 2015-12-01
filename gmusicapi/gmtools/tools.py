@@ -7,7 +7,7 @@ import operator
 import re
 import collections
 
-from gmusicapi.compat import Counter
+from collections import Counter
 from functools import reduce
 
 
