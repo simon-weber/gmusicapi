@@ -65,6 +65,8 @@ It requires plaintext auth, so your code might look something like:
     logged_in = api.login('user@gmail.com', 'my-password')
     # logged_in is True if login was successful
 
+Note that 2-factor users will need to setup and provide an app-specific password.
+
 If you're going to upload Music, you want the :py:class:`Musicmanager`.
 It uses `OAuth2
 <https://developers.google.com/accounts/docs/OAuth2#installed>`__ and

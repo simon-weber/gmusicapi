@@ -33,7 +33,7 @@ class Mobileclient(_Base):
         Returns ``True`` on success, ``False`` on failure.
 
         :param email: eg ``'test@gmail.com'`` or just ``'test'``.
-        :param password: the account's password.
+        :param password: password or app-specific password for 2-factor users.
           This is not stored locally, and is sent securely over SSL.
         :param android_id: 16 hex digits, eg ``'1234567890abcdef'``.
 
@@ -44,9 +44,8 @@ class Mobileclient(_Base):
           but appears to work fine in testing.
           If a valid MAC address cannot be determined on this machine
           (which is often the case when running on a VPS), raise OSError.
-
-        #TODO 2fa
         """
+        #TODO 2fa
 
         if android_id is None:
             raise ValueError("android_id cannot be None.")
