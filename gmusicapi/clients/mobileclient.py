@@ -45,7 +45,7 @@ class Mobileclient(_Base):
           If a valid MAC address cannot be determined on this machine
           (which is often the case when running on a VPS), raise OSError.
         """
-        #TODO 2fa
+        # TODO 2fa
 
         if android_id is None:
             raise ValueError("android_id cannot be None.")
