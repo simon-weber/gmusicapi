@@ -181,7 +181,7 @@ sj_artist = {
         'name': {'type': 'string'},
         'artistArtRef': {'type': 'string', 'required': False},
         'artistBio': {'type': 'string', 'required': False},
-        'artistId': {'type': 'string', 'blank': True},
+        'artistId': {'type': 'string', 'blank': True, 'required': False},
         'albums': {'type': 'array', 'items': sj_album, 'required': False},
         'topTracks': {'type': 'array', 'items': sj_track, 'required': False},
         'total_albums': {'type': 'integer', 'required': False},
