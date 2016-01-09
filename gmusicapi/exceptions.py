@@ -2,8 +2,14 @@
 
 """Custom exceptions used across the project."""
 from __future__ import print_function, division, absolute_import, unicode_literals
+from future import standard_library
+from future.utils import python_2_unicode_compatible
+
+standard_library.install_aliases()
+from builtins import *  # noqa
 
 
+@python_2_unicode_compatible
 class CallFailure(Exception):
     """Exception raised when a Google Music server responds that a call failed.
 

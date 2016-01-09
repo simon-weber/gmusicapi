@@ -7,6 +7,9 @@ Destructive modifications are not made, but if things go terrible wrong,
 an extra test playlist or song may result.
 """
 from __future__ import print_function, division, absolute_import, unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import *  # noqa
 
 from collections import namedtuple
 from hashlib import md5
@@ -24,6 +27,7 @@ from proboscis.asserts import (
 from proboscis import test, before_class, after_class, SkipTest
 import requests
 from requests.exceptions import SSLError
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 from gmusicapi import Webclient, Musicmanager, Mobileclient
 # from gmusicapi.protocol import mobileclient
@@ -101,8 +105,10 @@ class SslVerificationTests(object):
 
     @test
     def disable_client_verify(self):
-        for client_cls in (Webclient, Mobileclient, Musicmanager):
-            self.request_invalid_site(client_cls(verify_ssl=False))  # should not raise SSLError
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=InsecureRequestWarning)
+            for client_cls in (Webclient, Mobileclient, Musicmanager):
+                self.request_invalid_site(client_cls(verify_ssl=False))  # should not raise SSLError
 
 
 @test(groups=['server'])
@@ -231,7 +237,7 @@ class ClientTests(object):
         # how long do deleted tracks get returned for?
         # will this return tracks I've deleted since...ever?
 
-        num_deleted = [t for t in lib if t['deleted']]
+        num_deleted = len([t for t in lib if t['deleted']])
         assert_true(num_deleted > 0)
 
     @test
@@ -256,7 +262,7 @@ class ClientTests(object):
         # Otherwise, it should have been uploaded normally.
         assert_equal(not_uploaded, {})
         assert_equal(matched, {})
-        assert_equal(uploaded.keys(), [fname])
+        assert_equal(list(uploaded.keys()), [fname])
 
         user_sids.append(uploaded[fname])
 
@@ -893,11 +899,11 @@ class ClientTests(object):
             check.true(set(include_all_res.keys()) & optional_keys == optional_keys)
 
             check.true(set(no_albums_res.keys()) & optional_keys ==
-                       optional_keys - set(['albums']))
+                       optional_keys - {'albums'})
             check.true(set(no_rel_res.keys()) & optional_keys ==
-                       optional_keys - set(['related_artists']))
+                       optional_keys - {'related_artists'})
             check.true(set(no_tracks_res.keys()) & optional_keys ==
-                       optional_keys - set(['topTracks']))
+                       optional_keys - {'topTracks'})
 
     @test
     @retry
@@ -921,21 +927,20 @@ class ClientTests(object):
     @test(groups=['genres'])
     @all_access
     def mc_all_genres(self):
-        expected_genres = set([
-            u'COMEDY_SPOKEN_WORD_OTHER', u'COUNTRY', u'HOLIDAY', u'R_B_SOUL', u'FOLK', u'LATIN',
-            u'CHRISTIAN_GOSPEL', u'ALTERNATIVE_INDIE', u'POP', u'ROCK', u'WORLD',
-            u'VOCAL_EASY_LISTENING', u'HIP_HOP_RAP', u'JAZZ', u'METAL', u'REGGAE_SKA',
-            u'SOUNDTRACKS_CAST_ALBUMS', u'DANCE_ELECTRONIC', u'CLASSICAL', u'NEW_AGE', u'BLUES',
-            u'CHILDREN_MUSIC'])
+        expected_genres = {u'COMEDY_SPOKEN_WORD_OTHER', u'COUNTRY', u'HOLIDAY', u'R_B_SOUL',
+                           u'FOLK', u'LATIN', u'CHRISTIAN_GOSPEL', u'ALTERNATIVE_INDIE', u'POP',
+                           u'ROCK', u'WORLD', u'VOCAL_EASY_LISTENING', u'HIP_HOP_RAP', u'JAZZ',
+                           u'METAL', u'REGGAE_SKA', u'SOUNDTRACKS_CAST_ALBUMS', u'DANCE_ELECTRONIC',
+                           u'CLASSICAL', u'NEW_AGE', u'BLUES', u'CHILDREN_MUSIC'}
         res = self.mc.get_genres()
         assert_equal(set([e['id'] for e in res]), expected_genres)
 
     @test(groups=['genres'])
     @all_access
     def mc_specific_genre(self):
-        expected_genres = set([
-            u'PROGRESSIVE_METAL', u'CLASSIC_METAL', u'HAIR_METAL', u'INDUSTRIAL', u'ALT_METAL',
-            u'THRASH', u'METALCORE', u'BLACK_DEATH_METAL', u'DOOM_METAL'])
+        expected_genres = {u'PROGRESSIVE_METAL', u'CLASSIC_METAL', u'HAIR_METAL', u'INDUSTRIAL',
+                           u'ALT_METAL', u'THRASH', u'METALCORE', u'BLACK_DEATH_METAL',
+                           u'DOOM_METAL'}
         res = self.mc.get_genres('METAL')
         assert_equal(set([e['id'] for e in res]), expected_genres)
 
