@@ -81,8 +81,7 @@ def all_access(f, *args, **kwargs):
 
 @test(groups=['server-other'])
 class SslVerificationTests(object):
-    # found on https://onlinessl.netlock.hu/en/test-center/invalid-ssl-certificate.html
-    test_url = 'https://tv.eurosport.com/'
+    test_url = 'https://wrong.host.badssl.com/'
 
     @test
     def site_has_invalid_cert(self):
