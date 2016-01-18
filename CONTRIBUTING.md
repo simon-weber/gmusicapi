@@ -46,3 +46,11 @@ or together with the local tests:
 * `$ python -m gmusicapi.test.run_tests`
 
 Many of the server tests require a subscription to Google Music All-Access. If you have a subscription, set the environment variable `GM_A` (to anything).
+
+
+As there is experimental support for Python 3, it would be ideal to run the tests against all supported versions of Python. You can do this by using [tox](http://tox.testrun.org/):
+* Install all supported versions of Python that you'd like to test (Python 2.7, 3.4 and 3.5 are currently tested with tox)
+* **Outside** of a virtualenv, `$ pip install tox`
+* Set the environment variables (as above)
+* Run the tests: `$ tox` (this will create virtualenvs for you)
+* If you don't want to test every single version in the compatibility matrix, you can run tox with `--skip-missing-interpreters`, which will test just the python versions that you have installed
