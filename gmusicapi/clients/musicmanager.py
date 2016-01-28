@@ -469,7 +469,7 @@ class Musicmanager(_Base):
 
             bogus_sample = None
             if not enable_matching:
-                bogus_sample = ''  # just send empty bytes
+                bogus_sample = b''  # just send empty bytes
 
             try:
                 res = self._make_call(musicmanager.ProvideSample,

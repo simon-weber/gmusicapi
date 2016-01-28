@@ -539,8 +539,10 @@ def truncate(x, max_els=100, recurse_levels=0):
 
     try:
         if len(x) > max_els:
-            if isinstance(x, basestring):
+            if isinstance(x, str):
                 return x[:max_els] + '...'
+            elif isinstance(x, basestring):
+                return x[:max_els] + b'...'
 
             if isinstance(x, dict):
                 if 'id' in x and 'titleNorm' in x:

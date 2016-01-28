@@ -179,6 +179,10 @@ class UploadMetadata(MmCall):
         track.client_id = cls.get_track_clientid(filepath)
 
         extension = os.path.splitext(filepath)[1].upper()
+
+        if isinstance(extension, bytes):
+            extension = extension.decode('utf8')
+
         if extension:
             # Trim leading period if it exists (ie extension not empty).
             extension = extension[1:]
@@ -358,6 +362,10 @@ class GetUploadSession(MmCall):
         """track is a locker_pb2.Track, and the server_id is from a metadata upload."""
         # small info goes inline, big things get their own external PUT.
         # still not sure as to thresholds - I've seen big album art go inline.
+
+        if isinstance(filepath, bytes):
+            filepath = filepath.decode('utf8')
+
         inlined = {
             "title": "jumper-uploader-title-42",
             "ClientId": track.client_id,
