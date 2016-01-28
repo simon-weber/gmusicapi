@@ -103,7 +103,7 @@ class Webclient(_Base):
         super(Webclient, self).login()
 
         # Google's login form has a bunch of hidden fields I'd rather not deal with manually.
-        browser = mechanicalsoup.Browser(parser="html.parser")
+        browser = mechanicalsoup.Browser(soup_config={"features": "html.parser"})
 
         login_page = browser.get('https://accounts.google.com/ServiceLoginAuth',
                                  params={'service': 'sj',
