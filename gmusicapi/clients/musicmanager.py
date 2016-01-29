@@ -263,7 +263,7 @@ class Musicmanager(_Base):
     def get_uploaded_songs(self, incremental=False):
         """Returns a list of dictionaries, each with the following keys:
         ``('id', 'title', 'album', 'album_artist', 'artist', 'track_number',
-        'track_size')``.
+        'track_size'), 'disc_number', 'total_disc_count'``.
 
         All Access tracks that were added to the library will not be included,
         only tracks uploaded/matched by the user.
@@ -289,7 +289,8 @@ class Musicmanager(_Base):
 
         return dict((field, getattr(track_info, field)) for field in
                     ('id', 'title', 'album', 'album_artist', 'artist',
-                     'track_number', 'track_size'))
+                     'track_number', 'track_size', 'disc_number',
+                     'total_disc_count'))
 
     def _get_all_songs(self):
         """Return a generator of song chunks."""
