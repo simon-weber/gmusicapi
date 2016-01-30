@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import, unicode_literals
 from future import standard_library
+from past.builtins import basestring
 standard_library.install_aliases()
 from builtins import *  # noqa
 from urllib.parse import urlparse, parse_qsl
@@ -268,7 +269,7 @@ class Webclient(_Base):
 
         return bytes(stream_pieces)
 
-    @utils.accept_singleton(str)
+    @utils.accept_singleton(basestring)
     @utils.enforce_ids_param
     @utils.empty_arg_shortcircuit
     def report_incorrect_match(self, song_ids):
@@ -288,7 +289,7 @@ class Webclient(_Base):
 
         return song_ids
 
-    @utils.accept_singleton(str)
+    @utils.accept_singleton(basestring)
     @utils.enforce_ids_param
     @utils.empty_arg_shortcircuit
     def upload_album_art(self, song_ids, image_filepath):
@@ -314,7 +315,7 @@ class Webclient(_Base):
 
     # deprecated methods follow:
 
-    @utils.accept_singleton(str)
+    @utils.accept_singleton(basestring)
     @utils.enforce_ids_param
     @utils.empty_arg_shortcircuit
     @utils.deprecated('prefer Mobileclient.delete_songs')
@@ -330,7 +331,7 @@ class Webclient(_Base):
 
         return res['deleteIds']
 
-    @utils.accept_singleton(str, 2)
+    @utils.accept_singleton(basestring, 2)
     @utils.enforce_ids_param(2)
     @utils.enforce_id_param
     @utils.empty_arg_shortcircuit(position=2)
@@ -352,7 +353,7 @@ class Webclient(_Base):
 
         return [(e['songId'], e['playlistEntryId']) for e in new_entries]
 
-    @utils.accept_singleton(str, 2)
+    @utils.accept_singleton(basestring, 2)
     @utils.enforce_ids_param(2)
     @utils.enforce_id_param
     @utils.empty_arg_shortcircuit(position=2)
@@ -385,7 +386,7 @@ class Webclient(_Base):
         else:
             return []
 
-    @utils.accept_singleton(str, 2)
+    @utils.accept_singleton(basestring, 2)
     @utils.empty_arg_shortcircuit(position=2)
     def _remove_entries_from_playlist(self, playlist_id, entry_ids_to_remove):
         """Removes entries from a playlist. Returns a list of removed "sid_eid" strings.

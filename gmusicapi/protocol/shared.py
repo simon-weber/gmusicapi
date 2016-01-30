@@ -307,7 +307,7 @@ class Call(with_metaclass(BuildRequestMeta, object)):
         # Filter all byte fields.
         for field_name, val in ((fd.name, val) for fd, val in fields
                                 if fd.type == FieldDescriptor.TYPE_BYTES):
-            setattr(filtered, field_name, "<%s bytes>" % len(val))
+            setattr(filtered, field_name, bytes("<%s bytes>" % len(val), 'utf8'))
 
         # Filter submessages.
         for field in (val for fd, val in fields

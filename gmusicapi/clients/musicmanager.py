@@ -1,6 +1,7 @@
 from __future__ import print_function, division, absolute_import, unicode_literals
 from future import standard_library
 standard_library.install_aliases()
+from past.builtins import basestring
 from builtins import *  # noqa
 import os
 from socket import gethostname
@@ -361,7 +362,7 @@ class Musicmanager(_Base):
     #     #protocol incorrect here...
     #     return (quota.maximumTracks, quota.totalTracks, quota.availableTracks)
 
-    @utils.accept_singleton(str)
+    @utils.accept_singleton(basestring)
     @utils.empty_arg_shortcircuit(return_code='{}')
     def upload(self, filepaths, transcode_quality='320k', enable_matching=False):
         """Uploads the given filepaths.
@@ -468,7 +469,7 @@ class Musicmanager(_Base):
 
             bogus_sample = None
             if not enable_matching:
-                bogus_sample = ''  # just send empty bytes
+                bogus_sample = b''  # just send empty bytes
 
             try:
                 res = self._make_call(musicmanager.ProvideSample,
