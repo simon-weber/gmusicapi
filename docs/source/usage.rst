@@ -44,6 +44,10 @@ installed and in your system path, along with at least libmp3lame.
      and `edit your path <http://www.computerhope.com/issues/ch000549.htm>`__
      to include the directory that contains avconv.exe/ffmpeg.exe.
 
+ - Google App Engine
+
+   - See `this thread <https://github.com/simon-weber/gmusicapi/issues/381#issue-116838059>`__ for instructions.
+
 The only time avconv or ffmpeg is not required is when uploading mp3s without scan-and-match enabled.
    
 If you need to install avconv/ffmpeg from source, be sure to use
