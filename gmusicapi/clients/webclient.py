@@ -26,8 +26,6 @@ class Webclient(_Base):
 
     The following methods are *not* deprecated:
 
-        * :func:`create_playlist`
-        * :func:`get_registered_devices`
         * :func:`get_shared_playlist_info`
         * :func:`get_song_download_info`
         * :func:`get_stream_urls`
@@ -70,18 +68,6 @@ class Webclient(_Base):
     def logout(self):
         return super(Webclient, self).logout()
 
-    def create_playlist(self, name, description=None, public=False):
-        """
-        Creates a playlist and returns its id.
-
-        :param name: the name of the playlist.
-        :param description: (optional) the description of the playlist.
-        :param public: if True and the user has All Access, create a shared playlist.
-        """
-        res = self._make_call(webclient.CreatePlaylist, name, description, public)
-
-        return res[1][0]
-
     def get_shared_playlist_info(self, share_token):
         """
         Returns a dictionary with four keys: author, description, num_tracks, and title.
@@ -103,54 +89,6 @@ class Webclient(_Base):
             u'num_tracks': num_tracks,
             u'title': md[1],
         }
-
-    def get_registered_devices(self):
-        """
-        Returns a list of dictionaries representing devices associated with the account.
-
-        Performing the :class:`Musicmanager` OAuth flow will register a device
-        of type 1.
-
-        Installing the Google Music app on an android or ios device
-        and logging into it will register a device of type 2 or 3,
-        which is used for streaming with the :class:`Mobileclient`.
-
-        Here is an example response::
-
-            [
-              {
-                u'deviceType': 1,  # laptop/desktop
-                u'id': u'00:11:22:33:AA:BB',
-                u'lastAccessedFormatted': u'May 24, 2015',
-                u'lastAccessedTimeMillis': 1432468588200,  # utc-millisecond
-                u'lastEventTimeMillis': 1434211605335,
-                u'name': u'my computer'},
-              },
-              {
-                u'deviceType': 2,  # android device
-                u'carrier': u'Google',
-                u'id': u'0x00112233aabbccdd',  # remove 0x when streaming
-                u'lastAccessedFormatted': u'September 19, 2015',
-                u'lastAccessedTimeMillis': 1442706069906,
-                u'lastEventTimeMillis': 1435271137193,
-                u'manufacturer': u'Asus',
-                u'model': u'Nexus 7',
-                u'name': u'my nexus 7'
-              },
-              {
-                u'deviceType': 3,  # ios device
-                u'id': u'ios:01234567-0123-0123-0123-0123456789AB',
-                u'lastAccessedFormatted': u'June 25, 2015',
-                u'lastAccessedTimeMillis': 1435271588780,
-                u'lastEventTimeMillis': 1435271442417,
-                u'name': u'my iphone'
-              }
-            ]
-        """
-
-        # TODO sessionid stuff
-        res = self._make_call(webclient.GetSettings, '')
-        return res['settings']['uploadDevice']
 
     @utils.enforce_id_param
     def get_song_download_info(self, song_id):
@@ -314,6 +252,68 @@ class Webclient(_Base):
         return url
 
     # deprecated methods follow:
+
+    @utils.deprecated('prefer Mobileclient.create_playlist')
+    def create_playlist(self, name, description=None, public=False):
+        """
+        Creates a playlist and returns its id.
+
+        :param name: the name of the playlist.
+        :param description: (optional) the description of the playlist.
+        :param public: if True and the user has All Access, create a shared playlist.
+        """
+        res = self._make_call(webclient.CreatePlaylist, name, description, public)
+
+        return res[1][0]
+
+    @utils.deprecated('prefer Mobileclient.get_registered_devices')
+    def get_registered_devices(self):
+        """
+        Returns a list of dictionaries representing devices associated with the account.
+
+        Performing the :class:`Musicmanager` OAuth flow will register a device
+        of type 1.
+
+        Installing the Google Music app on an android or ios device
+        and logging into it will register a device of type 2 or 3,
+        which is used for streaming with the :class:`Mobileclient`.
+
+        Here is an example response::
+
+            [
+              {
+                u'deviceType': 1,  # laptop/desktop
+                u'id': u'00:11:22:33:AA:BB',
+                u'lastAccessedFormatted': u'May 24, 2015',
+                u'lastAccessedTimeMillis': 1432468588200,  # utc-millisecond
+                u'lastEventTimeMillis': 1434211605335,
+                u'name': u'my computer'},
+              },
+              {
+                u'deviceType': 2,  # android device
+                u'carrier': u'Google',
+                u'id': u'0x00112233aabbccdd',  # remove 0x when streaming
+                u'lastAccessedFormatted': u'September 19, 2015',
+                u'lastAccessedTimeMillis': 1442706069906,
+                u'lastEventTimeMillis': 1435271137193,
+                u'manufacturer': u'Asus',
+                u'model': u'Nexus 7',
+                u'name': u'my nexus 7'
+              },
+              {
+                u'deviceType': 3,  # ios device
+                u'id': u'ios:01234567-0123-0123-0123-0123456789AB',
+                u'lastAccessedFormatted': u'June 25, 2015',
+                u'lastAccessedTimeMillis': 1435271588780,
+                u'lastEventTimeMillis': 1435271442417,
+                u'name': u'my iphone'
+              }
+            ]
+        """
+
+        # TODO sessionid stuff
+        res = self._make_call(webclient.GetSettings, '')
+        return res['settings']['uploadDevice']
 
     @utils.accept_singleton(basestring)
     @utils.enforce_ids_param
