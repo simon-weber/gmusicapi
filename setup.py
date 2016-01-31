@@ -15,7 +15,7 @@ else:
     if sys.version_info[:3] < (2, 7, 9):
         warnings.warn("gmusicapi does not officially support versions below "
                       "Python 2.7.9", RuntimeWarning)
-    dynamic_requires.append('protobuf >= 2.4.1')  # 2.3.0 uses ez_setup?
+    dynamic_requires.append('protobuf >= 2.6.1')  # symbol_database
 
 # try to continue anyway
 
