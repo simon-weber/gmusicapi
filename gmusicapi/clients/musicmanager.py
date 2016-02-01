@@ -264,7 +264,7 @@ class Musicmanager(_Base):
     def get_uploaded_songs(self, incremental=False):
         """Returns a list of dictionaries, each with the following keys:
         ``('id', 'title', 'album', 'album_artist', 'artist', 'track_number',
-        'track_size'), 'disc_number', 'total_disc_count'``.
+        'track_size', 'disc_number', 'total_disc_count')``.
 
         All Access tracks that were added to the library will not be included,
         only tracks uploaded/matched by the user.
@@ -282,6 +282,26 @@ class Musicmanager(_Base):
 
         return to_return
 
+    # mostly copy-paste from Webclient.get_all_songs.
+    # not worried about overlap in this case; the logic of either could change.
+    def get_purchased_songs(self, incremental=False):
+        """Returns a list of dictionaries, each with the following keys:
+        ``('id', 'title', 'album', 'album_artist', 'artist', 'track_number',
+        'track_size', 'disc_number', 'total_disc_count')``.
+
+        :param incremental: if True, return a generator that yields lists
+          of at most 1000 dictionaries
+          as they are retrieved from the server. This can be useful for
+          presenting a loading bar to a user.
+        """
+
+        to_return = self._get_all_songs(export_type=2)
+
+        if not incremental:
+            to_return = [song for chunk in to_return for song in chunk]
+
+        return to_return
+
     @staticmethod
     def _track_info_to_dict(track_info):
         """Given a download_pb2.DownloadTrackInfo, return a dictionary."""
@@ -293,7 +313,7 @@ class Musicmanager(_Base):
                      'track_number', 'track_size', 'disc_number',
                      'total_disc_count'))
 
-    def _get_all_songs(self):
+    def _get_all_songs(self, export_type=1):
         """Return a generator of song chunks."""
 
         get_next_chunk = True
@@ -307,7 +327,8 @@ class Musicmanager(_Base):
         while get_next_chunk:
             lib_chunk = self._make_call(musicmanager.ListTracks,
                                         self.uploader_id,
-                                        lib_chunk.continuation_token)
+                                        lib_chunk.continuation_token,
+                                        export_type)
 
             yield [self._track_info_to_dict(info)
                    for info in lib_chunk.download_track_info]

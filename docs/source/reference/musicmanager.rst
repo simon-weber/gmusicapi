@@ -20,4 +20,5 @@ Uploading Songs
 Downloading Songs
 -----------------
 .. automethod:: Musicmanager.get_uploaded_songs
+.. automethod:: Musicmanager.get_purchased_songs
 .. automethod:: Musicmanager.download_song
