@@ -38,7 +38,7 @@ The server tests are a bit more complicated, as they exercise the actual Google 
 * `from gmusicapi import Musicmanager`
 * `Musicmanager.perform_oauth()`
 
-The server tests also require a device ID. Set this in the environment variable `GM_AA_D_ID`. This ideally should be the device ID of an Android device (use `Mobileclient.get_registered_devices()` to find the ID; strip out any leading `0x`). Using a desktop MAC address will work for most of the tests, but `mc_get_uploaded_track_stream_url` will fail.
+The server tests also require a device ID. You can set the environment variable `GM_AA_D_ID` or enter your ID at the prompt. Setting either to 'mac' will use Mobileclient.FROM_MAC_ADDRESS. Some tests will fail if not using an Android device ID (use `Mobileclient.get_registered_devices()` to find the ID; strip out any leading `0x`).
 
 Once you have all that set up, run the server tests:
 * `$ python -m gmusicapi.test.run_tests --group=server`

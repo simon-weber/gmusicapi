@@ -91,12 +91,21 @@ def retrieve_auth():
         mm_kwargs['oauth_credentials'] = \
             credentials_from_refresh_token(mm_kwargs['oauth_credentials'])
 
-    if 'GM_AA_D_ID' not in os.environ:
-        print('an android id must be provided in the env var GM_AA_D_ID')
+    mc_kwargs = wc_kwargs.copy()
+
+    try:
+        android_id = os.environ['GM_AA_D_ID']
+    except KeyError:
+        android_id = input("Device ID ('mac' for FROM_MAC_ADDRESS): ")
+
+    if android_id == "mac":
+        android_id = Mobileclient.FROM_MAC_ADDRESS
+
+    if not android_id:
+        print('a device id must be provided')
         sys.exit(1)
 
-    mc_kwargs = wc_kwargs.copy()
-    mc_kwargs['android_id'] = os.environ['GM_AA_D_ID']
+    mc_kwargs['android_id'] = android_id
 
     return (wc_kwargs, mc_kwargs, mm_kwargs)
 
