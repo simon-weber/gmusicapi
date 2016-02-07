@@ -29,7 +29,7 @@ installed and in your system path, along with at least libmp3lame.
    - Download pre-built binaries of
      `avconv <http://johnvansickle.com/libav/>`__ or `ffmpeg <http://johnvansickle.com/ffmpeg/>`__
      and `edit your path <http://www.troubleshooters.com/linux/prepostpath.htm>`__
-     to include the directory that contains avconv.exe/ffmpeg.exe.
+     to include the directory that contains avconv/ffmpeg.
 
  - Mac
 
