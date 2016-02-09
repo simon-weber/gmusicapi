@@ -54,6 +54,7 @@ Status and updates
 .. image:: https://travis-ci.org/simon-weber/gmusicapi.png?branch=develop
         :target: https://travis-ci.org/simon-weber/gmusicapi
 
+* February 2016: Python 3 support!
 * September 2015: Google switched to a new music uploading endpoint, breaking uploading for outdated versions of gmusicapi.
 * June 2015: Full mobileclient and webclient functionality was restored.
 * May 2015: Limited mobileclient functionality was restored.

@@ -5,11 +5,22 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-7.0.1
+8.0.0
 +++++
-released ...
+released 2016-02-08
+
+- breaking: drop support for python < 2.7.9
+- add (experimental) python 3 support!
+- add Musicmanager.get_purchased_songs
+- add station_hits to search_all_access results
+- add disc_number and total_disc_count to Musicmanager.get_uploaded_songs
+- add a prompt for device id in tests
+- upgrade gpsoauth, removing dependency on pycrypto
+- deprecate Webclient.create_playlist and Webclient.get_registered_devices
 - fix various packaging problems
 - fix KeyError in Mobileclient.get_station_tracks
+- fix a TypeError from requests
+- fix various bits of the docs
 
 7.0.0
 +++++
