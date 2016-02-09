@@ -3,6 +3,10 @@
 """
 Tests that don't hit the Google Music servers.
 """
+from __future__ import print_function, division, absolute_import, unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import *  # noqa
 
 from collections import namedtuple
 import os
@@ -27,8 +31,8 @@ jsarray_filenames = [base + '.jsarray' for base in ('searchresult', 'fetchartist
 
 test_file_dir = os.path.dirname(os.path.abspath(__file__))
 for filepath in [os.path.join(test_file_dir, p) for p in jsarray_filenames]:
-    with open(filepath, 'r') as f:
-        jsarray_samples.append(f.read().decode('utf-8'))
+    with open(filepath, 'r', encoding="utf-8") as f:
+        jsarray_samples.append(f.read())
 
 # TODO test gather_local, transcoding
 
@@ -40,8 +44,8 @@ test = test(groups=['local'])
 def longest_increasing_sub():
     lisi = utils.longest_increasing_subseq
     assert_equal(lisi([]), [])
-    assert_equal(lisi(range(10, 0, -1)), [1])
-    assert_equal(lisi(range(10, 20)), range(10, 20))
+    assert_equal(lisi(list(range(10, 0, -1))), [1])
+    assert_equal(lisi(list(range(10, 20))), list(range(10, 20)))
     assert_equal(lisi([3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9]),
                  [1, 2, 3, 5, 8, 9])
 
@@ -192,7 +196,7 @@ def authtypes_factory_args():
 def mc_url_signing():
     sig, _ = mobileclient.GetStreamUrl.get_signature("Tdr6kq3xznv5kdsphyojox6dtoq",
                                                      "1373247112519")
-    assert_equal(sig, "gua1gInBdaVo7_dSwF9y0kodua0")
+    assert_equal(sig, b"gua1gInBdaVo7_dSwF9y0kodua0")
 
 
 #

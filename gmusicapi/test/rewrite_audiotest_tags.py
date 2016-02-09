@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """A script that will rewrite audiotest* metadata to match their filenames."""
+from __future__ import print_function, division, absolute_import, unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import *  # noqa
 
 from glob import glob
 import os
@@ -12,11 +16,11 @@ for fname in glob(u'audiotest*'):
     audio = mutagen.File(fname, easy=True)
 
     if audio is None:
-        print 'could not open', fname
+        print('could not open', fname)
         continue
 
     # clear existing tags
-    for key in audio.tags.keys():
+    for key in list(audio.tags.keys()):
         del audio.tags[key]
 
     # write
@@ -27,5 +31,5 @@ for fname in glob(u'audiotest*'):
 
     # read back to verify
     audio = mutagen.File(fname, easy=True)  # assume it worked; it worked above
-    print fname
-    print '   ', audio.tags
+    print(fname)
+    print('   ', audio.tags)

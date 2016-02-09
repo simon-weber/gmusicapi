@@ -1,12 +1,20 @@
 # -*- coding: utf-8 -*-
 
 """Utility functions used across api code."""
+from __future__ import print_function, division, absolute_import, unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from past.builtins import basestring
+from builtins import *  # noqa
+from builtins import object
 
+import ast
 from bisect import bisect_left
 from distutils import spawn
 import errno
 import functools
 import inspect
+import itertools
 import logging
 import os
 import re
@@ -19,7 +27,7 @@ from decorator import decorator
 from google.protobuf.descriptor import FieldDescriptor
 
 from gmusicapi import __version__
-from gmusicapi.compat import my_appdirs
+from gmusicapi.appdirs import my_appdirs
 from gmusicapi.exceptions import CallFailure, GmusicapiWarning
 
 # this controls the crazy logging setup that checks the callstack;
@@ -29,7 +37,7 @@ per_client_logging = True
 
 # Map descriptor.CPPTYPE -> python type.
 _python_to_cpp_types = {
-    long: ('int32', 'int64', 'uint32', 'uint64'),
+    int: ('int32', 'int64', 'uint32', 'uint64'),
     float: ('double', 'float'),
     bool: ('bool',),
     str: ('string',),
@@ -144,10 +152,10 @@ def longest_increasing_subseq(seq):
     # predecessor[j] = linked list of indices of best subsequence ending
     # at seq[j], in reverse order
     predecessor = [-1]
-    for i in xrange(1, len(seq)):
+    for i in range(1, len(seq)):
         # Find j such that:  seq[head[j - 1]] < seq[i] <= seq[head[j]]
         # seq[head[j]] is increasing, so use binary search.
-        j = bisect_left([seq[head[idx]] for idx in xrange(len(head))], seq[i])
+        j = bisect_left([seq[head[idx]] for idx in range(len(head))], seq[i])
 
         if j == len(head):
             head.append(i)
@@ -438,12 +446,8 @@ def locate_mp3_transcoder():
             transcoder_details[transcoder] = 'not installed'
             continue
 
-        proc = subprocess.Popen(
-            [cmd_path, '-codecs'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
-
-        stdout, stderr = proc.communicate()
+        with open(os.devnull, "w") as null:
+            stdout = subprocess.check_output([cmd_path, '-codecs'], stderr=null).decode("ascii")
         mp3_encoding_support = ('libmp3lame' in stdout and 'disable-libmp3lame' not in stdout)
         if mp3_encoding_support:
             transcoder_details[transcoder] = "mp3 encoding support"
@@ -535,8 +539,10 @@ def truncate(x, max_els=100, recurse_levels=0):
 
     try:
         if len(x) > max_els:
-            if isinstance(x, basestring):
+            if isinstance(x, str):
                 return x[:max_els] + '...'
+            elif isinstance(x, basestring):
+                return x[:max_els] + b'...'
 
             if isinstance(x, dict):
                 if 'id' in x and 'titleNorm' in x:
@@ -545,7 +551,10 @@ def truncate(x, max_els=100, recurse_levels=0):
                     trunc['...'] = '...'
                     return trunc
                 else:
-                    return dict(x.items()[:max_els] + [('...', '...')])
+                    return dict(
+                        itertools.chain(
+                            itertools.islice(x.items(), 0, max_els),
+                            [('...', '...')]))
 
             if isinstance(x, list):
                 trunc = x[:max_els] + ['...']
@@ -567,7 +576,7 @@ def empty_arg_shortcircuit(return_code='[]', position=1):
     """Decorate a function to shortcircuit and return something immediately if
     the length of a positional arg is 0.
 
-    :param return_code: (optional) code to exec as the return value - default is a list.
+    :param return_code: (optional) simple expression to eval as the return value - default is a list
     :param position: (optional) the position of the expected list - default is 1.
     """
 
@@ -576,16 +585,13 @@ def empty_arg_shortcircuit(return_code='[]', position=1):
     # being mutated - there's only one, not a new one on each call.
     # Here we've got multiple things we'd like to
     # return, so we can't do that. Rather than make some kind of enum for
-    # 'accepted return values' I'm just allowing freedom to return anything.
-    # Less safe? Yes. More convenient? Definitely.
+    # 'accepted return values' I'm just allowing freedom to return basic values.
+    # ast.literal_eval only can evaluate most literal expressions (e.g. [] and {})
 
     @decorator
     def wrapper(function, *args, **kw):
         if len(args[position]) == 0:
-            # avoid polluting our namespace
-            ns = {}
-            exec 'retval = ' + return_code in ns
-            return ns['retval']
+            return ast.literal_eval(return_code)
         else:
             return function(*args, **kw)
 

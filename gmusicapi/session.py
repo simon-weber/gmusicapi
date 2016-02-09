@@ -3,6 +3,10 @@
 """
 Sessions handle the details of authentication and transporting requests.
 """
+from __future__ import print_function, division, absolute_import, unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import *  # noqa
 from contextlib import closing
 
 import gpsoauth
@@ -99,7 +103,7 @@ class Webclient(_Base):
         super(Webclient, self).login()
 
         # Google's login form has a bunch of hidden fields I'd rather not deal with manually.
-        browser = mechanicalsoup.Browser()
+        browser = mechanicalsoup.Browser(soup_config={"features": "html.parser"})
 
         login_page = browser.get('https://accounts.google.com/ServiceLoginAuth',
                                  params={'service': 'sj',
@@ -124,7 +128,7 @@ class Webclient(_Base):
 
         # We can't use in without .keys(), since international users will see a
         # CookieConflictError.
-        if 'SID' not in browser.session.cookies.keys():
+        if 'SID' not in list(browser.session.cookies.keys()):
             # Invalid auth.
             return False
 

@@ -1,3 +1,8 @@
+from __future__ import print_function, division, absolute_import, unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from past.builtins import basestring
+from builtins import *  # noqa
 from collections import defaultdict
 import datetime
 from operator import itemgetter
@@ -32,9 +37,8 @@ class Mobileclient(_Base):
         Returns ``True`` on success, ``False`` on failure.
 
         :param email: eg ``'test@gmail.com'`` or just ``'test'``.
-        :param password: the account's password.
+        :param password: password or app-specific password for 2-factor users.
           This is not stored locally, and is sent securely over SSL.
-          App-specific passwords are not supported.
         :param android_id: 16 hex digits, eg ``'1234567890abcdef'``.
 
           Pass Mobileclient.FROM_MAC_ADDRESS instead to attempt to use
@@ -44,9 +48,8 @@ class Mobileclient(_Base):
           but appears to work fine in testing.
           If a valid MAC address cannot be determined on this machine
           (which is often the case when running on a VPS), raise OSError.
-
-        #TODO 2fa
         """
+        # TODO 2fa
 
         if android_id is None:
             raise ValueError("android_id cannot be None.")
@@ -762,6 +765,8 @@ class Mobileclient(_Base):
         Each call performs a separate sampling (with replacement?)
         from all possible tracks for the station.
 
+        Nonexistent stations will return an empty list.
+
         :param station_id: the id of a radio station to retrieve tracks from.
           Use the special id ``'IFL'`` for the "I'm Feeling Lucky" station.
         :param num_tracks: the number of tracks to retrieve
@@ -793,7 +798,7 @@ class Mobileclient(_Base):
         return stations[0].get('tracks', [])
 
     def search_all_access(self, query, max_results=50):
-        """Queries the server for All Access songs, albums and shared playlists.
+        """Queries the server for All Access songs, artists, albums, shared playlists and stations.
 
         Using this method without an All Access subscription will always result in
         CallFailure being raised.
@@ -933,6 +938,25 @@ class Mobileclient(_Base):
                      'type': '4'
                   }
                ]
+               'station_hits': [
+                  {
+                     'station': {
+                        'imageUrls': [
+                            {
+                               'url': u'http://lh5.ggpht.com/...'
+                            }
+                        ],
+                        'kind': 'sj#radioStation',
+                        'name': 'Capricho Espanol',
+                        'seed': {
+                             'kind': u'sj#radioSeed',
+                             'seedType': '2',
+                             'trackId': 'T35ilrlthmmc4movyawx6eqqzsy'
+                        }
+                     },
+                     'type': '6'
+                  }
+               ]
             }
         """
         res = self._make_call(mobileclient.Search, query, max_results)
@@ -946,7 +970,8 @@ class Mobileclient(_Base):
         return {'album_hits': hits_by_type['3'],
                 'artist_hits': hits_by_type['2'],
                 'song_hits': hits_by_type['1'],
-                'playlist_hits': hits_by_type['4']}
+                'playlist_hits': hits_by_type['4'],
+                'station_hits': hits_by_type['6']}
 
     @utils.enforce_id_param
     def get_artist_info(self, artist_id, include_albums=True, max_top_tracks=5, max_rel_artist=5):

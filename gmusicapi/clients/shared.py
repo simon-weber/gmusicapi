@@ -1,12 +1,15 @@
+from __future__ import print_function, division, absolute_import, unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import *  # noqa
 import logging
 
 from gmusicapi.utils import utils
+from future.utils import with_metaclass
 
 
-class _Base(object):
+class _Base(with_metaclass(utils.DocstringInheritMeta, object)):
     """Factors out common client setup."""
-
-    __metaclass__ = utils.DocstringInheritMeta
     _session_class = utils.NotImplementedField
 
     num_clients = 0  # used to disambiguate loggers

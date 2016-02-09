@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
-
 """Tools for manipulating client-received Google Music data."""
+from __future__ import print_function, division, absolute_import, unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import *  # noqa
 
 import operator
 import re
 import collections
 
-from gmusicapi.compat import Counter
+from collections import Counter
+from functools import reduce
 
 
 def get_id_pairs(track_list):
@@ -87,8 +91,7 @@ def reorder_to(l, order):
     """
 
     # Zip on ordering, sort by it, then remove ordering.
-    return map(lambda el: el[1],
-               sorted(zip(order, l), key=lambda el: el[0]))
+    return [el[1] for el in sorted(zip(order, l), key=lambda el: el[0])]
 
 
 def build_queries_from(f, regex, cap_types, cap_pr, encoding='ascii'):
@@ -110,7 +113,7 @@ def build_queries_from(f, regex, cap_types, cap_pr, encoding='ascii'):
             if matches:
                 # Zip captures to their types and order by priority to build a query.
                 query = reorder_to(
-                    zip(matches.groups(), cap_types),
+                    list(zip(matches.groups(), cap_types)),
                     cap_pr)
 
                 queries.append(query)
@@ -121,7 +124,7 @@ def build_queries_from(f, regex, cap_types, cap_pr, encoding='ascii'):
 def build_query_rep(query, divider=" - "):
     """Build a string representation of a query, without metadata types"""
 
-    return divider.join(map(lambda el: el[0], query))
+    return divider.join([el[0] for el in query])
 
 
 # Not mine. From: http://en.wikipedia.org/wiki/Function_composition_(computer_science)
@@ -191,8 +194,8 @@ class SongMatcher(object):
     ignore_caps = SearchModifier(
         # Change query and song to lowercase,
         # before comparing with ==.
-        unicode.lower,
-        unicode.lower,
+        str.lower,
+        str.lower,
         operator.eq
     )
 
@@ -222,13 +225,13 @@ class SongMatcher(object):
         :param results: list of results.
         """
 
-        print
-        print "Manual tiebreak for query:"
-        print build_query_rep(query).encode('utf-8')
-        print
-        print "Enter the number next to your choice:"
-        print
-        print "0: None of these."
+        print()
+        print("Manual tiebreak for query:")
+        print(build_query_rep(query).encode('utf-8'))
+        print()
+        print("Enter the number next to your choice:")
+        print()
+        print("0: None of these.")
 
         menu_lines = []
         key = 1
@@ -241,14 +244,14 @@ class SongMatcher(object):
 
             key += 1
 
-        print "\n".join(menu_lines)
+        print("\n".join(menu_lines))
 
         choice = -1
 
         while not (0 <= choice <= len(results)):
             try:
-                choice = int(raw_input("Choice: "))
-            except:
+                choice = int(input("Choice: "))
+            except ValueError:
                 pass
 
         return None if choice == 0 else [results[choice - 1]]
@@ -299,7 +302,7 @@ class SongMatcher(object):
 
                     if not results:
                         try:
-                            current_mods.append(future_mods.next())
+                            current_mods.append(next(future_mods))
                         except StopIteration:
                             return results
 
@@ -311,7 +314,7 @@ class SongMatcher(object):
                         # Branch; try more modifers to try and improve.
                         # If results, use them; otherwise tiebreak ours.
                         try:
-                            current_mods.append(future_mods.next())
+                            current_mods.append(next(future_mods))
                         except StopIteration:
                             raise self.TieBroken(tie_breaker(query, results))
 
@@ -341,8 +344,8 @@ class SongMatcher(object):
             operator.eq))
 
         # Create the transformers by composing all of them.
-        q_t = compose(*map((lambda sm: sm.q_t), mods_to_apply))
-        s_t = compose(*map((lambda sm: sm.s_t), mods_to_apply))
+        q_t = compose(*list(map((lambda sm: sm.q_t), mods_to_apply)))
+        s_t = compose(*list(map((lambda sm: sm.s_t), mods_to_apply)))
 
         # Use the most outward comparator.
         comp = mods_to_apply[0].comp

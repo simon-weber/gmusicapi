@@ -29,7 +29,7 @@ installed and in your system path, along with at least libmp3lame.
    - Download pre-built binaries of
      `avconv <http://johnvansickle.com/libav/>`__ or `ffmpeg <http://johnvansickle.com/ffmpeg/>`__
      and `edit your path <http://www.troubleshooters.com/linux/prepostpath.htm>`__
-     to include the directory that contains avconv.exe/ffmpeg.exe.
+     to include the directory that contains avconv/ffmpeg.
 
  - Mac
 
@@ -43,6 +43,10 @@ installed and in your system path, along with at least libmp3lame.
      `avconv <http://win32.libav.org/releases/>`__ or `ffmpeg <http://ffmpeg.zeranoe.com/builds/>`__
      and `edit your path <http://www.computerhope.com/issues/ch000549.htm>`__
      to include the directory that contains avconv.exe/ffmpeg.exe.
+
+ - Google App Engine
+
+   - See `this thread <https://github.com/simon-weber/gmusicapi/issues/381#issue-116838059>`__ for instructions.
 
 The only time avconv or ffmpeg is not required is when uploading mp3s without scan-and-match enabled.
    
@@ -64,6 +68,8 @@ It requires plaintext auth, so your code might look something like:
     api = Mobileclient()
     logged_in = api.login('user@gmail.com', 'my-password')
     # logged_in is True if login was successful
+
+Note that 2-factor users will need to setup and provide an app-specific password.
 
 If you're going to upload Music, you want the :py:class:`Musicmanager`.
 It uses `OAuth2

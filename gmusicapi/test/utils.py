@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
 """Utilities used in testing."""
+from __future__ import print_function, division, absolute_import, unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import *  # noqa
 
 import logging
 import os
@@ -86,5 +90,5 @@ def is_id_list(lst):
 
 def is_id_pair_list(lst):
     """Returns True if the given list is made up of all (id, id) pairs."""
-    a, b = zip(*lst)
+    a, b = list(zip(*lst))
     return is_id_list(a + b)

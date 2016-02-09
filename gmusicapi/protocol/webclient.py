@@ -1,18 +1,23 @@
 # -*- coding: utf-8 -*-
 
 """Calls made by the web client."""
+from __future__ import print_function, division, absolute_import, unicode_literals
+from future import standard_library
+from future.utils import raise_from
+
+standard_library.install_aliases()
+from builtins import *  # noqa
 
 import base64
 import copy
 import hmac
 import random
 import string
-import sys
 from hashlib import sha1
 
 import validictory
 
-from gmusicapi.compat import json
+import json
 from gmusicapi.exceptions import CallFailure, ValidationException
 from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils, jsarray
@@ -64,8 +69,7 @@ class WcCall(Call):
         try:
             return validictory.validate(msg, cls._res_schema)
         except ValueError as e:
-            trace = sys.exc_info()[2]
-            raise ValidationException(str(e)), None, trace
+            raise_from(ValidationException(str(e)), e)
 
     @classmethod
     def check_success(cls, response, msg):
@@ -292,7 +296,7 @@ class ChangeSongMetadata(WcCall):
         """
         :param songs: a list of dicts ``{'id': '...', 'albumArtUrl': '...'}``
         """
-        if any([s for s in songs if set(s.keys()) != set(['id', 'albumArtUrl'])]):
+        if any([s for s in songs if set(s.keys()) != {'id', 'albumArtUrl'}]):
             raise ValueError("ChangeSongMetadata only supports the 'id' and 'albumArtUrl' keys."
                              " All other keys must be removed.")
 
@@ -369,9 +373,10 @@ class GetStreamUrl(WcCall):
 
         # without the track['type'] field we can't tell between 1 and 2, but
         # include slt/sig anyway; the server ignores the extra params.
-        key = '27f7313e-f75d-445a-ac99-56386a5fe879'
+        key = '27f7313e-f75d-445a-ac99-56386a5fe879'.encode("ascii")
         salt = ''.join(random.choice(string.ascii_lowercase + string.digits) for x in range(12))
-        sig = base64.urlsafe_b64encode(hmac.new(key, (song_id + salt), sha1).digest())[:-1]
+        salted_id = (song_id + salt).encode("utf-8")
+        sig = base64.urlsafe_b64encode(hmac.new(key, salted_id, sha1).digest())[:-1]
 
         params = {
             'u': 0,
@@ -477,7 +482,7 @@ class GetSettings(WcCall):
                             'expirationMillis': {'type': 'integer', 'required': False},
                             'isCanceled': {'type': 'boolean'},
                             'isSubscription': {'type': 'boolean'},
-                            'isTrial':  {'type': 'boolean'},
+                            'isTrial': {'type': 'boolean'},
                         }},
                     'lab': {
                         'type': 'array',
@@ -492,7 +497,7 @@ class GetSettings(WcCall):
                             },
                         }},
                     'maxUploadedTracks': {'type': 'integer'},
-                    'subscriptionNewsletter': {'type': 'boolean'},
+                    'subscriptionNewsletter': {'type': 'boolean', 'required': False},
                     'uploadDevice': {
                         'type': 'array',
                         'items': _device_schema,

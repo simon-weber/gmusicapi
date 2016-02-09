@@ -14,7 +14,7 @@ docutils==0.11
 enum34==1.0.4
 flake8==2.4.0
 future==0.14.3
-gpsoauth==0.0.4
+gpsoauth==0.0.5
 httplib2==0.9
 mccabe==0.3
 mock==1.0.1
@@ -25,12 +25,12 @@ oauth2client==1.2
 pep8==1.5.7
 ply==3.4
 proboscis==1.2.6.0
-protobuf==2.5.0
+protobuf==2.6.1
 py==1.4.26
 pyOpenSSL==0.15.1
 pyasn1==0.1.7
 pycparser==2.13
-pycrypto==2.6.1
+pycryptodome==3.3.1
 pyflakes==0.8.1
 python-dateutil==2.2
 python-gflags==2.0

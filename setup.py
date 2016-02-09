@@ -4,13 +4,20 @@
 import re
 from setuptools import setup, find_packages
 import sys
-
-# Only 2.7 is supported.
-if not ((2, 7, 0) <= sys.version_info[:3] < (2, 8)):
-    sys.stderr.write('gmusicapi does not officially support this Python version.\n')
-    # try to continue anyway
+import warnings
 
 dynamic_requires = []
+# Python 2.7 is supported. Python 3 support is experimental
+if sys.version_info[0] > 2:
+    warnings.warn("gmusicapi Python 3 support is experimental", RuntimeWarning)
+    dynamic_requires.append("protobuf >= 3.0.0b2")
+else:
+    if sys.version_info[:3] < (2, 7, 9):
+        warnings.warn("gmusicapi does not officially support versions below "
+                      "Python 2.7.9", RuntimeWarning)
+    dynamic_requires.append('protobuf >= 2.6.1')  # symbol_database
+
+# try to continue anyway
 
 # This hack is from http://stackoverflow.com/a/7071358/1231454;
 # the version is kept in a seperate file and gets parsed - this
@@ -19,7 +26,7 @@ dynamic_requires = []
 VERSIONFILE = 'gmusicapi/_version.py'
 
 version_line = open(VERSIONFILE).read()
-version_re = r"^__version__ = ['\"]([^'\"]*)['\"]"
+version_re = r"^__version__ = u['\"]([^'\"]*)['\"]"
 match = re.search(version_re, version_line, re.M)
 if match:
     version = match.group(1)
@@ -42,18 +49,18 @@ setup(
         'validictory >= 0.8.0, != 0.9.2',         # error messages
         'decorator >= 3.3.1',                     # > 3.0 likely work, but not on pypi
         'mutagen >= 1.18',                        # EasyID3 module renaming
-        'protobuf >= 2.4.1',                      # 2.3.0 uses ez_setup?
-        'requests >= 1.1.0, != 1.2.0, != 2.2.1',  # session.close
+        'requests >= 1.1.0, != 1.2.0, != 2.2.1, < 2.8.0',  # session.close, memory view TypeError
         'python-dateutil >= 1.3, != 2.0',         # 2.0 is python3-only
         'proboscis >= 1.2.5.1',                   # runs_after
         'oauth2client >= 1.1',                    # TokenRevokeError
         'mock >= 0.7.0',                          # MagicMock
         'appdirs >= 1.1.0',                       # user_log_dir
-        'gpsoauth == 0.0.4',                      # mac -> android_id, validation
+        'gpsoauth == 0.2.0',                      # mac -> android_id, validation, pycryptodome
         'MechanicalSoup',
         'pyopenssl',
         'ndg-httpsclient',
         'pyasn1',
+        'future',
     ] + dynamic_requires,
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -62,6 +69,9 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Multimedia :: Sound/Audio',
         'Topic :: Software Development :: Libraries :: Python Modules',

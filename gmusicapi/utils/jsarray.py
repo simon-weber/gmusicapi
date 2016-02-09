@@ -3,11 +3,15 @@
 """
 Tools to handle Google's ridiculous interchange format.
 """
+from __future__ import print_function, division, absolute_import, unicode_literals
+from future import standard_library
+standard_library.install_aliases()
+from builtins import *  # noqa
 
-from StringIO import StringIO
+from io import StringIO
 from tokenize import generate_tokens
 
-from gmusicapi.compat import json
+import json
 
 
 def to_json(s):

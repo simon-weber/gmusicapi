@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 
 """Calls made by the Music Manager (related to uploading)."""
+from __future__ import print_function, division, absolute_import, unicode_literals
+from future import standard_library
+from future.utils import raise_from
+
+standard_library.install_aliases()
+from builtins import *  # noqa
 
 import base64
 from collections import namedtuple
 import hashlib
+import itertools
 import os
-import sys
 
 import dateutil.parser
 from decorator import decorator
@@ -14,7 +20,7 @@ from google.protobuf.message import DecodeError
 import mutagen
 from oauth2client.client import OAuth2Credentials
 
-from gmusicapi.compat import json
+import json
 from gmusicapi.exceptions import CallFailure
 from gmusicapi.protocol import upload_pb2, locker_pb2, download_pb2
 from gmusicapi.protocol.shared import Call, ParseException, authtypes
@@ -86,9 +92,7 @@ class MmCall(Call):
         try:
             res_msg.ParseFromString(response.content)
         except DecodeError as e:
-            trace = sys.exc_info()[2]
-            raise ParseException(str(e)), None, trace
-            pass
+            raise_from(ParseException(str(e)), e)
 
         return res_msg
 
@@ -175,6 +179,10 @@ class UploadMetadata(MmCall):
         track.client_id = cls.get_track_clientid(filepath)
 
         extension = os.path.splitext(filepath)[1].upper()
+
+        if isinstance(extension, bytes):
+            extension = extension.decode('utf8')
+
         if extension:
             # Trim leading period if it exists (ie extension not empty).
             extension = extension[1:]
@@ -210,12 +218,12 @@ class UploadMetadata(MmCall):
         track.duration_millis = int(audio.info.length * 1000)
 
         try:
-            bitrate = int(audio.info.bitrate / 1000)
+            bitrate = audio.info.bitrate // 1000
         except AttributeError:
             # mutagen doesn't provide bitrate for some lossless formats (eg FLAC), so
             # provide an estimation instead. This shouldn't matter too much;
             # the bitrate will always be > 320, which is the highest scan and match quality.
-            bitrate = (track.estimated_size * 8) / track.duration_millis
+            bitrate = (track.estimated_size * 8) // track.duration_millis
 
         track.original_bit_rate = bitrate
 
@@ -270,9 +278,9 @@ class UploadMetadata(MmCall):
         # Mass-populate the rest of the simple fields.
         # Merge shared and unshared fields into {mutagen: Track}.
         fields = dict(
-            dict((shared, shared) for shared in cls.shared_fields).items() +
-            cls.field_map.items()
-        )
+            itertools.chain(
+                ((shared, shared) for shared in cls.shared_fields),
+                cls.field_map.items()))
 
         for mutagen_f, track_f in fields.items():
             if mutagen_f in audio:
@@ -354,6 +362,10 @@ class GetUploadSession(MmCall):
         """track is a locker_pb2.Track, and the server_id is from a metadata upload."""
         # small info goes inline, big things get their own external PUT.
         # still not sure as to thresholds - I've seen big album art go inline.
+
+        if isinstance(filepath, bytes):
+            filepath = filepath.decode('utf8')
+
         inlined = {
             "title": "jumper-uploader-title-42",
             "ClientId": track.client_id,
@@ -388,7 +400,7 @@ class GetUploadSession(MmCall):
         # Insert the inline info.
         for key in inlined:
             payload = inlined[key]
-            if not isinstance(payload, basestring):
+            if not isinstance(payload, str):
                 payload = str(payload)
 
             message['createSessionRequest']['fields'].append(
@@ -499,8 +511,8 @@ class ProvideSample(MmCall):
             # transcoded into 128kbs mp3. The server dictates where the cut should be made.
             sample_msg.sample = utils.transcode_to_mp3(
                 filepath, quality='128k',
-                slice_start=sample_spec.start_millis / 1000,
-                slice_duration=sample_spec.duration_millis / 1000
+                slice_start=sample_spec.start_millis // 1000,
+                slice_duration=sample_spec.duration_millis // 1000
             )
         else:
             sample_msg.sample = mock_sample

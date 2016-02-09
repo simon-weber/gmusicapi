@@ -37,6 +37,7 @@ That said, it's actively maintained, and powers a bunch of cool projects:
    as well as plugins for 
    `Mopidy <https://github.com/hechtus/mopidy-gmusic>`__ and
    `Squeezebox <https://github.com/hechtus/squeezebox-googlemusic>`__.
+-  enhancements like `autoplaylists <https://github.com/simon-weber/Autoplaylists-for-Google-Music>`__
 
 
 Getting started
@@ -53,6 +54,7 @@ Status and updates
 .. image:: https://travis-ci.org/simon-weber/gmusicapi.png?branch=develop
         :target: https://travis-ci.org/simon-weber/gmusicapi
 
+* February 2016: Python 3 support!
 * September 2015: Google switched to a new music uploading endpoint, breaking uploading for outdated versions of gmusicapi.
 * June 2015: Full mobileclient and webclient functionality was restored.
 * May 2015: Limited mobileclient functionality was restored.
