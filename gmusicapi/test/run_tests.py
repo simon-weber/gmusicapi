@@ -132,12 +132,6 @@ def main():
         # hack: assume we're just running the proboscis local group
         freeze_login_details(*retrieve_auth())
 
-    if 'GM_AA_D_ID' in os.environ:
-        freeze_method_kwargs(
-            Mobileclient,
-            'get_stream_url',
-            device_id=os.environ['GM_AA_D_ID'])
-
     # warnings typically signal a change in protocol,
     # so fail the build if anything >= warning are sent,
     noticer = NoticeLogging()
