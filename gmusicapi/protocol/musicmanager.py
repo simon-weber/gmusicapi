@@ -13,6 +13,7 @@ from collections import namedtuple
 import hashlib
 import itertools
 import os
+from tempfile import NamedTemporaryFile
 
 import dateutil.parser
 from decorator import decorator
@@ -147,15 +148,26 @@ class UploadMetadata(MmCall):
         # converting sum to base64
         # removing trailing ===
 
-        # My implementation is _not_ the same hash the music manager will send;
-        # they strip tags first. But files are differentiated across accounts,
-        # so this shouldn't cause problems.
-
-        # This will attempt to reupload files if their tags change.
-
         m = hashlib.md5()
-        with open(filepath, 'rb') as f:
-            m.update(f.read())
+
+        try:
+            ext = os.path.splitext(filepath)[1]
+
+            # delete=False is needed because the NamedTemporaryFile
+            # can't be opened by name a second time on Windows otherwise.
+            with open(filepath, 'rb') as f, NamedTemporaryFile(suffix=ext, delete=False) as temp:
+                temp.write(f.read())
+
+                audio = mutagen.File(temp.name, easy=True)
+                audio.delete()
+                audio.save()
+
+                m.update(temp.read())
+        finally:
+            try:
+                os.remove(temp.name)
+            except OSError:
+                log.exception("Could not remove temporary file %s", temp.name)
 
         return base64.encodestring(m.digest())[:-3]
 
