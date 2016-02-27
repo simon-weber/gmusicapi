@@ -426,9 +426,6 @@ class Musicmanager(_Base):
         All Google-supported filetypes are supported; see `Google's documentation
         <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1100462>`__.
 
-        Unlike Google's Music Manager, this function will currently allow the same song to
-        be uploaded more than once if its tags are changed. This is subject to change in the future.
-
         If ``PERMANENT_ERROR`` is given as a not_uploaded reason, attempts to reupload will never
         succeed. The file will need to be changed before the server will reconsider it; the easiest
         way is to change metadata tags (it's not important that the tag be uploaded, just that the
