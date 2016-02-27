@@ -118,7 +118,7 @@ class Webclient(_Base):
         form.select("#Email")[0]['value'] = email
 
         response = browser.submit(form, 'https://accounts.google.com/AccountLoginInfo')
-        
+
         try:
             response.raise_for_status()
         except requests.HTTPError:
