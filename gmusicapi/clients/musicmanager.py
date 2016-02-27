@@ -509,10 +509,10 @@ class Musicmanager(_Base):
             if sample_res.response_code == upload_pb2.TrackSampleResponse.MATCHED:
                 self.logger.info("matched '%s' to sid %s", path, sample_res.server_track_id)
 
-                if enable_matching:
-                    matched[path] = sample_res.server_track_id
-                else:
-                    self.logger.exception("'%s' was matched without matching enabled", path)
+                matched[path] = sample_res.server_track_id
+
+                if not enable_matching:
+                    self.logger.error("'%s' was matched without matching enabled", path)
 
             elif sample_res.response_code == upload_pb2.TrackSampleResponse.UPLOAD_REQUESTED:
                 to_upload[sample_res.server_track_id] = (path, track, False)
