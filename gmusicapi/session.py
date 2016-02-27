@@ -116,6 +116,22 @@ class Webclient(_Base):
 
         form = form_candidates[0]
         form.select("#Email")[0]['value'] = email
+
+        response = browser.submit(form, 'https://accounts.google.com/AccountLoginInfo')
+        
+        try:
+            response.raise_for_status()
+        except requests.HTTPError:
+            log.exception("submitting login form failed")
+            return False
+
+        form_candidates = response.soup.select("form")
+        if len(form_candidates) > 1:
+            log.error("Google login form dom has changed; there are %s candidate forms:\n%s",
+                      len(form_candidates), form_candidates)
+            return False
+
+        form = form_candidates[0]
         form.select("#Passwd")[0]['value'] = password
 
         response = browser.submit(form, 'https://accounts.google.com/ServiceLoginAuth')
