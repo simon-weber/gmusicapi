@@ -13,6 +13,7 @@ from collections import namedtuple
 import hashlib
 import itertools
 import os
+import shutil
 from tempfile import NamedTemporaryFile
 
 import dateutil.parser
@@ -156,7 +157,7 @@ class UploadMetadata(MmCall):
             # delete=False is needed because the NamedTemporaryFile
             # can't be opened by name a second time on Windows otherwise.
             with open(filepath, 'rb') as f, NamedTemporaryFile(suffix=ext, delete=False) as temp:
-                temp.write(f.read())
+                shutil.copy(f.name, temp.name)
 
                 audio = mutagen.File(temp.name, easy=True)
                 audio.delete()
