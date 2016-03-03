@@ -171,7 +171,7 @@ class Musicmanager(_Base):
         Return True on success; see :py:func:`login` for params.
         """
 
-        if isinstance(oauth_credentials, str):
+        if isinstance(oauth_credentials, basestring):
             oauth_file = oauth_credentials
             if oauth_file == OAUTH_FILEPATH:
                 utils.make_sure_path_exists(os.path.dirname(OAUTH_FILEPATH), 0o700)
