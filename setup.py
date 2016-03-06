@@ -10,12 +10,12 @@ dynamic_requires = []
 # Python 2.7 is supported. Python 3 support is experimental
 if sys.version_info[0] > 2:
     warnings.warn("gmusicapi Python 3 support is experimental", RuntimeWarning)
-    dynamic_requires.append("protobuf >= 3.0.0b2")
+    dynamic_requires.append("protobuf == 3.0.0b2")
 else:
     if sys.version_info[:3] < (2, 7, 9):
         warnings.warn("gmusicapi does not officially support versions below "
                       "Python 2.7.9", RuntimeWarning)
-    dynamic_requires.append('protobuf >= 2.6.1')  # symbol_database
+    dynamic_requires.append('protobuf >= 2.6.1, <= 3.0.0b2')  # symbol_database
 
 # try to continue anyway
 
