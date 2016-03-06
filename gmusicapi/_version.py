@@ -1,1 +1,1 @@
-__version__ = u"8.0.1-dev"
+__version__ = u"9.0.0"

@@ -5,9 +5,15 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-8.0.1-dev
+9.0.0
 +++++
-released...
+released 2016-03-05
+
+- breaking: attempting to reupload a file after changing only its tags will result in a rejection as a duplicate upload (it used to upload successfully)
+- fix webclient login after Google changes
+- fix ``'str' object has no attribute 'refresh'``
+- prevent upstream protobufs TypeError by locking version
+- a 'matched' value may be returned even if matching is not enabled if we were unable to disallow matching
 
 8.0.0
 +++++
