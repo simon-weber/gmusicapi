@@ -3,7 +3,7 @@
 """Calls made by the web client."""
 from __future__ import print_function, division, absolute_import, unicode_literals
 from future import standard_library
-from future.utils import raise_from
+from six import raise_from
 
 standard_library.install_aliases()
 from builtins import *  # noqa
