@@ -27,6 +27,19 @@ from gmusicapi.utils import utils
 sj_url = 'https://mclients.googleapis.com/sj/v2.4/'
 
 # shared schemas
+sj_image = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'kind': {'type': 'string'},
+        'url': {'type': 'string'},
+        'aspectRatio': {'type': 'string'},
+        'autogen': {'type': 'boolean',
+                    'required': False}
+    }
+}
+
+
 sj_video = {
     'type': 'object',
     'additionalProperties': False,
@@ -230,19 +243,22 @@ sj_station = {
                             'required': False},  # for public
         'clientId': {'type': 'string',
                      'required': False},  # for public
+        'skipEventHistory': {'type': 'array'},  # TODO: What's in this array?
         'seed': sj_station_seed,
+        'stationSeeds': {'type': 'array',
+                         'items': sj_station_seed},
         'id': {'type': 'string',
                'required': False},  # for public
         'description': {'type': 'string', 'required': False},
         'tracks': {'type': 'array', 'required': False, 'items': sj_track},
         'imageUrls': {'type': 'array',
                       'required': False,
-                      'items': {
-                          'type': 'object',
-                          'additionalProperties': False,
-                          'properties': {
-                              'url': {'type': 'string'}},
-                      }},
+                      'items': sj_image
+                      },
+        'compositeArtRefs': {'type': 'array',
+                             'required': False,
+                             'items': sj_image
+                             }
     }
 }
 
