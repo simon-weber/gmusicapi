@@ -672,13 +672,15 @@ class Mobileclient(_Base):
 
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
-                       genre_id=None):
+                       genre_id=None, playlist_token=None):
         """Creates an All Access radio station and returns its id.
 
         :param name: the name of the station to create
         :param \*_id: the id of an item to seed the station from.
-          Exactly one of these params must be provided, or ValueError
-          will be raised.
+        :param playlist_token: The shareToken of a playlist to seed the station from.
+
+        Exactly one of the id/token params must be provided, or ValueError
+        will be raised.
         """
         # TODO could expose include_tracks
 
@@ -700,6 +702,9 @@ class Mobileclient(_Base):
         if genre_id is not None:
             seed['genreId'] = genre_id
             seed['seedType'] = 5
+        if playlist_token is not None:
+            seed['playlistShareToken'] = playlist_token
+            seed['seedType'] = 8
 
         if len(seed) > 2:
             raise ValueError('exactly one {track,artist,album,genre}_id must be provided')
