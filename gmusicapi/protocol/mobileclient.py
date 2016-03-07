@@ -96,6 +96,8 @@ sj_track = {
         'lastRatingChangeTimestamp': {'type': 'string', 'required': False},
         'primaryVideo': sj_video.copy(),
         'lastModifiedTimestamp': {'type': 'string', 'required': False},
+        'explicitType': {'type': 'string', 'required': False},
+        'contentType': {'type': 'string', 'required': False}
     }
 }
 sj_track['properties']['primaryVideo']['required'] = False
@@ -136,6 +138,8 @@ sj_playlist = {
         'description': {'type': 'string',
                         'blank': True,
                         'required': False},
+        'explicitType': {'type': 'string', 'required': False},
+        'contentType': {'type': 'string', 'required': False}
     }
 }
 
@@ -186,6 +190,8 @@ sj_album = {
         'tracks': {'type': 'array', 'items': sj_track, 'required': False},
         'description': {'type': 'string', 'required': False},
         'description_attribution': sj_attribution.copy(),
+        'explicitType': {'type': 'string', 'required': False},
+        'contentType': {'type': 'string', 'required': False}
     }
 }
 sj_album['properties']['description_attribution']['required'] = False
