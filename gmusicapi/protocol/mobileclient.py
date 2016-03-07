@@ -24,7 +24,7 @@ from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
 # URL for sj service
-sj_url = 'https://mclients.googleapis.com/sj/v1.11/'
+sj_url = 'https://mclients.googleapis.com/sj/v2.4/'
 
 # shared schemas
 sj_video = {
