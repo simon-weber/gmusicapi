@@ -222,7 +222,7 @@ class Call(with_metaclass(BuildRequestMeta, object)):
 
                 if cls.gets_logged:
                     err_msg += "\n(requests kwargs: %r)" % (safe_req_kwargs)
-                    err_msg += "\n(response was: %r)" % response.content
+                    err_msg += "\n(response was: %r)" % response.text
 
                 raise CallFailure(err_msg, call_name)
 
@@ -233,8 +233,8 @@ class Call(with_metaclass(BuildRequestMeta, object)):
                        " The call may still have succeeded, but it's unlikely.")
             if cls.gets_logged:
                 err_msg += "\n(requests kwargs: %r)" % (safe_req_kwargs)
-                err_msg += "\n(response was: %r)" % response.content
-                log.exception("could not parse %s response: %r", call_name, response.content)
+                err_msg += "\n(response was: %r)" % response.text
+                log.exception("could not parse %s response: %r", call_name, response.text)
             else:
                 log.exception("could not parse %s response: (omitted)", call_name)
 
@@ -258,7 +258,7 @@ class Call(with_metaclass(BuildRequestMeta, object)):
                        "(response was: {content!r})").format(
                            e_message=e.message,
                            req_kwargs=safe_req_kwargs,
-                           content=response.content)
+                           content=response.text)
             raise_from(CallFailure(err_msg, e.callname), e)
 
         except ValidationException as e:
@@ -267,7 +267,7 @@ class Call(with_metaclass(BuildRequestMeta, object)):
             err_msg += "\n\n%s\n" % e
 
             if cls.gets_logged:
-                raw_response = response.content
+                raw_response = response.text
 
                 if len(raw_response) > 10000:
                     raw_response = raw_response[:10000] + '...'
