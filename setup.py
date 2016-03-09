@@ -60,7 +60,7 @@ setup(
         'pyopenssl',
         'ndg-httpsclient',
         'pyasn1',
-        'six',                                    # raise_from on Python 3
+        'six >= 1.9.0',                           # raise_from on Python 3
         'future',
     ] + dynamic_requires,
     classifiers=[
