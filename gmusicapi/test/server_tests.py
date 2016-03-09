@@ -373,7 +373,8 @@ class ClientTests(object):
                                ('up song', {'track_id': self.user_songs[0].sid}),
                                ('artist', {'artist_id': TEST_AA_ARTIST_ID}),
                                ('album', {'album_id': TEST_AA_ALBUM_ID}),
-                               ('genre', {'genre_id': TEST_AA_GENRE_ID})):
+                               ('genre', {'genre_id': TEST_AA_GENRE_ID}),
+                               ('playlist', {'playlist_token': TEST_PLAYLIST_SHARETOKEN})):
             station_ids.append(
                 self.mc.create_station(prefix + ' ' + TEST_STATION_NAME, **kwargs))
 
