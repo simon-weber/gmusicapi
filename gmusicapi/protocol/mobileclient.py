@@ -24,9 +24,22 @@ from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
 # URL for sj service
-sj_url = 'https://mclients.googleapis.com/sj/v1.11/'
+sj_url = 'https://mclients.googleapis.com/sj/v2.4/'
 
 # shared schemas
+sj_image = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'kind': {'type': 'string'},
+        'url': {'type': 'string'},
+        'aspectRatio': {'type': 'string'},
+        'autogen': {'type': 'boolean',
+                    'required': False}
+    }
+}
+
+
 sj_video = {
     'type': 'object',
     'additionalProperties': False,
@@ -83,6 +96,8 @@ sj_track = {
         'lastRatingChangeTimestamp': {'type': 'string', 'required': False},
         'primaryVideo': sj_video.copy(),
         'lastModifiedTimestamp': {'type': 'string', 'required': False},
+        'explicitType': {'type': 'string', 'required': False},
+        'contentType': {'type': 'string', 'required': False}
     }
 }
 sj_track['properties']['primaryVideo']['required'] = False
@@ -123,6 +138,8 @@ sj_playlist = {
         'description': {'type': 'string',
                         'blank': True,
                         'required': False},
+        'explicitType': {'type': 'string', 'required': False},
+        'contentType': {'type': 'string', 'required': False}
     }
 }
 
@@ -173,6 +190,8 @@ sj_album = {
         'tracks': {'type': 'array', 'items': sj_track, 'required': False},
         'description': {'type': 'string', 'required': False},
         'description_attribution': sj_attribution.copy(),
+        'explicitType': {'type': 'string', 'required': False},
+        'contentType': {'type': 'string', 'required': False}
     }
 }
 sj_album['properties']['description_attribution']['required'] = False
@@ -184,6 +203,9 @@ sj_artist = {
         'kind': {'type': 'string'},
         'name': {'type': 'string'},
         'artistArtRef': {'type': 'string', 'required': False},
+        'artistArtRefs': {'type': 'array',
+                          'items': sj_image,
+                          'required': False},
         'artistBio': {'type': 'string', 'required': False},
         'artistId': {'type': 'string', 'blank': True, 'required': False},
         'albums': {'type': 'array', 'items': sj_album, 'required': False},
@@ -230,19 +252,22 @@ sj_station = {
                             'required': False},  # for public
         'clientId': {'type': 'string',
                      'required': False},  # for public
+        'skipEventHistory': {'type': 'array'},  # TODO: What's in this array?
         'seed': sj_station_seed,
+        'stationSeeds': {'type': 'array',
+                         'items': sj_station_seed},
         'id': {'type': 'string',
                'required': False},  # for public
         'description': {'type': 'string', 'required': False},
         'tracks': {'type': 'array', 'required': False, 'items': sj_track},
         'imageUrls': {'type': 'array',
                       'required': False,
-                      'items': {
-                          'type': 'object',
-                          'additionalProperties': False,
-                          'properties': {
-                              'url': {'type': 'string'}},
-                      }},
+                      'items': sj_image
+                      },
+        'compositeArtRefs': {'type': 'array',
+                             'required': False,
+                             'items': sj_image
+                             }
     }
 }
 
