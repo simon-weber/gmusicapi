@@ -256,7 +256,7 @@ class Call(with_metaclass(BuildRequestMeta, object)):
             err_msg = ("{e_message}\n"
                        "(requests kwargs: {req_kwargs!r})\n"
                        "(response was: {content!r})").format(
-                           e_message=e.message,
+                           e_message=str(e),
                            req_kwargs=safe_req_kwargs,
                            content=response.text)
             raise_from(CallFailure(err_msg, e.callname), e)
