@@ -11,6 +11,7 @@ from uuid import getnode as getmac
 
 from gmusicapi import session
 from gmusicapi.clients.shared import _Base
+from gmusicapi.exceptions import NotSubscribed
 from gmusicapi.protocol import mobileclient
 from gmusicapi.utils import utils
 
@@ -286,6 +287,9 @@ class Mobileclient(_Base):
         <gmusicapi.clients.Musicmanager.download_song>`
         to download files with metadata.
         """
+
+        if song_id.startswith('T') and not self.is_subscribed:
+            raise NotSubscribed("Store tracks require a subscription to stream.")
 
         if device_id is None:
             device_id = self.android_id
