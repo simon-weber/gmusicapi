@@ -510,7 +510,7 @@ def transcode_to_mp3(filepath, quality='320k', slice_start=None, slice_duration=
 
     except (OSError, IOError) as e:
 
-        err_msg = "transcoding command (%s) failed: %s. " % (' '.join(cmd), e)
+        err_msg = "transcoding command (%r) failed: %s. " % (' '.join(cmd), e)
 
         if 'No such file or directory' in str(e):
             err_msg += '\nffmpeg or avconv must be installed and in the system path.'

@@ -168,7 +168,7 @@ class UploadMetadata(MmCall):
             try:
                 os.remove(temp.name)
             except OSError:
-                log.exception("Could not remove temporary file %s", temp.name)
+                log.exception("Could not remove temporary file %r", temp.name)
 
         return base64.encodestring(m.digest())[:-3]
 
@@ -248,7 +248,7 @@ class UploadMetadata(MmCall):
             success = utils.pb_set(msg, field_name, val)
 
             if not success:
-                log.info("could not pb_set track.%s = %r for '%s'", field_name, val, filepath)
+                log.info("could not pb_set track.%s = %r for '%r'", field_name, val, filepath)
 
             return success
 
@@ -271,7 +271,7 @@ class UploadMetadata(MmCall):
             except (ValueError, TypeError) as e:
                 # TypeError provides compatibility with:
                 #  https://bugs.launchpad.net/dateutil/+bug/1247643
-                log.warning("could not parse date md for '%s': (%s)", filepath, e)
+                log.warning("could not parse date md for '%r': (%s)", filepath, e)
             else:
                 track_set('year', datetime.year)
 

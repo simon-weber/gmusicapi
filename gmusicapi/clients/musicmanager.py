@@ -179,7 +179,7 @@ class Musicmanager(_Base):
 
             oauth_credentials = storage.get()
             if oauth_credentials is None:
-                self.logger.warning("could not retrieve oauth credentials from '%s'", oauth_file)
+                self.logger.warning("could not retrieve oauth credentials from '%r'", oauth_file)
                 return False
 
         if not self.session.login(oauth_credentials):
@@ -495,7 +495,7 @@ class Musicmanager(_Base):
                                       self.uploader_id, bogus_sample)
 
             except (IOError, ValueError) as e:
-                self.logger.warning("couldn't create scan and match sample for '%s': %s",
+                self.logger.warning("couldn't create scan and match sample for '%r': %s",
                                     path, str(e))
                 not_uploaded[path] = str(e)
             else:
@@ -507,12 +507,12 @@ class Musicmanager(_Base):
             path, track = local_info[sample_res.client_track_id]
 
             if sample_res.response_code == upload_pb2.TrackSampleResponse.MATCHED:
-                self.logger.info("matched '%s' to sid %s", path, sample_res.server_track_id)
+                self.logger.info("matched '%r' to sid %s", path, sample_res.server_track_id)
 
                 matched[path] = sample_res.server_track_id
 
                 if not enable_matching:
-                    self.logger.error("'%s' was matched without matching enabled", path)
+                    self.logger.error("'%r' was matched without matching enabled", path)
 
             elif sample_res.response_code == upload_pb2.TrackSampleResponse.UPLOAD_REQUESTED:
                 to_upload[sample_res.server_track_id] = (path, track, False)
@@ -531,7 +531,7 @@ class Musicmanager(_Base):
                     # tests - being surrounded by parens is how it's matched
                     err_msg += "(%s)" % sample_res.server_track_id
 
-                self.logger.warning("upload of '%s' rejected: %s", path, err_msg)
+                self.logger.warning("upload of '%r' rejected: %s", path, err_msg)
                 not_uploaded[path] = err_msg
 
         # Send upload requests.
@@ -554,7 +554,7 @@ class Musicmanager(_Base):
                         musicmanager.GetUploadSession.process_session(session)
 
                     if got_session:
-                        self.logger.info("got an upload session for '%s'", path)
+                        self.logger.info("got an upload session for '%r'", path)
                         break
 
                     should_retry, reason, error_code = error_details
@@ -570,7 +570,7 @@ class Musicmanager(_Base):
                 else:
                     err_msg = "GetUploadSession error %s: %s" % (error_code, reason)
 
-                    self.logger.warning("giving up on upload session for '%s': %s", path, err_msg)
+                    self.logger.warning("giving up on upload session for '%r': %s", path, err_msg)
                     not_uploaded[path] = err_msg
 
                     continue  # to next upload
@@ -585,10 +585,10 @@ class Musicmanager(_Base):
 
                 if track.original_content_type != locker_pb2.Track.MP3:
                     try:
-                        self.logger.info("transcoding '%s' to mp3", path)
+                        self.logger.info("transcoding '%r' to mp3", path)
                         contents = utils.transcode_to_mp3(path, quality=transcode_quality)
                     except (IOError, ValueError) as e:
-                        self.logger.warning("error transcoding %s: %s", path, e)
+                        self.logger.warning("error transcoding %r: %s", path, e)
                         not_uploaded[path] = "transcoding error: %s" % e
                         continue
                 else:
@@ -603,7 +603,7 @@ class Musicmanager(_Base):
                     uploaded[path] = server_id
                 else:
                     # 404 == already uploaded? serverside check on clientid?
-                    self.logger.debug("could not finalize upload of '%s'. response: %s",
+                    self.logger.debug("could not finalize upload of '%r'. response: %s",
                                       path, upload_response)
                     not_uploaded[path] = 'could not finalize upload; details in log'
 
