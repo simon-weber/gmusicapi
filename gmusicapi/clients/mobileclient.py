@@ -173,7 +173,7 @@ class Mobileclient(_Base):
         Set it to ``'0'`` (no thumb), ``'1'`` (down thumb), or ``'5'`` (up thumb)
         unless you're using the 5-star ratings lab.
 
-        You can also use this to rate All Access tracks
+        You can also use this to rate store tracks
         that aren't in your library, eg::
 
             song = mc.get_track_info('<some store track id>')
@@ -194,7 +194,7 @@ class Mobileclient(_Base):
     def increment_song_playcount(self, song_id, plays=1, playtime=None):
         """Increments a song's playcount and returns its song id.
 
-        :params song_id: a song id. Providing the id of an AA track
+        :params song_id: a song id. Providing the id of a store track
           that has been added to the library will *not* increment the
           corresponding library song's playcount. To do this, use the
           'id' field (which looks like a uuid and doesn't begin with 'T'),
@@ -342,7 +342,7 @@ class Mobileclient(_Base):
         :param name: the desired title.
           Creating multiple playlists with the same name is allowed.
         :param description: (optional) the desired description
-        :param public: if True, create a public All Access playlist.
+        :param public: (optional) if True and the user has a subscription, share playlist.
         """
 
         share_state = 'PUBLIC' if public else 'PRIVATE'
@@ -362,7 +362,7 @@ class Mobileclient(_Base):
         :param playlist_id: the id of the playlist
         :param new_name: (optional) desired title
         :param new_description: (optional) desired description
-        :param public: (optional) if True and the user has All Access, share playlist.
+        :param public: (optional) if True and the user has a subscription, share playlist.
         """
 
         if all(value is None for value in (new_name, new_description, public)):
@@ -448,7 +448,7 @@ class Mobileclient(_Base):
 
     def get_shared_playlist_contents(self, share_token):
         """
-        Retrieves the contents of a public All Access playlist.
+        Retrieves the contents of a public playlist.
 
         :param share_token: from ``playlist['shareToken']``, or a playlist share
           url (``https://play.google.com/music/playlist/<token>``).
@@ -684,7 +684,7 @@ class Mobileclient(_Base):
     def get_promoted_songs(self):
         """Returns a list of dictionaries that each represent a track.
 
-        Only All Access tracks will be returned.
+        Only store tracks will be returned.
 
         Promoted tracks are determined in an unknown fashion,
         but positively-rated library tracks are common.
@@ -699,7 +699,7 @@ class Mobileclient(_Base):
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
                        genre_id=None, playlist_token=None):
-        """Creates an All Access radio station and returns its id.
+        """Creates a radio station and returns its id.
 
         :param name: the name of the station to create
         :param \*_id: the id of an item to seed the station from.
@@ -745,7 +745,7 @@ class Mobileclient(_Base):
     @utils.enforce_ids_param
     @utils.empty_arg_shortcircuit
     def delete_stations(self, station_ids):
-        """Deletes All Access radio stations and returns their ids.
+        """Deletes radio stations and returns their ids.
 
         :param station_ids: a single id, or a list of ids to delete
         """
@@ -1008,13 +1008,10 @@ class Mobileclient(_Base):
     def get_artist_info(self, artist_id, include_albums=True, max_top_tracks=5, max_rel_artist=5):
         """Retrieves details on an artist.
 
-        :param artist_id: an All Access artist id (hint: they always start with 'A')
+        :param artist_id: an artist id (hint: they always start with 'A')
         :param include_albums: when True, create the ``'albums'`` substructure
         :param max_top_tracks: maximum number of top tracks to retrieve
         :param max_rel_artist: maximum number of related artists to retrieve
-
-        Using this method without an All Access subscription will always result in
-        CallFailure being raised.
 
         Returns a dict, eg::
 
@@ -1126,11 +1123,8 @@ class Mobileclient(_Base):
     def get_album_info(self, album_id, include_tracks=True):
         """Retrieves details on an album.
 
-        :param album_id: an All Access album id (hint: they always start with 'B')
+        :param album_id: an album id (hint: they always start with 'B')
         :param include_tracks: when True, create the ``'tracks'`` substructure
-
-        Using this method without an All Access subscription will always result in
-        CallFailure being raised.
 
         Returns a dict, eg::
 
@@ -1179,10 +1173,7 @@ class Mobileclient(_Base):
     def get_track_info(self, store_track_id):
         """Retrieves information about a store track.
 
-        :param store_track_id: an All Access track id (hint: they always start with 'T')
-
-        Using this method without an All Access subscription will always result in
-        CallFailure being raised.
+        :param store_track_id: a store track id (hint: they always start with 'T')
 
         Returns a dict, eg::
 
@@ -1222,9 +1213,6 @@ class Mobileclient(_Base):
           will be returned. By default, all root genres are returned.
           If this id is invalid, an empty list will be returned.
 
-        Using this method without an All Access subscription will always result in
-        CallFailure being raised.
-
         Returns a list of dicts of the form, eg::
 
             {
@@ -1246,7 +1234,7 @@ class Mobileclient(_Base):
             }
 
         Note that the id can be used with :func:`create_station`
-        to seed an All Access radio station.
+        to seed a radio station.
         """
 
         res = self._make_call(mobileclient.GetGenres, parent_genre_id)
