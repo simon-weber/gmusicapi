@@ -32,6 +32,28 @@ class Mobileclient(_Base):
                                            validate,
                                            verify_ssl)
 
+    @utils.cached_property(ttl=600)
+    def is_subscribed(self):
+        """Returns the subscription status of the Google Music account.
+
+        Result is cached with a TTL of 10 minutes. To get live status before the TTL
+        is up, delete the ``is_subscribed`` property of the Mobileclient instance.
+
+            >>> mc = Mobileclient()
+            >>> mc.is_subscribed  # Live status.
+            >>> mc.is_subscribed  # Cached status.
+            >>> del mc.is_subscribed  # Delete is_subscribed property.
+            >>> mc.is_subscribed  # Live status.
+        """
+
+        res = self._make_call(mobileclient.Config)
+
+        for item in res['data']['entries']:
+            if item['key'] == 'isNautilusUser' and item['value'] == 'true':
+                return True
+        else:
+            return False
+
     def login(self, email, password, android_id):
         """Authenticates the Mobileclient.
         Returns ``True`` on success, ``False`` on failure.

@@ -445,6 +445,36 @@ class McBatchMutateCall(McCall):
                               cls.__name__)
 
 
+class Config(McCall):
+    static_method = 'GET'
+    static_url = sj_url + 'config'
+
+    # dv is a required param of type int.
+    # Using 0 seems to work without issue.
+    static_params = {'dv': 0}
+
+    item_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'kind': {'type': 'string'},
+            'key': {'type': 'string'},
+            'value': {'type': 'string'}
+        }
+    }
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'kind': {'type': 'string'},
+            'data': {'type': 'object',
+                     'entries': {'type': 'array', 'items': item_schema},
+                     }
+        }
+    }
+
+
 class Search(McCall):
     """Search for All Access tracks."""
     static_method = 'GET'
