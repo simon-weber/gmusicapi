@@ -28,7 +28,7 @@ from google.protobuf.descriptor import FieldDescriptor
 
 from gmusicapi import __version__
 from gmusicapi.appdirs import my_appdirs
-from gmusicapi.exceptions import CallFailure, GmusicapiWarning
+from gmusicapi.exceptions import CallFailure, GmusicapiWarning, NotSubscribed
 
 # this controls the crazy logging setup that checks the callstack;
 #  it should be monkey-patched to False after importing to disable it.
@@ -619,6 +619,16 @@ def accept_singleton(expected_type, position=1):
         return function(*args, **kw)
 
     return wrapper
+
+
+@decorator
+def require_subscription(function, *args, **kwargs):
+    self = args[0]
+
+    if not self.is_subscribed:
+        raise NotSubscribed("%s requires a subscription." % func.__name__)
+
+    return function(*args, **kwargs)
 
 
 # Modification of recipe found at https://wiki.python.org/moin/PythonDecoratorLibrary#Cached_Properties.
