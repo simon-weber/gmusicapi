@@ -39,22 +39,22 @@ TEST_PLAYLIST_NAME = 'gmusicapi_test_playlist'
 TEST_PLAYLIST_DESCRIPTION = 'gmusicapi test playlist'
 TEST_STATION_NAME = 'gmusicapi_test_station'
 
-TEST_AA_GENRE_ID = 'METAL'
+TEST_STORE_GENRE_ID = 'METAL'
 
 # that dumb little intro track on Conspiracy of One,
 # picked since it's only a few seconds long
-TEST_AA_SONG_ID = 'Tqqufr34tuqojlvkolsrwdwx7pe'
+TEST_STORE_SONG_ID = 'Tqqufr34tuqojlvkolsrwdwx7pe'
 
 # used for testing streaming.
 # differences between clients are presumably from stream quality.
-TEST_AA_SONG_WC_HASH = 'c3302fe6bd54ce9b310f92da1904f3b9'
-TEST_AA_SONG_MC_HASH = '815c49d3e49eea675d198a2e00aa4c40'
+TEST_STORE_SONG_WC_HASH = 'c3302fe6bd54ce9b310f92da1904f3b9'
+TEST_STORE_SONG_MC_HASH = '815c49d3e49eea675d198a2e00aa4c40'
 
 # Amorphis
-TEST_AA_ARTIST_ID = 'Apoecs6off3y6k4h5nvqqos4b5e'
+TEST_STORE_ARTIST_ID = 'Apoecs6off3y6k4h5nvqqos4b5e'
 
 # Holographic Universe
-TEST_AA_ALBUM_ID = 'B4cao5ms5jjn36notfgnhjtguwa'
+TEST_STORE_ALBUM_ID = 'B4cao5ms5jjn36notfgnhjtguwa'
 
 # this is owned by my test account, so it shouldn't disappear
 TEST_PLAYLIST_SHARETOKEN = ('AMaBXymHAkflgs5lvFAUyyQLYelqqMZNAB4v7Y_-'
@@ -122,7 +122,7 @@ class ClientTests(object):
 
     # both are [TestSong]
     user_songs = None
-    aa_songs = None
+    store_songs = None
 
     playlist_ids = None
     plentry_ids = None
@@ -130,7 +130,7 @@ class ClientTests(object):
 
     @property
     def all_songs(self):
-        return (self.user_songs or []) + (self.aa_songs or [])
+        return (self.user_songs or []) + (self.store_songs or [])
 
     def mc_get_playlist_songs(self, plid):
         """For convenience, since mc can only get all playlists at once."""
@@ -243,10 +243,10 @@ class ClientTests(object):
     @test
     def song_create(self):
         # This can create more than one song: one through uploading, one through
-        # adding an AA track to the library.
+        # adding a store track to the library.
 
         user_sids = []
-        aa_sids = []
+        store_sids = []
 
         fname = test_utils.small_mp3
 
@@ -267,13 +267,13 @@ class ClientTests(object):
         user_sids.append(uploaded[fname])
 
         if test_all_access_features():
-            aa_sids.append(self.mc.add_aa_track(TEST_AA_SONG_ID))
+            store_sids.append(self.mc.add_store_track(TEST_STORE_SONG_ID))
 
         # we test get_all_songs here so that we can assume the existance
         # of the song for future tests (the servers take time to sync an upload)
 
         self.user_songs = self.assert_songs_state(self.mc.get_all_songs, user_sids, present=True)
-        self.aa_songs = self.assert_songs_state(self.mc.get_all_songs, aa_sids, present=True)
+        self.store_songs = self.assert_songs_state(self.mc.get_all_songs, store_sids, present=True)
 
     @test
     def playlist_create(self):
@@ -302,7 +302,7 @@ class ClientTests(object):
         # duplicate song_id case
         double_id = self.user_songs[0].sid
         if test_all_access_features():
-            double_id = TEST_AA_SONG_ID
+            double_id = TEST_STORE_SONG_ID
 
         song_ids += [double_id] * 2
 
@@ -365,15 +365,15 @@ class ClientTests(object):
     @test
     def station_create(self):
         if not test_all_access_features():
-            raise SkipTest('AA testing not enabled')
+            raise SkipTest('Subscription testing not enabled')
 
         station_ids = []
-        for prefix, kwargs in (('AA song', {'track_id': TEST_AA_SONG_ID}),
-                               ('AA-added song', {'track_id': self.aa_songs[0].sid}),
+        for prefix, kwargs in (('Store song', {'track_id': TEST_STORE_SONG_ID}),
+                               ('Store-added song', {'track_id': self.store_songs[0].sid}),
                                ('up song', {'track_id': self.user_songs[0].sid}),
-                               ('artist', {'artist_id': TEST_AA_ARTIST_ID}),
-                               ('album', {'album_id': TEST_AA_ALBUM_ID}),
-                               ('genre', {'genre_id': TEST_AA_GENRE_ID}),
+                               ('artist', {'artist_id': TEST_STORE_ARTIST_ID}),
+                               ('album', {'album_id': TEST_STORE_ALBUM_ID}),
+                               ('genre', {'genre_id': TEST_STORE_GENRE_ID}),
                                ('playlist', {'playlist_token': TEST_PLAYLIST_SHARETOKEN})):
             station_ids.append(
                 self.mc.create_station(prefix + ' ' + TEST_STATION_NAME, **kwargs))
@@ -421,7 +421,7 @@ class ClientTests(object):
           always_run=True)
     def song_delete(self):
         # split deletion between wc and mc
-        # mc is the only to run if AA testing not enabled
+        # mc is only to run if subscription testing not enabled
         with Check() as check:
             for i, testsong in enumerate(self.all_songs):
                 if True:
@@ -457,7 +457,7 @@ class ClientTests(object):
     def mm_list_new_songs(self):
         # mm only includes user-uploaded songs
         self.assert_songs_state(self.mm.get_uploaded_songs, sids(self.user_songs), present=True)
-        self.assert_songs_state(self.mm.get_uploaded_songs, sids(self.aa_songs), present=False)
+        self.assert_songs_state(self.mm.get_uploaded_songs, sids(self.store_songs), present=False)
 
     @test
     def mm_list_songs_inc_equal(self):
@@ -502,24 +502,24 @@ class ClientTests(object):
 
     # @test
     # @all_access
-    # def wc_get_aa_stream_urls(self):
-    #     urls = self.wc.get_stream_urls(TEST_AA_SONG_ID)
+    # def wc_get_store_stream_urls(self):
+    #     urls = self.wc.get_stream_urls(TEST_STORE_SONG_ID)
 
     #     assert_true(len(urls) > 1)
 
     # @test
     # @all_access
-    # def wc_stream_aa_track_with_header(self):
-    #     audio = self.wc.get_stream_audio(TEST_AA_SONG_ID, use_range_header=True)
+    # def wc_stream_store_track_with_header(self):
+    #     audio = self.wc.get_stream_audio(TEST_STORE_SONG_ID, use_range_header=True)
 
-    #     assert_equal(md5(audio).hexdigest(), TEST_AA_SONG_WC_HASH)
+    #     assert_equal(md5(audio).hexdigest(), TEST_STORE_SONG_WC_HASH)
 
     # @test
     # @all_access
-    # def wc_stream_aa_track_without_header(self):
-    #     audio = self.wc.get_stream_audio(TEST_AA_SONG_ID, use_range_header=False)
+    # def wc_stream_store_track_without_header(self):
+    #     audio = self.wc.get_stream_audio(TEST_STORE_SONG_ID, use_range_header=False)
 
-    #     assert_equal(md5(audio).hexdigest(), TEST_AA_SONG_WC_HASH)
+    #     assert_equal(md5(audio).hexdigest(), TEST_STORE_SONG_WC_HASH)
 
     # @song_test
     # def wc_get_download_info(self):
@@ -568,10 +568,10 @@ class ClientTests(object):
 
     @test
     @all_access
-    def mc_stream_aa_track(self):
-        url = self.mc.get_stream_url(TEST_AA_SONG_ID)  # uses frozen device_id
+    def mc_stream_store_track(self):
+        url = self.mc.get_stream_url(TEST_STORE_SONG_ID)  # uses frozen device_id
         audio = self.mc.session._rsession.get(url).content
-        assert_equal(md5(audio).hexdigest(), TEST_AA_SONG_MC_HASH)
+        assert_equal(md5(audio).hexdigest(), TEST_STORE_SONG_MC_HASH)
 
     @song_test
     def mc_get_uploaded_track_stream_url(self):
@@ -608,7 +608,7 @@ class ClientTests(object):
     # @test
     # @all_access
     # def mc_change_store_song_rating(self):
-    #     song = self.mc.get_track_info(TEST_AA_SONG_ID)
+    #     song = self.mc.get_track_info(TEST_STORE_SONG_ID)
 
     #     # increment by one but keep in rating range
     #     song['rating'] = int(song.get('rating', '0')) + 1
@@ -616,7 +616,7 @@ class ClientTests(object):
 
     #     self.mc.change_song_metadata(song)
 
-    #     self._assert_song_key_equal_to(lambda: self.mc.get_track_info(TEST_AA_SONG_ID),
+    #     self._assert_song_key_equal_to(lambda: self.mc.get_track_info(TEST_STORE_SONG_ID),
     #                              id_or_nid(song),
     #                              song['rating'])
 
@@ -640,7 +640,7 @@ class ClientTests(object):
     @all_access
     @retry
     def mc_get_promoted_songs(self):
-        song = self.mc.get_track_info(TEST_AA_SONG_ID)
+        song = self.mc.get_track_info(TEST_STORE_SONG_ID)
 
         song['rating'] = '5'
         self.mc.change_song_metadata(song)
@@ -674,7 +674,7 @@ class ClientTests(object):
     # Fails silently. See https://github.com/simon-weber/gmusicapi/issues/349.
     # @song_test
     # @all_access
-    # def mc_increment_aa_song_playcount(self):
+    # def mc_increment_store_song_playcount(self):
     #     self._test_increment_playcount(self.all_songs[1].sid)
 
     @song_test
@@ -862,7 +862,7 @@ class ClientTests(object):
             # used to assert that at least 1 track came back, but
             # our dummy uploaded track won't match anything
             self.mc.get_station_tracks(station_id, num_tracks=1,
-                                       recently_played_ids=[TEST_AA_SONG_ID])
+                                       recently_played_ids=[TEST_STORE_SONG_ID])
             self.mc.get_station_tracks(station_id, num_tracks=1,
                                        recently_played_ids=[self.user_songs[0].sid])
 
@@ -873,11 +873,12 @@ class ClientTests(object):
 
     @test(groups=['search'])
     @all_access
-    def mc_search_aa_no_playlists(self):
-        res = self.mc.search_all_access('amorphis', max_results=100)
+    def mc_search_store_no_playlists_no_situations(self):
+        res = self.mc.search('amorphis', max_results=100)
 
-        # TODO is there a search query that will consistently get playlist results?
+        # TODO is there a search query that will consistently get playlist/situation results?
         res.pop('playlist_hits')
+        res.pop('situation_hits')
 
         with Check() as check:
             for type_, hits in res.items():
@@ -910,8 +911,8 @@ class ClientTests(object):
     @retry
     @all_access
     def mc_album_info(self):
-        include_tracks = self.mc.get_album_info(TEST_AA_ALBUM_ID, include_tracks=True)
-        no_tracks = self.mc.get_album_info(TEST_AA_ALBUM_ID, include_tracks=False)
+        include_tracks = self.mc.get_album_info(TEST_STORE_ALBUM_ID, include_tracks=True)
+        no_tracks = self.mc.get_album_info(TEST_STORE_ALBUM_ID, include_tracks=False)
 
         with Check() as check:
             check.true('tracks' in include_tracks)
@@ -923,7 +924,7 @@ class ClientTests(object):
     @test
     @all_access
     def mc_track_info(self):
-        self.mc.get_track_info(TEST_AA_SONG_ID)  # just for the schema
+        self.mc.get_track_info(TEST_STORE_SONG_ID)  # just for the schema
 
     @test(groups=['genres'])
     @all_access
