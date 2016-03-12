@@ -4,7 +4,7 @@ The more details you can give, the better. The tail of your `gmusicapi.log` ofte
 ## Building docs locally
 [Sphinx](http://sphinx-doc.org/) is used to generate the docs, and they can be built locally if you'd like to view your edits.
 
-First, get a dev environment set up (if you're unsure, there are steps below). Then, install Sphinx: `pip install sphinx`.
+First, get a dev environment set up (if you're unsure, there are steps below). Then, install Sphinx: `pip install sphinx sphinx_rtd_theme`.
 
 Building the docs requires make: `cd docs`, then `make html`.
 

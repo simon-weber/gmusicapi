@@ -15,6 +15,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 from gmusicapi import __version__
 
@@ -91,15 +92,26 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+if not on_rtd:
+    # Try to use the ReadTheDocs theme if installed.
+    # Default to the default alabaster theme if not.
+    try:
+        import sphinx_rtd_theme
+        html_theme = 'sphinx_rtd_theme'
+        html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+    except ImportError:
+        html_theme = 'alabaster'
+else:
+    # Set theme to 'default' for ReadTheDocs.
+    html_theme = 'default'
+
+# Add any paths that contain custom themes here, relative to this directory.
+#html_theme_path = []
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #html_theme_options = {}
-
-# Add any paths that contain custom themes here, relative to this directory.
-#html_theme_path = []
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
