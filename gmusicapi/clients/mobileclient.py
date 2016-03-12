@@ -828,168 +828,174 @@ class Mobileclient(_Base):
 
         return stations[0].get('tracks', [])
 
-    def search_all_access(self, query, max_results=50):
-        """Queries the server for All Access songs, artists, albums, shared playlists and stations.
-
-        Using this method without an All Access subscription will always result in
-        CallFailure being raised.
+    def search(self, query, max_results=50):
+        """Queries Google Music for content.
 
         :param query: a string keyword to search with. Capitalization and punctuation are ignored.
         :param max_results: Maximum number of items to be retrieved
 
-        The results are returned in a dictionary, arranged by how they were found.
-        Here are example results for a search on ``'Amorphis'``::
+        The results are returned in a dictionary with keys:
+        ``album_hits, artist_hits, playlist_hits, situation_hits,
+        song_hits, station_hits, video_hits``
+        containing lists of results of that type.
+
+        Here is a sample of results for a search of ``'workout'``::
 
             {
-               'album_hits':[
-                  {
-                     'album':{
-                        'albumArtRef':'http://lh6.ggpht.com/...',
-                        'albumId':'Bfr2onjv7g7tm4rzosewnnwxxyy',
-                        'artist':'Amorphis',
-                        'artistId':[
-                           'Apoecs6off3y6k4h5nvqqos4b5e'
+                'album_hits': [{
+                    'album': {
+                        'albumArtRef': 'http://lh5.ggpht.com/DVIg4GiD6msHfgPs_Vu_2eRxCyAoz0fF...',
+                        'albumArtist': 'J.Cole',
+                        'albumId': 'Bfp2tuhynyqppnp6zennhmf6w3y',
+                        'artist': 'J.Cole',
+                        'artistId': ['Ajgnxme45wcqqv44vykrleifpji'],
+                        'description_attribution': {
+                            'kind': 'sj#attribution',
+                            'license_title': 'Creative Commons Attribution CC-BY',
+                            'license_url': 'http://creativecommons.org/licenses/by/4.0/legalcode',
+                            'source_title': 'Freebase',
+                            'source_url': ''
+                        },
+                        'explicitType': '1',
+                        'kind': 'sj#album',
+                        'name': 'Work Out',
+                        'year': 2011
+                    },
+                    'type': '3'
+                }],
+                'artist_hits': [{
+                    'artist': {
+                        'artistArtRef': 'http://lh3.googleusercontent.com/MJe-cDw9uQ-pUagoLlm...',
+                        'artistArtRefs': [{
+                            'aspectRatio': '2',
+                            'autogen': False,
+                            'kind': 'sj#imageRef',
+                            'url': 'http://lh3.googleusercontent.com/MJe-cDw9uQ-pUagoLlmKX3x_K...'
+                        }],
+                        'artistId': 'Ajgnxme45wcqqv44vykrleifpji',
+                        'artist_bio_attribution': {
+                            'kind': 'sj#attribution',
+                            'source_title': 'David Jeffries, Rovi'
+                        },
+                        'kind': 'sj#artist',
+                        'name': 'J. Cole'
+                    },
+                    'type': '2'
+                }],
+                'playlist_hits': [{
+                    'playlist': {
+                        'albumArtRef': [
+                            {'url': 'http://lh3.googleusercontent.com/KJsAhrg8Jk_5A4xYLA68LFC...'}
                         ],
-                        'kind':'sj#album',
-                        'name':'Circle',
-                        'year':2013
-                     },
-                     'best_result':True,
-                     'score':385.55609130859375,
-                     'type':'3'
-                  },
-                  {
-                     'album':{
-                        'albumArtRef':'http://lh3.ggpht.com/...',
-                        'albumArtist':'Amorphis',
-                        'albumId':'Bqzxfykbqcqmjjtdom7ukegaf2u',
-                        'artist':'Amorphis',
-                        'artistId':[
-                           'Apoecs6off3y6k4h5nvqqos4b5e'
-                        ],
-                        'kind':'sj#album',
-                        'name':'Elegy',
-                        'year':1996
-                     },
-                     'score':236.33485412597656,
-                     'type':'3'
-                  },
-               ],
-               'artist_hits':[
-                  {
-                     'artist':{
-                        'artistArtRef':'http://lh6.ggpht.com/...',
-                        'artistId':'Apoecs6off3y6k4h5nvqqos4b5e',
-                        'kind':'sj#artist',
-                        'name':'Amorphis'
-                     },
-                     'score':237.86375427246094,
-                     'type':'2'
-                  }
-               ],
-               'song_hits':[
-                  {
-                     'score':105.23198699951172,
-                     'track':{
-                        'album':'Skyforger',
-                        'albumArtRef':[
-                           {
-                              'url':'http://lh4.ggpht.com/...'
-                           }
-                        ],
-                        'albumArtist':'Amorphis',
-                        'albumAvailableForPurchase':True,
-                        'albumId':'B5nc22xlcmdwi3zn5htkohstg44',
-                        'artist':'Amorphis',
-                        'artistId':[
-                           'Apoecs6off3y6k4h5nvqqos4b5e'
-                        ],
-                        'discNumber':1,
-                        'durationMillis':'253000',
-                        'estimatedSize':'10137633',
-                        'kind':'sj#track',
-                        'nid':'Tn2ugrgkeinrrb2a4ji7khungoy',
-                        'playCount':1,
-                        'storeId':'Tn2ugrgkeinrrb2a4ji7khungoy',
-                        'title':'Silver Bride',
-                        'trackAvailableForPurchase':True,
-                        'trackNumber':2,
-                        'trackType':'7'
-                     },
-                     'type':'1'
-                  },
-                  {
-                     'score':96.23717498779297,
-                     'track':{
-                        'album':'Magic And Mayhem - Tales From The Early Years',
-                        'albumArtRef':[
-                           {
-                              'url':'http://lh4.ggpht.com/...'
-                           }
-                        ],
-                        'albumArtist':'Amorphis',
-                        'albumAvailableForPurchase':True,
-                        'albumId':'B7dplgr5h2jzzkcyrwhifgwl2v4',
-                        'artist':'Amorphis',
-                        'artistId':[
-                           'Apoecs6off3y6k4h5nvqqos4b5e'
-                        ],
-                        'discNumber':1,
-                        'durationMillis':'235000',
-                        'estimatedSize':'9405159',
-                        'kind':'sj#track',
-                        'nid':'T4j5jxodzredqklxxhncsua5oba',
-                        'storeId':'T4j5jxodzredqklxxhncsua5oba',
-                        'title':'Black Winter Day',
-                        'trackAvailableForPurchase':True,
-                        'trackNumber':4,
-                        'trackType':'7',
-                        'year':2010
-                     },
-                     'type':'1'
-                  },
-               ]
-               'playlist_hits': [
-                  {
-                     'score': 0.0,
-                     'playlist':{
-                        'albumArtRef':[
-                           {
-                              'url':'http://lh4.ggpht.com/...'
-                           }
-                        ],
-                        'description': 'Krasnoyarsk concert setlist 29.09.2013',
+                        'description': 'Workout Plan ',
                         'kind': 'sj#playlist',
-                        'name': 'Amorphis Setlist',
-                        'ownerName': 'Ilya Makarov',
-                        'ownerProfilePhotoUrl': 'http://lh6.googleusercontent.com/...',
-                        'shareToken': 'AMaBXymmMfeA8iwoEWWI9Z1A...',
+                        'name': 'Workout',
+                        'ownerName': 'Ida Sarver',
+                        'shareToken': 'AMaBXyktyF6Yy_G-8wQy8Rru0tkueIbIFblt2h0BpkvTzHDz-fFj6P...',
                         'type': 'SHARED'
-                     },
-                     'type': '4'
-                  }
-               ]
-               'station_hits': [
-                  {
-                     'station': {
-                        'imageUrls': [
-                            {
-                               'url': u'http://lh5.ggpht.com/...'
-                            }
-                        ],
+                    },
+                    'type': '4'
+                }],
+                'situation_hits': [{
+                    'situation': {
+                        'description':
+                            'Level up and enter beast mode with some loud, aggressive music.',
+                        'id': 'Nrklpcyfewwrmodvtds5qlfp5ve',
+                        'imageUrl': 'http://lh3.googleusercontent.com/Cd8WRMaG_pDwjTC_dSPIIuf...',
+                        'title': 'Entering Beast Mode',
+                        'wideImageUrl': 'http://lh3.googleusercontent.com/8A9S-nTb5pfJLcpS8P...'},
+                    'type': '7'
+                }],
+                'song_hits': [{
+                    'track': {
+                        'album': 'Work Out',
+                        'albumArtRef': [{
+                            'aspectRatio': '1',
+                            'autogen': False,
+                            'kind': 'sj#imageRef',
+                            'url': 'http://lh5.ggpht.com/DVIg4GiD6msHfgPs_Vu_2eRxCyAoz0fFdxj5w...'
+                        }],
+                        'albumArtist': 'J.Cole',
+                        'albumAvailableForPurchase': True,
+                        'albumId': 'Bfp2tuhynyqppnp6zennhmf6w3y',
+                        'artist': 'J Cole',
+                        'artistId': ['Ajgnxme45wcqqv44vykrleifpji', 'Ampniqsqcwxk7btbgh5ycujij5i'],
+                        'composer': '',
+                        'discNumber': 1,
+                        'durationMillis': '234000',
+                        'estimatedSize': '9368582',
+                        'explicitType': '1',
+                        'genre': 'Pop',
+                        'kind': 'sj#track',
+                        'nid': 'Tq3nsmzeumhilpegkimjcnbr6aq',
+                        'primaryVideo': {
+                            'id': '6PN78PS_QsM',
+                            'kind': 'sj#video',
+                            'thumbnails': [{
+                                'height': 180,
+                                'url': 'https://i.ytimg.com/vi/6PN78PS_QsM/mqdefault.jpg',
+                                'width': 320
+                            }]
+                        },
+                        'storeId': 'Tq3nsmzeumhilpegkimjcnbr6aq',
+                        'title': 'Work Out',
+                        'trackAvailableForPurchase': True,
+                        'trackAvailableForSubscription': True,
+                        'trackNumber': 1,
+                        'trackType': '7',
+                        'year': 2011
+                    },
+                    'type': '1'
+                }],
+                'station_hits': [{
+                    'station': {
+                        'compositeArtRefs': [{
+                                'aspectRatio': '1',
+                                'kind': 'sj#imageRef',
+                                'url': 'http://lh3.googleusercontent.com/3aD9mFppy6PwjADnjwv_w...'
+                        }],
+                        'contentTypes': ['1'],
+                        'description':
+                            'These riff-tastic metal tracks are perfect '
+                            'for getting the blood pumping.',
+                        'imageUrls': [{
+                            'aspectRatio': '1',
+                            'autogen': False,
+                            'kind': 'sj#imageRef',
+                            'url': 'http://lh5.ggpht.com/YNGkFdrtk43e8H941fuAHjflrNZ1CJUeqdoys...'
+                        }],
                         'kind': 'sj#radioStation',
-                        'name': 'Capricho Espanol',
+                        'name': 'Heavy Metal Workout',
                         'seed': {
-                             'kind': u'sj#radioSeed',
-                             'seedType': '2',
-                             'trackId': 'T35ilrlthmmc4movyawx6eqqzsy'
-                        }
-                     },
-                     'type': '6'
-                  }
-               ]
+                            'curatedStationId': 'Lcwg73w3bd64hsrgarnorif52r',
+                            'kind': 'sj#radioSeed',
+                            'seedType': '9'
+                        },
+                        'skipEventHistory': [],
+                        'stationSeeds': [{
+                            'curatedStationId': 'Lcwg73w3bd64hsrgarnorif52r',
+                            'kind': 'sj#radioSeed',
+                            'seedType': '9'}
+                        ]},
+                    'type': '6'
+                }],
+                'video_hits': [{
+                    'score': 629.6226806640625,
+                    'type': '8',
+                    'youtube_video': {
+                        'id': '6PN78PS_QsM',
+                        'kind': 'sj#video',
+                        'thumbnails': [{
+                            'height': 180,
+                            'url': 'https://i.ytimg.com/vi/6PN78PS_QsM/mqdefault.jpg',
+                            'width': 320
+                        }],
+                        'title': 'J. Cole - Work Out'
+                    }
+                }]
             }
         """
+
         res = self._make_call(mobileclient.Search, query, max_results)
 
         hits = res.get('entries', [])
@@ -1000,9 +1006,11 @@ class Mobileclient(_Base):
 
         return {'album_hits': hits_by_type['3'],
                 'artist_hits': hits_by_type['2'],
-                'song_hits': hits_by_type['1'],
                 'playlist_hits': hits_by_type['4'],
-                'station_hits': hits_by_type['6']}
+                'situation_hits': hits_by_type['7'],
+                'song_hits': hits_by_type['1'],
+                'station_hits': hits_by_type['6'],
+                'video_hits': hits_by_type['8']}
 
     @utils.enforce_id_param
     def get_artist_info(self, artist_id, include_albums=True, max_top_tracks=5, max_rel_artist=5):
