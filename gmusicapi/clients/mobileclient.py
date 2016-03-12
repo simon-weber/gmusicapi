@@ -213,20 +213,22 @@ class Mobileclient(_Base):
 
         return song_id
 
+    @utils.require_subscription
     @utils.enforce_id_param
-    def add_aa_track(self, aa_song_id):
-        """Adds an All Access track to the library,
-        returning the library track id.
+    def add_store_track(self, store_song_id):
+        """Adds a store track to the library
 
-        :param aa_song_id: All Access song id
+        Returns the library track id of added store track.
+
+        :param store_song_id: store song id
         """
         # TODO is there a way to do this on multiple tracks at once?
-        # problem is with gathering aa track info
+        # problem is with gathering store track info
 
-        aa_track_info = self.get_track_info(aa_song_id)
+        store_track_info = self.get_track_info(store_song_id)
 
         mutate_call = mobileclient.BatchMutateTracks
-        add_mutation = mutate_call.build_track_add(aa_track_info)
+        add_mutation = mutate_call.build_track_add(store_track_info)
         res = self._make_call(mutate_call, [add_mutation])
 
         return res['mutate_response'][0]['id']
