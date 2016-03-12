@@ -15,6 +15,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 from gmusicapi import __version__
 
@@ -41,7 +42,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'gmusicapi'
-copyright = u'2015 Simon Weber'
+copyright = u'2016 Simon Weber'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -91,15 +92,26 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+if not on_rtd:
+    # Try to use the ReadTheDocs theme if installed.
+    # Default to the default alabaster theme if not.
+    try:
+        import sphinx_rtd_theme
+        html_theme = 'sphinx_rtd_theme'
+        html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+    except ImportError:
+        html_theme = 'alabaster'
+else:
+    # Set theme to 'default' for ReadTheDocs.
+    html_theme = 'default'
+
+# Add any paths that contain custom themes here, relative to this directory.
+#html_theme_path = []
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #html_theme_options = {}
-
-# Add any paths that contain custom themes here, relative to this directory.
-#html_theme_path = []
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -183,7 +195,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'UnofficialGoogleMusicApi.tex', u'Unofficial Google Music Api Documentation',
+  ('index', 'gmusicapi.tex', u'gmusicapi Documentation',
    u'Simon Weber', 'manual'),
 ]
 
@@ -213,7 +225,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'unofficialgooglemusicapi', u'Unofficial Google Music Api Documentation',
+    ('index', 'gmusicapi', u'gmusicapi Documentation',
      [u'Simon Weber'], 1)
 ]
 
@@ -227,8 +239,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'UnofficialGoogleMusicApi', u'Unofficial Google Music Api Documentation',
-   u'Simon Weber', 'UnofficialGoogleMusicApi', 'One line description of project.',
+  ('index', 'gmusicapi', u'gmusicapi Documentation',
+   u'Simon Weber', 'gmusicapi', 'One line description of project.',
    'Miscellaneous'),
 ]
 
