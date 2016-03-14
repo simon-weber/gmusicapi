@@ -48,9 +48,9 @@ sj_image_color_styles = {
         'accent': {'type': 'object',
                    'additionalProperties': False,
                    'properties': {
-                        'red': {'type': 'integer'},
-                        'green': {'type': 'integer'},
-                        'blue': {'type': 'integer'}
+                       'red': {'type': 'integer'},
+                       'green': {'type': 'integer'},
+                       'blue': {'type': 'integer'}
                    }}
     }
 }

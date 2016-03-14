@@ -631,7 +631,8 @@ def require_subscription(function, *args, **kwargs):
     return function(*args, **kwargs)
 
 
-# Modification of recipe found at https://wiki.python.org/moin/PythonDecoratorLibrary#Cached_Properties.
+# Modification of recipe found at
+# https://wiki.python.org/moin/PythonDecoratorLibrary#Cached_Properties.
 class cached_property(object):
     """Version of @property decorator that caches the result with a TTL.
 
