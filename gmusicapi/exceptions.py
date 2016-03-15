@@ -43,5 +43,17 @@ class NotLoggedIn(Exception):
     pass
 
 
+class NotSubscribed(Exception):
+    def __init__(self, *args):
+        if len(args) >= 1:
+            args = list(args)
+            args[0] += " (https://goo.gl/v1wVHT)"
+            args = tuple(args)
+        else:
+            args = ("Subscription required. (https://goo.gl/v1wVHT)",)
+
+        self.args = args
+
+
 class GmusicapiWarning(UserWarning):
     pass

@@ -27,6 +27,34 @@ from gmusicapi.utils import utils
 sj_url = 'https://mclients.googleapis.com/sj/v2.4/'
 
 # shared schemas
+sj_image_color_styles = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'primary': {'type': 'object',
+                    'additionalProperties': False,
+                    'properties': {
+                        'red': {'type': 'integer'},
+                        'green': {'type': 'integer'},
+                        'blue': {'type': 'integer'}
+                    }},
+        'scrim': {'type': 'object',
+                  'additionalProperties': False,
+                  'properties': {
+                      'red': {'type': 'integer'},
+                      'green': {'type': 'integer'},
+                      'blue': {'type': 'integer'}
+                  }},
+        'accent': {'type': 'object',
+                   'additionalProperties': False,
+                   'properties': {
+                       'red': {'type': 'integer'},
+                       'green': {'type': 'integer'},
+                       'blue': {'type': 'integer'}
+                   }}
+    }
+}
+
 sj_image = {
     'type': 'object',
     'additionalProperties': False,
@@ -35,10 +63,12 @@ sj_image = {
         'url': {'type': 'string'},
         'aspectRatio': {'type': 'string'},
         'autogen': {'type': 'boolean',
-                    'required': False}
+                    'required': False},
+        'colorStyles': sj_image_color_styles.copy()
     }
 }
 
+sj_image['properties']['colorStyles']['required'] = False
 
 sj_video = {
     'type': 'object',
@@ -46,6 +76,7 @@ sj_video = {
     'properties': {
         'kind': {'type': 'string'},
         'id': {'type': 'string'},
+        'title': {'type': 'string', 'required': False},
         'thumbnails': {'type': 'array',
                        'items': {'type': 'object', 'properties': {
                            'url': {'type': 'string'},
@@ -234,6 +265,7 @@ sj_station_seed = {
         'genreId': {'type': 'string', 'required': False},
         'trackId': {'type': 'string', 'required': False},
         'trackLockerId': {'type': 'string', 'required': False},
+        'curatedStationId': {'type': 'string', 'required': False}
     }
 }
 
@@ -267,7 +299,27 @@ sj_station = {
         'compositeArtRefs': {'type': 'array',
                              'required': False,
                              'items': sj_image
-                             }
+                             },
+        'contentTypes': {'type': 'array',
+                         'required': False,
+                         'items': {'type': 'string'}
+                         }
+    }
+}
+
+sj_situation = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'description': {'type': 'string'},
+        'id': {'type': 'string'},
+        'imageUrl': {'type': 'string', 'required': False},
+        'title': {'type': 'string'},
+        'wideImageUrl': {'type': 'string', 'required': False},
+        'stations': {'type': 'array',
+                     'required': False,
+                     'items': sj_station
+                     }
     }
 }
 
@@ -285,6 +337,8 @@ sj_search_result = {
         'track': sj_track.copy(),
         'playlist': sj_playlist.copy(),
         'station': sj_station.copy(),
+        'situation': sj_situation.copy(),
+        'youtube_video': sj_video.copy()
     }
 }
 
@@ -293,6 +347,8 @@ sj_search_result['properties']['album']['required'] = False
 sj_search_result['properties']['track']['required'] = False
 sj_search_result['properties']['playlist']['required'] = False
 sj_search_result['properties']['station']['required'] = False
+sj_search_result['properties']['situation']['required'] = False
+sj_search_result['properties']['youtube_video']['required'] = False
 
 
 class McCall(Call):
@@ -445,10 +501,45 @@ class McBatchMutateCall(McCall):
                               cls.__name__)
 
 
+class Config(McCall):
+    static_method = 'GET'
+    static_url = sj_url + 'config'
+
+    # dv is a required param of type int.
+    # Using 0 seems to work without issue.
+    static_params = {'dv': 0}
+
+    item_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'kind': {'type': 'string'},
+            'key': {'type': 'string'},
+            'value': {'type': 'string'}
+        }
+    }
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'kind': {'type': 'string'},
+            'data': {'type': 'object',
+                     'entries': {'type': 'array', 'items': item_schema},
+                     }
+        }
+    }
+
+
 class Search(McCall):
     """Search for All Access tracks."""
     static_method = 'GET'
     static_url = sj_url + 'query'
+
+    # The result types returned are requested in the `ct` parameter.
+    # Free accounts don't get playlist results unless explicitly set here.
+    # 1: Song, 2: Artist, 3: Album, 4: Playlist, 6: Station, 7: Situation, 8: Video
+    static_params = {'ct': '1,2,3,4,6,7,8'}
 
     _res_schema = {
         'type': 'object',

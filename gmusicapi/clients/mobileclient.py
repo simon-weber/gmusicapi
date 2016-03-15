@@ -11,6 +11,7 @@ from uuid import getnode as getmac
 
 from gmusicapi import session
 from gmusicapi.clients.shared import _Base
+from gmusicapi.exceptions import NotSubscribed
 from gmusicapi.protocol import mobileclient
 from gmusicapi.utils import utils
 
@@ -31,6 +32,28 @@ class Mobileclient(_Base):
                                            debug_logging,
                                            validate,
                                            verify_ssl)
+
+    @utils.cached_property(ttl=600)
+    def is_subscribed(self):
+        """Returns the subscription status of the Google Music account.
+
+        Result is cached with a TTL of 10 minutes. To get live status before the TTL
+        is up, delete the ``is_subscribed`` property of the Mobileclient instance.
+
+            >>> mc = Mobileclient()
+            >>> mc.is_subscribed  # Live status.
+            >>> mc.is_subscribed  # Cached status.
+            >>> del mc.is_subscribed  # Delete is_subscribed property.
+            >>> mc.is_subscribed  # Live status.
+        """
+
+        res = self._make_call(mobileclient.Config)
+
+        for item in res['data']['entries']:
+            if item['key'] == 'isNautilusUser' and item['value'] == 'true':
+                return True
+        else:
+            return False
 
     def login(self, email, password, android_id):
         """Authenticates the Mobileclient.
@@ -150,7 +173,7 @@ class Mobileclient(_Base):
         Set it to ``'0'`` (no thumb), ``'1'`` (down thumb), or ``'5'`` (up thumb)
         unless you're using the 5-star ratings lab.
 
-        You can also use this to rate All Access tracks
+        You can also use this to rate store tracks
         that aren't in your library, eg::
 
             song = mc.get_track_info('<some store track id>')
@@ -171,7 +194,7 @@ class Mobileclient(_Base):
     def increment_song_playcount(self, song_id, plays=1, playtime=None):
         """Increments a song's playcount and returns its song id.
 
-        :params song_id: a song id. Providing the id of an AA track
+        :params song_id: a song id. Providing the id of a store track
           that has been added to the library will *not* increment the
           corresponding library song's playcount. To do this, use the
           'id' field (which looks like a uuid and doesn't begin with 'T'),
@@ -190,20 +213,22 @@ class Mobileclient(_Base):
 
         return song_id
 
+    @utils.require_subscription
     @utils.enforce_id_param
-    def add_aa_track(self, aa_song_id):
-        """Adds an All Access track to the library,
-        returning the library track id.
+    def add_store_track(self, store_song_id):
+        """Adds a store track to the library
 
-        :param aa_song_id: All Access song id
+        Returns the library track id of added store track.
+
+        :param store_song_id: store song id
         """
         # TODO is there a way to do this on multiple tracks at once?
-        # problem is with gathering aa track info
+        # problem is with gathering store track info
 
-        aa_track_info = self.get_track_info(aa_song_id)
+        store_track_info = self.get_track_info(store_song_id)
 
         mutate_call = mobileclient.BatchMutateTracks
-        add_mutation = mutate_call.build_track_add(aa_track_info)
+        add_mutation = mutate_call.build_track_add(store_track_info)
         res = self._make_call(mutate_call, [add_mutation])
 
         return res['mutate_response'][0]['id']
@@ -265,6 +290,9 @@ class Mobileclient(_Base):
         to download files with metadata.
         """
 
+        if song_id.startswith('T') and not self.is_subscribed:
+            raise NotSubscribed("Store tracks require a subscription to stream.")
+
         if device_id is None:
             device_id = self.android_id
 
@@ -316,7 +344,7 @@ class Mobileclient(_Base):
         :param name: the desired title.
           Creating multiple playlists with the same name is allowed.
         :param description: (optional) the desired description
-        :param public: if True, create a public All Access playlist.
+        :param public: (optional) if True and the user has a subscription, share playlist.
         """
 
         share_state = 'PUBLIC' if public else 'PRIVATE'
@@ -336,7 +364,7 @@ class Mobileclient(_Base):
         :param playlist_id: the id of the playlist
         :param new_name: (optional) desired title
         :param new_description: (optional) desired description
-        :param public: (optional) if True and the user has All Access, share playlist.
+        :param public: (optional) if True and the user has a subscription, share playlist.
         """
 
         if all(value is None for value in (new_name, new_description, public)):
@@ -422,7 +450,7 @@ class Mobileclient(_Base):
 
     def get_shared_playlist_contents(self, share_token):
         """
-        Retrieves the contents of a public All Access playlist.
+        Retrieves the contents of a public playlist.
 
         :param share_token: from ``playlist['shareToken']``, or a playlist share
           url (``https://play.google.com/music/playlist/<token>``).
@@ -658,7 +686,7 @@ class Mobileclient(_Base):
     def get_promoted_songs(self):
         """Returns a list of dictionaries that each represent a track.
 
-        Only All Access tracks will be returned.
+        Only store tracks will be returned.
 
         Promoted tracks are determined in an unknown fashion,
         but positively-rated library tracks are common.
@@ -673,7 +701,7 @@ class Mobileclient(_Base):
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
                        genre_id=None, playlist_token=None):
-        """Creates an All Access radio station and returns its id.
+        """Creates a radio station and returns its id.
 
         :param name: the name of the station to create
         :param \*_id: the id of an item to seed the station from.
@@ -719,7 +747,7 @@ class Mobileclient(_Base):
     @utils.enforce_ids_param
     @utils.empty_arg_shortcircuit
     def delete_stations(self, station_ids):
-        """Deletes All Access radio stations and returns their ids.
+        """Deletes radio stations and returns their ids.
 
         :param station_ids: a single id, or a list of ids to delete
         """
@@ -802,168 +830,174 @@ class Mobileclient(_Base):
 
         return stations[0].get('tracks', [])
 
-    def search_all_access(self, query, max_results=50):
-        """Queries the server for All Access songs, artists, albums, shared playlists and stations.
-
-        Using this method without an All Access subscription will always result in
-        CallFailure being raised.
+    def search(self, query, max_results=50):
+        """Queries Google Music for content.
 
         :param query: a string keyword to search with. Capitalization and punctuation are ignored.
         :param max_results: Maximum number of items to be retrieved
 
-        The results are returned in a dictionary, arranged by how they were found.
-        Here are example results for a search on ``'Amorphis'``::
+        The results are returned in a dictionary with keys:
+        ``album_hits, artist_hits, playlist_hits, situation_hits,
+        song_hits, station_hits, video_hits``
+        containing lists of results of that type.
+
+        Here is a sample of results for a search of ``'workout'``::
 
             {
-               'album_hits':[
-                  {
-                     'album':{
-                        'albumArtRef':'http://lh6.ggpht.com/...',
-                        'albumId':'Bfr2onjv7g7tm4rzosewnnwxxyy',
-                        'artist':'Amorphis',
-                        'artistId':[
-                           'Apoecs6off3y6k4h5nvqqos4b5e'
+                'album_hits': [{
+                    'album': {
+                        'albumArtRef': 'http://lh5.ggpht.com/DVIg4GiD6msHfgPs_Vu_2eRxCyAoz0fF...',
+                        'albumArtist': 'J.Cole',
+                        'albumId': 'Bfp2tuhynyqppnp6zennhmf6w3y',
+                        'artist': 'J.Cole',
+                        'artistId': ['Ajgnxme45wcqqv44vykrleifpji'],
+                        'description_attribution': {
+                            'kind': 'sj#attribution',
+                            'license_title': 'Creative Commons Attribution CC-BY',
+                            'license_url': 'http://creativecommons.org/licenses/by/4.0/legalcode',
+                            'source_title': 'Freebase',
+                            'source_url': ''
+                        },
+                        'explicitType': '1',
+                        'kind': 'sj#album',
+                        'name': 'Work Out',
+                        'year': 2011
+                    },
+                    'type': '3'
+                }],
+                'artist_hits': [{
+                    'artist': {
+                        'artistArtRef': 'http://lh3.googleusercontent.com/MJe-cDw9uQ-pUagoLlm...',
+                        'artistArtRefs': [{
+                            'aspectRatio': '2',
+                            'autogen': False,
+                            'kind': 'sj#imageRef',
+                            'url': 'http://lh3.googleusercontent.com/MJe-cDw9uQ-pUagoLlmKX3x_K...'
+                        }],
+                        'artistId': 'Ajgnxme45wcqqv44vykrleifpji',
+                        'artist_bio_attribution': {
+                            'kind': 'sj#attribution',
+                            'source_title': 'David Jeffries, Rovi'
+                        },
+                        'kind': 'sj#artist',
+                        'name': 'J. Cole'
+                    },
+                    'type': '2'
+                }],
+                'playlist_hits': [{
+                    'playlist': {
+                        'albumArtRef': [
+                            {'url': 'http://lh3.googleusercontent.com/KJsAhrg8Jk_5A4xYLA68LFC...'}
                         ],
-                        'kind':'sj#album',
-                        'name':'Circle',
-                        'year':2013
-                     },
-                     'best_result':True,
-                     'score':385.55609130859375,
-                     'type':'3'
-                  },
-                  {
-                     'album':{
-                        'albumArtRef':'http://lh3.ggpht.com/...',
-                        'albumArtist':'Amorphis',
-                        'albumId':'Bqzxfykbqcqmjjtdom7ukegaf2u',
-                        'artist':'Amorphis',
-                        'artistId':[
-                           'Apoecs6off3y6k4h5nvqqos4b5e'
-                        ],
-                        'kind':'sj#album',
-                        'name':'Elegy',
-                        'year':1996
-                     },
-                     'score':236.33485412597656,
-                     'type':'3'
-                  },
-               ],
-               'artist_hits':[
-                  {
-                     'artist':{
-                        'artistArtRef':'http://lh6.ggpht.com/...',
-                        'artistId':'Apoecs6off3y6k4h5nvqqos4b5e',
-                        'kind':'sj#artist',
-                        'name':'Amorphis'
-                     },
-                     'score':237.86375427246094,
-                     'type':'2'
-                  }
-               ],
-               'song_hits':[
-                  {
-                     'score':105.23198699951172,
-                     'track':{
-                        'album':'Skyforger',
-                        'albumArtRef':[
-                           {
-                              'url':'http://lh4.ggpht.com/...'
-                           }
-                        ],
-                        'albumArtist':'Amorphis',
-                        'albumAvailableForPurchase':True,
-                        'albumId':'B5nc22xlcmdwi3zn5htkohstg44',
-                        'artist':'Amorphis',
-                        'artistId':[
-                           'Apoecs6off3y6k4h5nvqqos4b5e'
-                        ],
-                        'discNumber':1,
-                        'durationMillis':'253000',
-                        'estimatedSize':'10137633',
-                        'kind':'sj#track',
-                        'nid':'Tn2ugrgkeinrrb2a4ji7khungoy',
-                        'playCount':1,
-                        'storeId':'Tn2ugrgkeinrrb2a4ji7khungoy',
-                        'title':'Silver Bride',
-                        'trackAvailableForPurchase':True,
-                        'trackNumber':2,
-                        'trackType':'7'
-                     },
-                     'type':'1'
-                  },
-                  {
-                     'score':96.23717498779297,
-                     'track':{
-                        'album':'Magic And Mayhem - Tales From The Early Years',
-                        'albumArtRef':[
-                           {
-                              'url':'http://lh4.ggpht.com/...'
-                           }
-                        ],
-                        'albumArtist':'Amorphis',
-                        'albumAvailableForPurchase':True,
-                        'albumId':'B7dplgr5h2jzzkcyrwhifgwl2v4',
-                        'artist':'Amorphis',
-                        'artistId':[
-                           'Apoecs6off3y6k4h5nvqqos4b5e'
-                        ],
-                        'discNumber':1,
-                        'durationMillis':'235000',
-                        'estimatedSize':'9405159',
-                        'kind':'sj#track',
-                        'nid':'T4j5jxodzredqklxxhncsua5oba',
-                        'storeId':'T4j5jxodzredqklxxhncsua5oba',
-                        'title':'Black Winter Day',
-                        'trackAvailableForPurchase':True,
-                        'trackNumber':4,
-                        'trackType':'7',
-                        'year':2010
-                     },
-                     'type':'1'
-                  },
-               ]
-               'playlist_hits': [
-                  {
-                     'score': 0.0,
-                     'playlist':{
-                        'albumArtRef':[
-                           {
-                              'url':'http://lh4.ggpht.com/...'
-                           }
-                        ],
-                        'description': 'Krasnoyarsk concert setlist 29.09.2013',
+                        'description': 'Workout Plan ',
                         'kind': 'sj#playlist',
-                        'name': 'Amorphis Setlist',
-                        'ownerName': 'Ilya Makarov',
-                        'ownerProfilePhotoUrl': 'http://lh6.googleusercontent.com/...',
-                        'shareToken': 'AMaBXymmMfeA8iwoEWWI9Z1A...',
+                        'name': 'Workout',
+                        'ownerName': 'Ida Sarver',
+                        'shareToken': 'AMaBXyktyF6Yy_G-8wQy8Rru0tkueIbIFblt2h0BpkvTzHDz-fFj6P...',
                         'type': 'SHARED'
-                     },
-                     'type': '4'
-                  }
-               ]
-               'station_hits': [
-                  {
-                     'station': {
-                        'imageUrls': [
-                            {
-                               'url': u'http://lh5.ggpht.com/...'
-                            }
-                        ],
+                    },
+                    'type': '4'
+                }],
+                'situation_hits': [{
+                    'situation': {
+                        'description':
+                            'Level up and enter beast mode with some loud, aggressive music.',
+                        'id': 'Nrklpcyfewwrmodvtds5qlfp5ve',
+                        'imageUrl': 'http://lh3.googleusercontent.com/Cd8WRMaG_pDwjTC_dSPIIuf...',
+                        'title': 'Entering Beast Mode',
+                        'wideImageUrl': 'http://lh3.googleusercontent.com/8A9S-nTb5pfJLcpS8P...'},
+                    'type': '7'
+                }],
+                'song_hits': [{
+                    'track': {
+                        'album': 'Work Out',
+                        'albumArtRef': [{
+                            'aspectRatio': '1',
+                            'autogen': False,
+                            'kind': 'sj#imageRef',
+                            'url': 'http://lh5.ggpht.com/DVIg4GiD6msHfgPs_Vu_2eRxCyAoz0fFdxj5w...'
+                        }],
+                        'albumArtist': 'J.Cole',
+                        'albumAvailableForPurchase': True,
+                        'albumId': 'Bfp2tuhynyqppnp6zennhmf6w3y',
+                        'artist': 'J Cole',
+                        'artistId': ['Ajgnxme45wcqqv44vykrleifpji', 'Ampniqsqcwxk7btbgh5ycujij5i'],
+                        'composer': '',
+                        'discNumber': 1,
+                        'durationMillis': '234000',
+                        'estimatedSize': '9368582',
+                        'explicitType': '1',
+                        'genre': 'Pop',
+                        'kind': 'sj#track',
+                        'nid': 'Tq3nsmzeumhilpegkimjcnbr6aq',
+                        'primaryVideo': {
+                            'id': '6PN78PS_QsM',
+                            'kind': 'sj#video',
+                            'thumbnails': [{
+                                'height': 180,
+                                'url': 'https://i.ytimg.com/vi/6PN78PS_QsM/mqdefault.jpg',
+                                'width': 320
+                            }]
+                        },
+                        'storeId': 'Tq3nsmzeumhilpegkimjcnbr6aq',
+                        'title': 'Work Out',
+                        'trackAvailableForPurchase': True,
+                        'trackAvailableForSubscription': True,
+                        'trackNumber': 1,
+                        'trackType': '7',
+                        'year': 2011
+                    },
+                    'type': '1'
+                }],
+                'station_hits': [{
+                    'station': {
+                        'compositeArtRefs': [{
+                                'aspectRatio': '1',
+                                'kind': 'sj#imageRef',
+                                'url': 'http://lh3.googleusercontent.com/3aD9mFppy6PwjADnjwv_w...'
+                        }],
+                        'contentTypes': ['1'],
+                        'description':
+                            'These riff-tastic metal tracks are perfect '
+                            'for getting the blood pumping.',
+                        'imageUrls': [{
+                            'aspectRatio': '1',
+                            'autogen': False,
+                            'kind': 'sj#imageRef',
+                            'url': 'http://lh5.ggpht.com/YNGkFdrtk43e8H941fuAHjflrNZ1CJUeqdoys...'
+                        }],
                         'kind': 'sj#radioStation',
-                        'name': 'Capricho Espanol',
+                        'name': 'Heavy Metal Workout',
                         'seed': {
-                             'kind': u'sj#radioSeed',
-                             'seedType': '2',
-                             'trackId': 'T35ilrlthmmc4movyawx6eqqzsy'
-                        }
-                     },
-                     'type': '6'
-                  }
-               ]
+                            'curatedStationId': 'Lcwg73w3bd64hsrgarnorif52r',
+                            'kind': 'sj#radioSeed',
+                            'seedType': '9'
+                        },
+                        'skipEventHistory': [],
+                        'stationSeeds': [{
+                            'curatedStationId': 'Lcwg73w3bd64hsrgarnorif52r',
+                            'kind': 'sj#radioSeed',
+                            'seedType': '9'}
+                        ]},
+                    'type': '6'
+                }],
+                'video_hits': [{
+                    'score': 629.6226806640625,
+                    'type': '8',
+                    'youtube_video': {
+                        'id': '6PN78PS_QsM',
+                        'kind': 'sj#video',
+                        'thumbnails': [{
+                            'height': 180,
+                            'url': 'https://i.ytimg.com/vi/6PN78PS_QsM/mqdefault.jpg',
+                            'width': 320
+                        }],
+                        'title': 'J. Cole - Work Out'
+                    }
+                }]
             }
         """
+
         res = self._make_call(mobileclient.Search, query, max_results)
 
         hits = res.get('entries', [])
@@ -974,21 +1008,20 @@ class Mobileclient(_Base):
 
         return {'album_hits': hits_by_type['3'],
                 'artist_hits': hits_by_type['2'],
-                'song_hits': hits_by_type['1'],
                 'playlist_hits': hits_by_type['4'],
-                'station_hits': hits_by_type['6']}
+                'situation_hits': hits_by_type['7'],
+                'song_hits': hits_by_type['1'],
+                'station_hits': hits_by_type['6'],
+                'video_hits': hits_by_type['8']}
 
     @utils.enforce_id_param
     def get_artist_info(self, artist_id, include_albums=True, max_top_tracks=5, max_rel_artist=5):
         """Retrieves details on an artist.
 
-        :param artist_id: an All Access artist id (hint: they always start with 'A')
+        :param artist_id: an artist id (hint: they always start with 'A')
         :param include_albums: when True, create the ``'albums'`` substructure
         :param max_top_tracks: maximum number of top tracks to retrieve
         :param max_rel_artist: maximum number of related artists to retrieve
-
-        Using this method without an All Access subscription will always result in
-        CallFailure being raised.
 
         Returns a dict, eg::
 
@@ -1100,11 +1133,8 @@ class Mobileclient(_Base):
     def get_album_info(self, album_id, include_tracks=True):
         """Retrieves details on an album.
 
-        :param album_id: an All Access album id (hint: they always start with 'B')
+        :param album_id: an album id (hint: they always start with 'B')
         :param include_tracks: when True, create the ``'tracks'`` substructure
-
-        Using this method without an All Access subscription will always result in
-        CallFailure being raised.
 
         Returns a dict, eg::
 
@@ -1153,10 +1183,7 @@ class Mobileclient(_Base):
     def get_track_info(self, store_track_id):
         """Retrieves information about a store track.
 
-        :param store_track_id: an All Access track id (hint: they always start with 'T')
-
-        Using this method without an All Access subscription will always result in
-        CallFailure being raised.
+        :param store_track_id: a store track id (hint: they always start with 'T')
 
         Returns a dict, eg::
 
@@ -1196,9 +1223,6 @@ class Mobileclient(_Base):
           will be returned. By default, all root genres are returned.
           If this id is invalid, an empty list will be returned.
 
-        Using this method without an All Access subscription will always result in
-        CallFailure being raised.
-
         Returns a list of dicts of the form, eg::
 
             {
@@ -1220,7 +1244,7 @@ class Mobileclient(_Base):
             }
 
         Note that the id can be used with :func:`create_station`
-        to seed an All Access radio station.
+        to seed a radio station.
         """
 
         res = self._make_call(mobileclient.GetGenres, parent_genre_id)

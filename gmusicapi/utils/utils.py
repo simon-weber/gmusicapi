@@ -28,7 +28,7 @@ from google.protobuf.descriptor import FieldDescriptor
 
 from gmusicapi import __version__
 from gmusicapi.appdirs import my_appdirs
-from gmusicapi.exceptions import CallFailure, GmusicapiWarning
+from gmusicapi.exceptions import CallFailure, GmusicapiWarning, NotSubscribed
 
 # this controls the crazy logging setup that checks the callstack;
 #  it should be monkey-patched to False after importing to disable it.
@@ -619,6 +619,67 @@ def accept_singleton(expected_type, position=1):
         return function(*args, **kw)
 
     return wrapper
+
+
+@decorator
+def require_subscription(function, *args, **kwargs):
+    self = args[0]
+
+    if not self.is_subscribed:
+        raise NotSubscribed("%s requires a subscription." % func.__name__)
+
+    return function(*args, **kwargs)
+
+
+# Modification of recipe found at
+# https://wiki.python.org/moin/PythonDecoratorLibrary#Cached_Properties.
+class cached_property(object):
+    """Version of @property decorator that caches the result with a TTL.
+
+    Tracks the property's value and last refresh time in a dict attribute
+    of a class instance (``self._cache``) using the property name as the key.
+    """
+
+    def __init__(self, ttl=0):
+        self.ttl = ttl
+
+    def __call__(self, fget, doc=None):
+        self.fget = fget
+        self.__doc__ = doc or fget.__doc__
+        self.__name__ = fget.__name__
+        self.__module__ = fget.__module__
+
+        return self
+
+    def __get__(self, inst, owner):
+        now = time.time()
+
+        try:
+            value, last_update = inst._cache[self.__name__]
+
+            if (self.ttl > 0) and (now - last_update > self.ttl):
+                raise AttributeError
+        except (KeyError, AttributeError):
+            value = self.fget(inst)
+
+            try:
+                cache = inst._cache
+            except AttributeError:
+                cache = inst._cache = {}
+
+            cache[self.__name__] = (value, now)
+
+        return value
+
+    def __set__(self, inst, value):
+        raise AttributeError("Can't set cached properties")
+
+    def __delete__(self, inst):
+        try:
+            del inst._cache[self.__name__]
+        except (KeyError, AttributeError):
+            if not inst._cache:
+                inst._cache = {}
 
 
 # Used to mark a field as unimplemented.
