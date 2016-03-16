@@ -29,6 +29,7 @@ Account Management
 		>>> mc.is_subscribed  # Live status.
 
 .. automethod:: Mobileclient.get_registered_devices
+.. automethod:: Mobileclient.deauthorize_device
 
 Songs
 -----

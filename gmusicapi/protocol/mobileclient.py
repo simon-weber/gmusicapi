@@ -874,6 +874,17 @@ class GetDeviceManagementInfo(McCall):
     }
 
 
+class DeauthDevice(McCall):
+    """Deauthorize a device from devicemanagementinfo."""
+
+    static_method = 'DELETE'
+    static_url = sj_url + "devicemanagementinfo"
+
+    @staticmethod
+    def dynamic_params(device_id):
+        return {'delete-id': device_id}
+
+
 class ListPromotedTracks(McListCall):
     item_schema = sj_track
     filter_text = 'tracks'
