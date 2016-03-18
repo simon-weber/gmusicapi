@@ -5,6 +5,7 @@ from __future__ import print_function, division, absolute_import, unicode_litera
 from future import standard_library
 standard_library.install_aliases()
 from builtins import *  # noqa
+from six import raise_from
 
 from collections import namedtuple
 
@@ -17,7 +18,7 @@ from gmusicapi.exceptions import (
 from gmusicapi.utils import utils
 
 import requests
-from future.utils import with_metaclass, raise_from
+from future.utils import with_metaclass
 
 log = utils.DynamicClientLogger(__name__)
 

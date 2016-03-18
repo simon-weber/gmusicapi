@@ -11,7 +11,7 @@ from uuid import getnode as getmac
 
 from gmusicapi import session
 from gmusicapi.clients.shared import _Base
-from gmusicapi.exceptions import NotSubscribed
+from gmusicapi.exceptions import CallFailure, NotSubscribed
 from gmusicapi.protocol import mobileclient
 from gmusicapi.utils import utils
 
@@ -682,6 +682,31 @@ class Mobileclient(_Base):
         res = self._make_call(mobileclient.GetDeviceManagementInfo)
 
         return res['data']['items'] if 'data' in res else []
+
+    def deauthorize_device(self, device_id):
+        """Deauthorize a registered device.
+
+        Returns ``True`` on success, ``False`` on failure.
+
+        :param device_id: A mobile device id as a string.
+          Android ids are 16 characters with '0x' prepended,
+          iOS ids are uuids with 'ios:' prepended,
+          while desktop ids are in the form of a MAC address.
+
+          Providing an invalid or unregistered device id will result in a 400 HTTP error.
+
+        Google limits the number of device deauthorizations to 4 per year.
+        Attempts to deauthorize a device when that limit is reached results in
+        a 403 HTTP error with: ``X-Rejected-Reason: TOO_MANY_DEAUTHORIZATIONS``.
+        """
+
+        try:
+            self._make_call(mobileclient.DeauthDevice, device_id)
+        except CallFailure:
+            self.logger.exception("Deauthorization failure.")
+            return False
+
+        return True
 
     def get_promoted_songs(self):
         """Returns a list of dictionaries that each represent a track.
