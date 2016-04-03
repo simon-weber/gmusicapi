@@ -505,7 +505,7 @@ def transcode_to_mp3(filepath, quality='320k', slice_start=None, slice_duration=
         audio_out, err_output = proc.communicate()
 
         if proc.returncode != 0:
-            err_output = ("(return code: %r)\n" % proc.returncode) + err_output
+            err_output = ("(return code: %r)\n" % proc.returncode) + err_output.decode("ascii")
             raise IOError  # handle errors in except
 
     except (OSError, IOError) as e:
