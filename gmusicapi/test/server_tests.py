@@ -70,17 +70,17 @@ def sids(test_songs):
     return [s.sid for s in test_songs]
 
 
-def test_all_access_features():
+def test_subscription_features():
     return 'GM_A' in os.environ
 
 
 @decorator
-def all_access(f, *args, **kwargs):
-    """Declare a test to only be run if All Access testing is enabled."""
-    if test_all_access_features():
+def subscription(f, *args, **kwargs):
+    """Declare a test to only be run if subscription testing is enabled."""
+    if test_subscription_features():
         return f(*args, **kwargs)
     else:
-        raise SkipTest('All Access testing disabled')
+        raise SkipTest('Subscription testing disabled')
 
 
 @test(groups=['server-other'])
@@ -266,7 +266,7 @@ class ClientTests(object):
 
         user_sids.append(uploaded[fname])
 
-        if test_all_access_features():
+        if test_subscription_features():
             store_sids.append(self.mc.add_store_track(TEST_STORE_SONG_ID))
 
         # we test get_all_songs here so that we can assume the existance
@@ -301,7 +301,7 @@ class ClientTests(object):
         # 3 songs is the minimum to fully test reordering, and also includes the
         # duplicate song_id case
         double_id = self.user_songs[0].sid
-        if test_all_access_features():
+        if test_subscription_features():
             double_id = TEST_STORE_SONG_ID
 
         song_ids += [double_id] * 2
@@ -363,10 +363,8 @@ class ClientTests(object):
             self.assert_listing_contains_deleted_items(self.mc.get_all_playlists)
 
     @test
+    @subscription
     def station_create(self):
-        if not test_all_access_features():
-            raise SkipTest('Subscription testing not enabled')
-
         station_ids = []
         for prefix, kwargs in (('Store song', {'track_id': TEST_STORE_SONG_ID}),
                                ('Store-added song', {'track_id': self.store_songs[0].sid}),
@@ -501,21 +499,21 @@ class ClientTests(object):
     #     )
 
     # @test
-    # @all_access
+    # @subscription
     # def wc_get_store_stream_urls(self):
     #     urls = self.wc.get_stream_urls(TEST_STORE_SONG_ID)
 
     #     assert_true(len(urls) > 1)
 
     # @test
-    # @all_access
+    # @subscription
     # def wc_stream_store_track_with_header(self):
     #     audio = self.wc.get_stream_audio(TEST_STORE_SONG_ID, use_range_header=True)
 
     #     assert_equal(md5(audio).hexdigest(), TEST_STORE_SONG_WC_HASH)
 
     # @test
-    # @all_access
+    # @subscription
     # def wc_stream_store_track_without_header(self):
     #     audio = self.wc.get_stream_audio(TEST_STORE_SONG_ID, use_range_header=False)
 
@@ -567,7 +565,7 @@ class ClientTests(object):
         assert_true(len(entries) > 0)
 
     @test
-    @all_access
+    @subscription
     def mc_stream_store_track(self):
         url = self.mc.get_stream_url(TEST_STORE_SONG_ID)  # uses frozen device_id
         audio = self.mc.session._rsession.get(url).content
@@ -606,7 +604,7 @@ class ClientTests(object):
     # it works in Google's clients!
 
     # @test
-    # @all_access
+    # @subscription
     # def mc_change_store_song_rating(self):
     #     song = self.mc.get_track_info(TEST_STORE_SONG_ID)
 
@@ -637,7 +635,6 @@ class ClientTests(object):
         self.mc.change_song_metadata(song)
 
     @song_test
-    @all_access
     @retry
     def mc_get_promoted_songs(self):
         song = self.mc.get_track_info(TEST_STORE_SONG_ID)
@@ -673,7 +670,7 @@ class ClientTests(object):
 
     # Fails silently. See https://github.com/simon-weber/gmusicapi/issues/349.
     # @song_test
-    # @all_access
+    # @subscription
     # def mc_increment_store_song_playcount(self):
     #     self._test_increment_playcount(self.all_songs[1].sid)
 
@@ -855,7 +852,7 @@ class ClientTests(object):
 
     @station_test
     @retry  # sometimes this comes back with no data key
-    @all_access
+    @subscription
     def mc_list_station_tracks(self):
         for station_id in self.station_ids:
             self.mc.get_station_tracks(station_id, num_tracks=1)
@@ -866,13 +863,12 @@ class ClientTests(object):
             self.mc.get_station_tracks(station_id, num_tracks=1,
                                        recently_played_ids=[self.user_songs[0].sid])
 
-    @all_access
     def mc_list_IFL_station_tracks(self):
         assert_equal(len(self.mc.get_station_tracks('IFL', num_tracks=1)),
                      1)
 
     @test(groups=['search'])
-    @all_access
+    @subscription
     def mc_search_store_no_playlists_no_situations(self):
         res = self.mc.search('amorphis', max_results=100)
 
@@ -885,7 +881,6 @@ class ClientTests(object):
                 check.true(len(hits) > 0, "%s had %s hits, expected > 0" % (type_, len(hits)))
 
     @test
-    @all_access
     def mc_artist_info(self):
         aid = 'Apoecs6off3y6k4h5nvqqos4b5e'  # amorphis
         optional_keys = set(('albums', 'topTracks', 'related_artists'))
@@ -909,7 +904,6 @@ class ClientTests(object):
 
     @test
     @retry
-    @all_access
     def mc_album_info(self):
         include_tracks = self.mc.get_album_info(TEST_STORE_ALBUM_ID, include_tracks=True)
         no_tracks = self.mc.get_album_info(TEST_STORE_ALBUM_ID, include_tracks=False)
@@ -922,12 +916,10 @@ class ClientTests(object):
             check.equal(include_tracks, no_tracks)
 
     @test
-    @all_access
     def mc_track_info(self):
         self.mc.get_track_info(TEST_STORE_SONG_ID)  # just for the schema
 
     @test(groups=['genres'])
-    @all_access
     def mc_all_genres(self):
         expected_genres = {u'COMEDY_SPOKEN_WORD_OTHER', u'COUNTRY', u'HOLIDAY', u'R_B_SOUL',
                            u'FOLK', u'LATIN', u'CHRISTIAN_GOSPEL', u'ALTERNATIVE_INDIE', u'POP',
@@ -938,7 +930,6 @@ class ClientTests(object):
         assert_equal(set([e['id'] for e in res]), expected_genres)
 
     @test(groups=['genres'])
-    @all_access
     def mc_specific_genre(self):
         expected_genres = {u'PROGRESSIVE_METAL', u'CLASSIC_METAL', u'HAIR_METAL', u'INDUSTRIAL',
                            u'ALT_METAL', u'THRASH', u'METALCORE', u'BLACK_DEATH_METAL',
@@ -947,11 +938,9 @@ class ClientTests(object):
         assert_equal(set([e['id'] for e in res]), expected_genres)
 
     @test(groups=['genres'])
-    @all_access
     def mc_leaf_parent_genre(self):
         assert_equal(self.mc.get_genres('AFRICA'), [])
 
     @test(groups=['genres'])
-    @all_access
     def mc_invalid_parent_genre(self):
         assert_equal(self.mc.get_genres('bogus genre'), [])

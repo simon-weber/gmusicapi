@@ -24,7 +24,7 @@ EnvArg = namedtuple('EnvArg', 'envarg kwarg description')
 
 # these names needed to be compressed to fit everything into the travisci key size.
 # there's also:
-#    * GM_A: when set (to anything) states that we are testing on an All Access account.
+#    * GM_A: when set (to anything) states that we are testing on a subscription account.
 #    * GM_AA_D_ID: a registered device id for use with mc streaming
 
 wc_envargs = (
