@@ -175,6 +175,7 @@ class Mobileclient(_Base):
         super(Mobileclient, self).__init__(*args, **kwargs)
         self._master_token = None
         self._authtoken = None
+        self._locale = None
 
     def login(self, email, password, android_id, *args, **kwargs):
         """
@@ -206,6 +207,14 @@ class Mobileclient(_Base):
 
     def _send_with_auth(self, req_kwargs, desired_auth, rsession):
         if desired_auth.oauth:
+            # Default to English (United States) if no locale given.
+            if not self._locale:
+                self._locale = 'en_US'
+
+            # Set locale for all Mobileclient calls.
+            req_kwargs.setdefault('params', {})
+            req_kwargs['params'].update({'hl': self._locale})
+
             req_kwargs.setdefault('headers', {})
 
             # does this expire?

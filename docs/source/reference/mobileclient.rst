@@ -12,6 +12,13 @@ Setup and login
 .. automethod:: Mobileclient.login
 .. automethod:: Mobileclient.logout
 .. automethod:: Mobileclient.is_authenticated
+.. attribute:: Mobileclient.locale
+
+	The locale of the Mobileclient session used to localize some responses.
+
+	Should be an `ICU <http://www.localeplanet.com/icu/>`__ locale supported by Android.
+
+	Set on authentication with :func:`login` but can be changed at any time.
 
 Account Management
 ------------------

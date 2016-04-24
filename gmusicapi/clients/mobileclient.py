@@ -33,6 +33,21 @@ class Mobileclient(_Base):
                                            validate,
                                            verify_ssl)
 
+    @property
+    def locale(self):
+        """The locale of the Mobileclient session used to localize some responses.
+
+        Should be an `ICU <http://www.localeplanet.com/icu/>`__ locale supported by Android.
+
+        Set on authentication with :func:`login` but can be changed at any time.
+        """
+
+        return self.session._locale
+
+    @locale.setter
+    def locale(self, locale):
+        self.session._locale = locale
+
     @utils.cached_property(ttl=600)
     def is_subscribed(self):
         """Returns the subscription status of the Google Music account.
@@ -55,7 +70,7 @@ class Mobileclient(_Base):
         else:
             return False
 
-    def login(self, email, password, android_id):
+    def login(self, email, password, android_id, locale='en_US'):
         """Authenticates the Mobileclient.
         Returns ``True`` on success, ``False`` on failure.
 
@@ -71,6 +86,10 @@ class Mobileclient(_Base):
           but appears to work fine in testing.
           If a valid MAC address cannot be determined on this machine
           (which is often the case when running on a VPS), raise OSError.
+
+        :param locale: `ICU <http://www.localeplanet.com/icu/>`__ locale
+          used to localize certain responses. This must be a locale supported
+          by Android. Defaults to ``'en_US'``.
         """
         # TODO 2fa
 
@@ -93,6 +112,8 @@ class Mobileclient(_Base):
 
         self.android_id = android_id
         self.logger.info("authenticated")
+
+        self.locale = locale
 
         return True
 
