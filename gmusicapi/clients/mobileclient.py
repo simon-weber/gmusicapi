@@ -66,9 +66,12 @@ class Mobileclient(_Base):
 
         for item in res['data']['entries']:
             if item['key'] == 'isNautilusUser' and item['value'] == 'true':
-                return True
+                self.session._is_subscribed = True
+                break
         else:
-            return False
+            self.session._is_subscribed = False
+
+        return self.session._is_subscribed
 
     def login(self, email, password, android_id, locale='en_US'):
         """Authenticates the Mobileclient.
@@ -114,6 +117,9 @@ class Mobileclient(_Base):
         self.logger.info("authenticated")
 
         self.locale = locale
+
+        if self.is_subscribed:
+            self.logger.info("subscribed")
 
         return True
 

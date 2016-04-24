@@ -176,6 +176,7 @@ class Mobileclient(_Base):
         self._master_token = None
         self._authtoken = None
         self._locale = None
+        self._is_subscribed = None
 
     def login(self, email, password, android_id, *args, **kwargs):
         """
@@ -214,6 +215,11 @@ class Mobileclient(_Base):
             # Set locale for all Mobileclient calls.
             req_kwargs.setdefault('params', {})
             req_kwargs['params'].update({'hl': self._locale})
+
+            if self._is_subscribed:
+                req_kwargs['params'].update({'tier': 'aa'})
+            else:
+                req_kwargs['params'].update({'tier': 'fr'})
 
             req_kwargs.setdefault('headers', {})
 
