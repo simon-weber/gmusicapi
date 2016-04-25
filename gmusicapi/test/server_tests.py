@@ -869,12 +869,8 @@ class ClientTests(object):
 
     @test(groups=['search'])
     @subscription
-    def mc_search_store_no_playlists_no_situations(self):
-        res = self.mc.search('amorphis', max_results=100)
-
-        # TODO is there a search query that will consistently get playlist/situation results?
-        res.pop('playlist_hits')
-        res.pop('situation_hits')
+    def mc_search_store(self):
+        res = self.mc.search('morning', max_results=100)
 
         with Check() as check:
             for type_, hits in res.items():
