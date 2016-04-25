@@ -537,7 +537,7 @@ class Search(McCall):
     static_url = sj_url + 'query'
 
     # The result types returned are requested in the `ct` parameter.
-    # Free accounts don't get playlist results unless explicitly set here.
+    # Free account search is restricted so may not contain hits for all result types.
     # 1: Song, 2: Artist, 3: Album, 4: Playlist, 6: Station, 7: Situation, 8: Video
     static_params = {'ct': '1,2,3,4,6,7,8'}
 

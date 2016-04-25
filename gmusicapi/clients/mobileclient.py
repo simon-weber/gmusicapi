@@ -866,6 +866,8 @@ class Mobileclient(_Base):
         song_hits, station_hits, video_hits``
         containing lists of results of that type.
 
+        Free account search is restricted so may not contain hits for all result types.
+
         Here is a sample of results for a search of ``'workout'``::
 
             {
