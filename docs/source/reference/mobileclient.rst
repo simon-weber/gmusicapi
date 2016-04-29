@@ -93,3 +93,8 @@ Search Google Play for information about artists, albums, tracks, and more.
 .. automethod:: Mobileclient.get_album_info
 .. automethod:: Mobileclient.get_artist_info
 .. automethod:: Mobileclient.get_track_info
+
+Misc
+----
+
+.. automethod:: Mobileclient.get_listen_now_items

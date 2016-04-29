@@ -723,6 +723,111 @@ class Mobileclient(_Base):
                                    incremental=False, include_deleted=False,
                                    updated_after=None)
 
+    def get_listen_now_items(self):
+        """Returns a list of dictionaries of Listen Now items.
+
+        Here is an example Listen Now album::
+
+            {
+              'album': {
+                'artist_metajam_id': 'A2mfgoustq7iqjdbvlenw7pnap4',
+                'artist_name': 'Justin Bieber',
+                'artist_profile_image': {
+                  'url': 'http://lh3.googleusercontent.com/XgktDR74DWE9xD...'',
+                },
+                'description': 'Purpose is the fourth studio album by Canadian...',
+                'description_attribution': {
+                  'kind': 'sj#attribution',
+                  'license_title': 'Creative Commons Attribution CC-BY-SA 4.0',
+                  'license_url': 'http://creativecommons.org/licenses/by-sa/4.0/legalcode',
+                  'source_title': 'Wikipedia',
+                  'source_url': 'http://en.wikipedia.org/wiki/Purpose_(Justin_Bieber_album)',
+                },
+                'id': {
+                  'artist': 'Justin Bieber',
+                  'metajamCompactKey': 'Bqpez5cimsze2fh6w7j2rcf55xa',
+                  'title': 'Purpose (Deluxe)',
+                },
+                'title': 'Purpose (Deluxe)'
+                'images': [
+                  {
+                    'kind': 'sj#imageRef',
+                    'url': 'http://lh3.googleusercontent.com/m66cbl4Jl3VNz...',
+                  },
+                ],
+              }
+              'kind': 'sj#listennowitem',
+              'suggestion_reason': '9',
+              'suggestion_text': 'Popular album on Google Play Music',
+              'type': '1'
+            }
+
+        Here is an example Listen Now station::
+
+            {
+              'radio_station': {
+                'id': {
+                  'seeds': [
+                    {
+                      'artistId': 'Ax6ociylvowozcz2iepfqsar54i',
+                      'kind': 'sj#radioSeed',
+                      'metadataSeed': {
+                        'artist': {
+                          'artistArtRef': 'http://lh3.googleusercontent.com/x9qukAx...',
+                          'artistArtRefs': [
+                            {
+                              'aspectRatio': '2',
+                              'autogen': False,
+                              'kind': 'sj#imageRef',
+                              'url': 'http://lh3.googleusercontent.com/x9qukAx...',
+                            },
+                          ],
+                          'artistId': 'Ax6ociylvowozcz2iepfqsar54i',
+                          'artist_bio_attribution': {
+                          'kind': 'sj#attribution',
+                          'source_title': 'artist representative',
+                          },
+                          'kind': 'sj#artist',
+                          'name': 'Drake',
+                        },
+                        'kind': 'sj#radioSeedMetadata',
+                      },
+                     'seedType': '3',
+                    },
+                  ]
+                },
+                'title': 'Drake',
+              },
+              'compositeArtRefs': [
+                {
+                  'aspectRatio': '2',
+                  'kind': 'sj#imageRef',
+                  'url': 'http://lh3.googleusercontent.com/rE39ky1yZN...',
+                },
+                {
+                  'aspectRatio': '1',
+                  'kind': 'sj#imageRef',
+                  'url': 'http://lh3.googleusercontent.com/Pcwg_HngBr...',
+                },
+              ],
+              'images': [
+                {
+                  'aspectRatio': '2',
+                  'autogen': False,
+                  'kind': 'sj#imageRef',
+                  'url': 'http://lh3.googleusercontent.com/x9qukAx_TMam...',
+                },
+              ],
+              'suggestion_reason': '9',
+              'suggestion_text': 'Popular artist on Google Play Music',
+              'type': '3'
+            }
+        """
+
+        res = self._make_call(mobileclient.ListListenNowItems)
+
+        return res['listennow_items']
+
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
                        genre_id=None, playlist_token=None):

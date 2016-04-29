@@ -61,7 +61,8 @@ sj_image = {
     'properties': {
         'kind': {'type': 'string'},
         'url': {'type': 'string'},
-        'aspectRatio': {'type': 'string'},
+        'aspectRatio': {'type': 'string',
+                        'required': False},
         'autogen': {'type': 'boolean',
                     'required': False},
         'colorStyles': sj_image_color_styles.copy()
@@ -253,6 +254,53 @@ sj_artist['properties']['related_artists'] = {
     'required': False
 }
 
+sj_genre = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'kind': {'type': 'string'},
+        'id': {'type': 'string'},
+        'name': {'type': 'string'},
+        'children': {
+            'type': 'array',
+            'required': False,
+            'items': {'type': 'string'}
+        },
+        'parentId': {
+            'type': 'string',
+            'required': False,
+        },
+        'images': {
+            'type': 'array',
+            'required': False,
+            'items': {
+                'type': 'object',
+                'additionalProperties': False,
+                'properties': {
+                    'url': {'type': 'string'}
+                }
+            }
+        }
+    }
+}
+
+sj_station_metadata_seed = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'kind': {'type': 'string'},
+        # one of these will be present
+        'artist': {
+            'type': sj_artist,
+            'required': False
+        },
+        'genre': {
+            'type': sj_genre,
+            'required': False
+        },
+    }
+}
+
 sj_station_seed = {
     'type': 'object',
     'additionalProperties': False,
@@ -265,7 +313,8 @@ sj_station_seed = {
         'genreId': {'type': 'string', 'required': False},
         'trackId': {'type': 'string', 'required': False},
         'trackLockerId': {'type': 'string', 'required': False},
-        'curatedStationId': {'type': 'string', 'required': False}
+        'curatedStationId': {'type': 'string', 'required': False},
+        'metadataSeed': {'type': sj_station_metadata_seed, 'required': False}
     }
 }
 
@@ -304,6 +353,88 @@ sj_station = {
                          'required': False,
                          'items': {'type': 'string'}
                          }
+    }
+}
+
+sj_listen_now_album = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'artist_metajam_id': {'type': 'string'},
+        'artist_name': {'type': 'string'},
+        'artist_profile_image': {
+            'type': 'object',
+            'url': {'type': 'string'}
+        },
+        'description': {
+            'type': 'string',
+            'blank': True
+        },
+        'description_attribution': {
+            'type': sj_attribution,
+            'required': False
+        },
+        'id': {
+            'type': 'object',
+            'properties': {
+                'metajamCompactKey': {'type': 'string'},
+                'artist': {'type': 'string'},
+                'title': {'type': 'string'}
+            }
+        },
+        'title': {'type': 'string'}
+    }
+}
+
+sj_listen_now_station = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'highlight_color': {
+            'type': 'string',
+            'required': False
+        },
+        'id': {
+            'type': 'object',
+            'seeds': {
+                'type': 'array',
+                'items': {'type': sj_station_seed}
+            }
+        },
+        'profile_image': {
+            'type': 'object',
+            'required': False,
+            'url': {'type': 'string'}
+        },
+        'title': {'type': 'string'}
+    }
+}
+
+sj_listen_now_item = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'kind': {'type': 'string'},
+        'compositeArtRefs': {
+            'type': 'array',
+            'required': False,
+            'items': {'type': sj_image}
+        },
+        'images': {
+            'type': 'array',
+            'items': {'type': sj_image}
+        },
+        'suggestion_reason': {'type': 'string'},
+        'suggestion_text': {'type': 'string'},
+        'type': {'type': 'string'},
+        'album': {
+            'type': sj_listen_now_album,
+            'required': False
+        },
+        'radio_station': {
+            'type': sj_listen_now_station,
+            'required': False
+        }
     }
 }
 
@@ -893,6 +1024,33 @@ class ListPromotedTracks(McListCall):
     static_url = sj_url + 'ephemeral/top'
 
 
+class ListListenNowItems(McCall):
+    static_method = 'GET'
+    static_url = sj_url + "listennow/getlistennowitems"
+    static_params = {'alt': 'json'}
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'kind': {'type': 'string'},
+            'listennow_items': {
+                'type': 'array',
+                'items': {'type': sj_listen_now_item}
+            }
+        }
+    }
+
+    @staticmethod
+    def filter_response(msg):
+        filtered = copy.deepcopy(msg)
+        if 'listennow_items' in filtered:
+            filtered['listennow_items'] = \
+                    ["<%s listennow_items>" % len(filtered['listennow_items'])]
+
+        return filtered
+
+
 class ListStations(McListCall):
     item_schema = sj_station
     filter_text = 'stations'
@@ -1059,36 +1217,6 @@ class GetGenres(McCall):
     static_url = sj_url + 'explore/genres'
     static_params = {'alt': 'json'}
 
-    genre_schema = {
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {
-            'name': {'type': 'string'},
-            'id': {'type': 'string'},
-            'kind': {'type': 'string'},
-            'images': {
-                'type': 'array',
-                'items': {
-                    'type': 'object',
-                    'additionalProperties': False,
-                    'properties': {
-                        'url': {'type': 'string'}
-                    },
-                },
-                'required': False,
-            },
-            'children': {
-                'type': 'array',
-                'items': {'type': 'string'},
-                'required': False,
-            },
-            'parentId': {
-                'type': 'string',
-                'required': False,
-            }
-        }
-    }
-
     _res_schema = {
         'type': 'object',
         'additionalProperties': False,
@@ -1096,7 +1224,7 @@ class GetGenres(McCall):
             'kind': {'type': 'string'},
             'genres': {
                 'type': 'array',
-                'items': genre_schema,
+                'items': sj_genre,
                 'required': False,  # only on errors
             }
         }
