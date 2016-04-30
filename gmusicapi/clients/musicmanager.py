@@ -385,7 +385,8 @@ class Musicmanager(_Base):
 
     @utils.accept_singleton(basestring)
     @utils.empty_arg_shortcircuit(return_code='{}')
-    def upload(self, filepaths, transcode_quality='320k', enable_matching=False):
+    def upload(self, filepaths, enable_matching=False,
+               enable_transcoding=True, transcode_quality='320k'):
         """Uploads the given filepaths.
 
         All non-mp3 files will be transcoded before being uploaded.
@@ -405,11 +406,6 @@ class Musicmanager(_Base):
             )
 
         :param filepaths: a list of filepaths, or a single filepath.
-        :param transcode_quality: if int, pass to ffmpeg/avconv ``-q:a`` for libmp3lame
-          (`lower-better int,
-          <http://trac.ffmpeg.org/wiki/Encoding%20VBR%20(Variable%20Bit%20Rate)%20mp3%20audio>`__).
-          If string, pass to ffmpeg/avconv ``-b:a`` (eg ``'128k'`` for an average bitrate of 128k).
-          The default is 320kbps cbr (the highest possible quality).
 
         :param enable_matching: if ``True``, attempt to use `scan and match
           <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=2920799&topic=2450455>`__
@@ -422,6 +418,17 @@ class Musicmanager(_Base):
           (or with the Music Manager).
           Fixing matches from gmusicapi may be supported in a future release; see issue `#89
           <https://github.com/simon-weber/gmusicapi/issues/89>`__.
+
+        :param enable_transcoding:
+          if ``False``, non-MP3 files that aren't matched using `scan and match
+          <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=2920799&topic=2450455>`__
+          will not be uploaded.
+
+        :param transcode_quality: if int, pass to ffmpeg/avconv ``-q:a`` for libmp3lame
+          (`lower-better int,
+          <http://trac.ffmpeg.org/wiki/Encoding%20VBR%20(Variable%20Bit%20Rate)%20mp3%20audio>`__).
+          If string, pass to ffmpeg/avconv ``-b:a`` (eg ``'128k'`` for an average bitrate of 128k).
+          The default is 320kbps cbr (the highest possible quality).
 
         All Google-supported filetypes are supported; see `Google's documentation
         <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1100462>`__.
@@ -584,12 +591,16 @@ class Musicmanager(_Base):
                 content_type = external.get('content_type', 'audio/mpeg')
 
                 if track.original_content_type != locker_pb2.Track.MP3:
-                    try:
-                        self.logger.info("transcoding '%r' to mp3", path)
-                        contents = utils.transcode_to_mp3(path, quality=transcode_quality)
-                    except (IOError, ValueError) as e:
-                        self.logger.warning("error transcoding %r: %s", path, e)
-                        not_uploaded[path] = "transcoding error: %s" % e
+                    if enable_transcoding:
+                        try:
+                            self.logger.info("transcoding '%r' to mp3", path)
+                            contents = utils.transcode_to_mp3(path, quality=transcode_quality)
+                        except (IOError, ValueError) as e:
+                            self.logger.warning("error transcoding %r: %s", path, e)
+                            not_uploaded[path] = "transcoding error: %s" % e
+                            continue
+                    else:
+                        not_uploaded[path] = "transcoding disabled"
                         continue
                 else:
                     with open(path, 'rb') as f:
