@@ -156,14 +156,18 @@ class UploadMetadata(MmCall):
 
             # delete=False is needed because the NamedTemporaryFile
             # can't be opened by name a second time on Windows otherwise.
-            with open(filepath, 'rb') as f, NamedTemporaryFile(suffix=ext, delete=False) as temp:
-                shutil.copy(f.name, temp.name)
+            with NamedTemporaryFile(suffix=ext, delete=False) as temp:
+                shutil.copy(filepath, temp.name)
 
                 audio = mutagen.File(temp.name, easy=True)
                 audio.delete()
                 audio.save()
 
-                m.update(temp.read())
+                while True:
+                    data = temp.read(65536)
+                    if not data:
+                        break
+                    m.update(data)
         finally:
             try:
                 os.remove(temp.name)
