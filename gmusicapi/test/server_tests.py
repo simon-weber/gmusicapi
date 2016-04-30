@@ -552,6 +552,11 @@ class ClientTests(object):
         self.mc.get_registered_devices()
 
     @test
+    def mc_get_listen_now_items(self):
+        # no logic; just checking schema
+        self.mc.get_listen_now_items()
+
+    @test
     def mc_list_stations_inc_equal(self):
         self.assert_list_inc_equivalence(self.mc.get_all_stations)
 
