@@ -874,8 +874,11 @@ class ClientTests(object):
 
     @test(groups=['search'])
     @subscription
-    def mc_search_store(self):
+    def mc_search_store_no_playlists(self):
         res = self.mc.search('morning', max_results=100)
+
+        # TODO Playlist results are not returned consistently.
+        res.pop('playlist_hits')
 
         with Check() as check:
             for type_, hits in res.items():
