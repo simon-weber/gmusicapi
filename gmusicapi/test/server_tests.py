@@ -61,6 +61,8 @@ TEST_PLAYLIST_SHARETOKEN = ('AMaBXymHAkflgs5lvFAUyyQLYelqqMZNAB4v7Y_-'
                             'v9vmrctLOeW64GScAScoFHEnrLgOP5DSRpl9FYIH'
                             'b84HRBvyIMsxc7Zlrg==')
 
+TEST_CURATED_STATION_ID = 'L75iymnapfmeiklef5rhaqxqiry'
+
 # this is a little data class for the songs we upload
 TestSong = namedtuple('TestSong', 'sid title artist album full_data')
 
@@ -366,13 +368,15 @@ class ClientTests(object):
     @subscription
     def station_create(self):
         station_ids = []
-        for prefix, kwargs in (('Store song', {'track_id': TEST_STORE_SONG_ID}),
-                               ('Store-added song', {'track_id': self.store_songs[0].sid}),
-                               ('up song', {'track_id': self.user_songs[0].sid}),
-                               ('artist', {'artist_id': TEST_STORE_ARTIST_ID}),
-                               ('album', {'album_id': TEST_STORE_ALBUM_ID}),
-                               ('genre', {'genre_id': TEST_STORE_GENRE_ID}),
-                               ('playlist', {'playlist_token': TEST_PLAYLIST_SHARETOKEN})):
+        for prefix, kwargs in (
+                ('Store song', {'track_id': TEST_STORE_SONG_ID}),
+                ('Store-added song', {'track_id': self.store_songs[0].sid}),
+                ('up song', {'track_id': self.user_songs[0].sid}),
+                ('artist', {'artist_id': TEST_STORE_ARTIST_ID}),
+                ('album', {'album_id': TEST_STORE_ALBUM_ID}),
+                ('genre', {'genre_id': TEST_STORE_GENRE_ID}),
+                ('playlist', {'playlist_token': TEST_PLAYLIST_SHARETOKEN}),
+                ('curated station', {'curated_station_id': TEST_CURATED_STATION_ID})):
             station_ids.append(
                 self.mc.create_station(prefix + ' ' + TEST_STATION_NAME, **kwargs))
 
