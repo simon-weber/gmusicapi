@@ -857,7 +857,7 @@ class Mobileclient(_Base):
 
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
-                       genre_id=None, playlist_token=None):
+                       genre_id=None, playlist_token=None, curated_station_id=None):
         """Creates a radio station and returns its id.
 
         :param name: the name of the station to create
@@ -890,6 +890,9 @@ class Mobileclient(_Base):
         if playlist_token is not None:
             seed['playlistShareToken'] = playlist_token
             seed['seedType'] = 8
+        if curated_station_id is not None:
+            seed['curatedStationId'] = curated_station_id
+            seed['seedType'] = 9
 
         if len(seed) > 2:
             raise ValueError('exactly one {track,artist,album,genre}_id must be provided')
