@@ -105,3 +105,4 @@ Misc
 ----
 
 .. automethod:: Mobileclient.get_listen_now_items
+.. automethod:: Mobileclient.get_listen_now_situations
