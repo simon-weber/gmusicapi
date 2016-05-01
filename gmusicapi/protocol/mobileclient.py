@@ -9,6 +9,7 @@ standard_library.install_aliases()
 from builtins import *  # noqa
 
 import base64
+import calendar
 import copy
 from datetime import datetime
 from hashlib import sha1
@@ -452,6 +453,12 @@ sj_situation = {
                      'items': sj_station
                      }
     }
+}
+
+sj_situation['properties']['situations'] = {
+    'type': 'array',
+    'required': False,
+    'items': sj_situation
 }
 
 sj_search_result = {
@@ -1047,6 +1054,43 @@ class ListListenNowItems(McCall):
         if 'listennow_items' in filtered:
             filtered['listennow_items'] = \
                     ["<%s listennow_items>" % len(filtered['listennow_items'])]
+
+
+class ListListenNowSituations(McCall):
+    static_method = 'POST'
+    static_url = sj_url + 'listennow/situations'
+    static_headers = {'Content-Type': 'application/json'}
+    static_params = {'alt': 'json'}
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'distilledContextWrapper': {'type': 'object',
+                                        'distilledContextToken': {'type': 'string'},
+                                        'required': False},
+            'primaryHeader': {'type': 'string'},
+            'subHeader': {'type': 'string'},
+            'situations': {'type': 'array',
+                           'items': sj_situation,
+                           },
+        },
+    }
+
+    @classmethod
+    def dynamic_data(cls):
+        tz_offset = calendar.timegm(time.localtime()) - calendar.timegm(time.gmtime())
+
+        return json.dumps({
+            'requestSignals': {'timeZoneOffsetSecs': tz_offset}
+        })
+
+    @staticmethod
+    def filter_response(msg):
+        filtered = copy.deepcopy(msg)
+        if 'situations' in filtered.get('data', {}):
+            filtered['data']['situations'] = \
+                    ["<%s situations>" % len(filtered['data']['situations'])]
 
         return filtered
 

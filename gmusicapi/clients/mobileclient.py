@@ -751,7 +751,9 @@ class Mobileclient(_Base):
                                    updated_after=None)
 
     def get_listen_now_items(self):
-        """Returns a list of dictionaries of Listen Now items.
+        """Returns a list of dictionaries of Listen Now albums and stations.
+
+        See :func:`get_listen_now_situations` for Listen Now situations.
 
         Here is an example Listen Now album::
 
@@ -854,6 +856,62 @@ class Mobileclient(_Base):
         res = self._make_call(mobileclient.ListListenNowItems)
 
         return res['listennow_items']
+
+    def get_listen_now_situations(self):
+        """Returns a list of dictionaries that each represent a Listen Now situation.
+
+        See :func:`get_listen_now_items` for Listen Now albums and stations.
+
+        A situation contains a list of related stations or other situations.
+
+        Here is an example situation::
+
+            {
+                'description': 'Select a station of today's most popular songs.',
+                'id': 'Ntiiwllegkw73p27o236mfsj674',
+                'imageUrl': 'http://lh3.googleusercontent.com/egm4NgIK-Cmh84GjVgH...',
+                'stations': [
+                    {
+                        'compositeArtRefs': [
+                            {
+                                'aspectRatio': '2',
+                                'kind': 'sj#imageRef',
+                                'url': 'http://lh3.googleusercontent.com/ffDI377y...',
+                            },
+                        ],
+                        'contentTypes': ['1'],
+                        'description': "This playlist features today's biggest pop songs...",
+                        'imageUrls': [
+                            {
+                                'aspectRatio': '1',
+                                'autogen': False,
+                                'kind': 'sj#imageRef',
+                                'url': 'http://lh3.googleusercontent.com/B4iKX23Z...',
+                            },
+                        ],
+                        'kind': 'sj#radioStation',
+                        'name': "Today's Pop Hits",
+                        'seed': {
+                            'curatedStationId': 'Lgen6kdn43tz5b3edimqd5e4ckq',
+                            'kind': 'sj#radioSeed',
+                            'seedType': '9',
+                        },
+                        'skipEventHistory': [],
+                        'stationSeeds': [
+                            {
+                                'curatedStationId': 'Lgen6kdn43tz5b3edimqd5e4ckq',
+                                'kind': 'sj#radioSeed',
+                                'seedType': '9',
+                            },
+                        ],
+                    }
+                ],
+                'title': "Today's Biggest Hits",
+                'wideImageUrl': 'http://lh3.googleusercontent.com/13W-bm3sNmSfOjUkEqY...'
+            }
+        """
+
+        return self._make_call(mobileclient.ListListenNowSituations)['situations']
 
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
