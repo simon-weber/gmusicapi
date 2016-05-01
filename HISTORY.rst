@@ -5,9 +5,21 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-9.0.1
-+++++
-released ...
+10.0.0
+++++++
+released 2016-05-01
+
+- breaking: Mobileclient.search_all_access is now Mobileclient.search
+- breaking: Mobileclient.add_aa_track is now Mobileclient.add_store_track
+- add situation_hits and video_hits to Mobclient.search
+- add methods Mobileclient.deauthorize_device, .get_listen_now_items, and .get_listen_now_situations
+- add property Mobileclient.is_subscribed
+- add playlists and curated stations as station seeds
+- add params locale and subscription to Mobileclient.login
+- add param enable_transcoding to Musicmanager.upload
+- update to newer Google apis, returning more data in responses
+- reduce memory usage during uploading
+- fix a variety of bugs, mostly python2/3 type errors
 
 9.0.0
 +++++
