@@ -423,7 +423,8 @@ sj_listen_now_item = {
         },
         'images': {
             'type': 'array',
-            'items': {'type': sj_image}
+            'items': {'type': sj_image},
+            'required': False,
         },
         'suggestion_reason': {'type': 'string'},
         'suggestion_text': {'type': 'string'},
