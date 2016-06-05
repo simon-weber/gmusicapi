@@ -7,7 +7,10 @@ As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
 10.0.1
 ++++++
-released ...
+released 2016-06-04
+
+- switch to pycryptodomex
+- minor schema adjustments
 
 10.0.0
 ++++++
