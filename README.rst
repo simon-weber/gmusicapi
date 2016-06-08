@@ -42,7 +42,9 @@ That said, it's actively maintained, and powers a bunch of cool projects:
 
 Getting started
 ---------------
-Everything you need is at http://unofficial-google-music-api.readthedocs.org.
+Start with `the usage docs <http://unofficial-google-music-api.readthedocs.io/en/latest/usage.html#usage>`__, which will guide you through installation and the available apis.
+
+Once you're up and running, you can explore the rest of the docs at http://unofficial-google-music-api.readthedocs.io.
 
 If the documentation doesn't answer your questions, or you just want to get
 in touch, either `drop by #gmusicapi on Freenode
