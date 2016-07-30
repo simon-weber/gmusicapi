@@ -35,8 +35,9 @@ That said, it's actively maintained, and powers a bunch of cool projects:
    `gmusicproxy <http://gmusicproxy.net>`__ and
    `gmusicprocurator <https://github.com/malept/gmusicprocurator>`__,
    as well as plugins for 
-   `Mopidy <https://github.com/hechtus/mopidy-gmusic>`__ and
-   `Squeezebox <https://github.com/hechtus/squeezebox-googlemusic>`__.
+   `Mopidy <https://github.com/hechtus/mopidy-gmusic>`__,
+   `Squeezebox <https://github.com/hechtus/squeezebox-googlemusic>`__ and
+   `Tizonia <https://github.com/tizonia/tizonia-openmax-il>`__.
 -  enhancements like `autoplaylists / smart playlists <https://autoplaylists.simon.codes>`__
 
 
