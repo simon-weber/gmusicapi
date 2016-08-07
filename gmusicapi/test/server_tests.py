@@ -269,7 +269,7 @@ class ClientTests(object):
         user_sids.append(uploaded[fname])
 
         if test_subscription_features():
-            store_sids.append(self.mc.add_store_track(TEST_STORE_SONG_ID))
+            store_sids.append(self.mc.add_store_tracks(TEST_STORE_SONG_ID)[0])
 
         # we test get_all_songs here so that we can assume the existance
         # of the song for future tests (the servers take time to sync an upload)

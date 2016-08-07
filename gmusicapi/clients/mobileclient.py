@@ -242,6 +242,7 @@ class Mobileclient(_Base):
 
     @utils.require_subscription
     @utils.enforce_id_param
+    @utils.deprecated('prefer Mobileclient.add_store_tracks')
     def add_store_track(self, store_song_id):
         """Adds a store track to the library
 
@@ -249,16 +250,27 @@ class Mobileclient(_Base):
 
         :param store_song_id: store song id
         """
-        # TODO is there a way to do this on multiple tracks at once?
-        # problem is with gathering store track info
 
-        store_track_info = self.get_track_info(store_song_id)
+        return self.add_store_tracks(store_song_id)[0]
+
+    @utils.require_subscription
+    @utils.accept_singleton(basestring)
+    @utils.enforce_ids_param
+    def add_store_tracks(self, store_song_ids):
+        """Add store tracks to the library
+
+        Returns a list of the library track ids of added store tracks.
+
+        :param store_song_ids: a list of store song ids or a single store song id
+        """
 
         mutate_call = mobileclient.BatchMutateTracks
-        add_mutation = mutate_call.build_track_add(store_track_info)
-        res = self._make_call(mutate_call, [add_mutation])
+        add_mutations = [mutate_call.build_track_add(self.get_track_info(store_song_id))
+                         for store_song_id in store_song_ids]
 
-        return res['mutate_response'][0]['id']
+        res = self._make_call(mutate_call, add_mutations)
+
+        return [r['id'] for r in res['mutate_response']]
 
     @utils.accept_singleton(basestring)
     @utils.enforce_ids_param

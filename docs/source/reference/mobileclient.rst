@@ -61,6 +61,7 @@ Note that sometimes they are stored under the ``'nid'`` key, not the ``'id'`` ke
 .. automethod:: Mobileclient.get_promoted_songs
 .. automethod:: Mobileclient.increment_song_playcount
 .. automethod:: Mobileclient.add_store_track
+.. automethod:: Mobileclient.add_store_tracks
 
 Playlists
 ---------
