@@ -191,7 +191,7 @@ released 2013-04-02
 ++++++++++
 
 - add support for uploading album art (`docs
-  <https://unofficial-google-music-api.readthedocs.org/en/
+  <https://unofficial-google-music-api.readthedocs.io/en/
   latest/reference/api.html#gmusicapi.api.Api.upload_album_art>`__)
 
 - add support for .m4b files
@@ -205,7 +205,7 @@ released 2013-04-02
 ++++++++++
 
 - user now controls logging (`docs
-  <https://unofficial-google-music-api.readthedocs.org/en/
+  <https://unofficial-google-music-api.readthedocs.io/en/
   latest/reference/api.html#gmusicapi.api.Api.__init__>`__)
 
 - documentation overhaul
@@ -230,20 +230,20 @@ released 2013-04-02
 ++++++++++
 
 - breaking: upload returns a 3-tuple (`docs
-  <https://unofficial-google-music-api.readthedocs.org/en
+  <https://unofficial-google-music-api.readthedocs.io/en
   /latest/#gmusicapi.api.Api.upload>`__)
 
 - breaking: get_all_playlist_ids always returns lists of ids; remove always_id_lists option
-  (`docs <https://unofficial-google-music-api.readthedocs.org/en
+  (`docs <https://unofficial-google-music-api.readthedocs.io/en
   /latest/#gmusicapi.api.Api.get_all_playlist_ids>`__)
 
 - breaking: remove suppress_failure option in Api.__init__
 - breaking: copy_playlist ``orig_id`` argument renamed to ``playlist_id`` (`docs
-  <https://unofficial-google-music-api.readthedocs.org/en
+  <https://unofficial-google-music-api.readthedocs.io/en
   /latest/#gmusicapi.api.Api.copy_playlist>`__)
 
 - new: report_incorrect_match (only useful for Music Manager uploads) (`docs
-  <https://unofficial-google-music-api.readthedocs.org/en
+  <https://unofficial-google-music-api.readthedocs.io/en
   /latest/#gmusicapi.api.Api.report_incorrect_match>`__)
 
 - uploading fixed

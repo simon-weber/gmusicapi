@@ -394,7 +394,7 @@ class Musicmanager(_Base):
 
         An available installation of ffmpeg or avconv is required in most cases:
         see `the installation page
-        <https://unofficial-google-music-api.readthedocs.org/en
+        <https://unofficial-google-music-api.readthedocs.io/en
         /latest/usage.html?#installation>`__ for details.
 
         Returns a 3-tuple ``(uploaded, matched, not_uploaded)`` of dictionaries, eg::
