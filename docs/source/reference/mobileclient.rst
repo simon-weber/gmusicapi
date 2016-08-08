@@ -56,6 +56,7 @@ Note that sometimes they are stored under the ``'nid'`` key, not the ``'id'`` ke
 
 .. automethod:: Mobileclient.get_all_songs
 .. automethod:: Mobileclient.get_stream_url
+.. automethod:: Mobileclient.rate_songs
 .. automethod:: Mobileclient.change_song_metadata
 .. automethod:: Mobileclient.delete_songs
 .. automethod:: Mobileclient.get_promoted_songs

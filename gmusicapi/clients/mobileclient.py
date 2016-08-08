@@ -187,6 +187,32 @@ class Mobileclient(_Base):
 
     @utils.accept_singleton(dict)
     @utils.empty_arg_shortcircuit
+    def rate_songs(self, songs, rating):
+        """Rate library or store songs.
+
+        Returns rated song ids.
+
+        :param songs: a list of song dictionaries
+          or a single song dictionary.
+          required keys: 'id' for library songs or 'nid' and 'trackType' for store songs.
+        :param rating: set to ``'0'`` (no thumb), ``'1'`` (down thumb), or ``'5'`` (up thumb).
+        """
+
+        mutate_call = mobileclient.BatchMutateTracks
+        mutations = []
+        for song in songs:
+            song['rating'] = rating
+            mutations.append({'update': song})
+        self._make_call(mutate_call, mutations)
+
+        # TODO
+        # store tracks don't send back their id, so we're
+        # forced to spoof this
+        return [utils.id_or_nid(song) for song in songs]
+
+    @utils.accept_singleton(dict)
+    @utils.empty_arg_shortcircuit
+    @utils.deprecated('prefer Mobileclient.rate_songs')
     def change_song_metadata(self, songs):
         """Changes the metadata of tracks.
         Returns a list of the song ids changed.
@@ -195,8 +221,7 @@ class Mobileclient(_Base):
           or a single song dictionary.
 
         Currently, only the ``rating`` key can be changed.
-        Set it to ``'0'`` (no thumb), ``'1'`` (down thumb), or ``'5'`` (up thumb)
-        unless you're using the 5-star ratings lab.
+        Set it to ``'0'`` (no thumb), ``'1'`` (down thumb), or ``'5'`` (up thumb).
 
         You can also use this to rate store tracks
         that aren't in your library, eg::

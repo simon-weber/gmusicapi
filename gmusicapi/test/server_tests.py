@@ -621,10 +621,10 @@ class ClientTests(object):
     #     song = self.mc.get_track_info(TEST_STORE_SONG_ID)
 
     #     # increment by one but keep in rating range
-    #     song['rating'] = int(song.get('rating', '0')) + 1
-    #     song['rating'] = str(song['rating'] % 6)
+    #     rating = int(song.get('rating', '0')) + 1
+    #     rating = str(rating % 6)
 
-    #     self.mc.change_song_metadata(song)
+    #     self.mc.rate_songs(song, rating)
 
     #     self._assert_song_key_equal_to(lambda: self.mc.get_track_info(TEST_STORE_SONG_ID),
     #                              id_or_nid(song),
@@ -638,27 +638,23 @@ class ClientTests(object):
             'rating',
             '0')  # initially unrated
 
-        song['rating'] = '1'
-        self.mc.change_song_metadata(song)
+        self.mc.rate_songs(song, 1)
 
         self._assert_song_key_equal_to(self.mc.get_all_songs, song['id'], 'rating', '1')
 
-        song['rating'] = '0'
-        self.mc.change_song_metadata(song)
+        self.mc.rate_songs(song, 0)
 
     @song_test
     @retry
     def mc_get_promoted_songs(self):
         song = self.mc.get_track_info(TEST_STORE_SONG_ID)
 
-        song['rating'] = '5'
-        self.mc.change_song_metadata(song)
+        self.mc.rate_songs(song, 5)
 
         promoted = self.mc.get_promoted_songs()
         assert_true(len(promoted))
 
-        song['rating'] = '0'
-        self.mc.change_song_metadata(song)
+        self.mc.rate_songs(song, 0)
 
     def _test_increment_playcount(self, sid):
         matching = [t for t in self.mc.get_all_songs()
@@ -695,7 +691,11 @@ class ClientTests(object):
 
         old_title = song.title
         new_title = old_title + '_mod'
-        self.mc.change_song_metadata({'id': song.sid, 'title': new_title})
+        # Mobileclient.change_song_metadata is deprecated, so
+        # ignore its deprecation warning.
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            self.mc.change_song_metadata({'id': song.sid, 'title': new_title})
 
         self._assert_song_key_equal_to(self.mc.get_all_songs, song.sid, 'title', old_title)
 
