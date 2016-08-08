@@ -216,6 +216,11 @@ class Mobileclient(_Base):
             req_kwargs.setdefault('params', {})
             req_kwargs['params'].update({'hl': self._locale})
 
+            # As of API v2.5, dv is a required parameter for all calls.
+            # The dv value is part of the Android app version number,
+            # but setting this to 0 works fine.
+            req_kwargs['params'].update({'dv': 0})
+
             if self._is_subscribed:
                 req_kwargs['params'].update({'tier': 'aa'})
             else:
