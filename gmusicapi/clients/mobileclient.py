@@ -989,7 +989,9 @@ class Mobileclient(_Base):
         return [s['id'] for s in res['mutate_response']]
 
     def get_all_stations(self, incremental=False, include_deleted=False, updated_after=None):
-        """Returns a list of dictionaries that each represent a radio station.
+        """Retrieve all library stations.
+
+        Returns a list of dictionaries that each represent a radio station.
 
         :param incremental: if True, return a generator that yields lists
           of at most 1000 stations
