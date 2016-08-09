@@ -337,14 +337,18 @@ class Musicmanager(_Base):
 
     @utils.enforce_id_param
     def download_song(self, song_id):
-        """Returns a tuple ``(u'suggested_filename', 'audio_bytestring')``.
+        """Download an uploaded or purchased song from your library.
+
+        Subscription tracks can't be downloaded with this method.
+
+        Returns a tuple ``(u'suggested_filename', 'audio_bytestring')``.
         The filename
         will be what the Music Manager would save the file as,
         presented as a unicode string with the proper file extension.
         You don't have to use it if you don't want.
 
 
-        :param song_id: a single song id.
+        :param song_id: a single uploaded or purchased song id.
 
         To write the song to disk, use something like::
 
