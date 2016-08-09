@@ -1052,7 +1052,8 @@ class Mobileclient(_Base):
         """Queries Google Music for content.
 
         :param query: a string keyword to search with. Capitalization and punctuation are ignored.
-        :param max_results: Maximum number of items to be retrieved
+        :param max_results: Maximum number of items to be retrieved.
+          The maximum accepted value is 100. If set higher, results are limited to 10.
 
         The results are returned in a dictionary with keys:
         ``album_hits, artist_hits, playlist_hits, situation_hits,
