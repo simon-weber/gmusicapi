@@ -25,7 +25,7 @@ from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
 # URL for sj service
-sj_url = 'https://mclients.googleapis.com/sj/v2.4/'
+sj_url = 'https://mclients.googleapis.com/sj/v2.5/'
 
 # shared schemas
 sj_image_color_styles = {
@@ -353,7 +353,8 @@ sj_station = {
         'contentTypes': {'type': 'array',
                          'required': False,
                          'items': {'type': 'string'}
-                         }
+                         },
+        'byline': {'type': 'string', 'required': False}
     }
 }
 
@@ -375,6 +376,7 @@ sj_listen_now_album = {
             'type': sj_attribution,
             'required': False
         },
+        'explicitType': {'type': 'string', 'required': False},
         'id': {
             'type': 'object',
             'properties': {
@@ -643,10 +645,6 @@ class McBatchMutateCall(McCall):
 class Config(McCall):
     static_method = 'GET'
     static_url = sj_url + 'config'
-
-    # dv is a required param of type int.
-    # Using 0 seems to work without issue.
-    static_params = {'dv': 0}
 
     item_schema = {
         'type': 'object',
