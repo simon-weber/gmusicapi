@@ -199,6 +199,7 @@ class Musicmanager(_Base):
         if uploader_id is None:
             mac_int = getmac()
             if (mac_int >> 40) % 2:
+                self.session.logout()
                 raise OSError('a valid MAC could not be determined.'
                               ' Provide uploader_id (and be'
                               ' sure to provide the same one on future runs).')
@@ -210,6 +211,7 @@ class Musicmanager(_Base):
             uploader_id = utils.create_mac_string(mac_int)
 
         if not utils.is_valid_mac(uploader_id):
+            self.session.logout()
             raise ValueError('uploader_id is not in a valid form.'
                              '\nProvide 6 pairs of hex digits'
                              ' with capital letters',
