@@ -300,7 +300,8 @@ class ChangeSongMetadata(WcCall):
         for s in songs:
             for k in s.keys():
                 if k not in supported:
-                    raise ValueError("ChangeSongMetadata only supports the the following keys: " + str(supported) +
+                    raise ValueError("ChangeSongMetadata only supports the the following keys: "
+                                     + str(supported) +
                                      ". All other keys must be removed. Key encountered:" + k)
 
         # jsarray is just wonderful
