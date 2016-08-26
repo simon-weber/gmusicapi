@@ -300,12 +300,18 @@ class ChangeSongMetadata(WcCall):
         for s in songs:
             for k in s.keys():
                 if k not in supported:
-                    raise ValueError("ChangeSongMetadata only supports the the following keys: " + str(supported) + "."
-                             " All other keys must be removed. Key encountered:" + k)
+                    raise ValueError("ChangeSongMetadata only supports the the following keys: " + str(supported) +
+                                     ". All other keys must be removed. Key encountered:" + k)
 
         # jsarray is just wonderful
         jsarray = [[session_id, 1]]
-        song_arrays = [[s['id'], s.get('title', None), s.get('albumArtUrl', None), s.get('artist', None), s.get('album', None), s.get('albumArtist', None)] + [None] * 33 + [[]] for s in songs]
+        song_arrays = [[s['id'],
+                        s.get('title', None),
+                        s.get('albumArtUrl', None),
+                        s.get('artist', None),
+                        s.get('album', None),
+                        s.get('albumArtist', None)]
+                       + [None] * 33 + [[]] for s in songs]
         jsarray.append([song_arrays])
         print(str(jsarray))
 
