@@ -307,11 +307,11 @@ class ChangeSongMetadata(WcCall):
         # jsarray is just wonderful
         jsarray = [[session_id, 1]]
         song_arrays = [[s['id'],
-                        s.get('title', None),
-                        s.get('albumArtUrl', None),
-                        s.get('artist', None),
-                        s.get('album', None),
-                        s.get('albumArtist', None)]
+                        s.get('title'),
+                        s.get('albumArtUrl'),
+                        s.get('artist'),
+                        s.get('album'),
+                        s.get('albumArtist')]
                        + [None] * 33 + [[]] for s in songs]
         jsarray.append([song_arrays])
         print(str(jsarray))

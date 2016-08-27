@@ -251,17 +251,21 @@ class Webclient(_Base):
 
         return url
 
-    @utils.accept_singleton(basestring)
+    @utils.accept_singleton(dict)
     @utils.empty_arg_shortcircuit
-    def change_song_metadata(self, dicts):
-        """Changes metadata for a list of songs.
+    def change_song_metadata(self, songs):
+        """Changes metadata of songs.
 
-        :param dicts: a list of song dictionaries, each dictionary must contain valid 'id'
+        Returns a list of the song ids changed.
+
+        :param songs: a list of song dictionaries, each dictionary must contain valid song 'id'
 
         The following fields are supported: title, album, albumArtist, artist
         """
 
-        self._make_call(webclient.ChangeSongMetadata, dicts)
+        self._make_call(webclient.ChangeSongMetadata, songs)
+
+        return list(song['id'] for song in songs)
 
     # deprecated methods follow:
 
