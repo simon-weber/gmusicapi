@@ -314,7 +314,6 @@ class ChangeSongMetadata(WcCall):
                         s.get('albumArtist')]
                        + [None] * 33 + [[]] for s in songs]
         jsarray.append([song_arrays])
-        print(str(jsarray))
 
         return json.dumps(jsarray)
 
