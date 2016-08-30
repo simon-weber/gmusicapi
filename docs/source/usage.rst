@@ -104,7 +104,8 @@ If you need both library management and uploading, just create
 multiple client instances.
 
 There is also the :py:class:`Webclient`, which is a mostly-deprecated
-interface that provides similar features to the Mobileclient.
+interface. It is not tested nor well supported. Use :class:`Mobileclient`
+or :class:`Musicmanager` if possible.
 
 The reference section has complete information on all clients:
 

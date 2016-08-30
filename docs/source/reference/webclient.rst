@@ -1,8 +1,15 @@
 .. _webclient:
 .. currentmodule:: gmusicapi.clients
+.. |br| raw:: html
+
+   <br />
 
 Webclient Interface
 ===================
+
+**WARNING** |br|
+**Webclient functionality is not tested nor well supported.**  |br|
+**Use** :class:`Mobileclient` **or** :class:`Musicmanager` **if possible.**
 
 .. autoclass:: Webclient
 
