@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import, unicode_literals
-from future import standard_library
+from future.utils import PY3
 from past.builtins import basestring
-standard_library.install_aliases()
 from builtins import *  # noqa
-from urllib.parse import urlparse, parse_qsl
+
 import warnings
+
+if PY3:
+    from urllib.parse import parse_qsl, urlparse
+else:
+    from urlparse import parse_qsl, urlparse
 
 import gmusicapi
 from gmusicapi.clients.shared import _Base

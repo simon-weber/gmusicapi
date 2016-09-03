@@ -2,11 +2,8 @@
 
 """Utility functions used across api code."""
 from __future__ import print_function, division, absolute_import, unicode_literals
-from future import standard_library
-standard_library.install_aliases()
 from past.builtins import basestring
 from builtins import *  # noqa
-from builtins import object
 
 import ast
 from bisect import bisect_left
