@@ -283,12 +283,6 @@ class UploadMetadata(MmCall):
             if null_field not in audio:
                 track_set(null_field, '')
 
-        if isinstance(audio, mutagen.mp3.EasyMP3):
-            # Mutagen tags the album artist as `performer` in EasyMP3 tags.
-            # https://bitbucket.org/lazka/mutagen/issue/195
-            if 'performer' in audio:
-                track_set('album_artist', audio['performer'][0])
-
         # Mass-populate the rest of the simple fields.
         # Merge shared and unshared fields into {mutagen: Track}.
         fields = dict(

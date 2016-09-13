@@ -48,7 +48,7 @@ setup(
     install_requires=[
         'validictory >= 0.8.0, != 0.9.2',         # error messages
         'decorator >= 3.3.1',                     # > 3.0 likely work, but not on pypi
-        'mutagen >= 1.18',                        # EasyID3 module renaming
+        'mutagen >= 1.34',                        # EasyID3 TPE2 mapping to albumartist
         ('requests >= 1.1.0, != 1.2.0,'           # session.close, memory view TypeError
          '!= 2.2.1, != 2.8.0, != 2.8.1'),
         'python-dateutil >= 1.3, != 2.0',         # 2.0 is python3-only
