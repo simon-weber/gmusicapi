@@ -1,16 +1,18 @@
 from __future__ import print_function, division, absolute_import, unicode_literals
-from future import standard_library
-standard_library.install_aliases()
+from future.utils import PY3
 from past.builtins import basestring
 from builtins import *  # noqa
+
 import os
 from socket import gethostname
 import time
-import urllib.request
-import urllib.parse
-import urllib.error
 from uuid import getnode as getmac
 import webbrowser
+
+if PY3:
+    from urllib.parse import unquote
+else:
+    from urllib import unquote
 
 import httplib2  # included with oauth2client
 from oauth2client.client import OAuth2WebServerFlow, TokenRevokeError
@@ -379,7 +381,7 @@ class Musicmanager(_Base):
 
         cd_header = response.headers['content-disposition']
 
-        filename = urllib.parse.unquote(cd_header.split("filename*=UTF-8''")[-1])
+        filename = unquote(cd_header.split("filename*=UTF-8''")[-1])
 
         return (filename, response.content)
 

@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tools for manipulating client-received Google Music data."""
 from __future__ import print_function, division, absolute_import, unicode_literals
-from future import standard_library
-standard_library.install_aliases()
 from builtins import *  # noqa
 
 import operator

@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import, unicode_literals
-from future import standard_library
 from future.utils import PY3, bind_method
-
-standard_library.install_aliases()
 from builtins import *  # noqa
+
 from collections import namedtuple
 import functools
 from getpass import getpass

@@ -2,10 +2,7 @@
 # -*- coding: utf-8 -*-
 """Calls made by the mobile client."""
 from __future__ import print_function, division, absolute_import, unicode_literals
-from future import standard_library
 from six import raise_from
-
-standard_library.install_aliases()
 from builtins import *  # noqa
 
 import base64
