@@ -546,7 +546,7 @@ class UpdateUploadState(MmCall):
 
     static_method = 'POST'
     static_params = {'version': 1}
-    static_url = _android_url + 'sample'
+    static_url = _android_url + 'uploadstate'
 
     @staticmethod
     @pb
