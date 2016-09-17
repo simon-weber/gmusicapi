@@ -12,7 +12,7 @@ idna==2.1
 ipaddress==1.0.16
 MechanicalSoup==0.4.0
 mock==2.0.0
-mutagen==1.32
+mutagen==1.34
 ndg-httpsclient==0.4.0
 oauth2client==2.1.0
 pbr==1.10.0
