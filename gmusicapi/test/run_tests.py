@@ -13,7 +13,7 @@ import sys
 
 from proboscis import TestProgram
 
-from gmusicapi.clients import Webclient, Musicmanager, Mobileclient, OAUTH_FILEPATH
+from gmusicapi.clients import Musicmanager, Mobileclient, OAUTH_FILEPATH
 from gmusicapi.protocol.musicmanager import credentials_from_refresh_token
 from gmusicapi.test import local_tests, server_tests  # noqa
 from gmusicapi.test.utils import NoticeLogging
@@ -30,6 +30,12 @@ wc_envargs = (
     EnvArg('GM_P', 'password', 'WC password. If not present, user will be prompted.'),
 )
 
+mc_envargs = (
+    EnvArg('GM_U', 'email', 'MC user. If not present, user will be prompted.'),
+    EnvArg('GM_P', 'password', 'MC password. If not present, user will be prompted.'),
+    EnvArg('GM_AA_D_ID', 'android_id', 'A registered device id for use with MC streaming'),
+)
+
 mm_envargs = (
     EnvArg('GM_O', 'oauth_credentials', 'MM refresh token. Defaults to MM.login default.'),
     EnvArg('GM_I', 'uploader_id', 'MM uploader id. Defaults to MM.login default.'),
@@ -37,47 +43,84 @@ mm_envargs = (
 )
 
 
-def prompt_for_wc_auth():
-    """Return a valid (user, pass) tuple by continually
+# Webclient auth retreival removed while testing disabled.
+#
+# def prompt_for_wc_auth():
+#     """Return a valid (user, pass) tuple by continually
+#     prompting the user."""
+#
+#     print("These tests will never delete or modify your music."
+#           "\n\n"
+#           "If the tests fail, you *might* end up with a test"
+#           " song/playlist in your library, though."
+#           "\n")
+#
+#     wclient = Webclient()
+#     valid_wc_auth = False
+#
+#     while not valid_wc_auth:
+#         print()
+#         email = input("Email: ")
+#         passwd = getpass()
+#
+#         valid_wc_auth = wclient.login(email, passwd)
+#
+#     return email, passwd
+
+
+def prompt_for_mc_auth():
+    """Return a valid (user, pass, android_id) tuple by continually
     prompting the user."""
 
-    print ("These tests will never delete or modify your music."
-           "\n\n"
-           "If the tests fail, you *might* end up with a test"
-           " song/playlist in your library, though."
-           "\n")
+    print("These tests will never delete or modify your music."
+          "\n\n"
+          "If the tests fail, you *might* end up with a test"
+          " song/playlist in your library, though."
+          "\n")
 
-    wclient = Webclient()
-    valid_wc_auth = False
+    mclient = Mobileclient()
+    valid_mc_auth = False
 
-    while not valid_wc_auth:
+    while not valid_mc_auth:
         print()
         email = input("Email: ")
         passwd = getpass()
 
-        valid_wc_auth = wclient.login(email, passwd)
+        try:
+            android_id = os.environ['GM_AA_D_ID']
+        except KeyError:
+            android_id = input("Device ID ('mac' for FROM_MAC_ADDRESS): ")
 
-    return email, passwd
+        if android_id == "mac":
+            android_id = Mobileclient.FROM_MAC_ADDRESS
+
+        if not android_id:
+            print('a device id must be provided')
+            sys.exit(1)
+
+        valid_mc_auth = mclient.login(email, passwd, android_id)
+
+    return email, passwd, android_id
 
 
 def retrieve_auth():
     """Searches the env for auth, prompting the user if necessary.
 
-    On success, return (wc_kwargs, mc_kwargs, mm_kwargs). On failure, raise ValueError."""
+    On success, return (mc_kwargs, mm_kwargs). On failure, raise ValueError."""
 
     def get_kwargs(envargs):
         return dict([(arg.kwarg, os.environ.get(arg.envarg))
                      for arg in envargs])
 
-    wc_kwargs = get_kwargs(wc_envargs)
+    mc_kwargs = get_kwargs(mc_envargs)
     mm_kwargs = get_kwargs(mm_envargs)
 
-    if not all([wc_kwargs[arg] for arg in ('email', 'password')]):
+    if not all([mc_kwargs[arg] for arg in ('email', 'password', 'android_id')]):
         if os.environ.get('TRAVIS'):
             print('on Travis but could not read auth from environ; quitting.')
             sys.exit(1)
 
-        wc_kwargs.update(zip(['email', 'password'], prompt_for_wc_auth()))
+        mc_kwargs.update(zip(['email', 'password', 'android_id'], prompt_for_mc_auth()))
 
     if mm_kwargs['oauth_credentials'] is None:
         # ignoring race
@@ -89,23 +132,7 @@ def retrieve_auth():
         mm_kwargs['oauth_credentials'] = \
             credentials_from_refresh_token(mm_kwargs['oauth_credentials'])
 
-    mc_kwargs = wc_kwargs.copy()
-
-    try:
-        android_id = os.environ['GM_AA_D_ID']
-    except KeyError:
-        android_id = input("Device ID ('mac' for FROM_MAC_ADDRESS): ")
-
-    if android_id == "mac":
-        android_id = Mobileclient.FROM_MAC_ADDRESS
-
-    if not android_id:
-        print('a device id must be provided')
-        sys.exit(1)
-
-    mc_kwargs['android_id'] = android_id
-
-    return (wc_kwargs, mc_kwargs, mm_kwargs)
+    return (mc_kwargs, mm_kwargs)
 
 
 def freeze_method_kwargs(klass, method_name, **kwargs):
@@ -114,10 +141,9 @@ def freeze_method_kwargs(klass, method_name, **kwargs):
     bind_method(klass, method_name, partialfunc(method, **kwargs))
 
 
-def freeze_login_details(wc_kwargs, mc_kwargs, mm_kwargs):
+def freeze_login_details(mc_kwargs, mm_kwargs):
     """Set the given kwargs to be the default for client login methods."""
     for cls, kwargs in ((Musicmanager, mm_kwargs),
-                        (Webclient, wc_kwargs),
                         (Mobileclient, mc_kwargs),
                         ):
         freeze_method_kwargs(cls, 'login', **kwargs)

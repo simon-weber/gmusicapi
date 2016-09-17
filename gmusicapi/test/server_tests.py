@@ -27,7 +27,7 @@ import requests
 from requests.exceptions import SSLError
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-from gmusicapi import Webclient, Musicmanager, Mobileclient
+from gmusicapi import Musicmanager, Mobileclient
 # from gmusicapi.protocol import mobileclient
 from gmusicapi.protocol.shared import authtypes
 from gmusicapi.utils.utils import retry, id_or_nid
@@ -100,21 +100,23 @@ class SslVerificationTests(object):
 
     @test
     def clients_verify_by_default(self):
-        for client_cls in (Webclient, Mobileclient, Musicmanager):
+        # Webclient removed since testing is disabled.
+        for client_cls in (Mobileclient, Musicmanager):
             assert_raises(SSLError, self.request_invalid_site, client_cls())
 
     @test
     def disable_client_verify(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=InsecureRequestWarning)
-            for client_cls in (Webclient, Mobileclient, Musicmanager):
+            # Webclient removed since testing is disabled.
+            for client_cls in (Mobileclient, Musicmanager):
                 self.request_invalid_site(client_cls(verify_ssl=False))  # should not raise SSLError
 
 
 @test(groups=['server'])
 class ClientTests(object):
     # set on the instance in login
-    wc = None  # webclient
+    # wc = None  # webclient
     mm = None  # musicmanager
     mc = None  # mobileclient
 
