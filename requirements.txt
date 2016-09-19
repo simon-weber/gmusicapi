@@ -10,7 +10,7 @@ mutagen==1.34.1
 oauth2client==3.0.0
 pbr==1.10.0
 proboscis==1.2.6.0
-protobuf==3.0.0b2
+protobuf==3.0.0
 pyasn1==0.1.9
 pyasn1-modules==0.0.8
 pycryptodomex==3.4.2

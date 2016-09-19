@@ -17,8 +17,9 @@ _sym_db = _symbol_database.Default()
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='download.proto',
-  package='',
-  serialized_pb=_b('\n\x0e\x64ownload.proto\"\xdf\x01\n\x18GetTracksToExportRequest\x12\x11\n\tclient_id\x18\x02 \x02(\t\x12\x1a\n\x12\x63ontinuation_token\x18\x03 \x01(\t\x12\x41\n\x0b\x65xport_type\x18\x04 \x01(\x0e\x32,.GetTracksToExportRequest.TracksToExportType\x12\x13\n\x0bupdated_min\x18\x05 \x01(\x03\"<\n\x12TracksToExportType\x12\x07\n\x03\x41LL\x10\x01\x12\x1d\n\x19PURCHASED_AND_PROMOTIONAL\x10\x02\"\xbc\x01\n\x11\x44ownloadTrackInfo\x12\n\n\x02id\x18\x01 \x01(\t\x12\r\n\x05title\x18\x02 \x01(\t\x12\r\n\x05\x61lbum\x18\x03 \x01(\t\x12\x14\n\x0c\x61lbum_artist\x18\x04 \x01(\t\x12\x0e\n\x06\x61rtist\x18\x05 \x01(\t\x12\x14\n\x0ctrack_number\x18\x06 \x01(\x05\x12\x12\n\ntrack_size\x18\x07 \x01(\x03\x12\x13\n\x0b\x64isc_number\x18\x08 \x01(\x05\x12\x18\n\x10total_disc_count\x18\t \x01(\x05\"\xd3\x02\n\x19GetTracksToExportResponse\x12?\n\x06status\x18\x01 \x02(\x0e\x32/.GetTracksToExportResponse.TracksToExportStatus\x12/\n\x13\x64ownload_track_info\x18\x02 \x03(\x0b\x32\x12.DownloadTrackInfo\x12\x1a\n\x12\x63ontinuation_token\x18\x03 \x01(\t\x12\x13\n\x0bupdated_min\x18\x04 \x01(\x03\"\x92\x01\n\x14TracksToExportStatus\x12\x06\n\x02OK\x10\x01\x12\x13\n\x0fTRANSIENT_ERROR\x10\x02\x12\x1b\n\x17MAX_NUM_CLIENTS_REACHED\x10\x03\x12!\n\x1dUNABLE_TO_AUTHENTICATE_CLIENT\x10\x04\x12\x1d\n\x19UNABLE_TO_REGISTER_CLIENT\x10\x05')
+  package='wireless_android_skyjam',
+  syntax='proto2',
+  serialized_pb=_b('\n\x0e\x64ownload.proto\x12\x17wireless_android_skyjam\"\xf7\x01\n\x18GetTracksToExportRequest\x12\x11\n\tclient_id\x18\x02 \x02(\t\x12\x1a\n\x12\x63ontinuation_token\x18\x03 \x01(\t\x12Y\n\x0b\x65xport_type\x18\x04 \x01(\x0e\x32\x44.wireless_android_skyjam.GetTracksToExportRequest.TracksToExportType\x12\x13\n\x0bupdated_min\x18\x05 \x01(\x03\"<\n\x12TracksToExportType\x12\x07\n\x03\x41LL\x10\x01\x12\x1d\n\x19PURCHASED_AND_PROMOTIONAL\x10\x02\"\xbc\x01\n\x11\x44ownloadTrackInfo\x12\n\n\x02id\x18\x01 \x01(\t\x12\r\n\x05title\x18\x02 \x01(\t\x12\r\n\x05\x61lbum\x18\x03 \x01(\t\x12\x14\n\x0c\x61lbum_artist\x18\x04 \x01(\t\x12\x0e\n\x06\x61rtist\x18\x05 \x01(\t\x12\x14\n\x0ctrack_number\x18\x06 \x01(\x05\x12\x12\n\ntrack_size\x18\x07 \x01(\x03\x12\x13\n\x0b\x64isc_number\x18\x08 \x01(\x05\x12\x18\n\x10total_disc_count\x18\t \x01(\x05\"\x83\x03\n\x19GetTracksToExportResponse\x12W\n\x06status\x18\x01 \x02(\x0e\x32G.wireless_android_skyjam.GetTracksToExportResponse.TracksToExportStatus\x12G\n\x13\x64ownload_track_info\x18\x02 \x03(\x0b\x32*.wireless_android_skyjam.DownloadTrackInfo\x12\x1a\n\x12\x63ontinuation_token\x18\x03 \x01(\t\x12\x13\n\x0bupdated_min\x18\x04 \x01(\x03\"\x92\x01\n\x14TracksToExportStatus\x12\x06\n\x02OK\x10\x01\x12\x13\n\x0fTRANSIENT_ERROR\x10\x02\x12\x1b\n\x17MAX_NUM_CLIENTS_REACHED\x10\x03\x12!\n\x1dUNABLE_TO_AUTHENTICATE_CLIENT\x10\x04\x12\x1d\n\x19UNABLE_TO_REGISTER_CLIENT\x10\x05')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -26,7 +27,7 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 _GETTRACKSTOEXPORTREQUEST_TRACKSTOEXPORTTYPE = _descriptor.EnumDescriptor(
   name='TracksToExportType',
-  full_name='GetTracksToExportRequest.TracksToExportType',
+  full_name='wireless_android_skyjam.GetTracksToExportRequest.TracksToExportType',
   filename=None,
   file=DESCRIPTOR,
   values=[
@@ -41,14 +42,14 @@ _GETTRACKSTOEXPORTREQUEST_TRACKSTOEXPORTTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=182,
-  serialized_end=242,
+  serialized_start=231,
+  serialized_end=291,
 )
 _sym_db.RegisterEnumDescriptor(_GETTRACKSTOEXPORTREQUEST_TRACKSTOEXPORTTYPE)
 
 _GETTRACKSTOEXPORTRESPONSE_TRACKSTOEXPORTSTATUS = _descriptor.EnumDescriptor(
   name='TracksToExportStatus',
-  full_name='GetTracksToExportResponse.TracksToExportStatus',
+  full_name='wireless_android_skyjam.GetTracksToExportResponse.TracksToExportStatus',
   filename=None,
   file=DESCRIPTOR,
   values=[
@@ -75,42 +76,42 @@ _GETTRACKSTOEXPORTRESPONSE_TRACKSTOEXPORTSTATUS = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=629,
-  serialized_end=775,
+  serialized_start=726,
+  serialized_end=872,
 )
 _sym_db.RegisterEnumDescriptor(_GETTRACKSTOEXPORTRESPONSE_TRACKSTOEXPORTSTATUS)
 
 
 _GETTRACKSTOEXPORTREQUEST = _descriptor.Descriptor(
   name='GetTracksToExportRequest',
-  full_name='GetTracksToExportRequest',
+  full_name='wireless_android_skyjam.GetTracksToExportRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='client_id', full_name='GetTracksToExportRequest.client_id', index=0,
+      name='client_id', full_name='wireless_android_skyjam.GetTracksToExportRequest.client_id', index=0,
       number=2, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='continuation_token', full_name='GetTracksToExportRequest.continuation_token', index=1,
+      name='continuation_token', full_name='wireless_android_skyjam.GetTracksToExportRequest.continuation_token', index=1,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='export_type', full_name='GetTracksToExportRequest.export_type', index=2,
+      name='export_type', full_name='wireless_android_skyjam.GetTracksToExportRequest.export_type', index=2,
       number=4, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=1,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='updated_min', full_name='GetTracksToExportRequest.updated_min', index=3,
+      name='updated_min', full_name='wireless_android_skyjam.GetTracksToExportRequest.updated_min', index=3,
       number=5, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -125,79 +126,80 @@ _GETTRACKSTOEXPORTREQUEST = _descriptor.Descriptor(
   ],
   options=None,
   is_extendable=False,
+  syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=19,
-  serialized_end=242,
+  serialized_start=44,
+  serialized_end=291,
 )
 
 
 _DOWNLOADTRACKINFO = _descriptor.Descriptor(
   name='DownloadTrackInfo',
-  full_name='DownloadTrackInfo',
+  full_name='wireless_android_skyjam.DownloadTrackInfo',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='id', full_name='DownloadTrackInfo.id', index=0,
+      name='id', full_name='wireless_android_skyjam.DownloadTrackInfo.id', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='title', full_name='DownloadTrackInfo.title', index=1,
+      name='title', full_name='wireless_android_skyjam.DownloadTrackInfo.title', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='album', full_name='DownloadTrackInfo.album', index=2,
+      name='album', full_name='wireless_android_skyjam.DownloadTrackInfo.album', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='album_artist', full_name='DownloadTrackInfo.album_artist', index=3,
+      name='album_artist', full_name='wireless_android_skyjam.DownloadTrackInfo.album_artist', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='artist', full_name='DownloadTrackInfo.artist', index=4,
+      name='artist', full_name='wireless_android_skyjam.DownloadTrackInfo.artist', index=4,
       number=5, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='track_number', full_name='DownloadTrackInfo.track_number', index=5,
+      name='track_number', full_name='wireless_android_skyjam.DownloadTrackInfo.track_number', index=5,
       number=6, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='track_size', full_name='DownloadTrackInfo.track_size', index=6,
+      name='track_size', full_name='wireless_android_skyjam.DownloadTrackInfo.track_size', index=6,
       number=7, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='disc_number', full_name='DownloadTrackInfo.disc_number', index=7,
+      name='disc_number', full_name='wireless_android_skyjam.DownloadTrackInfo.disc_number', index=7,
       number=8, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='total_disc_count', full_name='DownloadTrackInfo.total_disc_count', index=8,
+      name='total_disc_count', full_name='wireless_android_skyjam.DownloadTrackInfo.total_disc_count', index=8,
       number=9, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -211,44 +213,45 @@ _DOWNLOADTRACKINFO = _descriptor.Descriptor(
   ],
   options=None,
   is_extendable=False,
+  syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=245,
-  serialized_end=433,
+  serialized_start=294,
+  serialized_end=482,
 )
 
 
 _GETTRACKSTOEXPORTRESPONSE = _descriptor.Descriptor(
   name='GetTracksToExportResponse',
-  full_name='GetTracksToExportResponse',
+  full_name='wireless_android_skyjam.GetTracksToExportResponse',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='status', full_name='GetTracksToExportResponse.status', index=0,
+      name='status', full_name='wireless_android_skyjam.GetTracksToExportResponse.status', index=0,
       number=1, type=14, cpp_type=8, label=2,
       has_default_value=False, default_value=1,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='download_track_info', full_name='GetTracksToExportResponse.download_track_info', index=1,
+      name='download_track_info', full_name='wireless_android_skyjam.GetTracksToExportResponse.download_track_info', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='continuation_token', full_name='GetTracksToExportResponse.continuation_token', index=2,
+      name='continuation_token', full_name='wireless_android_skyjam.GetTracksToExportResponse.continuation_token', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='updated_min', full_name='GetTracksToExportResponse.updated_min', index=3,
+      name='updated_min', full_name='wireless_android_skyjam.GetTracksToExportResponse.updated_min', index=3,
       number=4, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -263,11 +266,12 @@ _GETTRACKSTOEXPORTRESPONSE = _descriptor.Descriptor(
   ],
   options=None,
   is_extendable=False,
+  syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=436,
-  serialized_end=775,
+  serialized_start=485,
+  serialized_end=872,
 )
 
 _GETTRACKSTOEXPORTREQUEST.fields_by_name['export_type'].enum_type = _GETTRACKSTOEXPORTREQUEST_TRACKSTOEXPORTTYPE
@@ -282,21 +286,21 @@ DESCRIPTOR.message_types_by_name['GetTracksToExportResponse'] = _GETTRACKSTOEXPO
 GetTracksToExportRequest = _reflection.GeneratedProtocolMessageType('GetTracksToExportRequest', (_message.Message,), dict(
   DESCRIPTOR = _GETTRACKSTOEXPORTREQUEST,
   __module__ = 'download_pb2'
-  # @@protoc_insertion_point(class_scope:GetTracksToExportRequest)
+  # @@protoc_insertion_point(class_scope:wireless_android_skyjam.GetTracksToExportRequest)
   ))
 _sym_db.RegisterMessage(GetTracksToExportRequest)
 
 DownloadTrackInfo = _reflection.GeneratedProtocolMessageType('DownloadTrackInfo', (_message.Message,), dict(
   DESCRIPTOR = _DOWNLOADTRACKINFO,
   __module__ = 'download_pb2'
-  # @@protoc_insertion_point(class_scope:DownloadTrackInfo)
+  # @@protoc_insertion_point(class_scope:wireless_android_skyjam.DownloadTrackInfo)
   ))
 _sym_db.RegisterMessage(DownloadTrackInfo)
 
 GetTracksToExportResponse = _reflection.GeneratedProtocolMessageType('GetTracksToExportResponse', (_message.Message,), dict(
   DESCRIPTOR = _GETTRACKSTOEXPORTRESPONSE,
   __module__ = 'download_pb2'
-  # @@protoc_insertion_point(class_scope:GetTracksToExportResponse)
+  # @@protoc_insertion_point(class_scope:wireless_android_skyjam.GetTracksToExportResponse)
   ))
 _sym_db.RegisterMessage(GetTracksToExportResponse)
 
