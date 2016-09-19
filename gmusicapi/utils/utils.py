@@ -623,7 +623,7 @@ def require_subscription(function, *args, **kwargs):
     self = args[0]
 
     if not self.is_subscribed:
-        raise NotSubscribed("%s requires a subscription." % func.__name__)
+        raise NotSubscribed("%s requires a subscription." % function.__name__)
 
     return function(*args, **kwargs)
 
