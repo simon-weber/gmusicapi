@@ -1302,6 +1302,49 @@ class Mobileclient(_Base):
 
         return res['mutate_response'][0]['id']
 
+    @utils.enforce_id_param
+    def get_podcast_episode_stream_url(self, podcast_episode_id, device_id=None, quality='hi'):
+        """Returns a url that will point to an mp3 file.
+
+        :param podcast_episde_id: a single podcast episode id (hint: they always start with 'D').
+
+        :param device_id: (optional) defaults to ``android_id`` from login.
+
+          Otherwise, provide a mobile device id as a string.
+          Android device ids are 16 characters, while iOS ids
+          are uuids with 'ios:' prepended.
+
+          If you have already used Google Music on a mobile device,
+          :func:`Mobileclient.get_registered_devices
+          <gmusicapi.clients.Mobileclient.get_registered_devices>` will provide
+          at least one working id. Omit ``'0x'`` from the start of the string if present.
+
+          Registered computer ids (a MAC address) will not be accepted and will 403.
+
+          Providing an unregistered mobile device id will register it to your account,
+          subject to Google's `device limits
+          <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1230356>`__.
+          **Registering a device id that you do not own is likely a violation of the TOS.**
+
+        :param quality: (optional) stream bits per second quality
+          One of three possible values, hi: 320kbps, med: 160kbps, low: 128kbps.
+          The default is hi
+
+        When handling the resulting url, keep in mind that:
+            * you will likely need to handle redirects
+            * the url expires after a minute
+            * only one IP can be streaming music at once.
+              This can result in an http 403 with
+              ``X-Rejected-Reason: ANOTHER_STREAM_BEING_PLAYED``.
+
+        The file will not contain metadata.
+        """
+
+        device_id = self._ensure_device_id(device_id)
+
+        return self._make_call(
+            mobileclient.GetPodcastEpisodeStreamUrl, podcast_episode_id, device_id, quality)
+
     def get_podcast_series_info(self, podcast_series_id, max_episodes=50):
         """Retrieves information about a podcast series.
 

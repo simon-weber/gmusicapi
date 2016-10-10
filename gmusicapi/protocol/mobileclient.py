@@ -795,8 +795,8 @@ class McStreamCall(McCall):
                   'slt': salt,
                   'sig': sig,
                   }
-        if item_id.startswith('T'):
-            # Store track.
+        if item_id.startswith(('T', 'D')):
+            # Store track or podcast episode.
             params['mjck'] = item_id
         else:
             # Library track.
@@ -1348,6 +1348,11 @@ class ListPodcastEpisodes(McListCall):
     @classmethod
     def dynamic_data(cls, device_id=None, updated_after=None, start_token=None, max_results=None):
         pass
+
+
+class GetPodcastEpisodeStreamUrl(McStreamCall):
+    static_method = 'GET'
+    static_url = sj_stream_url + 'fplay'
 
 
 class ListStations(McListCall):
