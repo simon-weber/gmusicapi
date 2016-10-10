@@ -1605,8 +1605,8 @@ class Mobileclient(_Base):
           The maximum accepted value is 100. If set higher, results are limited to 10.
 
         The results are returned in a dictionary with keys:
-        ``album_hits, artist_hits, playlist_hits, situation_hits,
-        song_hits, station_hits, video_hits``
+        ``album_hits, artist_hits, playlist_hits, podcast hits,
+          situation_hits, song_hits, station_hits, video_hits``
         containing lists of results of that type.
 
         Free account search is restricted so may not contain hits for all result types.
@@ -1667,6 +1667,39 @@ class Mobileclient(_Base):
                         'type': 'SHARED'
                     },
                     'type': '4'
+                }],
+                'podcast_hits': [{
+                    'series': {
+                        'art': [
+                            {
+                                'aspectRatio': '1',
+                                'autogen': False,
+                                'kind': 'sj#imageRef',
+                                'url': 'https://lh3.googleusercontent.com/je4lsaiQCdfcOWoYm3Z_mC...'
+                            }
+                        ],
+                        'author': 'Steve Boyett',
+                        'continuationToken': '',
+                        'copyright': 'Music copyright c the respective artists. All other '
+                                     'material c2006, 2016 by Podrunner, LLC. All rights '
+                                     'reserved. For personal use only. Unauthorized '
+                                     'reproduction, sale, rental, exchange, public '
+                                     'performance, or broadcast of this audio is '
+                                     'prohibited.',
+                        'description': 'Nonstop, one-hour, high-energy workout music mixes '
+                                       "to help you groove while you move. Podrunner's "
+                                       'fixed-tempo and interval exercise mixes are '
+                                       'perfect for power walking, jogging, running, '
+                                       'spinning, elliptical, aerobics, and many other '
+                                       'tempo-based forms of exercise. An iTunes '
+                                       'award-winner six years in a row!',
+                        'explicitType': '2',
+                        'link': 'http://www.podrunner.com/',
+                        'seriesId': 'Ilx4ufdua5rdvzplnojtloulo3a',
+                        'title': 'PODRUNNER: Workout Music',
+                        'totalNumEpisodes': 0
+                    },
+                    'type': '9'
                 }],
                 'situation_hits': [{
                     'situation': {
@@ -1779,6 +1812,7 @@ class Mobileclient(_Base):
         return {'album_hits': hits_by_type['3'],
                 'artist_hits': hits_by_type['2'],
                 'playlist_hits': hits_by_type['4'],
+                'podcast_hits': hits_by_type['9'],
                 'situation_hits': hits_by_type['7'],
                 'song_hits': hits_by_type['1'],
                 'station_hits': hits_by_type['6'],
