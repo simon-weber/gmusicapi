@@ -93,6 +93,16 @@ A subscription is required in other countries.
 .. automethod:: Mobileclient.delete_stations
 .. automethod:: Mobileclient.get_station_tracks
 
+Podcasts
+--------
+
+.. automethod:: Mobileclient.get_all_podcast_series
+.. automethod:: Mobileclient.get_all_podcast_episodes
+.. automethod:: Mobileclient.add_podcast_series
+.. automethod:: Mobileclient.delete_podcast_series
+.. automethod:: Mobileclient.edit_podcast_series
+.. automethod:: Mobileclient.get_podcast_episode_stream_url
+
 Search
 ------
 Search Google Play for information about artists, albums, tracks, and more.
@@ -101,10 +111,14 @@ Search Google Play for information about artists, albums, tracks, and more.
 .. automethod:: Mobileclient.get_genres
 .. automethod:: Mobileclient.get_album_info
 .. automethod:: Mobileclient.get_artist_info
+.. automethod:: Mobileclient.get_podcast_episode_info
+.. automethod:: Mobileclient.get_podcast_series_info
 .. automethod:: Mobileclient.get_track_info
 
 Misc
 ----
 
+.. automethod:: Mobileclient.get_browse_podcast_hierarchy
+.. automethod:: Mobileclient.get_browse_podcast_series
 .. automethod:: Mobileclient.get_listen_now_items
 .. automethod:: Mobileclient.get_listen_now_situations
