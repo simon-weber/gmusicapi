@@ -31,6 +31,16 @@ class Mobileclient(_Base):
                                            validate,
                                            verify_ssl)
 
+    def _ensure_device_id(self, device_id=None):
+        if device_id is None:
+            device_id = self.android_id
+
+        if len(device_id) == 16 and re.match('^[a-z0-9]*$', device_id):
+            # android device ids are now sent in base 10
+            device_id = str(int(device_id, 16))
+
+        return device_id
+
     @property
     def locale(self):
         """The locale of the Mobileclient session used to localize some responses.
@@ -355,12 +365,7 @@ class Mobileclient(_Base):
         if song_id.startswith('T') and not self.is_subscribed:
             raise NotSubscribed("Store tracks require a subscription to stream.")
 
-        if device_id is None:
-            device_id = self.android_id
-
-        if len(device_id) == 16 and re.match('^[a-z0-9]*$', device_id):
-            # android device ids are now sent in base 10
-            device_id = str(int(device_id, 16))
+        device_id = self._ensure_device_id(device_id)
 
         return self._make_call(mobileclient.GetStreamUrl, song_id, device_id, quality)
 
