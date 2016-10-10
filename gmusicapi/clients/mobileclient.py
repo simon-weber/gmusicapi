@@ -1382,17 +1382,17 @@ class Mobileclient(_Base):
                                 'url': 'http://lh3.googleusercontent.com/bNoyxoGTwCGkUscMjHsvKe5...'
                             }
                         ],
-                        'description': 'Sarah Jessica Parker\xa0(Sex and the City) '
+                        'description': 'Sarah Jessica Parker (Sex and the City) '
                                        'chats with Chris about growing up without '
-                                       'television, her time on\xa0Square Pegs\xa0and '
-                                       'her character in\xa0L.A. Story. Sarah Jessica '
+                                       'television, her time on Square Pegs and '
+                                       'her character in L.A. Story. Sarah Jessica '
                                        'then talks about how she felt when she first '
-                                       'got the part of Carrie on\xa0Sex and the '
-                                       'City,\xa0how she dealt with her sudden '
+                                       'got the part of Carrie on Sex and the '
+                                       'City, how she dealt with her sudden '
                                        'celebrity of being Carrie Bradshaw and they '
                                        'come up with a crazy theory about the show! '
                                        'They also talk about Sarah Jessica’s new '
-                                       'show\xa0Divorce\xa0on HBO!',
+                                       'show Divorce on HBO!',
                         'durationMillis': '5101000',
                         'episodeId': 'Dcz67vtkhrerzh4hptfqpadt5vm',
                         'explicitType': '1',
@@ -1435,17 +1435,17 @@ class Mobileclient(_Base):
                         'url': 'http://lh3.googleusercontent.com/bNoyxoGTwCGkUscMjHsvKe5...'
                     }
                 ],
-                'description': 'Sarah Jessica Parker\xa0(Sex and the City) '
+                'description': 'Sarah Jessica Parker (Sex and the City) '
                                'chats with Chris about growing up without '
-                               'television, her time on\xa0Square Pegs\xa0and '
-                               'her character in\xa0L.A. Story. Sarah Jessica '
+                               'television, her time on Square Pegs and '
+                               'her character in L.A. Story. Sarah Jessica '
                                'then talks about how she felt when she first '
-                               'got the part of Carrie on\xa0Sex and the '
-                               'City,\xa0how she dealt with her sudden '
+                               'got the part of Carrie on Sex and the '
+                               'City, how she dealt with her sudden '
                                'celebrity of being Carrie Bradshaw and they '
                                'come up with a crazy theory about the show! '
                                'They also talk about Sarah Jessica’s new '
-                               'show\xa0Divorce\xa0on HBO!',
+                               'show Divorce on HBO!',
                 'durationMillis': '5101000',
                 'episodeId': 'Dcz67vtkhrerzh4hptfqpadt5vm',
                 'explicitType': '1',
