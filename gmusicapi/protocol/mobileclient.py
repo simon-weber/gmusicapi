@@ -23,6 +23,7 @@ from gmusicapi.utils import utils
 
 # URL for sj service
 sj_url = 'https://mclients.googleapis.com/sj/v2.5/'
+sj_stream_url = 'https://mclients.googleapis.com/music/'
 
 # shared schemas
 sj_image_color_styles = {
@@ -648,6 +649,63 @@ class McBatchMutateCall(McCall):
                               cls.__name__)
 
 
+class McStreamCall(McCall):
+    # this call will redirect to the mp3
+    static_allow_redirects = False
+
+    _s1 = bytes(base64.b64decode('VzeC4H4h+T2f0VI180nVX8x+Mb5HiTtGnKgH52Otj8ZCGDz9jRW'
+                                 'yHb6QXK0JskSiOgzQfwTY5xgLLSdUSreaLVMsVVWfxfa8Rw=='))
+    _s2 = bytes(base64.b64decode('ZAPnhUkYwQ6y5DdQxWThbvhJHN8msQ1rqJw0ggKdufQjelrKuiG'
+                                 'GJI30aswkgCWTDyHkTGK9ynlqTkJ5L4CiGGUabGeo8M6JTQ=='))
+
+    # bitwise and of _s1 and _s2 ascii, converted to string
+    _key = ''.join([chr(c1 ^ c2) for (c1, c2) in zip(_s1, _s2)]).encode("ascii")
+
+    @classmethod
+    def get_signature(cls, item_id, salt=None):
+        """Return a (sig, salt) pair for url signing."""
+
+        if salt is None:
+            salt = str(int(time.time() * 1000))
+
+        mac = hmac.new(cls._key, item_id.encode("utf-8"), sha1)
+        mac.update(salt.encode("utf-8"))
+        sig = base64.urlsafe_b64encode(mac.digest())[:-1]
+
+        return sig, salt
+
+    @staticmethod
+    def dynamic_headers(item_id, device_id, quality):
+        return {'X-Device-ID': device_id}
+
+    @classmethod
+    def dynamic_params(cls, item_id, device_id, quality):
+        sig, salt = cls.get_signature(item_id)
+
+        params = {'opt': quality,
+                  'net': 'mob',
+                  'pt': 'e',
+                  'slt': salt,
+                  'sig': sig,
+                  }
+        if item_id.startswith('T'):
+            # Store track.
+            params['mjck'] = item_id
+        else:
+            # Library track.
+            params['songid'] = item_id
+
+        return params
+
+    @staticmethod
+    def parse_response(response):
+        return response.headers['location']  # ie where we were redirected
+
+    @classmethod
+    def validate(cls, response, msg):
+        pass
+
+
 class Config(McCall):
     static_method = 'GET'
     static_url = sj_url + 'config'
@@ -712,63 +770,9 @@ class ListTracks(McListCall):
     static_url = sj_url + 'trackfeed'
 
 
-class GetStreamUrl(McCall):
+class GetStreamUrl(McStreamCall):
     static_method = 'GET'
-    static_url = 'https://android.clients.google.com/music/mplay'
-
-    # this call will redirect to the mp3
-    static_allow_redirects = False
-
-    _s1 = bytes(base64.b64decode('VzeC4H4h+T2f0VI180nVX8x+Mb5HiTtGnKgH52Otj8ZCGDz9jRW'
-                                 'yHb6QXK0JskSiOgzQfwTY5xgLLSdUSreaLVMsVVWfxfa8Rw=='))
-    _s2 = bytes(base64.b64decode('ZAPnhUkYwQ6y5DdQxWThbvhJHN8msQ1rqJw0ggKdufQjelrKuiG'
-                                 'GJI30aswkgCWTDyHkTGK9ynlqTkJ5L4CiGGUabGeo8M6JTQ=='))
-
-    # bitwise and of _s1 and _s2 ascii, converted to string
-    _key = ''.join([chr(c1 ^ c2) for (c1, c2) in zip(_s1, _s2)]).encode("ascii")
-
-    @classmethod
-    def get_signature(cls, song_id, salt=None):
-        """Return a (sig, salt) pair for url signing."""
-
-        if salt is None:
-            salt = str(int(time.time() * 1000))
-
-        mac = hmac.new(cls._key, song_id.encode("utf-8"), sha1)
-        mac.update(salt.encode("utf-8"))
-        sig = base64.urlsafe_b64encode(mac.digest())[:-1]
-
-        return sig, salt
-
-    @staticmethod
-    def dynamic_headers(song_id, device_id, quality):
-        return {'X-Device-ID': device_id}
-
-    @classmethod
-    def dynamic_params(cls, song_id, device_id, quality):
-        sig, salt = cls.get_signature(song_id)
-
-        params = {'opt': quality,
-                  'net': 'mob',
-                  'pt': 'e',
-                  'slt': salt,
-                  'sig': sig,
-                  }
-        if song_id[0] == 'T':
-            # all access
-            params['mjck'] = song_id
-        else:
-            params['songid'] = song_id
-
-        return params
-
-    @staticmethod
-    def parse_response(response):
-        return response.headers['location']  # ie where we were redirected
-
-    @classmethod
-    def validate(cls, response, msg):
-        pass
+    static_url = sj_stream_url + 'mplay'
 
 
 class ListPlaylists(McListCall):
