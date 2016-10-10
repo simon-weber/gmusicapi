@@ -1221,6 +1221,87 @@ class Mobileclient(_Base):
                                    include_deleted=include_deleted, updated_after=updated_after,
                                    device_id=device_id)
 
+    # TODO: Support multiple.
+    @utils.enforce_id_param
+    def add_podcast_series(self, podcast_id, notify_on_new_episode=False):
+        """Subscribe to a podcast series.
+
+        :param podcast_id: A podcast series id (hint: they always start with 'I').
+        :param notify_on_new_episode: Get device notifications on new episodes.
+
+        Returns podcast series id of added podcast series
+        """
+
+        mutate_call = mobileclient.BatchMutatePodcastSeries
+        update_mutations = mutate_call.build_podcast_updates([
+            {
+                'seriesId': podcast_id,
+                'subscribed': True,
+                'userPreferences': {
+                    'subscribed': True,
+                    'notifyOnNewEpisode': notify_on_new_episode
+                }
+            }
+        ])
+
+        res = self._make_call(mutate_call, update_mutations)
+
+        return res['mutate_response'][0]['id']
+
+    # TODO: Support multiple.
+    @utils.enforce_id_param
+    def delete_podcast_series(self, podcast_id):
+        """Unsubscribe to a podcast series.
+
+        :param podcast_id: A podcast series id (hint: they always start with 'I').
+
+        Returns podcast series id of removed podcast series
+        """
+
+        mutate_call = mobileclient.BatchMutatePodcastSeries
+        update_mutations = mutate_call.build_podcast_updates([
+            {
+                'seriesId': podcast_id,
+                'subscribed': False,
+                'userPreferences': {
+                    'subscribed': False,
+                    'notifyOnNewEpisode': False
+                }
+            }
+        ])
+
+        res = self._make_call(mutate_call, update_mutations)
+
+        return res['mutate_response'][0]['id']
+
+    # TODO: Support multiple.
+    @utils.enforce_id_param
+    def edit_podcast_series(self, podcast_id, subscribe=True, notify_on_new_episode=False):
+        """Edit a podcast series subscription.
+
+        :param podcast_id: A podcast series id (hint: they always start with 'I').
+        :param subscribe: Subscribe to podcast.
+        :param notify_on_new_episode: Get device notifications on new episodes.
+
+        Returns podcast series id of edited podcast series
+        """
+
+        mutate_call = mobileclient.BatchMutatePodcastSeries
+        update_mutations = mutate_call.build_podcast_updates([
+            {
+                'seriesId': podcast_id,
+                'subscribed': subscribe,
+                'userPreferences': {
+                    'subscribed': subscribe,
+                    'notifyOnNewEpisode': notify_on_new_episode
+                }
+            }
+        ])
+
+        res = self._make_call(mutate_call, update_mutations)
+
+        return res['mutate_response'][0]['id']
+
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
                        genre_id=None, playlist_token=None, curated_station_id=None):

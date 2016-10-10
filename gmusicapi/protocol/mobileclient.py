@@ -1257,6 +1257,23 @@ class ListBrowsePodcastSeries(McCall):
                     ["<%s podcasts>" % len(filtered['series'])]
 
 
+class BatchMutatePodcastSeries(McBatchMutateCall):
+    static_method = 'POST'
+    static_url = sj_url + 'podcastseries/batchmutate'
+
+    @staticmethod
+    def build_podcast_updates(updates):
+        """
+        :param updates:
+          [
+            {'seriesId': '', 'subscribed': '', 'userPreferences': {
+             'notifyOnNewEpisode': '', 'subscrubed': ''}}...
+          ]
+        """
+
+        return [{'update': update} for update in updates]
+
+
 # The podcastseries and podcastepisode list calls are strange in that they require a device
 # ID and pass updated-min, max-results, and start-token as params.
 # The start-token param is required, even if not given, to get a result for more than one
