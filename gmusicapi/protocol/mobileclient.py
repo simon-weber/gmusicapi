@@ -1211,6 +1211,24 @@ class ListListenNowSituations(McCall):
         return filtered
 
 
+class GetBrowsePodcastHierarchy(McCall):
+    static_method = 'GET'
+    static_url = sj_url + 'podcast/browsehierarchy'
+    static_params = {'alt': 'json'}
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'groups': {
+                'type': 'array',
+                'required': False,  # Only on errors
+                'items': sj_podcast_genre
+            }
+        }
+    }
+
+
 class ListStations(McListCall):
     item_schema = sj_station
     filter_text = 'stations'

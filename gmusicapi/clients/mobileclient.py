@@ -953,6 +953,95 @@ class Mobileclient(_Base):
 
         return self._make_call(mobileclient.ListListenNowSituations)['situations']
 
+    def get_browse_podcast_hierarchy(self):
+        """Retrieve the hierarchy of podcast browse genres.
+
+        Returns a list of podcast genres and subgenres::
+
+            {
+                "groups": [
+                    {
+                        "id": "JZCpodcasttopchart",
+                        "displayName": "Top Charts",
+                        "subgroups": [
+                            {
+                             "id": "JZCpodcasttopchartall",
+                             "displayName": "All categories"
+                            },
+                            {
+                             "id": "JZCpodcasttopchartarts",
+                             "displayName": "Arts"
+                            },
+                            {
+                             "id": "JZCpodcasttopchartbusiness",
+                             "displayName": "Business"
+                            },
+                            {
+                             "id": "JZCpodcasttopchartcomedy",
+                             "displayName": "Comedy"
+                            },
+                            {
+                             "id": "JZCpodcasttopcharteducation",
+                             "displayName": "Education"
+                            },
+                            {
+                             "id": "JZCpodcasttopchartgames",
+                             "displayName": "Games & hobbies"
+                            },
+                            {
+                             "id": "JZCpodcasttopchartgovernment",
+                             "displayName": "Government & organizations"
+                            },
+                            {
+                             "id": "JZCpodcasttopcharthealth",
+                             "displayName": "Health"
+                            },
+                            {
+                             "id": "JZCpodcasttopchartkids",
+                             "displayName": "Kids & families"
+                            },
+                            {
+                             "id": "JZCpodcasttopchartmusic",
+                             "displayName": "Music"
+                            },
+                            {
+                             "id": "JZCpodcasttopchartnews",
+                             "displayName": "News & politics"
+                            },
+                            {
+                             "id": "JZCpodcasttopchartreligion",
+                             "displayName": "Religion & spirituality"
+                            },
+                            {
+                             "id": "JZCpodcasttopchartscience",
+                             "displayName": "Science & medicine"
+                            },
+                            {
+                             "id": "JZCpodcasttopchartsociety",
+                             "displayName": "Society & culture"
+                            },
+                            {
+                             "id": "JZCpodcasttopchartsports",
+                             "displayName": "Sports & recreation"
+                            },
+                            {
+                             "id": "JZCpodcasttopcharttechnology",
+                             "displayName": "Technology"
+                            },
+                            {
+                             "id": "JZCpodcasttopcharttv",
+                             "displayName": "TV & film"
+                            }
+                        ]
+                    }
+                ]
+            }
+        """
+
+        res = self._make_call(mobileclient.GetBrowsePodcastHierarchy)
+
+        return res.get('groups', [])
+
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
                        genre_id=None, playlist_token=None, curated_station_id=None):
