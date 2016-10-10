@@ -1154,6 +1154,73 @@ class Mobileclient(_Base):
                                    include_deleted=include_deleted, updated_after=updated_after,
                                    device_id=device_id)
 
+    def get_all_podcast_episodes(self, device_id=None, incremental=False,
+                                 include_deleted=False, updated_after=None):
+        """Retrieve list of episodes from user-subscribed podcast series.
+
+        :param device_id: (optional) defaults to ``android_id`` from login.
+
+          Otherwise, provide a mobile device id as a string.
+          Android device ids are 16 characters, while iOS ids
+          are uuids with 'ios:' prepended.
+
+          If you have already used Google Music on a mobile device,
+          :func:`Mobileclient.get_registered_devices
+          <gmusicapi.clients.Mobileclient.get_registered_devices>` will provide
+          at least one working id. Omit ``'0x'`` from the start of the string if present.
+
+          Registered computer ids (a MAC address) will not be accepted and will 403.
+
+          Providing an unregistered mobile device id will register it to your account,
+          subject to Google's `device limits
+          <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1230356>`__.
+          **Registering a device id that you do not own is likely a violation of the TOS.**
+
+        :param incremental: if True, return a generator that yields lists
+          of at most 1000 playlists
+          as they are retrieved from the server. This can be useful for
+          presenting a loading bar to a user.
+
+        :param include_deleted: if True, include playlists that have been deleted
+          in the past.
+
+        :param updated_after: a datetime.datetime; defaults to unix epoch
+
+        Returns a list of podcast episode dicts.
+
+        Here is an example podcast episode dict::
+
+            {
+                'art': [
+                    {
+                        'aspectRatio': '1',
+                        'autogen': False,
+                        'kind': 'sj#imageRef',
+                        'url': 'http://lh3.googleusercontent.com/bNoyxoGTwCGkUscMjHsvKe5W80uMOfq...'
+                    }
+                ],
+                'deleted': False,
+                'description': 'Comedian Bill Burr yelled at Philadelphia, Chris vaguely '
+                               'understands hockey, Jonah understands it even less, and Matt '
+                               'is weirdly not tired of the running "Matt loves the Dave '
+                               'Matthews Band" joke, though I\'m sure all of you are.',
+                'durationMillis': '4310000',
+                'episodeId': 'D6i26frpxu53t2ws3lpbjtpovum',
+                'explicitType': '2',
+                'fileSize': '69064793',
+                'publicationTimestampMillis': '1277791500000',
+                'seriesId': 'Iliyrhelw74vdqrro77kq2vrdhy',
+                'seriesTitle': 'The Nerdist',
+                'title': 'Bill Burr'
+            }
+
+        """
+        device_id = self._ensure_device_id(device_id)
+
+        return self._get_all_items(mobileclient.ListPodcastEpisodes, incremental=incremental,
+                                   include_deleted=include_deleted, updated_after=updated_after,
+                                   device_id=device_id)
+
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
                        genre_id=None, playlist_token=None, curated_station_id=None):

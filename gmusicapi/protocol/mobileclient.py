@@ -1295,6 +1295,44 @@ class ListPodcastSeries(McListCall):
         pass
 
 
+# The podcastseries and podcastepisode list calls are strange in that they require a device
+# ID and pass updated-min, max-results, and start-token as params.
+# The start-token param is required, even if not given, to get a result for more than one
+# call in a session.
+class ListPodcastEpisodes(McListCall):
+    item_schema = sj_podcast_episode
+    filter_text = 'podcast episodes'
+
+    static_method = 'GET'
+    static_url = sj_url + 'podcastepisode'
+
+    @staticmethod
+    def dynamic_headers(device_id, updated_after=None, start_token=None, max_results=None):
+        return {'X-Device-ID': device_id}
+
+    @classmethod
+    def dynamic_params(cls, device_id=None, updated_after=None, start_token=None, max_results=None):
+        params = {}
+
+        if updated_after is None:
+            microseconds = 0
+        else:
+            microseconds = utils.datetime_to_microseconds(updated_after)
+
+        params['updated-min'] = microseconds
+
+        params['start-token'] = start_token
+
+        if max_results is not None:
+            params['max-results'] = str(max_results)
+
+        return params
+
+    @classmethod
+    def dynamic_data(cls, device_id=None, updated_after=None, start_token=None, max_results=None):
+        pass
+
+
 class ListStations(McListCall):
     item_schema = sj_station
     filter_text = 'stations'
