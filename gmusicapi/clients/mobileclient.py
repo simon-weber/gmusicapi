@@ -1370,22 +1370,38 @@ class Mobileclient(_Base):
         kwargs are passed to the call."""
 
         get_next_chunk = True
-        lib_chunk = {'nextPageToken': None}
+        lib_chunk = {}
+        next_page_token = None
 
         while get_next_chunk:
             lib_chunk = self._make_call(call,
-                                        start_token=lib_chunk['nextPageToken'],
+                                        start_token=next_page_token,
                                         **kwargs)
 
-            items = lib_chunk['data']['items']
-
             if not include_deleted:
-                items = [item for item in items
-                         if not item.get('deleted', False)]
+                items = []
 
-            yield items
+                for item in lib_chunk['data']['items']:
+                    if 'userPreferences' in item:
+                        if item['userPreferences'].get('subscribed', False):
+                            items.append(item)
+                    elif not item.get('deleted', False):
+                        items.append(item)
+            else:
+                items = lib_chunk['data']['items']
 
-            get_next_chunk = 'nextPageToken' in lib_chunk
+            # Conditional prevents generator from yielding empty
+            # list for last page of podcast list calls.
+            if items:
+                yield items
+
+            # Podcast list calls always include 'nextPageToken' in responses.
+            # We have to check to make sure we don't get stuck in an infinite loop
+            # by comparing the previous and next page tokens.
+            prev_page_token = next_page_token
+            next_page_token = lib_chunk.get('nextPageToken')
+
+            get_next_chunk = (next_page_token != prev_page_token)
 
     @utils.enforce_id_param
     def get_album_info(self, album_id, include_tracks=True):
