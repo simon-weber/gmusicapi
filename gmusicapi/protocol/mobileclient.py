@@ -449,6 +449,111 @@ sj_listen_now_item = {
     }
 }
 
+sj_podcast_genre = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'id': {'type': 'string'},
+        'displayName': {'type': 'string'}
+    }
+}
+
+sj_podcast_genre['properties']['subgroups'] = {
+    'type': 'array',
+    'required': False,
+    'items': sj_podcast_genre
+}
+
+sj_podcast_episode = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'art': {
+            'type': 'array',
+            'required': False,
+            'items': sj_image
+        },
+        'author': {
+            'type': 'string',
+            'required': False
+        },
+        'deleted': {
+            'type': 'string',
+            'required': False
+        },
+        'description': {
+            'type': 'string',
+            'required': False
+        },
+        'durationMillis': {'type': 'string'},
+        'episodeId': {'type': 'string'},
+        'explicitType': {'type': 'string'},
+        'fileSize': {'type': 'string'},
+        'playbackPositionMillis': {
+            'type': 'string',
+            'required': False
+        },
+        'publicationTimestampMillis': {
+            'type': 'string',
+            'required': False
+        },
+        'seriesId': {'type': 'string'},
+        'seriesTitle': {'type': 'string'},
+        'title': {'type': 'string'}
+    },
+}
+
+sj_podcast_series = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'art': {
+            'type': 'array',
+            'required': False,
+            'items': sj_image
+        },
+        'author': {'type': 'string'},
+        'continuationToken': {
+            'type': 'string',
+            'required': False,
+            'blank': True
+        },
+        'copyright': {
+            'type': 'string',
+            'required': False
+        },
+        'description': {
+            'type': 'string',
+            'required': False
+        },
+        'episodes': {
+            'type': 'array',
+            'required': False,
+            'items': sj_podcast_episode
+        },
+        'explicitType': {'type': 'string'},
+        'link': {'type': 'string'},
+        'seriesId': {'type': 'string'},
+        'title': {'type': 'string'},
+        'totalNumEpisodes': {'type': 'integer'},
+        'userPreferences': {
+            'type': 'object',
+            'required': False,
+            'properties': {
+                'autoDownload': {
+                    'type': 'boolean',
+                    'required': False
+                },
+                'notifyOnNewEpisode': {
+                    'type': 'boolean',
+                    'required': False
+                },
+                'subscribed': {'type': 'boolean'}
+            }
+        }
+    }
+}
+
 sj_situation = {
     'type': 'object',
     'additionalProperties': False,
@@ -484,6 +589,7 @@ sj_search_result = {
         'album': sj_album.copy(),
         'track': sj_track.copy(),
         'playlist': sj_playlist.copy(),
+        'series': sj_podcast_series.copy(),
         'station': sj_station.copy(),
         'situation': sj_situation.copy(),
         'youtube_video': sj_video.copy()
@@ -494,6 +600,7 @@ sj_search_result['properties']['artist']['required'] = False
 sj_search_result['properties']['album']['required'] = False
 sj_search_result['properties']['track']['required'] = False
 sj_search_result['properties']['playlist']['required'] = False
+sj_search_result['properties']['series']['required'] = False
 sj_search_result['properties']['station']['required'] = False
 sj_search_result['properties']['situation']['required'] = False
 sj_search_result['properties']['youtube_video']['required'] = False
