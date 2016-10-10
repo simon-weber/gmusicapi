@@ -1042,6 +1042,43 @@ class Mobileclient(_Base):
 
         return res.get('groups', [])
 
+    def get_browse_podcast_series(self, genre_id='JZCpodcasttopchartall'):
+        """Retrieve podcast series from browse podcasts by genre.
+
+        :param genre_id: A podcast genre id as returned by :func:`get_podcast_browse_hierarchy`.
+          Defaults to Top Chart 'All categories'.
+
+        Returns a list of podcast series dicts.
+
+        Here is an example podcast series dict::
+
+            {
+                'art': [
+                    {
+                        'aspectRatio': '1',
+                        'autogen': False,
+                        'kind': 'sj#imageRef',
+                        'url': 'http://lh3.googleusercontent.com/liR-Pm7EhB58wrAa4uo9Y33LcJJ8keU...'
+                    }
+                ],
+                'author': 'NBC Sports Radio',
+                'continuationToken': '',
+                'description': 'Mike Florio talks about the biggest NFL topics with the '
+                              'people who are most passionate about the game: League execs, '
+                              'players, coaches and the journalists who cover pro football.',
+                'explicitType': '2',
+                'link': 'https://audioboom.com/channel/pro-football-talk-live-with-mike-florio',
+                'seriesId': 'I3iad5heqorm3nck6yp7giruc5i',
+                'title': 'Pro Football Talk Live with Mike Florio',
+                'totalNumEpisodes': 0
+            }
+
+        """
+
+        res = self._make_call(mobileclient.ListBrowsePodcastSeries, id=genre_id)
+
+        return res.get('series', [])
+
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
                        genre_id=None, playlist_token=None, curated_station_id=None):

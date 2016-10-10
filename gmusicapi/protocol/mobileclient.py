@@ -1229,6 +1229,34 @@ class GetBrowsePodcastHierarchy(McCall):
     }
 
 
+class ListBrowsePodcastSeries(McCall):
+    static_method = 'GET'
+    static_url = sj_url + 'podcast/browse'
+    static_params = {'alt': 'json'}
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'series': {
+                'type': 'array',
+                'items': {'type': sj_podcast_series}
+            }
+        }
+    }
+
+    @classmethod
+    def dynamic_params(cls, id=None):
+        return {'id': id}
+
+    @staticmethod
+    def filter_response(msg):
+        filtered = copy.deepcopy(msg)
+        if 'series' in filtered:
+            filtered['series'] = \
+                    ["<%s podcasts>" % len(filtered['series'])]
+
+
 class ListStations(McListCall):
     item_schema = sj_station
     filter_text = 'stations'
