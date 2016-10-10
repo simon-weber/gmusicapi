@@ -1376,6 +1376,47 @@ class Mobileclient(_Base):
 
         return self._make_call(mobileclient.GetPodcastSeries, podcast_series_id, max_episodes)
 
+    def get_podcast_episode_info(self, podcast_episode_id):
+        """Retrieves information about a podcast episode.
+
+        :param podcast_episode_id: A podcast episode id (hint: they always start with 'D').
+
+        Returns a dict, eg::
+
+            {
+                'art': [
+                    {
+                        'aspectRatio': '1',
+                        'autogen': False,
+                        'kind': 'sj#imageRef',
+                        'url': 'http://lh3.googleusercontent.com/bNoyxoGTwCGkUscMjHsvKe5...'
+                    }
+                ],
+                'description': 'Sarah Jessica Parker\xa0(Sex and the City) '
+                               'chats with Chris about growing up without '
+                               'television, her time on\xa0Square Pegs\xa0and '
+                               'her character in\xa0L.A. Story. Sarah Jessica '
+                               'then talks about how she felt when she first '
+                               'got the part of Carrie on\xa0Sex and the '
+                               'City,\xa0how she dealt with her sudden '
+                               'celebrity of being Carrie Bradshaw and they '
+                               'come up with a crazy theory about the show! '
+                               'They also talk about Sarah Jessica’s new '
+                               'show\xa0Divorce\xa0on HBO!',
+                'durationMillis': '5101000',
+                'episodeId': 'Dcz67vtkhrerzh4hptfqpadt5vm',
+                'explicitType': '1',
+                'fileSize': '40995252',
+                'publicationTimestampMillis': '1475640000000',
+                'seriesId': 'Iliyrhelw74vdqrro77kq2vrdhy',
+                'seriesTitle': 'The Nerdist',
+                'title': 'Sarah Jessica Parker'
+            }
+
+        """
+
+        return self._make_call(mobileclient.GetPodcastEpisode, podcast_episode_id)
+
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
                        genre_id=None, playlist_token=None, curated_station_id=None):

@@ -1512,6 +1512,19 @@ class GetPodcastSeries(McCall):
             'num': num_episodes}
 
 
+class GetPodcastEpisode(McCall):
+    static_method = 'GET'
+    static_url = sj_url + 'podcast/fetchepisode'
+    static_headers = {'Content-Type': 'application/json'}
+    static_params = {'alt': 'json'}
+
+    _res_schema = sj_podcast_episode
+
+    @staticmethod
+    def dynamic_params(podcast_episode_id):
+        return {'nid': podcast_episode_id}
+
+
 class GetStoreTrack(McCall):
     # TODO does this accept library ids, too?
     static_method = 'GET'
