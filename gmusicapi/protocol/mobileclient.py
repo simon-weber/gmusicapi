@@ -1497,6 +1497,21 @@ class BatchMutateTracks(McBatchMutateCall):
         return {'create': track_dict}
 
 
+class GetPodcastSeries(McCall):
+    static_method = 'GET'
+    static_url = sj_url + 'podcast/fetchseries'
+    static_headers = {'Content-Type': 'application/json'}
+    static_params = {'alt': 'json'}
+
+    _res_schema = sj_podcast_series
+
+    @staticmethod
+    def dynamic_params(podcast_series_id, num_episodes):
+        return {
+            'nid': podcast_series_id,
+            'num': num_episodes}
+
+
 class GetStoreTrack(McCall):
     # TODO does this accept library ids, too?
     static_method = 'GET'

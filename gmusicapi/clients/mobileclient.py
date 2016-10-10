@@ -1302,6 +1302,80 @@ class Mobileclient(_Base):
 
         return res['mutate_response'][0]['id']
 
+    def get_podcast_series_info(self, podcast_series_id, max_episodes=50):
+        """Retrieves information about a podcast series.
+
+        :param podcast_series_id: A podcast series id (hint: they always start with 'I').
+        :param max_episodes: Maximum number of episodes to retrieve
+
+        Returns a dict, eg::
+
+            {
+                'art': [
+                    {
+                        'aspectRatio': '1',
+                        'autogen': False,
+                        'kind': 'sj#imageRef',
+                        'url': 'http://lh3.googleusercontent.com/bNoyxoGTwCGkUscMjHsvKe5W80uMOfq...'
+                    }
+                ],
+                'author': 'Chris Hardwick',
+                'continuationToken': '',
+                'description': 'I am Chris Hardwick. I am on TV a lot and have a blog at '
+                               'nerdist.com. This podcast is basically just me talking about '
+                               'stuff and things with my two nerdy friends Jonah Ray and Matt '
+                               'Mira, and usually someone more famous than all of us. '
+                               'Occasionally we swear because that is fun. I hope you like '
+                               "it, but if you don't I'm sure you will not hesitate to unfurl "
+                               "your rage in the 'reviews' section because that's how the "
+                               'Internet works.',
+                'episodes': [
+                    {
+                        'art': [
+                            {
+                                'aspectRatio': '1',
+                                'autogen': False,
+                                'kind': 'sj#imageRef',
+                                'url': 'http://lh3.googleusercontent.com/bNoyxoGTwCGkUscMjHsvKe5...'
+                            }
+                        ],
+                        'description': 'Sarah Jessica Parker\xa0(Sex and the City) '
+                                       'chats with Chris about growing up without '
+                                       'television, her time on\xa0Square Pegs\xa0and '
+                                       'her character in\xa0L.A. Story. Sarah Jessica '
+                                       'then talks about how she felt when she first '
+                                       'got the part of Carrie on\xa0Sex and the '
+                                       'City,\xa0how she dealt with her sudden '
+                                       'celebrity of being Carrie Bradshaw and they '
+                                       'come up with a crazy theory about the show! '
+                                       'They also talk about Sarah Jessica’s new '
+                                       'show\xa0Divorce\xa0on HBO!',
+                        'durationMillis': '5101000',
+                        'episodeId': 'Dcz67vtkhrerzh4hptfqpadt5vm',
+                        'explicitType': '1',
+                        'fileSize': '40995252',
+                        'publicationTimestampMillis': '1475640000000',
+                        'seriesId': 'Iliyrhelw74vdqrro77kq2vrdhy',
+                        'seriesTitle': 'The Nerdist',
+                        'title': 'Sarah Jessica Parker'
+                    },
+                ]
+                'explicitType': '1',
+                'link': 'http://nerdist.com/',
+                'seriesId': 'Iliyrhelw74vdqrro77kq2vrdhy',
+                'title': 'The Nerdist',
+                'totalNumEpisodes': 829,
+                'userPreferences': {
+                    'autoDownload': False,
+                    'notifyOnNewEpisode': False,
+                    'subscribed': True
+                }
+            }
+
+        """
+
+        return self._make_call(mobileclient.GetPodcastSeries, podcast_series_id, max_episodes)
+
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
                        genre_id=None, playlist_token=None, curated_station_id=None):
