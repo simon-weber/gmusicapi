@@ -1079,6 +1079,81 @@ class Mobileclient(_Base):
 
         return res.get('series', [])
 
+    def get_all_podcast_series(self, device_id=None, incremental=False,
+                               include_deleted=False, updated_after=None):
+        """Retrieve list of user-subscribed podcast series.
+
+        :param device_id: (optional) defaults to ``android_id`` from login.
+
+          Otherwise, provide a mobile device id as a string.
+          Android device ids are 16 characters, while iOS ids
+          are uuids with 'ios:' prepended.
+
+          If you have already used Google Music on a mobile device,
+          :func:`Mobileclient.get_registered_devices
+          <gmusicapi.clients.Mobileclient.get_registered_devices>` will provide
+          at least one working id. Omit ``'0x'`` from the start of the string if present.
+
+          Registered computer ids (a MAC address) will not be accepted and will 403.
+
+          Providing an unregistered mobile device id will register it to your account,
+          subject to Google's `device limits
+          <http://support.google.com/googleplay/bin/answer.py?hl=en&answer=1230356>`__.
+          **Registering a device id that you do not own is likely a violation of the TOS.**
+
+        :param incremental: if True, return a generator that yields lists
+          of at most 1000 playlists
+          as they are retrieved from the server. This can be useful for
+          presenting a loading bar to a user.
+
+        :param include_deleted: if True, include playlists that have been deleted
+          in the past.
+
+        :param updated_after: a datetime.datetime; defaults to unix epoch
+
+        Returns a list of podcast series dicts.
+
+        Here is an example podcast series dict::
+
+            {
+                'art': [
+                    {
+                        'aspectRatio': '1',
+                        'autogen': False,
+                        'kind': 'sj#imageRef',
+                        'url': 'http://lh3.googleusercontent.com/bNoyxoGTwCGkUscMjHsvKe5W80uMOfq...'
+                    }
+                ],
+                'author': 'Chris Hardwick',
+                'continuationToken': '',
+                'description': 'I am Chris Hardwick. I am on TV a lot and have a blog at '
+                               'nerdist.com. This podcast is basically just me talking about '
+                               'stuff and things with my two nerdy friends Jonah Ray and Matt '
+                               'Mira, and usually someone more famous than all of us. '
+                               'Occasionally we swear because that is fun. I hope you like '
+                               "it, but if you don't I'm sure you will not hesitate to unfurl "
+                               "your rage in the 'reviews' section because that's how the "
+                               'Internet works.',
+                'explicitType': '1',
+                'link': 'http://nerdist.com/',
+                'seriesId': 'Iliyrhelw74vdqrro77kq2vrdhy',
+                'title': 'The Nerdist',
+                'totalNumEpisodes': 829,
+                'userPreferences': {
+                    'autoDownload': False,
+                    'notifyOnNewEpisode': False,
+                    'subscribed': True
+                }
+            }
+
+        """
+
+        device_id = self._ensure_device_id(device_id)
+
+        return self._get_all_items(mobileclient.ListPodcastSeries, incremental=incremental,
+                                   include_deleted=include_deleted, updated_after=updated_after,
+                                   device_id=device_id)
+
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
                        genre_id=None, playlist_token=None, curated_station_id=None):
