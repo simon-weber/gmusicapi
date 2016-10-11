@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import print_function, division, absolute_import, unicode_literals
 from past.builtins import basestring
 from builtins import *  # noqa
