@@ -1104,11 +1104,11 @@ class Mobileclient(_Base):
           **Registering a device id that you do not own is likely a violation of the TOS.**
 
         :param incremental: if True, return a generator that yields lists
-          of at most 1000 playlists
+          of at most 1000 podcast series
           as they are retrieved from the server. This can be useful for
           presenting a loading bar to a user.
 
-        :param include_deleted: if True, include playlists that have been deleted
+        :param include_deleted: if True, include podcast series that have been deleted
           in the past.
 
         :param updated_after: a datetime.datetime; defaults to unix epoch
@@ -1179,11 +1179,11 @@ class Mobileclient(_Base):
           **Registering a device id that you do not own is likely a violation of the TOS.**
 
         :param incremental: if True, return a generator that yields lists
-          of at most 1000 playlists
+          of at most 1000 podcast episodes
           as they are retrieved from the server. This can be useful for
           presenting a loading bar to a user.
 
-        :param include_deleted: if True, include playlists that have been deleted
+        :param include_deleted: if True, include podcast episodes that have been deleted
           in the past.
 
         :param updated_after: a datetime.datetime; defaults to unix epoch
@@ -1607,7 +1607,7 @@ class Mobileclient(_Base):
           The maximum accepted value is 100. If set higher, results are limited to 10.
 
         The results are returned in a dictionary with keys:
-        ``album_hits, artist_hits, playlist_hits, podcast hits,
+        ``album_hits, artist_hits, playlist_hits, podcast_hits,
           situation_hits, song_hits, station_hits, video_hits``
         containing lists of results of that type.
 
