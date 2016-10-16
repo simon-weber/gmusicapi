@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import print_function, division, absolute_import, unicode_literals
 from gmusicapi.clients.webclient import Webclient
 from gmusicapi.clients.musicmanager import Musicmanager, OAUTH_FILEPATH

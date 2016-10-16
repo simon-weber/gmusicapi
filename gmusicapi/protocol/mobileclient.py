@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 """Calls made by the mobile client."""
 from __future__ import print_function, division, absolute_import, unicode_literals
 from six import raise_from
@@ -23,6 +24,7 @@ from gmusicapi.utils import utils
 
 # URL for sj service
 sj_url = 'https://mclients.googleapis.com/sj/v2.5/'
+sj_stream_url = 'https://mclients.googleapis.com/music/'
 
 # shared schemas
 sj_image_color_styles = {
@@ -448,6 +450,111 @@ sj_listen_now_item = {
     }
 }
 
+sj_podcast_genre = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'id': {'type': 'string'},
+        'displayName': {'type': 'string'}
+    }
+}
+
+sj_podcast_genre['properties']['subgroups'] = {
+    'type': 'array',
+    'required': False,
+    'items': sj_podcast_genre
+}
+
+sj_podcast_episode = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'art': {
+            'type': 'array',
+            'required': False,
+            'items': sj_image
+        },
+        'author': {
+            'type': 'string',
+            'required': False
+        },
+        'deleted': {
+            'type': 'string',
+            'required': False
+        },
+        'description': {
+            'type': 'string',
+            'required': False
+        },
+        'durationMillis': {'type': 'string'},
+        'episodeId': {'type': 'string'},
+        'explicitType': {'type': 'string'},
+        'fileSize': {'type': 'string'},
+        'playbackPositionMillis': {
+            'type': 'string',
+            'required': False
+        },
+        'publicationTimestampMillis': {
+            'type': 'string',
+            'required': False
+        },
+        'seriesId': {'type': 'string'},
+        'seriesTitle': {'type': 'string'},
+        'title': {'type': 'string'}
+    },
+}
+
+sj_podcast_series = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'art': {
+            'type': 'array',
+            'required': False,
+            'items': sj_image
+        },
+        'author': {'type': 'string'},
+        'continuationToken': {
+            'type': 'string',
+            'required': False,
+            'blank': True
+        },
+        'copyright': {
+            'type': 'string',
+            'required': False
+        },
+        'description': {
+            'type': 'string',
+            'required': False
+        },
+        'episodes': {
+            'type': 'array',
+            'required': False,
+            'items': sj_podcast_episode
+        },
+        'explicitType': {'type': 'string'},
+        'link': {'type': 'string'},
+        'seriesId': {'type': 'string'},
+        'title': {'type': 'string'},
+        'totalNumEpisodes': {'type': 'integer'},
+        'userPreferences': {
+            'type': 'object',
+            'required': False,
+            'properties': {
+                'autoDownload': {
+                    'type': 'boolean',
+                    'required': False
+                },
+                'notifyOnNewEpisode': {
+                    'type': 'boolean',
+                    'required': False
+                },
+                'subscribed': {'type': 'boolean'}
+            }
+        }
+    }
+}
+
 sj_situation = {
     'type': 'object',
     'additionalProperties': False,
@@ -483,6 +590,7 @@ sj_search_result = {
         'album': sj_album.copy(),
         'track': sj_track.copy(),
         'playlist': sj_playlist.copy(),
+        'series': sj_podcast_series.copy(),
         'station': sj_station.copy(),
         'situation': sj_situation.copy(),
         'youtube_video': sj_video.copy()
@@ -493,6 +601,7 @@ sj_search_result['properties']['artist']['required'] = False
 sj_search_result['properties']['album']['required'] = False
 sj_search_result['properties']['track']['required'] = False
 sj_search_result['properties']['playlist']['required'] = False
+sj_search_result['properties']['series']['required'] = False
 sj_search_result['properties']['station']['required'] = False
 sj_search_result['properties']['situation']['required'] = False
 sj_search_result['properties']['youtube_video']['required'] = False
@@ -648,6 +757,63 @@ class McBatchMutateCall(McCall):
                               cls.__name__)
 
 
+class McStreamCall(McCall):
+    # this call will redirect to the mp3
+    static_allow_redirects = False
+
+    _s1 = bytes(base64.b64decode('VzeC4H4h+T2f0VI180nVX8x+Mb5HiTtGnKgH52Otj8ZCGDz9jRW'
+                                 'yHb6QXK0JskSiOgzQfwTY5xgLLSdUSreaLVMsVVWfxfa8Rw=='))
+    _s2 = bytes(base64.b64decode('ZAPnhUkYwQ6y5DdQxWThbvhJHN8msQ1rqJw0ggKdufQjelrKuiG'
+                                 'GJI30aswkgCWTDyHkTGK9ynlqTkJ5L4CiGGUabGeo8M6JTQ=='))
+
+    # bitwise and of _s1 and _s2 ascii, converted to string
+    _key = ''.join([chr(c1 ^ c2) for (c1, c2) in zip(_s1, _s2)]).encode("ascii")
+
+    @classmethod
+    def get_signature(cls, item_id, salt=None):
+        """Return a (sig, salt) pair for url signing."""
+
+        if salt is None:
+            salt = str(int(time.time() * 1000))
+
+        mac = hmac.new(cls._key, item_id.encode("utf-8"), sha1)
+        mac.update(salt.encode("utf-8"))
+        sig = base64.urlsafe_b64encode(mac.digest())[:-1]
+
+        return sig, salt
+
+    @staticmethod
+    def dynamic_headers(item_id, device_id, quality):
+        return {'X-Device-ID': device_id}
+
+    @classmethod
+    def dynamic_params(cls, item_id, device_id, quality):
+        sig, salt = cls.get_signature(item_id)
+
+        params = {'opt': quality,
+                  'net': 'mob',
+                  'pt': 'e',
+                  'slt': salt,
+                  'sig': sig,
+                  }
+        if item_id.startswith(('T', 'D')):
+            # Store track or podcast episode.
+            params['mjck'] = item_id
+        else:
+            # Library track.
+            params['songid'] = item_id
+
+        return params
+
+    @staticmethod
+    def parse_response(response):
+        return response.headers['location']  # ie where we were redirected
+
+    @classmethod
+    def validate(cls, response, msg):
+        pass
+
+
 class Config(McCall):
     static_method = 'GET'
     static_url = sj_url + 'config'
@@ -682,7 +848,8 @@ class Search(McCall):
     # The result types returned are requested in the `ct` parameter.
     # Free account search is restricted so may not contain hits for all result types.
     # 1: Song, 2: Artist, 3: Album, 4: Playlist, 6: Station, 7: Situation, 8: Video
-    static_params = {'ct': '1,2,3,4,6,7,8'}
+    # 9: Podcast Series
+    static_params = {'ct': '1,2,3,4,6,7,8,9'}
 
     _res_schema = {
         'type': 'object',
@@ -712,63 +879,9 @@ class ListTracks(McListCall):
     static_url = sj_url + 'trackfeed'
 
 
-class GetStreamUrl(McCall):
+class GetStreamUrl(McStreamCall):
     static_method = 'GET'
-    static_url = 'https://android.clients.google.com/music/mplay'
-
-    # this call will redirect to the mp3
-    static_allow_redirects = False
-
-    _s1 = bytes(base64.b64decode('VzeC4H4h+T2f0VI180nVX8x+Mb5HiTtGnKgH52Otj8ZCGDz9jRW'
-                                 'yHb6QXK0JskSiOgzQfwTY5xgLLSdUSreaLVMsVVWfxfa8Rw=='))
-    _s2 = bytes(base64.b64decode('ZAPnhUkYwQ6y5DdQxWThbvhJHN8msQ1rqJw0ggKdufQjelrKuiG'
-                                 'GJI30aswkgCWTDyHkTGK9ynlqTkJ5L4CiGGUabGeo8M6JTQ=='))
-
-    # bitwise and of _s1 and _s2 ascii, converted to string
-    _key = ''.join([chr(c1 ^ c2) for (c1, c2) in zip(_s1, _s2)]).encode("ascii")
-
-    @classmethod
-    def get_signature(cls, song_id, salt=None):
-        """Return a (sig, salt) pair for url signing."""
-
-        if salt is None:
-            salt = str(int(time.time() * 1000))
-
-        mac = hmac.new(cls._key, song_id.encode("utf-8"), sha1)
-        mac.update(salt.encode("utf-8"))
-        sig = base64.urlsafe_b64encode(mac.digest())[:-1]
-
-        return sig, salt
-
-    @staticmethod
-    def dynamic_headers(song_id, device_id, quality):
-        return {'X-Device-ID': device_id}
-
-    @classmethod
-    def dynamic_params(cls, song_id, device_id, quality):
-        sig, salt = cls.get_signature(song_id)
-
-        params = {'opt': quality,
-                  'net': 'mob',
-                  'pt': 'e',
-                  'slt': salt,
-                  'sig': sig,
-                  }
-        if song_id[0] == 'T':
-            # all access
-            params['mjck'] = song_id
-        else:
-            params['songid'] = song_id
-
-        return params
-
-    @staticmethod
-    def parse_response(response):
-        return response.headers['location']  # ie where we were redirected
-
-    @classmethod
-    def validate(cls, response, msg):
-        pass
+    static_url = sj_stream_url + 'mplay'
 
 
 class ListPlaylists(McListCall):
@@ -1100,6 +1213,150 @@ class ListListenNowSituations(McCall):
         return filtered
 
 
+class GetBrowsePodcastHierarchy(McCall):
+    static_method = 'GET'
+    static_url = sj_url + 'podcast/browsehierarchy'
+    static_params = {'alt': 'json'}
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'groups': {
+                'type': 'array',
+                'required': False,  # Only on errors
+                'items': sj_podcast_genre
+            }
+        }
+    }
+
+
+class ListBrowsePodcastSeries(McCall):
+    static_method = 'GET'
+    static_url = sj_url + 'podcast/browse'
+    static_params = {'alt': 'json'}
+
+    _res_schema = {
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'series': {
+                'type': 'array',
+                'items': {'type': sj_podcast_series}
+            }
+        }
+    }
+
+    @classmethod
+    def dynamic_params(cls, id=None):
+        return {'id': id}
+
+    @staticmethod
+    def filter_response(msg):
+        filtered = copy.deepcopy(msg)
+        if 'series' in filtered:
+            filtered['series'] = \
+                    ["<%s podcasts>" % len(filtered['series'])]
+
+
+class BatchMutatePodcastSeries(McBatchMutateCall):
+    static_method = 'POST'
+    static_url = sj_url + 'podcastseries/batchmutate'
+
+    @staticmethod
+    def build_podcast_updates(updates):
+        """
+        :param updates:
+          [
+            {'seriesId': '', 'subscribed': '', 'userPreferences': {
+             'notifyOnNewEpisode': '', 'subscrubed': ''}}...
+          ]
+        """
+
+        return [{'update': update} for update in updates]
+
+
+# The podcastseries and podcastepisode list calls are strange in that they require a device
+# ID and pass updated-min, max-results, and start-token as params.
+# The start-token param is required, even if not given, to get a result for more than one
+# call in a session.
+class ListPodcastSeries(McListCall):
+    item_schema = sj_podcast_series
+    filter_text = 'podcast series'
+
+    static_method = 'GET'
+    static_url = sj_url + 'podcastseries'
+
+    @staticmethod
+    def dynamic_headers(device_id, updated_after=None, start_token=None, max_results=None):
+        return {'X-Device-ID': device_id}
+
+    @classmethod
+    def dynamic_params(cls, device_id=None, updated_after=None, start_token=None, max_results=None):
+        params = {}
+
+        if updated_after is None:
+            microseconds = 0
+        else:
+            microseconds = utils.datetime_to_microseconds(updated_after)
+
+        params['updated-min'] = microseconds
+
+        params['start-token'] = start_token
+
+        if max_results is not None:
+            params['max-results'] = str(max_results)
+
+        return params
+
+    @classmethod
+    def dynamic_data(cls, device_id=None, updated_after=None, start_token=None, max_results=None):
+        pass
+
+
+# The podcastseries and podcastepisode list calls are strange in that they require a device
+# ID and pass updated-min, max-results, and start-token as params.
+# The start-token param is required, even if not given, to get a result for more than one
+# call in a session.
+class ListPodcastEpisodes(McListCall):
+    item_schema = sj_podcast_episode
+    filter_text = 'podcast episodes'
+
+    static_method = 'GET'
+    static_url = sj_url + 'podcastepisode'
+
+    @staticmethod
+    def dynamic_headers(device_id, updated_after=None, start_token=None, max_results=None):
+        return {'X-Device-ID': device_id}
+
+    @classmethod
+    def dynamic_params(cls, device_id=None, updated_after=None, start_token=None, max_results=None):
+        params = {}
+
+        if updated_after is None:
+            microseconds = 0
+        else:
+            microseconds = utils.datetime_to_microseconds(updated_after)
+
+        params['updated-min'] = microseconds
+
+        params['start-token'] = start_token
+
+        if max_results is not None:
+            params['max-results'] = str(max_results)
+
+        return params
+
+    @classmethod
+    def dynamic_data(cls, device_id=None, updated_after=None, start_token=None, max_results=None):
+        pass
+
+
+class GetPodcastEpisodeStreamUrl(McStreamCall):
+    static_method = 'GET'
+    static_url = sj_stream_url + 'fplay'
+
+
 class ListStations(McListCall):
     item_schema = sj_station
     filter_text = 'stations'
@@ -1245,6 +1502,34 @@ class BatchMutateTracks(McBatchMutateCall):
         track_dict['trackType'] = 8
 
         return {'create': track_dict}
+
+
+class GetPodcastSeries(McCall):
+    static_method = 'GET'
+    static_url = sj_url + 'podcast/fetchseries'
+    static_headers = {'Content-Type': 'application/json'}
+    static_params = {'alt': 'json'}
+
+    _res_schema = sj_podcast_series
+
+    @staticmethod
+    def dynamic_params(podcast_series_id, num_episodes):
+        return {
+            'nid': podcast_series_id,
+            'num': num_episodes}
+
+
+class GetPodcastEpisode(McCall):
+    static_method = 'GET'
+    static_url = sj_url + 'podcast/fetchepisode'
+    static_headers = {'Content-Type': 'application/json'}
+    static_params = {'alt': 'json'}
+
+    _res_schema = sj_podcast_episode
+
+    @staticmethod
+    def dynamic_params(podcast_episode_id):
+        return {'nid': podcast_episode_id}
 
 
 class GetStoreTrack(McCall):
