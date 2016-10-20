@@ -533,7 +533,10 @@ sj_podcast_series = {
             'items': sj_podcast_episode
         },
         'explicitType': {'type': 'string'},
-        'link': {'type': 'string'},
+        'link': {
+            'type': 'string',
+            'required': False
+        },
         'seriesId': {'type': 'string'},
         'title': {'type': 'string'},
         'totalNumEpisodes': {'type': 'integer'},
