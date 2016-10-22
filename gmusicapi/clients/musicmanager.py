@@ -387,11 +387,18 @@ class Musicmanager(_Base):
 
         return (filename, response.content)
 
-    # def get_quota(self):
-    #     """Returns a tuple of (allowed number of tracks, total tracks, available tracks)."""
-    #     quota = self._mm_pb_call("client_state").quota
-    #     #protocol incorrect here...
-    #     return (quota.maximumTracks, quota.totalTracks, quota.availableTracks)
+    def get_quota(self):
+        """Returns a tuple of (number of uploaded tracks, allowed number of uploaded tracks)."""
+
+        if self.uploader_id is None:
+            raise NotLoggedIn("Not authenticated as an upload device;"
+                              " run Musicmanager.login(...perform_upload_auth=True...)"
+                              " first.")
+
+        client_state = self._make_call(
+            musicmanager.GetClientState, self.uploader_id).clientstate_response
+
+        return (client_state.total_track_count, client_state.locker_track_limit)
 
     @utils.accept_singleton(basestring)
     @utils.empty_arg_shortcircuit(return_code='{}')

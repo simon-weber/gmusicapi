@@ -14,7 +14,7 @@ Setup and login
 .. automethod:: Musicmanager.logout
 
 Uploading Songs
----------------------------
+---------------
 .. automethod:: Musicmanager.upload
 
 Downloading Songs
@@ -22,3 +22,7 @@ Downloading Songs
 .. automethod:: Musicmanager.get_uploaded_songs
 .. automethod:: Musicmanager.get_purchased_songs
 .. automethod:: Musicmanager.download_song
+
+Misc
+----
+..automethod:: Musicmanager.get_quota

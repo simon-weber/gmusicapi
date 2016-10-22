@@ -100,6 +100,23 @@ class MmCall(Call):
         return Call._filter_proto(msg)
 
 
+class GetClientState(MmCall):
+    static_url = _android_url + 'clientstate'
+
+    @classmethod
+    @pb
+    def dynamic_data(cls, uploader_id):
+        """
+        :param uploader_id: MM uses host MAC address
+        """
+
+        req_msg = upload_pb2.ClientStateRequest()
+
+        req_msg.uploader_id = uploader_id
+
+        return req_msg
+
+
 class AuthenticateUploader(MmCall):
     """Sent to auth, reauth, or register our upload client."""
 
