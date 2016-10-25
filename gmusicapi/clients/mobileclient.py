@@ -1949,7 +1949,7 @@ class Mobileclient(_Base):
             prev_page_token = next_page_token
             next_page_token = lib_chunk.get('nextPageToken')
 
-            get_next_chunk = (next_page_token != prev_page_token)
+            get_next_chunk = (next_page_token and next_page_token != prev_page_token)
 
     @utils.enforce_id_param
     def get_album_info(self, album_id, include_tracks=True):
