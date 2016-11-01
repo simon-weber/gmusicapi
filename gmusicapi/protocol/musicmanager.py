@@ -207,6 +207,12 @@ class UploadMetadata(MmCall):
         On problems, raise ValueError."""
         track = locker_pb2.Track()
 
+        # The track protobuf message supports an additional metadata list field.
+        # ALBUM_ART_HASH has been observed being sent in this field so far.
+        # Append locker_pb2.AdditionalMetadata objects to additional_metadata.
+        # AdditionalMetadata objects consist of two fields, 'tag_name' and 'value'.
+        additional_metadata = []
+
         track.client_id = cls.get_track_clientid(filepath)
 
         extension = os.path.splitext(filepath)[1].upper()
@@ -318,6 +324,9 @@ class UploadMetadata(MmCall):
 
                 if len(numstrs) == 2 and numstrs[1]:
                     track_set(track_total_f, numstrs[1])
+
+        if additional_metadata:
+            track.track_extras.additional_metadata.extend(additional_metadata)
 
         return track
 

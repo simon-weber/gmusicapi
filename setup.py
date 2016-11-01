@@ -10,12 +10,10 @@ dynamic_requires = []
 # Python 2.7 is supported. Python 3 support is experimental
 if sys.version_info[0] > 2:
     warnings.warn("gmusicapi Python 3 support is experimental", RuntimeWarning)
-    dynamic_requires.append("protobuf == 3.0.0b2")
 else:
     if sys.version_info[:3] < (2, 7, 9):
         warnings.warn("gmusicapi does not officially support versions below "
                       "Python 2.7.9", RuntimeWarning)
-    dynamic_requires.append('protobuf >= 2.6.1, <= 3.0.0b2')  # symbol_database
 
 # try to continue anyway
 
@@ -53,6 +51,7 @@ setup(
          '!= 2.2.1, != 2.8.0, != 2.8.1'),
         'python-dateutil >= 1.3, != 2.0',         # 2.0 is python3-only
         'proboscis >= 1.2.5.1',                   # runs_after
+        'protobuf >= 3.0.0',
         'oauth2client >= 1.1',                    # TokenRevokeError
         'mock >= 0.7.0',                          # MagicMock
         'appdirs >= 1.1.0',                       # user_log_dir
