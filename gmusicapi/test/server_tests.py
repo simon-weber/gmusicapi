@@ -513,6 +513,10 @@ class ClientTests(object):
     #  MM tests
     # ---------
 
+    def mm_get_quota(self):
+        # just testing the call is successful
+        self.mm.get_quota()
+
     @song_test
     def mm_list_new_songs(self):
         # mm only includes user-uploaded songs
