@@ -5,9 +5,29 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-10.0.2
+10.1.0
 ++++++
-released ...
+released 2016-10-31
+
+- deprecate the Webclient
+- add podcast support to Mobileclient:
+   - get_all_podcast_series
+   - get_all_podcast_episodes
+   - add_podcast_series
+   - delete_podcast_series
+   - edit_podcast_series
+   - get_podcast_episode_stream_url
+   - get_podcast_episode_info
+   - get_podcast_series_info
+   - get_browse_podcast_hierarchy
+   - get_browse_podcast_series
+- add Mobileclient.add_store_tracks
+- add Mobileclient.rate_songs
+- add Musicmanager.get_quota
+- fix get_all_user_playlist_contents hanging for large playlists
+- fix is_authenticated status after uploader_id exceptions
+- fix upload progress tracker remaining after upload
+- various internal improvements and schema updates
 
 
 10.0.1
