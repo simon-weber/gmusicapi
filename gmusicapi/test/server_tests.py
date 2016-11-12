@@ -970,7 +970,6 @@ class ClientTests(object):
                      1)
 
     @test(groups=['search'])
-    @subscription
     def mc_search_store_no_playlists(self):
         res = self.mc.search('morning', max_results=100)
 
