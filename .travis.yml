@@ -39,3 +39,9 @@ env:
   matrix:
   - IDARG=1
   - IDARG=2
+notifications:
+  irc:
+    channels:
+      - "chat.freenode.net#gmusicapi"
+    on_success: change
+    on_failure: change
