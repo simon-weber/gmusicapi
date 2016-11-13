@@ -970,7 +970,6 @@ class ClientTests(object):
                      1)
 
     @test(groups=['search'])
-    @subscription
     def mc_search_store_no_playlists(self):
         res = self.mc.search('morning', max_results=100)
 
@@ -979,17 +978,8 @@ class ClientTests(object):
 
         with Check() as check:
             for type_, hits in res.items():
-                check.true(len(hits) > 0, "%s had %s hits, expected > 0" % (type_, len(hits)))
-
-    @test(groups=['search'])
-    def mc_search_store_no_playlists_no_sub(self):
-        res = self.mc.search('morning', max_results=100)
-
-        res.pop('playlist_hits')
-
-        with Check() as check:
-            for type_, hits in res.items():
-                if type_ in ('artist_hits', 'song_hits', 'album_hits'):
+                if ((not test_subscription_features() and
+                     type_ in ('artist_hits', 'song_hits', 'album_hits'))):
                     # These results aren't returned for non-sub accounts.
                     check.true(len(hits) == 0, "%s had %s hits, expected 0" % (type_, len(hits)))
                 else:
