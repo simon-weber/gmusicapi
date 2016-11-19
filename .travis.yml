@@ -45,3 +45,4 @@ notifications:
       - "chat.freenode.net#gmusicapi"
     on_success: change
     on_failure: change
+    skip_join: true
