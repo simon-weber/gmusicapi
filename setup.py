@@ -48,7 +48,8 @@ setup(
         'decorator >= 3.3.1',                     # > 3.0 likely work, but not on pypi
         'mutagen >= 1.34',                        # EasyID3 TPE2 mapping to albumartist
         ('requests >= 1.1.0, != 1.2.0,'           # session.close, memory view TypeError
-         '!= 2.2.1, != 2.8.0, != 2.8.1'),
+         '!= 2.2.1, != 2.8.0, != 2.8.1,'
+         '< 2.12.0'),                             # idna breaks streaming urls
         'python-dateutil >= 1.3, != 2.0',         # 2.0 is python3-only
         'proboscis >= 1.2.5.1',                   # runs_after
         'protobuf >= 3.0.0',
