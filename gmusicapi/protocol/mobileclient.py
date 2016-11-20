@@ -669,15 +669,15 @@ class McListCall(McCall):
     @classmethod
     def dynamic_params(cls, updated_after=None, start_token=None, max_results=None):
         """
-        :param updated_after: datetime.datetime; defaults to epoch
+        :param updated_after: datetime.datetime; defaults to all current results
         """
 
-        if updated_after is None:
-            microseconds = 0
-        else:
-            microseconds = utils.datetime_to_microseconds(updated_after)
+        params = {}
 
-        return {'updated-min': microseconds}
+        if updated_after is not None:
+            params['updated-min'] = utils.datetime_to_microseconds(updated_after)
+
+        return params
 
     @classmethod
     def dynamic_data(cls, updated_after=None, start_token=None, max_results=None):
@@ -1298,12 +1298,8 @@ class ListPodcastSeries(McListCall):
     def dynamic_params(cls, device_id=None, updated_after=None, start_token=None, max_results=None):
         params = {}
 
-        if updated_after is None:
-            microseconds = 0
-        else:
-            microseconds = utils.datetime_to_microseconds(updated_after)
-
-        params['updated-min'] = microseconds
+        if updated_after is not None:
+            params['updated-min'] = utils.datetime_to_microseconds(updated_after)
 
         params['start-token'] = start_token
 
@@ -1336,12 +1332,8 @@ class ListPodcastEpisodes(McListCall):
     def dynamic_params(cls, device_id=None, updated_after=None, start_token=None, max_results=None):
         params = {}
 
-        if updated_after is None:
-            microseconds = 0
-        else:
-            microseconds = utils.datetime_to_microseconds(updated_after)
-
-        params['updated-min'] = microseconds
+        if updated_after is not None:
+            params['updated-min'] = utils.datetime_to_microseconds(updated_after)
 
         params['start-token'] = start_token
 

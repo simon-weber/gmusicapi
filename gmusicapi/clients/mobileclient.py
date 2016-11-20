@@ -1186,7 +1186,7 @@ class Mobileclient(_Base):
         :param include_deleted: if True, include podcast episodes that have been deleted
           in the past.
 
-        :param updated_after: a datetime.datetime; defaults to unix epoch
+        :param updated_after: a datetime.datetime; defaults to all current results
 
         Returns a list of podcast episode dicts.
 
@@ -1536,7 +1536,7 @@ class Mobileclient(_Base):
           presenting a loading bar to a user.
         :param include_deleted: if True, include stations that have been deleted
           in the past.
-        :param updated_after: a datetime.datetime; defaults to unix epoch
+        :param updated_after: a datetime.datetime; defaults to all current results
 
         Here is an example station dictionary::
 
