@@ -328,7 +328,7 @@ def configure_debug_log_handlers(logger):
     try:
         make_sure_path_exists(os.path.dirname(log_filepath), 0o700)
         debug_handler = logging.FileHandler(log_filepath)
-    except OSError:
+    except (OSError, IOError):
         logging_to_file = False
         debug_handler = logging.StreamHandler()
 
