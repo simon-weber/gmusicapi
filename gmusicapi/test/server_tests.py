@@ -41,7 +41,7 @@ TEST_STORE_GENRE_ID = 'METAL'
 
 # that dumb little intro track on Conspiracy of One,
 # picked since it's only a few seconds long
-TEST_STORE_SONG_ID = 'Tqqufr34tuqojlvkolsrwdwx7pe'
+TEST_STORE_SONG_ID = 'Tf3pxtcrp2tw7i6kdxzueoz7uia'
 
 # used for testing streaming.
 # differences between clients are presumably from stream quality.
