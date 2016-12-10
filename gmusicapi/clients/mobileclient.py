@@ -135,7 +135,7 @@ class Mobileclient(_Base):
 
     # TODO expose max/page-results, updated_after, etc for list operations
 
-    def get_all_songs(self, incremental=False, include_deleted=False):
+    def get_all_songs(self, incremental=False, include_deleted=None):
         """Returns a list of dictionaries that each represent a song.
 
         :param incremental: if True, return a generator that yields lists
@@ -143,8 +143,7 @@ class Mobileclient(_Base):
           as they are retrieved from the server. This can be useful for
           presenting a loading bar to a user.
 
-        :param include_deleted: if True, include tracks that have been deleted
-          in the past.
+        :param include_deleted: ignored. Will be removed in a future release.
 
         Here is an example song dictionary::
 
@@ -193,7 +192,7 @@ class Mobileclient(_Base):
 
         """
 
-        tracks = self._get_all_items(mobileclient.ListTracks, incremental, include_deleted)
+        tracks = self._get_all_items(mobileclient.ListTracks, incremental)
 
         return tracks
 
@@ -371,15 +370,14 @@ class Mobileclient(_Base):
 
         return self._make_call(mobileclient.GetStreamUrl, song_id, device_id, quality)
 
-    def get_all_playlists(self, incremental=False, include_deleted=False):
+    def get_all_playlists(self, incremental=False, include_deleted=None):
         """Returns a list of dictionaries that each represent a playlist.
 
         :param incremental: if True, return a generator that yields lists
           of at most 1000 playlists
           as they are retrieved from the server. This can be useful for
           presenting a loading bar to a user.
-        :param include_deleted: if True, include playlists that have been deleted
-          in the past.
+        :param include_deleted: ignored. Will be removed in a future release.
 
         Here is an example playlist dictionary::
 
@@ -401,7 +399,7 @@ class Mobileclient(_Base):
             }
         """
 
-        playlists = self._get_all_items(mobileclient.ListPlaylists, incremental, include_deleted)
+        playlists = self._get_all_items(mobileclient.ListPlaylists, incremental)
 
         return playlists
 
@@ -504,7 +502,7 @@ class Mobileclient(_Base):
                               'type' not in p)]
 
         all_entries = self._get_all_items(mobileclient.ListPlaylistEntries,
-                                          incremental=False, include_deleted=False,
+                                          incremental=False,
                                           updated_after=None)
 
         for playlist in user_playlists:
@@ -789,7 +787,7 @@ class Mobileclient(_Base):
         """
 
         return self._get_all_items(mobileclient.ListPromotedTracks,
-                                   incremental=False, include_deleted=False,
+                                   incremental=False,
                                    updated_after=None)
 
     def get_listen_now_items(self):
@@ -1082,7 +1080,7 @@ class Mobileclient(_Base):
         return res.get('series', [])
 
     def get_all_podcast_series(self, device_id=None, incremental=False,
-                               include_deleted=False, updated_after=None):
+                               include_deleted=None, updated_after=None):
         """Retrieve list of user-subscribed podcast series.
 
         :param device_id: (optional) defaults to ``android_id`` from login.
@@ -1108,8 +1106,7 @@ class Mobileclient(_Base):
           as they are retrieved from the server. This can be useful for
           presenting a loading bar to a user.
 
-        :param include_deleted: if True, include podcast series that have been deleted
-          in the past.
+        :param include_deleted: ignored. Will be removed in a future release.
 
         :param updated_after: a datetime.datetime; defaults to unix epoch
 
@@ -1153,11 +1150,11 @@ class Mobileclient(_Base):
         device_id = self._ensure_device_id(device_id)
 
         return self._get_all_items(mobileclient.ListPodcastSeries, incremental=incremental,
-                                   include_deleted=include_deleted, updated_after=updated_after,
+                                   updated_after=updated_after,
                                    device_id=device_id)
 
     def get_all_podcast_episodes(self, device_id=None, incremental=False,
-                                 include_deleted=False, updated_after=None):
+                                 include_deleted=None, updated_after=None):
         """Retrieve list of episodes from user-subscribed podcast series.
 
         :param device_id: (optional) defaults to ``android_id`` from login.
@@ -1183,8 +1180,7 @@ class Mobileclient(_Base):
           as they are retrieved from the server. This can be useful for
           presenting a loading bar to a user.
 
-        :param include_deleted: if True, include podcast episodes that have been deleted
-          in the past.
+        :param include_deleted: ignored. Will be removed in a future release.
 
         :param updated_after: a datetime.datetime; defaults to unix epoch
 
@@ -1220,7 +1216,7 @@ class Mobileclient(_Base):
         device_id = self._ensure_device_id(device_id)
 
         return self._get_all_items(mobileclient.ListPodcastEpisodes, incremental=incremental,
-                                   include_deleted=include_deleted, updated_after=updated_after,
+                                   updated_after=updated_after,
                                    device_id=device_id)
 
     # TODO: Support multiple.
@@ -1525,7 +1521,7 @@ class Mobileclient(_Base):
 
         return [s['id'] for s in res['mutate_response']]
 
-    def get_all_stations(self, incremental=False, include_deleted=False, updated_after=None):
+    def get_all_stations(self, incremental=False, include_deleted=None, updated_after=None):
         """Retrieve all library stations.
 
         Returns a list of dictionaries that each represent a radio station.
@@ -1534,8 +1530,7 @@ class Mobileclient(_Base):
           of at most 1000 stations
           as they are retrieved from the server. This can be useful for
           presenting a loading bar to a user.
-        :param include_deleted: if True, include stations that have been deleted
-          in the past.
+        :param include_deleted: ignored. Will be removed in a future release.
         :param updated_after: a datetime.datetime; defaults to unix epoch
 
         Here is an example station dictionary::
@@ -1558,7 +1553,7 @@ class Mobileclient(_Base):
                 'id': '69f1bfce-308a-313e-9ed2-e50abe33a25d'
             },
         """
-        return self._get_all_items(mobileclient.ListStations, incremental, include_deleted,
+        return self._get_all_items(mobileclient.ListStations, incremental,
                                    updated_after=updated_after)
 
     def get_station_tracks(self, station_id, num_tracks=25, recently_played_ids=None):
@@ -1894,11 +1889,10 @@ class Mobileclient(_Base):
                               artist_id, include_albums, max_top_tracks, max_rel_artist)
         return res
 
-    def _get_all_items(self, call, incremental, include_deleted, **kwargs):
+    def _get_all_items(self, call, incremental, **kwargs):
         """
         :param call: protocol.McCall
         :param incremental: bool
-        :param include_deleted: bool
 
         kwargs are passed to the call.
         """
@@ -1906,13 +1900,13 @@ class Mobileclient(_Base):
             # slight optimization: get more items in a page
             kwargs.setdefault('max_results', 20000)
 
-        generator = self._get_all_items_incremental(call, include_deleted, **kwargs)
+        generator = self._get_all_items_incremental(call, **kwargs)
         if incremental:
             return generator
 
         return [s for chunk in generator for s in chunk]
 
-    def _get_all_items_incremental(self, call, include_deleted, **kwargs):
+    def _get_all_items_incremental(self, call, **kwargs):
         """Return a generator of lists of tracks.
 
         kwargs are passed to the call."""
@@ -1926,17 +1920,14 @@ class Mobileclient(_Base):
                                         start_token=next_page_token,
                                         **kwargs)
 
-            if not include_deleted:
-                items = []
+            items = []
 
-                for item in lib_chunk['data']['items']:
-                    if 'userPreferences' in item:
-                        if item['userPreferences'].get('subscribed', False):
-                            items.append(item)
-                    elif not item.get('deleted', False):
+            for item in lib_chunk['data']['items']:
+                if 'userPreferences' in item:
+                    if item['userPreferences'].get('subscribed', False):
                         items.append(item)
-            else:
-                items = lib_chunk['data']['items']
+                elif not item.get('deleted', False):
+                    items.append(item)
 
             # Conditional prevents generator from yielding empty
             # list for last page of podcast list calls.

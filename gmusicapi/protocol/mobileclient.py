@@ -673,7 +673,7 @@ class McListCall(McCall):
         """
 
         if updated_after is None:
-            microseconds = 0
+            microseconds = -1
         else:
             microseconds = utils.datetime_to_microseconds(updated_after)
 
@@ -1299,7 +1299,7 @@ class ListPodcastSeries(McListCall):
         params = {}
 
         if updated_after is None:
-            microseconds = 0
+            microseconds = -1
         else:
             microseconds = utils.datetime_to_microseconds(updated_after)
 
@@ -1337,7 +1337,7 @@ class ListPodcastEpisodes(McListCall):
         params = {}
 
         if updated_after is None:
-            microseconds = 0
+            microseconds = -1
         else:
             microseconds = utils.datetime_to_microseconds(updated_after)
 

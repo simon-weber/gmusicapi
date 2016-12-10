@@ -237,22 +237,6 @@ class ClientTests(object):
         assert_equal([e for chunk in lib_chunk_gen for e in chunk],
                      method(incremental=False, **kwargs))
 
-    @staticmethod
-    @retry
-    def assert_listing_contains_deleted_items(method):
-        """
-        Assert that some listing method includes deleted tracks.
-
-        :param method: eg self.mc.get_all_songs
-        """
-        lib = method(incremental=False, include_deleted=True)
-
-        # how long do deleted tracks get returned for?
-        # will this return tracks I've deleted since...ever?
-
-        num_deleted = len([t for t in lib if t['deleted']])
-        assert_true(num_deleted > 0)
-
     @test
     def song_create(self):
         # This can create more than one song: one through uploading, one through
@@ -350,7 +334,6 @@ class ClientTests(object):
             assert_equal(len(found), 0)
 
         assert_plentries_removed(self.playlist_ids[0], self.plentry_ids)
-        # self.assert_listing_contains_deleted_items(self.mc_get_playlist_songs)
 
     @test(groups=['playlist'], depends_on=[playlist_create],
           runs_after=[plentry_delete],
@@ -366,14 +349,13 @@ class ClientTests(object):
 
         @retry
         def assert_playlist_does_not_exist(plid):
-            found = [p for p in self.mc.get_all_playlists(include_deleted=False)
+            found = [p for p in self.mc.get_all_playlists()
                      if p['id'] == plid]
 
             assert_equal(len(found), 0)
 
         for plid in self.playlist_ids:
             assert_playlist_does_not_exist(plid)
-            self.assert_listing_contains_deleted_items(self.mc.get_all_playlists)
 
     @test
     @subscription
@@ -426,7 +408,6 @@ class ClientTests(object):
 
         for station_id in self.station_ids:
             assert_station_deleted(station_id)
-        self.assert_listing_contains_deleted_items(self.mc.get_all_stations)
 
     @test(groups=['song'], depends_on=[song_create],
           runs_after=[plentry_delete, station_delete],
@@ -446,7 +427,6 @@ class ClientTests(object):
                 check.equal(res, [testsong.sid])
 
         self.assert_songs_state(self.mc.get_all_songs, sids(self.all_songs), present=False)
-        self.assert_listing_contains_deleted_items(self.mc.get_all_songs)
 
     @test
     def podcast_create(self):
@@ -486,7 +466,7 @@ class ClientTests(object):
 
         @retry
         def assert_podcast_does_not_exist(pcid):
-            found = [pc for pc in self.mc.get_all_podcast_series(include_deleted=False)
+            found = [pc for pc in self.mc.get_all_podcast_series()
                      if pc['seriesId'] == pcid]
 
             assert_equal(len(found), 0)
@@ -642,10 +622,6 @@ class ClientTests(object):
         self.assert_list_inc_equivalence(self.mc.get_all_stations)
 
     @test
-    def mc_list_stations_inc_equal_with_deleted(self):
-        self.assert_list_inc_equivalence(self.mc.get_all_stations, include_deleted=True)
-
-    @test
     def mc_list_shared_playlist_entries(self):
         entries = self.mc.get_shared_playlist_contents(TEST_PLAYLIST_SHARETOKEN)
         assert_true(len(entries) > 0)
@@ -785,25 +761,13 @@ class ClientTests(object):
     def mc_list_songs_inc_equal(self):
         self.assert_list_inc_equivalence(self.mc.get_all_songs)
 
-    @song_test
-    def mc_list_songs_inc_equal_with_deleted(self):
-        self.assert_list_inc_equivalence(self.mc.get_all_songs, include_deleted=True)
-
     @podcast_test
     def mc_list_podcast_series_inc_equal(self):
         self.assert_list_inc_equivalence(self.mc.get_all_podcast_series)
 
-    @podcast_test
-    def mc_list_podcast_series_inc_equal_with_deleted(self):
-        self.assert_list_inc_equivalence(self.mc.get_all_podcast_series, include_deleted=True)
-
     @playlist_test
     def mc_list_playlists_inc_equal(self):
         self.assert_list_inc_equivalence(self.mc.get_all_playlists)
-
-    @playlist_test
-    def mc_list_playlists_inc_equal_with_deleted(self):
-        self.assert_list_inc_equivalence(self.mc.get_all_playlists, include_deleted=True)
 
     @playlist_test
     def mc_edit_playlist_name(self):
