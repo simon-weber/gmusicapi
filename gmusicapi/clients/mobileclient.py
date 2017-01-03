@@ -495,7 +495,7 @@ class Mobileclient(_Base):
               'id': 'c9f1aff5-f93d-4b98-b13a-429cc7972fea' ## see below
           }
 
-        If a user uploads local music to Google Music using the Music Manager, 
+        If a user uploads local music to Google Music using the Music Manager,
         Google will attempt to match each uploaded track to a track already
         hosted on its servers. If a match is found for a track, the playlist
         entry key ``'source'`` has the value ``'2'``, and the entry will have a
