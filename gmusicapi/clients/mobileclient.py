@@ -481,7 +481,7 @@ class Mobileclient(_Base):
         with the addition of a ``'tracks'`` key in each dict
         set to a list of properly-ordered playlist entry dicts.
 
-        Here is an example playlist entry::
+        Here is an example playlist entry for an individual track::
 
           {
               'kind': 'sj#playlistEntry',
@@ -490,10 +490,29 @@ class Mobileclient(_Base):
               'lastModifiedTimestamp': '1325285553655027',
               'playlistId': '3d72c9b5-baad-4ff7-815d-cdef717e5d61',
               'absolutePosition': '01729382256910287871',  # denotes playlist ordering
-              'source': '1',  # ??
+              'source': '1',  # '2' if hosted on Google Music, '1' otherwise (see below)
               'creationTimestamp': '1325285553655027',
-              'id': 'c9f1aff5-f93d-4b98-b13a-429cc7972fea'
+              'id': 'c9f1aff5-f93d-4b98-b13a-429cc7972fea' ## see below
           }
+
+        If a user uploads local music to Google Music using the Music Manager,
+        Google will attempt to match each uploaded track to a track already
+        hosted on its servers. If a match is found for a track, the playlist
+        entry key ``'source'`` has the value ``'2'``, and the entry will have a
+        key ``'track'`` with a value that is a dict of track metadata (title,
+        artist, etc).
+
+        If a track is not hosted on Google Music, then the playlist entry key
+        ``'source'`` has the value ``'1'``, and may not have a ``'track'``
+        key (e.g., for an MP3 without ID3 tags). In this case, the key ``'trackId'``
+        corresponds to the column ``ServerId`` in the table ``XFILES`` in Music
+        Manager's local SQLite database (stored, e.g., at
+        ~/Library/Application\ Support/Google/MusicManager/ServerDatabase.db
+        on OS X). Among other things, the SQLite database exposes the track's
+        local file path, and Music Manager's imputed metadata.
+
+        (Note that the above behavior is documented for the Music Manager set to
+        sync from local Folders, and may differ if it instead syncs from iTunes.)
         """
 
         user_playlists = [p for p in self.get_all_playlists()
