@@ -504,8 +504,8 @@ class Mobileclient(_Base):
 
         If a track is not hosted on Google Music, then the playlist entry key
         ``'source'`` has the value ``'1'``, and may not have a ``'track'``
-        key (e.g., for an MP3 without ID3 tags). In this case, the key ``'id'``
-        corresponds to the column ``MD5Hash`` in the table ``XFILES`` in Music
+        key (e.g., for an MP3 without ID3 tags). In this case, the key ``'trackId'``
+        corresponds to the column ``ServerId`` in the table ``XFILES`` in Music
         Manager's local SQLite database (stored, e.g., at
         ~/Library/Application\ Support/Google/MusicManager/ServerDatabase.db
         on OS X). Among other things, the SQLite database exposes the track's
