@@ -5,6 +5,10 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
+10.1.2
+++++++
+released ...
+
 10.1.1
 ++++++
 released 2016-02-10
