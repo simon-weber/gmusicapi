@@ -7,7 +7,12 @@ As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
 10.1.1
 ++++++
-released ...
+released 2016-02-10
+
+- deprecate include_deleted param to greatly speed up responses for Mobileclient.get_all_*
+- Mobileclient.search now works on non-subscription accounts
+- fix logging IOError on read-only filesystems
+- fix problems caused by broken requests IDNA support
 
 10.1.0
 ++++++
