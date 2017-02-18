@@ -79,6 +79,7 @@ sj_video = {
         'id': {'type': 'string'},
         'title': {'type': 'string', 'required': False},
         'thumbnails': {'type': 'array',
+                       'required': False,
                        'items': {'type': 'object', 'properties': {
                            'url': {'type': 'string'},
                            'width': {'type': 'integer'},
