@@ -49,6 +49,7 @@ class Mobileclient(_Base):
                          for d in self.get_registered_devices()]:
             return device_id
         else:
+            self.logout()
             raise ValueError('Invalid device_id.')
 
     @property
