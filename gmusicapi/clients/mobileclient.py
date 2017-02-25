@@ -43,6 +43,14 @@ class Mobileclient(_Base):
 
         return device_id
 
+    def _validate_device_id(self, device_id):
+        """Ensure that a given device_id belongs to the user supplying it."""
+        if device_id in [d['id'][2:] if d['id'].startswith('0x') else d['id']
+                         for d in self.get_registered_devices()]:
+            return device_id
+        else:
+            raise ValueError('Invalid device_id.')
+
     @property
     def locale(self):
         """The locale of the Mobileclient session used to localize some responses.
@@ -108,7 +116,6 @@ class Mobileclient(_Base):
 
         if android_id is None:
             raise ValueError("android_id cannot be None.")
-
         if android_id is self.FROM_MAC_ADDRESS:
             mac_int = getmac()
             if (mac_int >> 40) % 2:
@@ -123,7 +130,7 @@ class Mobileclient(_Base):
             self.logger.info("failed to authenticate")
             return False
 
-        self.android_id = android_id
+        self.android_id = self._validate_device_id(android_id)
         self.logger.info("authenticated")
 
         self.locale = locale
