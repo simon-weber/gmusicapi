@@ -54,3 +54,14 @@ class NotSubscribed(Exception):
 
 class GmusicapiWarning(UserWarning):
     pass
+
+
+class InvalidDeviceId(Exception):
+    def __init__(self, message, ids):
+        if ids:
+            message += 'Your valid device IDs are:\n* %s' % '\n* '.join(ids)
+        else:
+            message += 'It looks like your account does not have any '
+            'valid device IDs.'
+        super(InvalidDeviceId, self).__init__(message)
+        self.valid_device_ids = ids

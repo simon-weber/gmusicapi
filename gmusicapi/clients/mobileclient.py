@@ -11,7 +11,7 @@ from uuid import getnode as getmac
 
 from gmusicapi import session
 from gmusicapi.clients.shared import _Base
-from gmusicapi.exceptions import CallFailure, NotSubscribed
+from gmusicapi.exceptions import CallFailure, NotSubscribed, InvalidDeviceId
 from gmusicapi.protocol import mobileclient
 from gmusicapi.utils import utils
 
@@ -43,14 +43,19 @@ class Mobileclient(_Base):
 
         return device_id
 
-    def _validate_device_id(self, device_id):
+    def _validate_device_id(self, device_id, is_mac=False):
         """Ensure that a given device_id belongs to the user supplying it."""
-        if device_id in [d['id'][2:] if d['id'].startswith('0x') else d['id']
-                         for d in self.get_registered_devices()]:
+        if is_mac:  # Always allow logins with MAC address.
+            return device_id
+        devices = [
+            d['id'][2:] if d['id'].startswith('0x') else d['id'].replace(':', '')
+            for d in self.get_registered_devices()
+        ]
+        if device_id in devices:
             return device_id
         else:
             self.logout()
-            raise ValueError('Invalid device_id.')
+            raise InvalidDeviceId('Invalid device_id %s.' % device_id, devices)
 
     @property
     def locale(self):
@@ -117,7 +122,9 @@ class Mobileclient(_Base):
 
         if android_id is None:
             raise ValueError("android_id cannot be None.")
-        if android_id is self.FROM_MAC_ADDRESS:
+
+        is_mac = android_id is self.FROM_MAC_ADDRESS
+        if is_mac:
             mac_int = getmac()
             if (mac_int >> 40) % 2:
                 raise OSError("a valid MAC could not be determined."
@@ -131,7 +138,7 @@ class Mobileclient(_Base):
             self.logger.info("failed to authenticate")
             return False
 
-        self.android_id = self._validate_device_id(android_id)
+        self.android_id = self._validate_device_id(android_id, is_mac=is_mac)
         self.logger.info("authenticated")
 
         self.locale = locale
