@@ -1604,7 +1604,9 @@ class GetAlbum(McCall):
 
     @staticmethod
     def dynamic_params(album_id, tracks):
-        return {'nid': album_id, 'include-tracks': tracks}
+        include_tracks = bool(tracks) if tracks else None
+
+        return {'nid': album_id, 'include-tracks': include_tracks}
 
 
 class IncrementPlayCount(McCall):
