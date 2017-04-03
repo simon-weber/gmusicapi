@@ -7,11 +7,15 @@ As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
 10.1.2
 ++++++
-released ...
+released 2017-04-03
+
+- validate device ids to prevent 403s during streaming
+- fix LocalUnboundError during login for some environments
+- update schemas
 
 10.1.1
 ++++++
-released 2016-02-10
+released 2017-02-10
 
 - deprecate include_deleted param to greatly speed up responses for Mobileclient.get_all_*
 - Mobileclient.search now works on non-subscription accounts
