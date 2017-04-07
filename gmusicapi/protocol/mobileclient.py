@@ -363,7 +363,16 @@ sj_station = {
                          'required': False,
                          'items': {'type': 'string'}
                          },
-        'byline': {'type': 'string', 'required': False}
+        'byline': {'type': 'string', 'required': False},
+        'adTargeting': {
+            'type': 'object',
+            'properties': {
+                'keyword': {'type': 'array',
+                            'items': {'type': 'string'}
+                            },
+            },
+            'required': False,
+        },
     }
 }
 
