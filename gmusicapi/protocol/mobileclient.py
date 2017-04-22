@@ -1408,6 +1408,16 @@ class ListStationTracks(McCall):
         # but then that might introduce paging?
         # I'll leave it for someone else
 
+        if station_id == 'IFL':
+            return json.dumps({'contentFilter': 1,
+                               'stations': [
+                                   {
+                                       'numEntries': num_entries,
+                                       'recentlyPlayed': recently_played,
+                                       'seed': {'seedType': 6}
+                                   }
+                               ]})
+
         return json.dumps({'contentFilter': 1,
                            'stations': [
                                {
