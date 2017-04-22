@@ -66,7 +66,7 @@ It requires plaintext auth, so your code might look something like:
     from gmusicapi import Mobileclient
 
     api = Mobileclient()
-    logged_in = api.login('user@gmail.com', 'my-password')
+    logged_in = api.login('user@gmail.com', 'my-password', Mobileclient.FROM_MAC_ADDRESS)
     # logged_in is True if login was successful
 
 Note that 2-factor users will need to setup and provide an app-specific password.
