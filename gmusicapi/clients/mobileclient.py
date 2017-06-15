@@ -150,9 +150,9 @@ class Mobileclient(_Base):
 
         return True
 
-    # TODO expose max/page-results, updated_after, etc for list operations
+    # TODO expose max/page-results, etc for list operations
 
-    def get_all_songs(self, incremental=False, include_deleted=None):
+    def get_all_songs(self, incremental=False, include_deleted=None, updated_after=None):
         """Returns a list of dictionaries that each represent a song.
 
         :param incremental: if True, return a generator that yields lists
@@ -161,6 +161,8 @@ class Mobileclient(_Base):
           presenting a loading bar to a user.
 
         :param include_deleted: ignored. Will be removed in a future release.
+        :param updated_after: a datetime.datetime; defaults to unix epoch.
+          If provided, deleted songs may be returned.
 
         Here is an example song dictionary::
 
@@ -209,7 +211,7 @@ class Mobileclient(_Base):
 
         """
 
-        tracks = self._get_all_items(mobileclient.ListTracks, incremental)
+        tracks = self._get_all_items(mobileclient.ListTracks, incremental, updated_after=updated_after)
 
         return tracks
 
@@ -387,7 +389,7 @@ class Mobileclient(_Base):
 
         return self._make_call(mobileclient.GetStreamUrl, song_id, device_id, quality)
 
-    def get_all_playlists(self, incremental=False, include_deleted=None):
+    def get_all_playlists(self, incremental=False, include_deleted=None, updated_after=None):
         """Returns a list of dictionaries that each represent a playlist.
 
         :param incremental: if True, return a generator that yields lists
@@ -395,6 +397,8 @@ class Mobileclient(_Base):
           as they are retrieved from the server. This can be useful for
           presenting a loading bar to a user.
         :param include_deleted: ignored. Will be removed in a future release.
+        :param updated_after: a datetime.datetime; defaults to unix epoch
+          If provided, deleted playlists may be returned.
 
         Here is an example playlist dictionary::
 
@@ -416,7 +420,7 @@ class Mobileclient(_Base):
             }
         """
 
-        playlists = self._get_all_items(mobileclient.ListPlaylists, incremental)
+        playlists = self._get_all_items(mobileclient.ListPlaylists, incremental, updated_after=updated_after)
 
         return playlists
 
@@ -1962,7 +1966,7 @@ class Mobileclient(_Base):
                 if 'userPreferences' in item:
                     if item['userPreferences'].get('subscribed', False):
                         items.append(item)
-                elif not item.get('deleted', False):
+                elif ('updated_after' in kwargs) or (not item.get('deleted', False)):
                     items.append(item)
 
             # Conditional prevents generator from yielding empty
