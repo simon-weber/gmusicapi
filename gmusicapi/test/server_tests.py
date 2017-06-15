@@ -764,7 +764,8 @@ class ClientTests(object):
 
     @song_test
     def mc_list_songs_updated_after(self):
-        songs_last_minute = self.mc.get_all_songs(updated_after=datetime.datetime.now() - datetime.timedelta(minutes=1))
+        songs_last_minute = self.mc.get_all_songs(
+            updated_after=datetime.datetime.now() - datetime.timedelta(minutes=1))
         assert_not_equal(len(songs_last_minute), 0)
 
         all_songs = self.mc.get_all_songs()
@@ -843,7 +844,8 @@ class ClientTests(object):
 
     @playlist_test
     def mc_list_playlists_updated_after(self):
-        pls_last_minute = self.mc.get_all_playlists(updated_after=datetime.datetime.now() - datetime.timedelta(minutes=1))
+        pls_last_minute = self.mc.get_all_playlists(
+            updated_after=datetime.datetime.now() - datetime.timedelta(minutes=1))
         assert_not_equal(len(pls_last_minute), 0)
         print(pls_last_minute)
 

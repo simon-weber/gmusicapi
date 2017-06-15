@@ -211,7 +211,8 @@ class Mobileclient(_Base):
 
         """
 
-        tracks = self._get_all_items(mobileclient.ListTracks, incremental, updated_after=updated_after)
+        tracks = self._get_all_items(mobileclient.ListTracks, incremental,
+                                     updated_after=updated_after)
 
         return tracks
 
@@ -420,7 +421,8 @@ class Mobileclient(_Base):
             }
         """
 
-        playlists = self._get_all_items(mobileclient.ListPlaylists, incremental, updated_after=updated_after)
+        playlists = self._get_all_items(mobileclient.ListPlaylists, incremental,
+                                        updated_after=updated_after)
 
         return playlists
 
