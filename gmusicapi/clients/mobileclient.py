@@ -390,7 +390,28 @@ class Mobileclient(_Base):
 
         return self._make_call(mobileclient.GetStreamUrl, song_id, device_id, quality)
 
+    def get_station_track_stream_url(self, song_id, wentry_id, session_token, quality='hi'):
+        """Returns a url that will point to an mp3 file.
+
+        This is only for use by free accounts, and requires a call to
+        :func:`get_station_info` first to provide `wentry_id` and `session_token`.
+        Subscribers should instead use :func:`get_stream_url`.
+
+        :param song_id: a single song id
+        :param wentry_id: a free radio station track entry id (`wentryid` from
+          :func:`get_station_info`)
+        :param session_token: a free radio station session token (`sessionToken` from
+          :func:`get_station_info`)
+        :param quality: (optional) stream bits per second quality
+          One of three possible values, hi: 320kbps, med: 160kbps, low: 128kbps.
+          The default is hi
+
+        """
+        return self._make_call(mobileclient.GetStationTrackStreamUrl, song_id, wentry_id,
+                               session_token, quality)
+
     def get_all_playlists(self, incremental=False, include_deleted=None, updated_after=None):
+
         """Returns a list of dictionaries that each represent a playlist.
 
         :param incremental: if True, return a generator that yields lists
@@ -2070,6 +2091,105 @@ class Mobileclient(_Base):
         """
 
         return self._make_call(mobileclient.GetStoreTrack, store_track_id)
+
+    @utils.enforce_id_param
+    def get_station_info(self, station_id, num_tracks=25):
+        """Retrieves information about a station.
+
+        :param station_id: a station id
+        :param include_tracks: when True, create the ``'tracks'`` substructure
+        :param num_tracks: maximum number of tracks to return
+
+        Returns a dict, eg::
+
+            {
+                'kind':'sj#radioStation',
+                'byline':'By Google Play Music',
+                'name':'Neo Soul',
+                'compositeArtRefs':[
+                    {
+                        'url':'http://lh3.googleusercontent.com/Aa-WBVTbKegp6McwqeHlj6KX5EYHKOBag74uwNl4xIHSv1g7Mi-NkMzwig',
+                        'kind':'sj#imageRef',
+                        'aspectRatio':'2'
+                    }                ],
+                'deleted':False,
+                'enforcementResult':{
+                    'sessionInvalidated':False
+                },
+                'lastModifiedTimestamp':'1497410517701000',
+                'recentTimestamp':'1497410516945000',
+                'clientId':'9e66e89e-50b0-11e7-aaa3-bc5ff4545c4b',
+                'sessionToken':'AFTSR9PtB_PbyqZ3jsnl-PFma4upK1MEtlhVnIlxRNynGalctoJF4TpgzaxymOnk0Gv5DQG7gb_W3eLamPU_Mg1cWylhrowQi1EFMBKWHeDDYWzpU1cEOF-D3c_gnwsBRHIuOetph2veY2Fd-dKVzjOkN6mtidE-XPR2VnpR9PG83wRLVRtJq5593-Vvbu6wjCHD9f23ohxg-ki0tyD3fjFW1463zy63YzN5Aa2SpbvOskEWhwhS3u9ASgEoX08lePE-ZZAq1XtmVvLa8DnDMVb7i95Qhp0dM2it1uruKHH85u7tMYnttbAW4022d0rqrp3ULDKOYMvIIouXH44-bkbKLuVIADiqeNavwTVzcoJxWo4mMKjCaxM=',
+                'tracks':[
+                    {
+                        'albumArtRef':[
+                            {
+                                'url':'http://lh5.ggpht.com/vWRj9DkKZ7cFj-qXoGoBGsv7ngUWdtGNl1SSOdzj2efDwdAs3F0kJ3Xq6zLxKjgv1v3ive5S',
+                                'kind':'sj#imageRef',
+                                'aspectRatio':'1',
+                                'autogen':False
+                            }
+                        ],
+                        'artistId':[
+                            'Atmjrctnubes5zhftrey2xjkzl'
+                        ],
+                        'composer':'',
+                        'year':1996,
+                        'trackAvailableForSubscription':True,
+                        'trackType':'7',
+                        'album':u"Maxwell's Urban Hang Suite",
+                        'title':u"Ascension (Don't Ever Wonder)",
+                        'albumArtist':'Maxwell',
+                        'trackNumber':4,
+                        'discNumber':1,
+                        'albumAvailableForPurchase':False,
+                        'explicitType':'2',
+                        'trackAvailableForPurchase':True,
+                        'storeId':'T6utayayrlyfmpovgj4ulacpat',
+                        'nid':'T6utayayrlyfmpovgj4ulacpat',
+                        'estimatedSize':'13848059',
+                        'albumId':'Bpwzztxynfjwtnrtgiugem3b56e',
+                        'genre':'Neo-Soul',
+                        'kind':'sj#track',
+                        'primaryVideo':{
+                            'kind':'sj#video',
+                            'id':'D7rm9t5S4uE',
+                            'thumbnails':[
+                                {
+                                    'url':'https://i.ytimg.com/vi/D7rm9t5S4uE/mqdefault.jpg',
+                                    'width':320,
+                                    'height':180
+                                }
+                            ]
+                        },
+                        'artist':'Maxwell',
+                        'wentryid':'ec9428eb-2676-4e92-901d-2de9a72fe581',
+                        'durationMillis':'346000'
+                    }
+                ],
+                'seed':{
+                    'kind':'sj#radioSeed',
+                    'curatedStationId':'L3lu7bpcqtd3e7pa7w37rf7gdu',
+                    'seedType':'9'
+                },
+                'skipEventHistory':[
+                ],
+                'inLibrary':False,
+                'imageUrls':[
+                    {
+                        'url':'http://lh3.googleusercontent.com/iceDDsQjQ683AD4w21WWlekg115Ixy_kMTivkFJTjo3w7vuW4-SSs3F3KQOaR8qoI-QYVuOQoA',
+                        'kind':'sj#imageRef',
+                        'aspectRatio':'1',
+                        'autogen':False
+                    }
+                ],
+                'id':'1a9ec96c-6c98-3c43-b123-9e2743203f5d'
+            }
+
+        """
+        res = self._make_call(mobileclient.ListStationTracks, station_id, num_tracks, [])
+
+        return res.get('data', {'stations': [{}]})['stations'][0]
 
     def get_genres(self, parent_genre_id=None):
         """Retrieves information on Google Music genres.

@@ -328,6 +328,9 @@ sj_station_seed = {
     }
 }
 
+sj_station_track = sj_track.copy()
+sj_station_track['properties']['wentryid'] = {'type': 'string', 'required': False}
+
 sj_station = {
     'type': 'object',
     'additionalProperties': False,
@@ -343,6 +346,8 @@ sj_station = {
                             'required': False},  # for public
         'clientId': {'type': 'string',
                      'required': False},  # for public
+        'sessionToken': {'type': 'string',
+                         'required': False},  # for free radios
         'skipEventHistory': {'type': 'array'},  # TODO: What's in this array?
         'seed': sj_station_seed,
         'stationSeeds': {'type': 'array',
@@ -350,7 +355,7 @@ sj_station = {
         'id': {'type': 'string',
                'required': False},  # for public
         'description': {'type': 'string', 'required': False},
-        'tracks': {'type': 'array', 'required': False, 'items': sj_track},
+        'tracks': {'type': 'array', 'required': False, 'items': sj_station_track},
         'imageUrls': {'type': 'array',
                       'required': False,
                       'items': sj_image
@@ -895,6 +900,46 @@ class ListTracks(McListCall):
 class GetStreamUrl(McStreamCall):
     static_method = 'GET'
     static_url = sj_stream_url + 'mplay'
+
+
+class GetStationTrackStreamUrl(McStreamCall):
+    static_method = 'GET'
+    static_url = sj_stream_url + 'wplay'
+
+    @staticmethod
+    def dynamic_headers(item_id, wentry_id, session_token, quality):
+        return {'X-Device-ID': ''}
+
+    @classmethod
+    def dynamic_params(cls, song_id, wentry_id, session_token, quality):
+        sig, salt = cls.get_signature(song_id)
+
+        params = {}
+        if song_id[0] == 'T':
+            # all access
+            params['mjck'] = song_id
+        else:
+            params['songid'] = song_id
+
+        params['sesstok'] = session_token.encode('utf-8')
+        params['wentryid'] = wentry_id.encode('utf-8')
+        params['tier'] = 'fr'
+
+        params.update(
+            {'audio_formats': 'mp3',
+             'opt': quality,
+             'net': 'mob',
+             'pt': 'a',
+             'slt': salt,
+             'sig': sig,
+             })
+
+        return params
+
+    @staticmethod
+    def parse_response(response):
+        res = json.loads(response.text)
+        return res['location']
 
 
 class ListPlaylists(McListCall):

@@ -63,6 +63,7 @@ Note that sometimes they are stored under the ``'nid'`` key, not the ``'id'`` ke
 .. automethod:: Mobileclient.increment_song_playcount
 .. automethod:: Mobileclient.add_store_track
 .. automethod:: Mobileclient.add_store_tracks
+.. automethod:: Mobileclient.get_station_track_stream_url
 
 Playlists
 ---------
@@ -114,6 +115,7 @@ Search Google Play for information about artists, albums, tracks, and more.
 .. automethod:: Mobileclient.get_podcast_episode_info
 .. automethod:: Mobileclient.get_podcast_series_info
 .. automethod:: Mobileclient.get_track_info
+.. automethod:: Mobileclient.get_station_info
 
 Misc
 ----
