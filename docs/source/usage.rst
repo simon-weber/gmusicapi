@@ -6,7 +6,7 @@ Usage
 
 Installation
 ------------
-Use `pip <http://www.pip-installer.org/en/latest/index.html>`__:
+Use `pip <https://pip.pypa.io/en/stable/installing/>`__:
 ``$ pip install gmusicapi``.
 This will grab all the source dependencies.
 Avoid using ``easy_install``.
