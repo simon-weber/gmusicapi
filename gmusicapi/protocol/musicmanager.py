@@ -457,10 +457,14 @@ class GetUploadSession(MmCall):
             return (True, None)
 
         if 'errorMessage' in res:
-            # This terribly nested structure is Google's doing.
-            error_code = (res['errorMessage']['additionalInfo']
-                          ['uploader_service.GoogleRupioAdditionalInfo']
-                          ['completionInfo']['customerSpecificInfo']['ResponseCode'])
+            try:
+                # This terribly nested structure is Google's doing.
+                error_code = (res['errorMessage']['additionalInfo']
+                              ['uploader_service.GoogleRupioAdditionalInfo']['completionInfo']
+                              ['customerSpecificInfo']['ResponseCode'])
+            except KeyError:
+                # The returned nested structure is not as expected: cannot get Response Code
+                error_code = None
 
             got_session = False
 
