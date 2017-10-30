@@ -621,6 +621,8 @@ class Mobileclient(_Base):
 
         :param playlist_id: the id of the playlist to add to.
         :param song_ids: a list of song ids, or a single song id.
+          These can be ``'storeId'`` from a store song, ``'id'`` from an uploaded song, or
+          ``'trackId'`` from a playlist entry.
 
         Playlists have a maximum size of 1000 songs.
         Calls may fail before that point (presumably) due to
