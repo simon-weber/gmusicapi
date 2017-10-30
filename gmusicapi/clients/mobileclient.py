@@ -346,7 +346,9 @@ class Mobileclient(_Base):
     def get_stream_url(self, song_id, device_id=None, quality='hi'):
         """Returns a url that will point to an mp3 file.
 
-        :param song_id: a single song id
+        :param song_id: A single song id.
+          This can be ``'storeId'`` from a store song, ``'id'`` from an uploaded song, or
+          ``'trackId'`` from a playlist entry.
         :param device_id: (optional) defaults to ``android_id`` from login.
 
           Otherwise, provide a mobile device id as a string.
