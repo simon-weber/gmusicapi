@@ -1657,12 +1657,13 @@ class Mobileclient(_Base):
 
         return stations[0].get('tracks', [])
 
-    def search(self, query, max_results=50):
+    def search(self, query, max_results=None):
         """Queries Google Music for content.
 
         :param query: a string keyword to search with. Capitalization and punctuation are ignored.
         :param max_results: Maximum number of items to be retrieved.
           The maximum accepted value is 100. If set higher, results are limited to 10.
+          A value of ``None`` allows up to 999 results per type. Default is ``None``.
 
         The results are returned in a dictionary with keys:
         ``album_hits, artist_hits, playlist_hits, podcast_hits,
