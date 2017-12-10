@@ -16,7 +16,7 @@ before_script:
 script:
   - flake8 example.py setup.py gmusicapi
   - python travis-secure-redefine.py "python -m gmusicapi.test.run_tests $GROUP" IDARG GM_U GM_P GM_O GM_I GM_A
-after_failure: cat `python -c 'from gmusicapi.utils import utils; print utils.log_filepath'`
+after_failure: cat `python -c 'from __future__ import print_function; from gmusicapi.utils import utils; print(utils.log_filepath)'`
 branches:
   only:
   - develop
