@@ -215,6 +215,16 @@ class UploadMetadata(MmCall):
 
         track.client_id = cls.get_track_clientid(filepath)
 
+        audio = mutagen.File(filepath, easy=True)
+
+        if audio is None:
+            raise ValueError("could not open to read metadata")
+        elif isinstance(audio, mutagen.asf.ASF):
+            # WMA entries store more info than just the value.
+            # Monkeypatch in a dict {key: value} to keep interface the same for all filetypes.
+            asf_dict = dict((k, [ve.value for ve in v]) for (k, v) in audio.tags.as_dict().items())
+            audio.tags = asf_dict
+
         extension = os.path.splitext(filepath)[1].upper()
 
         if isinstance(extension, bytes):
@@ -224,12 +234,18 @@ class UploadMetadata(MmCall):
             # Trim leading period if it exists (ie extension not empty).
             extension = extension[1:]
 
+        if isinstance(audio, mutagen.mp4.MP4) and (
+                audio.info.codec == 'alac' or audio.info.codec_description == 'ALAC'):
+            extension = 'ALAC'
+        elif isinstance(audio, mutagen.mp4.MP4) and audio.info.codec_description.startswith('AAC'):
+            extension = 'AAC'
+
         if extension.upper() == 'M4B':
             # M4B are supported by the music manager, and transcoded like normal.
             extension = 'M4A'
 
         if not hasattr(locker_pb2.Track, extension):
-            raise ValueError("unsupported filetype")
+            raise ValueError("unsupported filetype: {0} for file {1}".format(extension, filepath))
 
         track.original_content_type = getattr(locker_pb2.Track, extension)
 
@@ -241,16 +257,6 @@ class UploadMetadata(MmCall):
         track.client_date_added = 0
         track.recent_timestamp = 0
         track.rating = locker_pb2.Track.NOT_RATED  # star rating
-
-        # Populate information about the encoding.
-        audio = mutagen.File(filepath, easy=True)
-        if audio is None:
-            raise ValueError("could not open to read metadata")
-        elif isinstance(audio, mutagen.asf.ASF):
-            # WMA entries store more info than just the value.
-            # Monkeypatch in a dict {key: value} to keep interface the same for all filetypes.
-            asf_dict = dict((k, [ve.value for ve in v]) for (k, v) in audio.tags.as_dict().items())
-            audio.tags = asf_dict
 
         track.duration_millis = int(audio.info.length * 1000)
 
@@ -457,10 +463,14 @@ class GetUploadSession(MmCall):
             return (True, None)
 
         if 'errorMessage' in res:
-            # This terribly nested structure is Google's doing.
-            error_code = (res['errorMessage']['additionalInfo']
-                          ['uploader_service.GoogleRupioAdditionalInfo']
-                          ['completionInfo']['customerSpecificInfo']['ResponseCode'])
+            try:
+                # This terribly nested structure is Google's doing.
+                error_code = (res['errorMessage']['additionalInfo']
+                              ['uploader_service.GoogleRupioAdditionalInfo']['completionInfo']
+                              ['customerSpecificInfo']['ResponseCode'])
+            except KeyError:
+                # The returned nested structure is not as expected: cannot get Response Code
+                error_code = None
 
             got_session = False
 

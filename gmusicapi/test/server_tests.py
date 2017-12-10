@@ -10,6 +10,7 @@ from __future__ import print_function, division, absolute_import, unicode_litera
 from builtins import *  # noqa
 
 from collections import namedtuple
+import datetime
 from hashlib import md5
 import itertools
 import os
@@ -20,7 +21,7 @@ import warnings
 from decorator import decorator
 from proboscis.asserts import (
     assert_true, assert_equal, assert_is_not_none,
-    assert_raises, Check
+    assert_raises, assert_not_equal, Check,
 )
 from proboscis import test, before_class, after_class, SkipTest
 import requests
@@ -761,6 +762,15 @@ class ClientTests(object):
     def mc_list_songs_inc_equal(self):
         self.assert_list_inc_equivalence(self.mc.get_all_songs)
 
+    @song_test
+    def mc_list_songs_updated_after(self):
+        songs_last_minute = self.mc.get_all_songs(
+            updated_after=datetime.datetime.now() - datetime.timedelta(minutes=1))
+        assert_not_equal(len(songs_last_minute), 0)
+
+        all_songs = self.mc.get_all_songs()
+        assert_not_equal(len(songs_last_minute), len(all_songs))
+
     @podcast_test
     def mc_list_podcast_series_inc_equal(self):
         self.assert_list_inc_equivalence(self.mc.get_all_podcast_series)
@@ -831,6 +841,16 @@ class ClientTests(object):
         # revert
         self.mc.edit_playlist(self.playlist_ids[0], public=True)
         assert_public_equal(self.playlist_ids[0], True)
+
+    @playlist_test
+    def mc_list_playlists_updated_after(self):
+        pls_last_minute = self.mc.get_all_playlists(
+            updated_after=datetime.datetime.now() - datetime.timedelta(minutes=1))
+        assert_not_equal(len(pls_last_minute), 0)
+        print(pls_last_minute)
+
+        all_pls = self.mc.get_all_playlists()
+        assert_not_equal(len(pls_last_minute), len(all_pls))
 
     @retry(tries=3)
     def _mc_assert_ple_position(self, entry, pos):

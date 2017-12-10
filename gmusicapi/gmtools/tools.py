@@ -315,12 +315,12 @@ class SongMatcher(object):
                         try:
                             current_mods.append(next(future_mods))
                         except StopIteration:
-                            raise self.TieBroken(tie_breaker(query, results))
+                            raise self.TieBroken(tie_breaker.__func__(query, results))
 
                         next_results = self.query_library(query, tie_breaker, current_mods, auto)
 
                         if not next_results:
-                            raise self.TieBroken(tie_breaker(query, results))
+                            raise self.TieBroken(tie_breaker.__func__(query, results))
                         else:
                             return next_results
         except self.TieBroken as tie:
@@ -398,7 +398,9 @@ class SongMatcher(object):
 
         for query in queries:
             res = self.query_library(query, tie_breaker, auto=auto)
-            matches += res
+
+            if res:
+                matches += res
 
             # Log the results.
 
