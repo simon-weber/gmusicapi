@@ -109,7 +109,7 @@ sj_track = {
                          },
         'discNumber': {'type': 'integer'},
         'totalDiscCount': {'type': 'integer', 'required': False},
-        'estimatedSize': {'type': 'string'},
+        'estimatedSize': {'type': 'string', 'required': False},
         'trackType': {'type': 'string', 'required': False},
         'storeId': {'type': 'string', 'required': False},
         'albumId': {'type': 'string'},
