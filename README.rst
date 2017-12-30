@@ -26,7 +26,8 @@ That said, it's actively maintained, and powers a bunch of cool projects:
 -  alternate clients, including
    `one designed for the visually impaired <https://github.com/chrisnorman7/gmp3>`__,
    `a web-based jukebox which ships with its own server <https://github.com/chrisnorman7/jukebox>`__,
-   `a command line client <https://github.com/christopher-dg/pmcli>`__,
+   `command line <https://github.com/christopher-dg/pmcli>`__
+   `clients <https://github.com/and3rson/clay>`__,
    `a FUSE filesystem <https://github.com/EnigmaCurry/GMusicFS>`__,
    and `an Alexa skill <https://github.com/stevenleeg/geemusic>`__
 -  library management tools for
