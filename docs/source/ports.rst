@@ -7,7 +7,7 @@ Here are the ports I'm currently aware of:
 
 
 -  C++: `dvirtz <https://github.com/dvirtz/gmusicapi-cpp>`__
-   and Greg Wicks <https://github.com/gwicks/gmusicapi-curl>`__
+   and `Greg Wicks <https://github.com/gwicks/gmusicapi-curl>`__
 -  C#:
    `ffleischer <https://github.com/ffleischer/gmusicapiCSharp/tree/master>`__
    and `Taylor Finnell <https://github.com/taylorfinnell/GoogleMusicAPI.NET>`__
@@ -19,6 +19,7 @@ Here are the ports I'm currently aware of:
    There's also my `Google Music Turntable uploader
    <https://github.com/simon-weber/Google-Music-Turntable-Uploader>`__;
    it's not a port, but may be useful as an example.
+-  Kotlin: `timtimmahh <https://github.com/timtimmahh/gmusicapi>`__
 -  Node: `Jamon Terrell <https://github.com/jamon/playmusic>`__
 -  Objective-C:
    `Gregory Wicks <https://github.com/gwicks/gmusicapi-objc>`__
@@ -26,8 +27,7 @@ Here are the ports I'm currently aware of:
    `raydanhk <http://code.google.com/p/unofficial-google-music-api-php/>`__
 -  Ruby: `Loic Nageleisen <https://github.com/lloeki/ruby-skyjam>`__
 
-They're in various states of completion and maintenance because,
-well, building a port is tough.
+They're in various states of completion and maintenance.
 
 Alternatively, consider using `GMusicProxy <http://gmusicproxy.net/>`__ or copying its approach.
 
