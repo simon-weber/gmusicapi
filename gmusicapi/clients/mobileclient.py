@@ -1601,6 +1601,8 @@ class Mobileclient(_Base):
 
         Returns a list of dictionaries that each represent a radio station.
 
+        This includes any stations listened to recently, which might not be in the library.
+
         :param incremental: if True, return a generator that yields lists
           of at most 1000 stations
           as they are retrieved from the server. This can be useful for
@@ -1625,7 +1627,8 @@ class Mobileclient(_Base):
                     # possible keys:
                     #  albumId, artistId, genreId, trackId, trackLockerId
                 },
-                'id': '69f1bfce-308a-313e-9ed2-e50abe33a25d'
+                'id': '69f1bfce-308a-313e-9ed2-e50abe33a25d',
+                'inLibrary': True
             },
         """
         return self._get_all_items(mobileclient.ListStations, incremental,
