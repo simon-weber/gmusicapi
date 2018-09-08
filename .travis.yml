@@ -40,7 +40,8 @@ env:
   - secure: GVFTMs8TGOunR+eNR7VCQNkKVDWtCZ6siyB2KfgPPzeRKduUFhJA5VhhV+Vl+uhmL3767nM8Tv+ypX7C6mg2qZNcm9EJkAZzXg4f5qQJjTfxXC6lJfBn3i0S1Q9qBhwyQ1Jx+mHfth3TTXEq8sBgTuZcu+G0V8Lb4zzr83bLxto=
   matrix:
   - IDARG=1
-  - IDARG=2
+  # disabled until I can add my ios test device
+  # - IDARG=2
 notifications:
   irc:
     channels:
