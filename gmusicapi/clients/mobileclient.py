@@ -47,15 +47,23 @@ class Mobileclient(_Base):
         """Ensure that a given device_id belongs to the user supplying it."""
         if is_mac:  # Always allow logins with MAC address.
             return device_id
-        devices = [
-            d['id'][2:] if d['id'].startswith('0x') else d['id'].replace(':', '')
-            for d in self.get_registered_devices()
-        ]
-        if device_id in devices:
+
+        device_ids = []
+        for d in self.get_registered_devices():
+            if d['id'].startswith('ios:'):
+                device_ids.append(d['id'])
+            elif d['id'].startswith('0x'):
+                # old android format
+                device_ids.append(d['id'][2:])
+            else:
+                # mac address format
+                device_ids.append(d['id'].replace(':', ''))
+
+        if device_id in device_ids:
             return device_id
         else:
             self.logout()
-            raise InvalidDeviceId('Invalid device_id %s.' % device_id, devices)
+            raise InvalidDeviceId('Invalid device_id %s.' % device_id, device_ids)
 
     @property
     def locale(self):
