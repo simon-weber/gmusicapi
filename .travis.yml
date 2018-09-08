@@ -24,7 +24,7 @@ branches:
 env:
   global:
   - GM_N="Travis-CI (gmusicapi)"
-  - GM_AA_D_ID="30da8b7f1d8cab94"
+  - GM_AA_D_ID="ios:96BCE7FD-4C0B-4B11-883A-2FCF534AC99C"
     # AA: u, p, o, i, a
     # append 1 to vars
   - secure: end65RuZTJF3GMk/MK5u9V0/9zMAOuHfSZW5Bu5kOchhJdNFYgx44vs3qXJovkDy4EooIT45Pjt9uPBbqcgINvvJmm60T4ICpoBaC/gvG23vynCATxQ4qp2lOni7YiVGQvXp/uSuYRocLxxE/hToqmANrNSsAa1ksc7jmHkZC80=
