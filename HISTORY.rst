@@ -5,9 +5,12 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-11.0.2-rc.1
+11.0.2
 ++++++
-released ...
+released 2018-09-09
+
+- fix validation of "ios:..." format device ids
+- add inLibrary field to station docs
 
 11.0.1
 ++++++
