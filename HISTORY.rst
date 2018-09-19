@@ -5,9 +5,11 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-11.0.3-rc.1
+11.0.3
 ++++++
-released ...
+released 2018-09-19
+
+- fix an "__init__() takes at most 4..." warning coming from oauth2client
 
 11.0.2
 ++++++
