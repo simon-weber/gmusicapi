@@ -82,7 +82,7 @@ class Musicmanager(_Base):
         to :func:`login` instead.
         """
 
-        flow = OAuth2WebServerFlow(*musicmanager.oauth)
+        flow = OAuth2WebServerFlow(**musicmanager.oauth._asdict())
 
         auth_uri = flow.step1_get_authorize_url()
         print()

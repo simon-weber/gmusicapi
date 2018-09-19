@@ -30,7 +30,7 @@ log = utils.DynamicClientLogger(__name__)
 
 _android_url = 'https://android.clients.google.com/upsj/'
 
-OAuthInfo = namedtuple('OAuthInfo', 'client_id client_secret scope redirect')
+OAuthInfo = namedtuple('OAuthInfo', 'client_id client_secret scope redirect_uri')
 oauth = OAuthInfo(
     '652850857958.apps.googleusercontent.com',
     'ji1rklciNp2bfsFJnEH_i6al',
