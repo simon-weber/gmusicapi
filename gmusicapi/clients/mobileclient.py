@@ -1681,7 +1681,7 @@ class Mobileclient(_Base):
           A value of ``None`` allows up to 999 results per type. Default is ``None``.
 
         The results are returned in a dictionary with keys:
-        ``album_hits, artist_hits, playlist_hits, podcast_hits,
+        ``album_hits, artist_hits, genre_hits, playlist_hits, podcast_hits,
           situation_hits, song_hits, station_hits, video_hits``
         containing lists of results of that type.
 
@@ -1879,15 +1879,19 @@ class Mobileclient(_Base):
 
         res = self._make_call(mobileclient.Search, query, max_results)
 
-        hits = res.get('entries', [])
+        clusters = res.get('clusterDetail', [])
 
         hits_by_type = defaultdict(list)
-        for hit in hits:
-            hits_by_type[hit['type']].append(hit)
+        for cluster in clusters:
+            hit_type = cluster['cluster']['type']
+            hits = cluster.get('entries', [])
+            for hit in hits:
+                hits_by_type[hit_type].append(hit)
 
         return {'album_hits': hits_by_type['3'],
                 'artist_hits': hits_by_type['2'],
                 'playlist_hits': hits_by_type['4'],
+                'genre_hits': hits_by_type['5'],
                 'podcast_hits': hits_by_type['9'],
                 'situation_hits': hits_by_type['7'],
                 'song_hits': hits_by_type['1'],
