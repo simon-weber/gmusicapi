@@ -957,6 +957,8 @@ class ClientTests(object):
     def mc_search_store_no_playlists(self):
         res = self.mc.search('morning', max_results=100)
 
+        res.pop('genre_hits')  # Genre cluster is returned but without results in the new response.
+
         # TODO playlist and situation results are not returned consistently.
         res.pop('playlist_hits')
         res.pop('situation_hits')
