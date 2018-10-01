@@ -595,6 +595,16 @@ sj_situation['properties']['situations'] = {
     'items': sj_situation
 }
 
+sj_search_result_cluster_info = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'category': {'type': 'string'},
+        'id': {'type': 'string'},
+        'type': {'type': 'string'}
+    }
+}
+
 sj_search_result = {
     'type': 'object',
     'additionalProperties': False,
@@ -604,10 +614,16 @@ sj_search_result = {
         'best_result': {'type': 'boolean', 'required': False},
         'navigational_result': {'type': 'boolean', 'required': False},
         'navigational_confidence': {'type': 'number', 'required': False},
+        'cluster': {
+            'type': 'array',
+            'required': False,
+            'items': sj_search_result_cluster_info
+        },
         'artist': sj_artist.copy(),
         'album': sj_album.copy(),
         'track': sj_track.copy(),
         'playlist': sj_playlist.copy(),
+        'genre': sj_genre.copy(),
         'series': sj_podcast_series.copy(),
         'station': sj_station.copy(),
         'situation': sj_situation.copy(),
@@ -619,10 +635,26 @@ sj_search_result['properties']['artist']['required'] = False
 sj_search_result['properties']['album']['required'] = False
 sj_search_result['properties']['track']['required'] = False
 sj_search_result['properties']['playlist']['required'] = False
+sj_search_result['properties']['genre']['required'] = False
 sj_search_result['properties']['series']['required'] = False
 sj_search_result['properties']['station']['required'] = False
 sj_search_result['properties']['situation']['required'] = False
 sj_search_result['properties']['youtube_video']['required'] = False
+
+sj_search_result_cluster = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'cluster': {'type': sj_search_result_cluster_info},
+        'displayName': {'type': 'string', 'required': False},
+        'entries': {
+            'type': 'array',
+            'items': sj_search_result,
+            'required': False
+        },
+        'resultToken': {'type': 'string', 'required': False}
+    }
+}
 
 
 class McCall(Call):
@@ -865,22 +897,17 @@ class Search(McCall):
 
     # The result types returned are requested in the `ct` parameter.
     # Free account search is restricted so may not contain hits for all result types.
-    # 1: Song, 2: Artist, 3: Album, 4: Playlist, 6: Station, 7: Situation, 8: Video
-    # 9: Podcast Series
-    static_params = {'ct': '1,2,3,4,6,7,8,9'}
+    # 1: Song, 2: Artist, 3: Album, 4: Playlist, 5: Genre,
+    # 6: Station, 7: Situation, 8: Video, 9: Podcast Series
+    static_params = {'ct': '1,2,3,4,5,6,7,8,9', 'ic': True}
 
     _res_schema = {
         'type': 'object',
         'additionalProperties': False,
         'properties': {
             'kind': {'type': 'string'},
-            'clusterOrder': {'type': 'array',
-                             'items': {'type': 'string'},
-                             'required': False},
-            'entries': {'type': 'array',
-                        'items': sj_search_result,
-                        'required': False},
-            'suggestedQuery': {'type': 'string', 'required': False}
+            'clusterDetail': {'type': 'array',
+                              'items': {'type': sj_search_result_cluster}}
         },
     }
 
