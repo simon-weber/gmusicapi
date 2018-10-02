@@ -1887,8 +1887,7 @@ class Mobileclient(_Base):
         for cluster in clusters:
             hit_type = cluster['cluster']['type']
             hits = cluster.get('entries', [])
-            for hit in hits:
-                hits_by_type[hit_type].append(hit)
+            hits_by_type[hit_type].extend(hits)
 
         return {'album_hits': hits_by_type['3'],
                 'artist_hits': hits_by_type['2'],
