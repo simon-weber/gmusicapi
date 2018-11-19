@@ -5,9 +5,11 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-11.0.4-rc.1
+11.0.4
 ++++++
-released ...
+released 2018-11-19
+
+- fix a number of bugs with Mobileclient.search
 
 11.0.3
 ++++++
