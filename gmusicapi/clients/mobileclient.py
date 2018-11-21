@@ -5,18 +5,22 @@ from past.builtins import basestring
 from builtins import *  # noqa
 from collections import defaultdict
 import datetime
+from functools import partial
 from operator import itemgetter
+import os
 import re
 from uuid import getnode as getmac
 
 from gmusicapi import session
-from gmusicapi.clients.shared import _Base
+from gmusicapi.appdirs import my_appdirs
+from gmusicapi.clients.shared import _OAuthClient
 from gmusicapi.exceptions import CallFailure, NotSubscribed, InvalidDeviceId
 from gmusicapi.protocol import mobileclient
+from gmusicapi.protocol.shared import authtypes
 from gmusicapi.utils import utils
 
 
-class Mobileclient(_Base):
+class Mobileclient(_OAuthClient):
     """Allows library management and streaming by posing as the
     googleapis.com mobile clients.
 

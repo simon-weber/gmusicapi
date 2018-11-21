@@ -6,12 +6,15 @@ Sessions handle the details of authentication and transporting requests.
 from __future__ import print_function, division, absolute_import, unicode_literals
 from builtins import *  # noqa
 
+from collections import namedtuple
 from contextlib import closing
+import json
 
 import gpsoauth
 import httplib2  # included with oauth2client
 import mechanicalsoup
 import oauth2client
+from oauth2client.client import OAuth2Credentials
 import requests
 
 from gmusicapi.exceptions import (
@@ -21,6 +24,32 @@ from gmusicapi.protocol import webclient
 from gmusicapi.utils import utils
 
 log = utils.DynamicClientLogger(__name__)
+
+OAuthInfo = namedtuple('OAuthInfo', 'client_id client_secret scope redirect_uri')
+
+
+def credentials_from_refresh_token(token, oauth_info):
+    # why doesn't Google provide this!?
+
+    cred_json = {"_module": "oauth2client.client",
+                 "token_expiry": "2000-01-01T00:13:37Z",  # to refresh now
+                 "access_token": 'bogus',
+                 "token_uri": "https://accounts.google.com/o/oauth2/token",
+                 "invalid": False,
+                 "token_response": {
+                     "access_token": 'bogus',
+                     "token_type": "Bearer",
+                     "expires_in": 3600,
+                     "refresh_token": token},
+                 "client_id": oauth_info.client_id,
+                 "id_token": None,
+                 "client_secret": oauth_info.client_secret,
+                 "revoke_uri": "https://accounts.google.com/o/oauth2/revoke",
+                 "_class": "OAuth2Credentials",
+                 "refresh_token": token,
+                 "user_agent": None}
+
+    return OAuth2Credentials.new_from_json(json.dumps(cred_json))
 
 
 class _Base(object):
@@ -169,72 +198,14 @@ class Webclient(_Base):
         return rsession.request(**req_kwargs)
 
 
-class Mobileclient(_Base):
-    def __init__(self, *args, **kwargs):
-        super(Mobileclient, self).__init__(*args, **kwargs)
-        self._master_token = None
-        self._authtoken = None
-        self._locale = None
-        self._is_subscribed = None
-
-    def login(self, email, password, android_id, *args, **kwargs):
-        """
-        Get a master token, then use it to get a skyjam OAuth token.
-
-        :param email:
-        :param password:
-        :param android_id:
-        """
-
-        super(Mobileclient, self).login(email, password, android_id, *args, **kwargs)
-
-        res = gpsoauth.perform_master_login(email, password, android_id)
-        if 'Token' not in res:
-            return False
-        self._master_token = res['Token']
-
-        res = gpsoauth.perform_oauth(
-            email, self._master_token, android_id,
-            service='sj', app='com.google.android.music',
-            client_sig='38918a453d07199354f8b19af05ec6562ced5788')
-        if 'Auth' not in res:
-            return False
-        self._authtoken = res['Auth']
-
-        self.is_authenticated = True
-
-        return True
-
-    def _send_with_auth(self, req_kwargs, desired_auth, rsession):
-        if desired_auth.oauth:
-            # Default to English (United States) if no locale given.
-            if not self._locale:
-                self._locale = 'en_US'
-
-            # Set locale for all Mobileclient calls.
-            req_kwargs.setdefault('params', {})
-            req_kwargs['params'].update({'hl': self._locale})
-
-            # As of API v2.5, dv is a required parameter for all calls.
-            # The dv value is part of the Android app version number,
-            # but setting this to 0 works fine.
-            req_kwargs['params'].update({'dv': 0})
-
-            if self._is_subscribed:
-                req_kwargs['params'].update({'tier': 'aa'})
-            else:
-                req_kwargs['params'].update({'tier': 'fr'})
-
-            req_kwargs.setdefault('headers', {})
-
-            # does this expire?
-            req_kwargs['headers']['Authorization'] = \
-                'GoogleLogin auth=' + self._authtoken
-
-        return rsession.request(**req_kwargs)
-
-
 class Musicmanager(_Base):
+    oauth = OAuthInfo(
+        '652850857958.apps.googleusercontent.com',
+        'ji1rklciNp2bfsFJnEH_i6al',
+        'https://www.googleapis.com/auth/musicmanager',
+        'urn:ietf:wg:oauth:2.0:oob'
+    )
+
     def __init__(self, *args, **kwargs):
         super(Musicmanager, self).__init__(*args, **kwargs)
         self._oauth_creds = None
@@ -268,3 +239,80 @@ class Musicmanager(_Base):
                 'Bearer ' + self._oauth_creds.access_token
 
         return rsession.request(**req_kwargs)
+
+
+class Mobileclient(Musicmanager):
+    oauth = OAuthInfo(
+        '228293309116.apps.googleusercontent.com',
+        'GL1YV0XMp0RlL7ylCV3ilFz-',
+        'https://www.googleapis.com/auth/skyjam',
+        'urn:ietf:wg:oauth:2.0:oob'
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(Mobileclient, self).__init__(*args, **kwargs)
+        self._master_token = None
+        self._authtoken = None
+        self._locale = None
+        self._is_subscribed = None
+
+    def gpsoauth_login(self, email, password, android_id, *args, **kwargs):
+        """
+        Get a master token, then use it to get a skyjam OAuth token.
+
+        :param email:
+        :param password:
+        :param android_id:
+        """
+
+        # TODO calling directly into base is weird
+        _Base.login(self, email, password, android_id, *args, **kwargs)
+
+        res = gpsoauth.perform_master_login(email, password, android_id)
+        if 'Token' not in res:
+            return False
+        self._master_token = res['Token']
+
+        res = gpsoauth.perform_oauth(
+            email, self._master_token, android_id,
+            service='sj', app='com.google.android.music',
+            client_sig='38918a453d07199354f8b19af05ec6562ced5788')
+        if 'Auth' not in res:
+            return False
+        self._authtoken = res['Auth']
+
+        self.is_authenticated = True
+
+        return True
+
+    def _send_with_auth(self, req_kwargs, desired_auth, rsession):
+        # Default to English (United States) if no locale given.
+        if not self._locale:
+            self._locale = 'en_US'
+
+        # Set locale for all Mobileclient calls.
+        req_kwargs.setdefault('params', {})
+        req_kwargs['params'].update({'hl': self._locale})
+
+        # As of API v2.5, dv is a required parameter for all calls.
+        # The dv value is part of the Android app version number,
+        # but setting this to 0 works fine.
+        req_kwargs['params'].update({'dv': 0})
+
+        if self._is_subscribed:
+            req_kwargs['params'].update({'tier': 'aa'})
+        else:
+            req_kwargs['params'].update({'tier': 'fr'})
+
+        req_kwargs.setdefault('headers', {})
+
+        if desired_auth.gpsoauth:
+            # does this expire?
+            req_kwargs['headers']['Authorization'] = \
+                'GoogleLogin auth=' + self._authtoken
+            return rsession.request(**req_kwargs)
+
+        if desired_auth.oauth:
+            return super(Mobileclient, self)._send_with_auth(req_kwargs, desired_auth, rsession)
+
+        raise ValueError("_send_with_auth got invalid desired_auth: {}".format(desired_auth))

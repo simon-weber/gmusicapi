@@ -15,7 +15,7 @@ import sys
 from proboscis import TestProgram
 
 from gmusicapi.clients import Musicmanager, Mobileclient, OAUTH_FILEPATH
-from gmusicapi.protocol.musicmanager import credentials_from_refresh_token
+from gmusicapi.session import credentials_from_refresh_token
 from gmusicapi.test import local_tests, server_tests  # noqa
 from gmusicapi.test.utils import NoticeLogging
 
@@ -177,6 +177,7 @@ def main():
 
         if e.code is not None:
             sys.exit(e.code)
+
 
 if __name__ == '__main__':
     main()

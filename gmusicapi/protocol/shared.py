@@ -20,13 +20,14 @@ from future.utils import with_metaclass
 
 log = utils.DynamicClientLogger(__name__)
 
-_auth_names = ('xt', 'sso', 'oauth')
+_auth_names = ('xt', 'sso', 'oauth', 'gpsoauth',)
 
 """
   AuthTypes has fields for each type of auth, each of which store a bool:
     xt: webclient xsrf param/cookie
     sso: webclient Authorization header
-    oauth: musicmanager/mobileclient oauth header
+    oauth: musicmanager/mobileclient Bearer header
+    gpsoauth: mobileclient gpsoauth GoogleLogin header
 """
 AuthTypes = namedtuple('AuthTypes', _auth_names)
 
@@ -189,7 +190,8 @@ class Call(with_metaclass(BuildRequestMeta, object)):
         *args and **kwargs are passed to protocol.build_transaction.
 
         :param session: a PlaySession used to send this request.
-        :param validate: if False, do not validate
+        :param validate: if False, do not validate.
+        :param required_auth: if in kwargs, overrides the static protocol required_auth.
         """
         # TODO link up these docs
 
@@ -204,9 +206,11 @@ class Call(with_metaclass(BuildRequestMeta, object)):
         else:
             log.debug("%s(<omitted>)", call_name)
 
+        required_auth = kwargs.pop('required_auth', cls.required_auth)
+
         req_kwargs = cls.build_request(*args, **kwargs)
 
-        response = session.send(req_kwargs, cls.required_auth)
+        response = session.send(req_kwargs, required_auth)
         # TODO trim the logged response if it's huge?
 
         safe_req_kwargs = req_kwargs.copy()
