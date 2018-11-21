@@ -6,7 +6,6 @@ from six import raise_from
 from builtins import *  # noqa
 
 import base64
-from collections import namedtuple
 import hashlib
 import itertools
 import os
@@ -17,7 +16,6 @@ import dateutil.parser
 from decorator import decorator
 from google.protobuf.message import DecodeError
 import mutagen
-from oauth2client.client import OAuth2Credentials
 
 import json
 from gmusicapi.exceptions import CallFailure
@@ -29,38 +27,6 @@ log = utils.DynamicClientLogger(__name__)
 
 
 _android_url = 'https://android.clients.google.com/upsj/'
-
-OAuthInfo = namedtuple('OAuthInfo', 'client_id client_secret scope redirect_uri')
-oauth = OAuthInfo(
-    '652850857958.apps.googleusercontent.com',
-    'ji1rklciNp2bfsFJnEH_i6al',
-    'https://www.googleapis.com/auth/musicmanager',
-    'urn:ietf:wg:oauth:2.0:oob'
-)
-
-
-def credentials_from_refresh_token(token):
-    # why doesn't Google provide this!?
-
-    cred_json = {"_module": "oauth2client.client",
-                 "token_expiry": "2000-01-01T00:13:37Z",  # to refresh now
-                 "access_token": 'bogus',
-                 "token_uri": "https://accounts.google.com/o/oauth2/token",
-                 "invalid": False,
-                 "token_response": {
-                     "access_token": 'bogus',
-                     "token_type": "Bearer",
-                     "expires_in": 3600,
-                     "refresh_token": token},
-                 "client_id": oauth.client_id,
-                 "id_token": None,
-                 "client_secret": oauth.client_secret,
-                 "revoke_uri": "https://accounts.google.com/o/oauth2/revoke",
-                 "_class": "OAuth2Credentials",
-                 "refresh_token": token,
-                 "user_agent": None}
-
-    return OAuth2Credentials.new_from_json(json.dumps(cred_json))
 
 
 @decorator

@@ -9,7 +9,6 @@ import os
 from socket import gethostname
 import time
 from uuid import getnode as getmac
-import webbrowser
 
 if PY3:
     from urllib.parse import unquote
@@ -17,21 +16,18 @@ else:
     from urllib import unquote
 
 import httplib2  # included with oauth2client
-from oauth2client.client import OAuth2WebServerFlow, TokenRevokeError
-import oauth2client.file
+from oauth2client.client import TokenRevokeError
 
 import gmusicapi
-from gmusicapi.clients.shared import _Base
+from gmusicapi.clients.shared import _OAuthClient
 from gmusicapi.appdirs import my_appdirs
 from gmusicapi.exceptions import CallFailure, NotLoggedIn
 from gmusicapi.protocol import musicmanager, upload_pb2, locker_pb2
 from gmusicapi.utils import utils
 from gmusicapi import session
 
-OAUTH_FILEPATH = os.path.join(my_appdirs.user_data_dir, 'oauth.cred')
 
-
-class Musicmanager(_Base):
+class Musicmanager(_OAuthClient):
     """Allows uploading by posing as Google's Music Manager.
 
     Musicmanager uses OAuth, so a plaintext email and password are not required
@@ -46,67 +42,9 @@ class Musicmanager(_Base):
     Some authors may want more control over the OAuth flow.
     In this case, credentials can be directly provided to :func:`login`.
     """
+    OAUTH_FILEPATH = os.path.join(my_appdirs.user_data_dir, 'oauth.cred')
 
     _session_class = session.Musicmanager
-
-    @staticmethod
-    def perform_oauth(storage_filepath=OAUTH_FILEPATH, open_browser=False):
-        """Provides a series of prompts for a user to follow to authenticate.
-        Returns ``oauth2client.client.OAuth2Credentials`` when successful.
-
-        In most cases, this should only be run once per machine to store
-        credentials to disk, then never be needed again.
-
-        If the user refuses to give access,
-        ``oauth2client.client.FlowExchangeError`` is raised.
-
-        :param storage_filepath: a filepath to write the credentials to,
-          or ``None``
-          to not write the credentials to disk (which is not recommended).
-
-          `Appdirs <https://pypi.python.org/pypi/appdirs>`__
-          ``user_data_dir`` is used by default. Users can run::
-
-              import gmusicapi.clients
-              print gmusicapi.clients.OAUTH_FILEPATH
-
-          to see the exact location on their system.
-
-        :param open_browser: if True, attempt to open the auth url
-          in the system default web browser. The url will be printed
-          regardless of this param's setting.
-
-        This flow is intentionally very simple.
-        For complete control over the OAuth flow, pass an
-        ``oauth2client.client.OAuth2Credentials``
-        to :func:`login` instead.
-        """
-
-        flow = OAuth2WebServerFlow(**musicmanager.oauth._asdict())
-
-        auth_uri = flow.step1_get_authorize_url()
-        print()
-        print("Visit the following url:\n %s" % auth_uri)
-
-        if open_browser:
-            print()
-            print('Opening your browser to it now...', end=' ')
-            webbrowser.open(auth_uri)
-            print('done.')
-            print("If you don't see your browser, you can just copy and paste the url.")
-            print()
-
-        code = input("Follow the prompts, then paste the auth code here and hit enter: ")
-
-        credentials = flow.step2_exchange(code)
-
-        if storage_filepath is not None:
-            if storage_filepath == OAUTH_FILEPATH:
-                utils.make_sure_path_exists(os.path.dirname(OAUTH_FILEPATH), 0o700)
-            storage = oauth2client.file.Storage(storage_filepath)
-            storage.put(credentials)
-
-        return credentials
 
     def __init__(self, debug_logging=True, validate=True, verify_ssl=True):
         super(Musicmanager, self).__init__(self.__class__.__name__,
@@ -168,31 +106,6 @@ class Musicmanager(_Base):
 
         return (self._oauth_login(oauth_credentials) and
                 self._perform_upauth(uploader_id, uploader_name))
-
-    def _oauth_login(self, oauth_credentials):
-        """Auth ourselves to the MM oauth endpoint.
-
-        Return True on success; see :py:func:`login` for params.
-        """
-
-        if isinstance(oauth_credentials, basestring):
-            oauth_file = oauth_credentials
-            if oauth_file == OAUTH_FILEPATH:
-                utils.make_sure_path_exists(os.path.dirname(OAUTH_FILEPATH), 0o700)
-            storage = oauth2client.file.Storage(oauth_file)
-
-            oauth_credentials = storage.get()
-            if oauth_credentials is None:
-                self.logger.warning("could not retrieve oauth credentials from '%r'", oauth_file)
-                return False
-
-        if not self.session.login(oauth_credentials):
-            self.logger.warning("failed to authenticate")
-            return False
-
-        self.logger.info("oauth successful")
-
-        return True
 
     def _perform_upauth(self, uploader_id, uploader_name):
         """Auth or register ourselves as an upload client.

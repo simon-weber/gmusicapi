@@ -22,6 +22,7 @@ from gmusicapi.exceptions import ValidationException, CallFailure
 from gmusicapi.protocol.shared import Call, authtypes
 from gmusicapi.utils import utils
 
+
 # URL for sj service
 sj_url = 'https://mclients.googleapis.com/sj/v2.5/'
 sj_stream_url = 'https://mclients.googleapis.com/music/'
@@ -124,7 +125,6 @@ sj_track = {
         'rating': {'type': 'string', 'required': False},
         'genre': {'type': 'string', 'required': False},
         'trackAvailableForSubscription': {'type': 'boolean', 'required': False},
-        'contentType': {'type': 'string'},
         # Only available when rating differs from '0'
         # when using :change_song_metadata:, specifying this value will cause all clients to
         # properly update (web/mobile). As value int(round(time.time() * 1000000)) works quite well
@@ -660,7 +660,7 @@ sj_search_result_cluster = {
 class McCall(Call):
     """Abstract base for mobile client calls."""
 
-    required_auth = authtypes(oauth=True)
+    required_auth = authtypes(gpsoauth=True)
 
     # validictory schema for the response
     _res_schema = utils.NotImplementedField
