@@ -124,7 +124,6 @@ sj_track = {
         'rating': {'type': 'string', 'required': False},
         'genre': {'type': 'string', 'required': False},
         'trackAvailableForSubscription': {'type': 'boolean', 'required': False},
-        'contentType': {'type': 'string'},
         # Only available when rating differs from '0'
         # when using :change_song_metadata:, specifying this value will cause all clients to
         # properly update (web/mobile). As value int(round(time.time() * 1000000)) works quite well
