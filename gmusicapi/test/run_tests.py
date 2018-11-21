@@ -7,40 +7,38 @@ from builtins import *  # noqa
 
 from collections import namedtuple
 import functools
-from getpass import getpass
 import logging
 import os
 import sys
 
 from proboscis import TestProgram
 
-from gmusicapi.clients import Musicmanager, Mobileclient, OAUTH_FILEPATH
-from gmusicapi.session import credentials_from_refresh_token
+from gmusicapi.clients import Musicmanager, Mobileclient
+from gmusicapi import session
 from gmusicapi.test import local_tests, server_tests  # noqa
 from gmusicapi.test.utils import NoticeLogging
 
-EnvArg = namedtuple('EnvArg', 'envarg kwarg description')
+EnvArg = namedtuple('EnvArg', 'envarg is_required kwarg description')
 
 # these names needed to be compressed to fit everything into the travisci key size.
 # there's also:
 #    * GM_A: when set (to anything) states that we are testing on a subscription account.
 #    * GM_AA_D_ID: a registered device id for use with mc streaming
 
-wc_envargs = (
-    EnvArg('GM_U', 'email', 'WC user. If not present, user will be prompted.'),
-    EnvArg('GM_P', 'password', 'WC password. If not present, user will be prompted.'),
-)
+# wc_envargs = (
+#     EnvArg('GM_U', 'email', 'WC user. If not present, user will be prompted.'),
+#     EnvArg('GM_P', 'password', 'WC password. If not present, user will be prompted.'),
+# )
 
 mc_envargs = (
-    EnvArg('GM_U', 'email', 'MC user. If not present, user will be prompted.'),
-    EnvArg('GM_P', 'password', 'MC password. If not present, user will be prompted.'),
-    EnvArg('GM_AA_D_ID', 'android_id', 'A registered device id for use with MC streaming'),
+    EnvArg('GM_AA_D_ID', True, 'device_id', 'a registered device id for use with MC streaming'),
+    EnvArg('GM_R', False, 'oauth_credentials', 'an MC refresh token (defaults to MC.login default)'),
 )
 
 mm_envargs = (
-    EnvArg('GM_O', 'oauth_credentials', 'MM refresh token. Defaults to MM.login default.'),
-    EnvArg('GM_I', 'uploader_id', 'MM uploader id. Defaults to MM.login default.'),
-    EnvArg('GM_N', 'uploader_name', 'MM uploader name. Default to MM.login default.'),
+    EnvArg('GM_O', False, 'oauth_credentials', 'an MM refresh token (defaults to MM.login default)'),
+    EnvArg('GM_I', False, 'uploader_id', 'an MM uploader id (defaults to MM.login default)'),
+    EnvArg('GM_N', False, 'uploader_name', 'an MM uploader name (default to MM.login default)'),
 )
 
 
@@ -69,69 +67,30 @@ mm_envargs = (
 #     return email, passwd
 
 
-def prompt_for_mc_auth():
-    """Return a valid (user, pass, android_id) tuple by continually
-    prompting the user."""
+def _get_kwargs(envargs):
+    kwargs = {}
+    for arg in envargs:
+        if arg.is_required and arg.envarg not in os.environ:
+            raise ValueError("%s was not exported and must be %s" % (arg.envarg, arg.description))
 
-    print("These tests will never delete or modify your music."
-          "\n\n"
-          "If the tests fail, you *might* end up with a test"
-          " song/playlist in your library, though."
-          "\n")
+        val = os.environ.get(arg.envarg)
 
-    mclient = Mobileclient()
-    valid_mc_auth = False
+        if arg.kwarg == 'oauth_credentials' and val is not None:
+            oauth_info = session.Musicmanager.oauth if arg.envarg == 'GM_O' else session.Mobileclient.oauth
+            kwargs['oauth_credentials'] = session.credentials_from_refresh_token(val, oauth_info)
+        else:
+            kwargs[arg.kwarg] = val
 
-    while not valid_mc_auth:
-        print()
-        email = input("Email: ")
-        passwd = getpass()
-
-        try:
-            android_id = os.environ['GM_AA_D_ID']
-        except KeyError:
-            android_id = input("Device ID ('mac' for FROM_MAC_ADDRESS): ")
-
-        if android_id == "mac":
-            android_id = Mobileclient.FROM_MAC_ADDRESS
-
-        if not android_id:
-            print('a device id must be provided')
-            sys.exit(1)
-
-        valid_mc_auth = mclient.login(email, passwd, android_id)
-
-    return email, passwd, android_id
+    return kwargs
 
 
 def retrieve_auth():
-    """Searches the env for auth, prompting the user if necessary.
+    """Searches the env for auth.
 
     On success, return (mc_kwargs, mm_kwargs). On failure, raise ValueError."""
 
-    def get_kwargs(envargs):
-        return dict([(arg.kwarg, os.environ.get(arg.envarg))
-                     for arg in envargs])
-
-    mc_kwargs = get_kwargs(mc_envargs)
-    mm_kwargs = get_kwargs(mm_envargs)
-
-    if not all([mc_kwargs[arg] for arg in ('email', 'password', 'android_id')]):
-        if os.environ.get('TRAVIS'):
-            print('on Travis but could not read auth from environ; quitting.')
-            sys.exit(1)
-
-        mc_kwargs.update(zip(['email', 'password', 'android_id'], prompt_for_mc_auth()))
-
-    if mm_kwargs['oauth_credentials'] is None:
-        # ignoring race
-        if not os.path.isfile(OAUTH_FILEPATH):
-            raise ValueError("You must have oauth credentials stored at the default"
-                             " path by Musicmanager.perform_oauth prior to running.")
-        del mm_kwargs['oauth_credentials']  # mm default is not None
-    else:
-        mm_kwargs['oauth_credentials'] = \
-            credentials_from_refresh_token(mm_kwargs['oauth_credentials'])
+    mc_kwargs = _get_kwargs(mc_envargs)
+    mm_kwargs = _get_kwargs(mm_envargs)
 
     return (mc_kwargs, mm_kwargs)
 
@@ -144,10 +103,9 @@ def freeze_method_kwargs(klass, method_name, **kwargs):
 
 def freeze_login_details(mc_kwargs, mm_kwargs):
     """Set the given kwargs to be the default for client login methods."""
-    for cls, kwargs in ((Musicmanager, mm_kwargs),
-                        (Mobileclient, mc_kwargs),
-                        ):
-        freeze_method_kwargs(cls, 'login', **kwargs)
+
+    freeze_method_kwargs(Musicmanager, 'login', **mm_kwargs)
+    freeze_method_kwargs(Mobileclient, 'oauth_login', **mc_kwargs)
 
 
 def main():

@@ -10,6 +10,7 @@ import re
 
 
 from gmusicapi.utils import utils
+from gmusicapi import Mobileclient
 
 log = utils.DynamicClientLogger(__name__)
 
@@ -52,7 +53,10 @@ def new_test_client(cls, **kwargs):
     """
 
     client = cls(debug_logging=True)
-    client.login(**kwargs)
+    if isinstance(client, Mobileclient):
+        client.oauth_login(**kwargs)
+    else:
+        client.login(**kwargs)
 
     return client
 
