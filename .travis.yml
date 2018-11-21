@@ -15,7 +15,7 @@ before_script:
   - if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then export GROUP='--group=local'; fi
 script:
   - flake8 example.py setup.py gmusicapi
-  - python travis-secure-redefine.py "python -m gmusicapi.test.run_tests $GROUP" IDARG GM_U GM_P GM_O GM_I GM_A
+  - python travis-secure-redefine.py "python -m gmusicapi.test.run_tests $GROUP" IDARG GM_R GM_O GM_I GM_A
 after_failure: cat `python -c 'from __future__ import print_function; from gmusicapi.utils import utils; print(utils.log_filepath)'`
 branches:
   only:
@@ -25,17 +25,15 @@ env:
   global:
   - GM_N="Travis-CI (gmusicapi)"
   - GM_AA_D_ID="ios:96BCE7FD-4C0B-4B11-883A-2FCF534AC99C"
-    # AA: u, p, o, i, a
+    # AA: r, o, i, a
     # append 1 to vars
-  - secure: end65RuZTJF3GMk/MK5u9V0/9zMAOuHfSZW5Bu5kOchhJdNFYgx44vs3qXJovkDy4EooIT45Pjt9uPBbqcgINvvJmm60T4ICpoBaC/gvG23vynCATxQ4qp2lOni7YiVGQvXp/uSuYRocLxxE/hToqmANrNSsAa1ksc7jmHkZC80=
-  - secure: "KoL9fsmMHrjMMGRvHnPTvpoVk0uYHvgIZvmLyCAvjk0hqRRqFNZsLHRy/cWP8DDrYq64h4w7NAhuCRICZhO+ZVpIBm4JbdRaxm9uuN8tgyQfpCBZ0f9MDworY4obBpHSQokS9UsxIjcIusJQ1LLKjvRWgigaPVSESCxaFiH6Yv4="
+  - secure: "PmgQB0jQlh2FZU1z3BORvPuYLp4dVQeiWs7f9605Xt/yCqnbEtq0AssAQc3oODYLP5ra261wRGOIuFQNNVIrtgWPzsEirS2grEAqgwvohhmWLhRGOgNDsg9TTv91k54bMj1QEGbBDatNLANHuKJgHSOWy70HYnIEabydxGeiuhQ="
   - secure: "AI726k373fAUBgZPRWrZ1BzpFnGhJDJcmopwb9I5R8Jl1Mt2zYHEuVXk7b00oCoa8Q8smMoG8OvTQZEEO/1pna0M61vvx5MIR257Zct5+9fREh8kv8HYFScrndNTDuvRtijMJtOKhfeI9XiQnzuHavgveXBMHtQvxZTnVm77RlE="
   - secure: cQ/KaEOW73kmT5NwvQnT+H3w0yMtxhJWvBCnGahzmYMUlr7UjW5XkF4FpYiLX0MfKYbPLIIxGe7knwNznbFEGPjwwYhsQjhgikY+ufvF5l3VN2zvC04QjD3SWTz3oYGdhQSHakbMwRT+UFkQPXswZ+dxp3DsqD253eVNmybgn9c=
   - secure: QYItohH4sbVkSFKBpKUQl+a4ONMJjNHg/YIyDpLkVh68qBuJ2ZiT1ufjD9drt4a2K/hyD2wmnwvovcM6kXJiFdLsEIthJG8gW7GUyIzXQZMH85dfl8BUBqY/JPUNiRibX8JYxxkz3e6QKq6uQ0NIc1Df6P10IJib3ZdXw94ybSg=
-    # non-AA: u, p, o, i
+    # non-AA: r, o, i
     # append 2 to vars
-  - secure: UxA3zMQStTnCqX+Jq0isjpDBHjTWs5r2wVPtDve5OEqVqW3hHwjHVz/Y37YDhZrHP8sVIsQloT2THDiGj8nN8irGzVeuyPbjgUCXylNqXRZ+dlF1G3P/73Qxe3wSCEy+mvqXb9oVvQorK83ZxgZeYPFo0f0UTvs900z3CExbQMY=
-  - secure: "ZZ3h1j3KKsEnNZQgHyIUxgbRVTbpoOLjzsDdFVbAriOgbyDCX+AgGzvNTn9ft4/Do8c2uvzZ1E1O0Ao9kh0GPnHYRnfdTe9WMx/1bN+rvtj92O2WcSyQ1Dmvy2sshcXqkIhWsqnrJBvzCTB1cncMVifD9CY8JwFGHagYzL2dvEc="
+  - secure: "gFlhkNjlGZgnM6Yj5mX3CWogvczmW4IMmmeQFf7X1WuErF7xpx5QkuVQZoGZ/SL99nXvGcLgionvJl0Eg21HrRYRqn4inxxc9sCkocQtWQCZjCYGxFmEe8ony9rwb30oE4XO6QiRFeuatY27PsxJVWYAoXj8QW0VHE4Umzr3GFg="
   - secure: "VaigSzZugnvqfLWJt9AeaNHWXa/faAs9MKLSMbmfZJq5tohtTaaKv77JveTUpDsZNubjnq410hV4ZMwUgiFjrlqPZJxX5BzMNvFTIwA+0RPgtQUfNoRHAHrK3itAqjHeZ59f0gpFgpR7kVzvg4dJF7zWoFvSAscffDAS2QVyLKo="
   - secure: GVFTMs8TGOunR+eNR7VCQNkKVDWtCZ6siyB2KfgPPzeRKduUFhJA5VhhV+Vl+uhmL3767nM8Tv+ypX7C6mg2qZNcm9EJkAZzXg4f5qQJjTfxXC6lJfBn3i0S1Q9qBhwyQ1Jx+mHfth3TTXEq8sBgTuZcu+G0V8Lb4zzr83bLxto=
   matrix:
