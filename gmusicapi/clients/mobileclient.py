@@ -29,13 +29,23 @@ class Mobileclient(_OAuthClient):
     """
 
     _session_class = session.Mobileclient
+    _authtype = None
+
     FROM_MAC_ADDRESS = object()
+    OAUTH_FILEPATH = os.path.join(my_appdirs.user_data_dir, 'mobileclient.cred')
 
     def __init__(self, debug_logging=True, validate=True, verify_ssl=True):
         super(Mobileclient, self).__init__(self.__class__.__name__,
                                            debug_logging,
                                            validate,
                                            verify_ssl)
+
+    def _make_call(self, protocol, *args, **kwargs):
+        """Switch the required_auth at runtime."""
+        if self._authtype is not None:
+            kwargs['required_auth'] = authtypes(**{self._authtype: True})
+
+        return super(Mobileclient, self)._make_call(protocol, *args, **kwargs)
 
     def _ensure_device_id(self, device_id=None):
         if device_id is None:
@@ -109,9 +119,78 @@ class Mobileclient(_OAuthClient):
 
         return self.session._is_subscribed
 
-    def login(self, email, password, android_id, locale='en_US'):
-        """Authenticates the Mobileclient.
+    def _login(self, session_login, android_id, locale):
+        if android_id is None:
+            raise ValueError("android_id cannot be None.")
+
+        is_mac = android_id is self.FROM_MAC_ADDRESS
+        if is_mac:
+            mac_int = getmac()
+            if (mac_int >> 40) % 2:
+                raise OSError("a valid MAC could not be determined."
+                              " Provide an android_id (and be"
+                              " sure to provide the same one on future runs).")
+
+            device_id = utils.create_mac_string(mac_int)
+            device_id = device_id.replace(':', '')
+        else:
+            device_id = android_id
+
+        if not session_login():
+            self.logger.info("failed to authenticate")
+            return False
+
+        self.android_id = self._validate_device_id(device_id, is_mac=is_mac)
+        self.logger.info("authenticated")
+
+        self.locale = locale
+
+        if self.is_subscribed:
+            self.logger.info("subscribed")
+
+        return True
+
+    def oauth_login(self, device_id, oauth_credentials=OAUTH_FILEPATH, locale='en_US'):
+        """Authenticates the mobileclient with pre-existing OAuth credentials.
         Returns ``True`` on success, ``False`` on failure.
+
+        :param oauth_credentials: ``oauth2client.client.OAuth2Credentials`` or the path to a
+          ``oauth2client.file.Storage`` file. By default, the same default path used by
+          :func:`perform_oauth` is used.
+
+          Endusers will likely call :func:`perform_oauth` once to write
+          credentials to disk and then ignore this parameter.
+
+          This param
+          is mostly intended to allow flexibility for developers of a
+          3rd party service who intend to perform their own OAuth flow
+          (eg on their website).
+        :param device_id: A string of 16 hex digits for Android or "ios:<uuid>" for iOS.
+
+          Alternatively, pass ``Mobileclient.FROM_MAC_ADDRESS`` to attempt to use
+          this machine's MAC address as an id.
+          If a valid MAC address cannot be determined on this machine
+          (which is often the case when running on a VPS), raise OSError.
+
+          This will likely be deprecated, since Google now rejects ids of this form.
+
+        :param locale: `ICU <http://www.localeplanet.com/icu/>`__ locale
+          used to localize certain responses. This must be a locale supported
+          by Android. Defaults to ``'en_US'``.
+        """
+        self._authtype = 'oauth'
+        session_login = partial(self._oauth_login, oauth_credentials)
+        return self._login(session_login, device_id, locale)
+
+    @utils.deprecated('prefer Mobileclient.oauth_login')
+    def login(self, email, password, android_id, locale='en_US'):
+        """Authenticates the Mobileclient using full account credentials.
+        Returns ``True`` on success, ``False`` on failure.
+
+        Behind the scenes, this performs a Google-specific Android login flow
+        with the provided credentials, then trades those for a Google Music auth token.
+        It is deprecated in favor of the more robust :func:`oauth_login`,
+        which performs a normal OAuth flow instead of taking account credentials.
 
         :param email: eg ``'test@gmail.com'`` or just ``'test'``.
         :param password: password or app-specific password for 2-factor users.
@@ -130,37 +209,9 @@ class Mobileclient(_OAuthClient):
           used to localize certain responses. This must be a locale supported
           by Android. Defaults to ``'en_US'``.
         """
-        # TODO 2fa
-
-        if android_id is None:
-            raise ValueError("android_id cannot be None.")
-
-        is_mac = android_id is self.FROM_MAC_ADDRESS
-        if is_mac:
-            mac_int = getmac()
-            if (mac_int >> 40) % 2:
-                raise OSError("a valid MAC could not be determined."
-                              " Provide an android_id (and be"
-                              " sure to provide the same one on future runs).")
-
-            device_id = utils.create_mac_string(mac_int)
-            device_id = device_id.replace(':', '')
-        else:
-            device_id = android_id
-
-        if not self.session.login(email, password, device_id):
-            self.logger.info("failed to authenticate")
-            return False
-
-        self.android_id = self._validate_device_id(device_id, is_mac=is_mac)
-        self.logger.info("authenticated")
-
-        self.locale = locale
-
-        if self.is_subscribed:
-            self.logger.info("subscribed")
-
-        return True
+        self._authtype = 'gpsoauth'
+        session_login = partial(self.session.gpsoauth_login, email, password, android_id)
+        return self._login(session_login, android_id, locale)
 
     # TODO expose max/page-results, etc for list operations
 
