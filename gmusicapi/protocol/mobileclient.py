@@ -907,7 +907,8 @@ class Search(McCall):
         'properties': {
             'kind': {'type': 'string'},
             'clusterDetail': {'type': 'array',
-                              'items': {'type': sj_search_result_cluster}}
+                              'items': {'type': sj_search_result_cluster}},
+            'suggestedQuery': {'type': 'string', 'required': False}
         },
     }
 
