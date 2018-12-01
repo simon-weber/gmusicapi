@@ -1730,6 +1730,8 @@ class Mobileclient(_OAuthClient):
     def search(self, query, max_results=100):
         """Queries Google Music for content.
 
+        Most result types will be empty unless using a subscription account.
+
         :param query: a string keyword to search with. Capitalization and punctuation are ignored.
         :param max_results: Maximum number of items to be retrieved.
           The maximum accepted value is 100. If set higher, results are limited to 10.
@@ -1737,14 +1739,19 @@ class Mobileclient(_OAuthClient):
           won't return playlist nor situation results.
           Default is ``100``.
 
-        The results are returned in a dictionary with keys:
-        ``album_hits, artist_hits, genre_hits, playlist_hits, podcast_hits,
-          situation_hits, song_hits, station_hits, video_hits``
-        containing lists of results of that type.
+        The results are returned as a dictionary of lists mapped by result type:
+        * album_hits
+        * artist_hits
+        * genre_hits
+        * playlist_hits
+        * podcast_hits
+        * situation_hits
+        * song_hits
+        * station_hits
+        * video_hits
 
-        Free account search is restricted so may not contain hits for all result types.
 
-        Here is a sample of results for a search of ``'workout'``::
+        Here is a sample of results for a search of ``'workout'`` on a subscription account::
 
             {
                 'album_hits': [{
