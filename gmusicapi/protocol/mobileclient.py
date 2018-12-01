@@ -1352,11 +1352,8 @@ class BatchMutatePodcastSeries(McBatchMutateCall):
     @staticmethod
     def build_podcast_updates(updates):
         """
-        :param updates:
-          [
-            {'seriesId': '', 'subscribed': '', 'userPreferences': {
-             'notifyOnNewEpisode': '', 'subscrubed': ''}}...
-          ]
+        :param updates: ``{'seriesId': '', 'subscribed': '', 'userPreferences':
+          {'notifyOnNewEpisode': '', 'subscribed': ''}}...``
         """
 
         return [{'update': update} for update in updates]

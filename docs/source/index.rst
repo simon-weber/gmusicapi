@@ -9,7 +9,8 @@ This library allows control of
     from gmusicapi import Mobileclient
     
     api = Mobileclient()
-    api.login('user@gmail.com', 'my-password', Mobileclient.FROM_MAC_ADDRESS)
+    # after running api.perform_oauth() once:
+    api.oauth_login('<a previously-registered device id>')
     # => True
     
     library = api.get_all_songs()
@@ -84,9 +85,7 @@ ports.
 
 Getting help
 ++++++++++++
-Running into bugs? Have questions? Drop by ``#gmusicapi`` on Freenode.
-If you've never used IRC before, it's easy: just fill in a nickname and captcha
-at `this webchat link <http://webchat.freenode.net/?channels=gmusicapi>`__.
+Start by searching for `existing issues <https://github.com/simon-weber/gmusicapi/issues>`__ on GitHub.
+If you don't find any describing what you're seeing, go ahead and open one.
 
-If IRC makes you uncomfortable, you can always email me directly:
-`simon@simonmweber.com <mailto:simon@simonmweber.com>`__.
+There's also ``#gmusicapi`` on Freenode, though it's pretty quiet these days.

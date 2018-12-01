@@ -9,7 +9,8 @@ gmusicapi allows control of
     from gmusicapi import Mobileclient
     
     api = Mobileclient()
-    api.login('user@gmail.com', 'my-password', Mobileclient.FROM_MAC_ADDRESS)
+    # after running api.perform_oauth() once:
+    api.oauth_login('<a previously-registered device id>')
     # => True
     
     library = api.get_all_songs()

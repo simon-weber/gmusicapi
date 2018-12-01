@@ -22,7 +22,7 @@ If you need exact specifications, look at `the code
 - or submit a pull request to generate the docs =)
 
 Android Client
--------------
+--------------
 
 .. automodule:: gmusicapi.protocol.mobileclient
    :members:

@@ -8,18 +8,15 @@ Installation
 ------------
 Use `pip <https://pip.pypa.io/en/stable/installing/>`__:
 ``$ pip install gmusicapi``.
-This will grab all the source dependencies.
-Avoid using ``easy_install``.
 
-If you're upgrading from a date-versioned release (eg ``2013.03.04``),
-do ``$ pip uninstall gmusicapi; pip install gmusicapi`` instead.
+To install the yet-to-be-released development version, use
+``$ pip install git+https://github.com/simon-weber/gmusicapi.git@develop#egg=gmusicapi``.
 
 If you're going to be uploading music,
 you'll likely need
 `avconv <http://libav.org/avconv.html>`__ or
 `ffmpeg <http://ffmpeg.org/ffmpeg.html>`__
-installed and in your system path, along with at least libmp3lame.
-
+installed and in your system path, along with at least libmp3lame:
  - Linux
 
    - Use your distro's package manager:
@@ -56,28 +53,16 @@ If you need to install avconv/ffmpeg from source, be sure to use
 Quickstart
 ----------
 
-If you're not going to be uploading music, you'll likely
-want to use the :py:class:`Mobileclient`: it supports streaming
-and library management.
-It requires plaintext auth, so your code might look something like:
+There are two supported client classes based on different Google apis.
 
-.. code-block:: python
+The :py:class:`Mobileclient` uses the Android app's apis to handle 
+library management and playback.
 
-    from gmusicapi import Mobileclient
+The :py:class:`Musicmanager` uses the desktop Music Manager's apis to
+handle uploading and downloading.
 
-    api = Mobileclient()
-    logged_in = api.login('user@gmail.com', 'my-password', Mobileclient.FROM_MAC_ADDRESS)
-    # logged_in is True if login was successful
-
-Note that 2-factor users will need to setup and provide an app-specific password.
-
-If you're going to upload Music, you want the :py:class:`Musicmanager`.
-It uses `OAuth2
-<https://developers.google.com/accounts/docs/OAuth2#installed>`__ and
-does not require plaintext credentials.
-
-Instead, you'll need to authorize your account *once* before logging in.
-The easiest way is to run:
+Both have similar command-line `OAuth2 <https://developers.google.com/accounts/docs/OAuth2#installed>`__
+interfaces for logging in. For example:
 
 .. code-block:: python
 
@@ -86,7 +71,7 @@ The easiest way is to run:
     mm = Musicmanager()
     mm.perform_oauth()
 
-If successful, this will save your credentials to disk.
+This only needs to be run once, and if successful will save a refresh token to disk.
 Then, future runs can start with:
 
 .. code-block:: python
@@ -94,18 +79,16 @@ Then, future runs can start with:
     from gmusicapi import Musicmanager
 
     mm = Musicmanager()
-    mm.login()
-
-    # mm.upload('foo.mp3')
-    # ...
+    mm.login()  # currently named oauth_login for the Mobileclient
 
 
 If you need both library management and uploading, just create 
 multiple client instances.
 
-There is also the :py:class:`Webclient`, which is a mostly-deprecated
-interface. It is not tested nor well supported. Use :class:`Mobileclient`
-or :class:`Musicmanager` if possible.
+There is also the :py:class:`Webclient`, which is uses the webapp's
+apis to handle similar tasks to the Mobileclient.
+It is not tested nor well supported, and requires providing full account credentials
+to use. Avoid it if possible.
 
 The reference section has complete information on all clients:
 

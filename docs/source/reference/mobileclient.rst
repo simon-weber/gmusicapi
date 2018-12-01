@@ -9,6 +9,8 @@ Mobileclient Interface
 Setup and login
 ---------------
 .. automethod:: Mobileclient.__init__
+.. automethod:: Mobileclient.perform_oauth
+.. automethod:: Mobileclient.oauth_login
 .. automethod:: Mobileclient.login
 .. automethod:: Mobileclient.logout
 .. automethod:: Mobileclient.is_authenticated
@@ -18,7 +20,7 @@ Setup and login
 
 	Should be an `ICU <http://www.localeplanet.com/icu/>`__ locale supported by Android.
 
-	Set on authentication with :func:`login` but can be changed at any time.
+	Set during login but can be changed at any time.
 
 Account Management
 ------------------
