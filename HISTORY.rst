@@ -5,9 +5,14 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-11.0.5-rc.1
+11.1.0
 ++++++
-released ...
+released 2018-11-30
+
+- add Mobileclient OAuth support (``perform_oauth`` and ``oauth_login``) and deprecate email/password auth, which Google now often rejects.
+  It works the same way as the Musicmanager; see `the docs
+  <https://unofficial-google-music-api.readthedocs.io/en/latest/usage.html#quickstart>`__ for an example.
+- update Mobileclient.search schema
 
 11.0.4
 ++++++
