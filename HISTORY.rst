@@ -5,9 +5,12 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-11.1.1-rc.1
+11.1.1
 ++++++
-released ...
+released 2018-12-04
+
+- add back gmusicapi.clients.OAUTH_FILEPATH after it was removed in 11.1.0 (a breaking change)
+- deprecate gmusicapi.clients.OAUTH_FILEPATH in favor of Musicmanager.OAUTH_FILEPATH
 
 11.1.0
 ++++++
