@@ -36,7 +36,7 @@ That said, it's actively maintained, and powers a bunch of cool projects:
    `syncing playlists <https://github.com/soulfx/gmusic-playlist>`__,
    and `migrating to a different account <https://github.com/brettcoburn/gmusic-migrate>`__
 -  proxies for media players, such as
-   `gmusicproxy <http://gmusicproxy.net>`__ and
+   `gmusicproxy <https://github.com/gmusicproxy/gmusicproxy>`__ and
    `gmusicprocurator <https://github.com/malept/gmusicprocurator>`__,
    as well as plugins for 
    `Mopidy <https://github.com/hechtus/mopidy-gmusic>`__,
