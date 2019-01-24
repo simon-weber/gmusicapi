@@ -905,6 +905,22 @@ class Mobileclient(_OAuthClient):
 
         return True
 
+    def get_top_songs(self):
+        """Returns a list of dictionaries that each represent a track.
+
+        Only store tracks will be returned.
+
+        Tops songs seem to be an auto-generated playlist of
+        positively-rated songs (Thumbs up).
+
+        See :func:`get_track_info` for the format of a track dictionary.
+        """
+
+        return self._get_all_items(mobileclient.ListPromotedTracks,
+                                   incremental=False,
+                                   updated_after=None)
+
+    @utils.deprecated('prefer Mobileclient.get_top_songs')
     def get_promoted_songs(self):
         """Returns a list of dictionaries that each represent a track.
 
@@ -913,12 +929,13 @@ class Mobileclient(_OAuthClient):
         Promoted tracks are determined in an unknown fashion,
         but positively-rated library tracks are common.
 
+        It is deprecated in favor of the more clearly scoped
+        :func:`get_tops_songs`.
+
         See :func:`get_track_info` for the format of a track dictionary.
         """
 
-        return self._get_all_items(mobileclient.ListPromotedTracks,
-                                   incremental=False,
-                                   updated_after=None)
+        return self.get_top_songs()
 
     def get_listen_now_items(self):
         """Returns a list of dictionaries of Listen Now albums and stations.
