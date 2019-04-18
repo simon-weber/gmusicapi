@@ -47,7 +47,7 @@ TEST_STORE_SONG_ID = 'Tf3pxtcrp2tw7i6kdxzueoz7uia'
 # used for testing streaming.
 # differences between clients are presumably from stream quality.
 TEST_STORE_SONG_WC_HASH = 'c3302fe6bd54ce9b310f92da1904f3b9'
-TEST_STORE_SONG_MC_HASH = '75b3281eda6af04239bf4f23de65618d'
+TEST_STORE_SONG_MC_HASH = 'ccce8dbec7b8939531db8eeaf877696f'
 
 # The Nerdist.
 TEST_PODCAST_SERIES_ID = 'Iliyrhelw74vdqrro77kq2vrdhy'
