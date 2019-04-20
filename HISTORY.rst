@@ -5,9 +5,11 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-12.0.1-rc.1
+12.1.0
 ++++++
-released ...
+released 2019-04-20
+
+- deprecate Mobileclient.get_promoted_songs in favor of Mobileclient.get_top_songs to clarify its behavior. Functionality remains the same.
 
 12.0.0
 ++++++
