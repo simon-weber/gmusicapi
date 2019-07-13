@@ -7,7 +7,9 @@ As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
 12.1.1
 ++++++
-released ...
+released 2019-07-13
+
+- open default log file as utf-8 to avoid windows encoding problems
 
 12.1.0
 ++++++
