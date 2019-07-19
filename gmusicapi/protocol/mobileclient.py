@@ -222,7 +222,7 @@ sj_album = {
     'additionalProperties': False,
     'properties': {
         'kind': {'type': 'string'},
-        'name': {'type': 'string'},
+        'name': {'type': 'string', 'blank': True},
         'albumArtist': {'type': 'string'},
         'albumArtRef': {'type': 'string', 'required': False},
         'albumId': {'type': 'string'},
