@@ -154,6 +154,12 @@ class Mobileclient(_OAuthClient):
         """Authenticates the mobileclient with pre-existing OAuth credentials.
         Returns ``True`` on success, ``False`` on failure.
 
+        Raises ``gmusicapi.exceptions.InvalidDeviceId`` if ``device_id`` is not valid
+        (ie, it is not returned by :func:`Mobileclient.get_registered_devices
+        <gmusicapi.clients.Mobileclient.get_registered_devices>`).
+        If unhandled, it will print possible valid device ids with the traceback.
+        If handled, the list is available on the ``valid_device_ids`` field.
+
         :param oauth_credentials: ``oauth2client.client.OAuth2Credentials`` or the path to a
           ``oauth2client.file.Storage`` file. By default, the same default path used by
           :func:`perform_oauth` is used.
