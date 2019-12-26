@@ -66,6 +66,7 @@ Status and updates
 .. |repominder_status| image:: https://img.shields.io/badge/dynamic/json.svg?label=release&query=%24.status&maxAge=43200&uri=https%3A%2F%2Fwww.repominder.com%2Fbadge%2FeyJyZXBvX2lkIjogMTEsICJ1c2VyX2lkIjogMn0%3D%2F&link=https%3A%2F%2Fwww.repominder.com%2F
         :target: https://www.repominder.com
 
+* January 2020: Python 2 support dropped.
 * November 2018: proper OAuth support for the mobileclient.
 * February 2016: Python 3 support!
 * September 2015: Google switched to a new music uploading endpoint, breaking uploading for outdated versions of gmusicapi.

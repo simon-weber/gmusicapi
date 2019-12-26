@@ -6,16 +6,9 @@ from setuptools import setup, find_packages
 import sys
 import warnings
 
-dynamic_requires = []
-# Python 2.7 is supported. Python 3 support is experimental
-if sys.version_info[0] > 2:
-    warnings.warn("gmusicapi Python 3 support is experimental", RuntimeWarning)
-else:
-    if sys.version_info[:3] < (2, 7, 9):
-        warnings.warn("gmusicapi does not officially support versions below "
-                      "Python 2.7.9", RuntimeWarning)
-
-# try to continue anyway
+if sys.version_info[:3] < (3, 5, 0):
+    warnings.warn("gmusicapi does not officially support versions below "
+                  "Python 3.5.0", RuntimeWarning)
 
 # This hack is from http://stackoverflow.com/a/7071358/1231454;
 # the version is kept in a seperate file and gets parsed - this
@@ -61,17 +54,14 @@ setup(
         'MechanicalSoup >= 0.4.0',
         'six >= 1.9.0',                           # raise_from on Python 3
         'future',
-    ] + dynamic_requires,
+    ],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Multimedia :: Sound/Audio',
         'Topic :: Software Development :: Libraries :: Python Modules',
