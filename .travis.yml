@@ -21,6 +21,7 @@ branches:
   only:
   - develop
   - master
+  - drop-py2
 env:
   global:
   - GM_N="Travis-CI (gmusicapi)"
