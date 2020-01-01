@@ -8,8 +8,8 @@ from __future__ import print_function, division, absolute_import, unicode_litera
 from collections import namedtuple
 import os
 import time
+from unittest.mock import MagicMock
 
-from mock import MagicMock
 from proboscis.asserts import (
     assert_raises, assert_true, assert_false, assert_equal,
     assert_is_not, Check

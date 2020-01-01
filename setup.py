@@ -48,7 +48,6 @@ setup(
         'proboscis >= 1.2.5.1',                   # runs_after
         'protobuf >= 3.0.0',
         'oauth2client >= 1.1',                    # TokenRevokeError
-        'mock >= 0.7.0',                          # MagicMock
         'appdirs >= 1.1.0',                       # user_log_dir
         'gpsoauth >= 0.2.0',                      # mac -> android_id, validation, pycryptodome
         'MechanicalSoup >= 0.4.0',
