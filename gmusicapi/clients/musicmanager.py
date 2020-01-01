@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function, division, absolute_import, unicode_literals
-from past.builtins import basestring
 from builtins import *  # noqa
 
 import os
@@ -308,7 +307,7 @@ class Musicmanager(_OAuthClient):
 
         return (client_state.total_track_count, client_state.locker_track_limit)
 
-    @utils.accept_singleton(basestring)
+    @utils.accept_singleton(str)
     @utils.empty_arg_shortcircuit(return_code='{}')
     def upload(self, filepaths, enable_matching=False,
                enable_transcoding=True, transcode_quality='320k'):

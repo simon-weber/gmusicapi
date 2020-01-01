@@ -2,7 +2,6 @@
 
 """Utility functions used across api code."""
 from __future__ import print_function, division, absolute_import, unicode_literals
-from past.builtins import basestring
 from builtins import *  # noqa
 
 import ast
@@ -286,7 +285,7 @@ def enforce_id_param(position=1):
     @decorator
     def wrapper(function, *args, **kw):
 
-        if not isinstance(args[position], basestring):
+        if not isinstance(args[position], str):
             raise ValueError("Invalid param type in position %s;"
                              " expected an id (did you pass a dictionary?)" % position)
 
@@ -307,7 +306,7 @@ def enforce_ids_param(position=1):
     def wrapper(function, *args, **kw):
 
         if ((not isinstance(args[position], (list, tuple)) or
-             not all([isinstance(e, basestring) for e in args[position]]))):
+             not all([isinstance(e, str) for e in args[position]]))):
             raise ValueError("Invalid param type in position %s;"
                              " expected ids (did you pass dictionaries?)" % position)
 
@@ -484,7 +483,7 @@ def transcode_to_mp3(filepath, quality='320k', slice_start=None, slice_duration=
 
     if isinstance(quality, int):
         cmd.extend(['-q:a', str(quality)])
-    elif isinstance(quality, basestring):
+    elif isinstance(quality, str):
         cmd.extend(['-b:a', quality])
     else:
         raise ValueError("quality must be int or string, but received %r" % quality)
@@ -538,7 +537,7 @@ def truncate(x, max_els=100, recurse_levels=0):
         if len(x) > max_els:
             if isinstance(x, str):
                 return x[:max_els] + '...'
-            elif isinstance(x, basestring):
+            elif isinstance(x, bytes):
                 return x[:max_els] + b'...'
 
             if isinstance(x, dict):
