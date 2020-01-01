@@ -124,7 +124,7 @@ class Musicmanager(_OAuthClient):
                              ' (eg "00:11:22:33:AA:BB")')
 
         if uploader_name is None:
-            uploader_name = gethostname() + u" (gmusicapi-%s)" % gmusicapi.__version__
+            uploader_name = gethostname() + " (gmusicapi-%s)" % gmusicapi.__version__
 
         try:
             # this is a MM-specific step that might register a new device.

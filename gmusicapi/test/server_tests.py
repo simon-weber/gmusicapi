@@ -1022,19 +1022,19 @@ class ClientTests(object):
 
     @test(groups=['genres'])
     def mc_all_genres(self):
-        expected_genres = {u'COMEDY_SPOKEN_WORD_OTHER', u'COUNTRY', u'HOLIDAY', u'R_B_SOUL',
-                           u'FOLK', u'LATIN', u'CHRISTIAN_GOSPEL', u'ALTERNATIVE_INDIE', u'POP',
-                           u'ROCK', u'WORLD', u'VOCAL_EASY_LISTENING', u'HIP_HOP_RAP', u'JAZZ',
-                           u'METAL', u'REGGAE_SKA', u'SOUNDTRACKS_CAST_ALBUMS', u'DANCE_ELECTRONIC',
-                           u'CLASSICAL', u'NEW_AGE', u'BLUES', u'CHILDREN_MUSIC'}
+        expected_genres = {'COMEDY_SPOKEN_WORD_OTHER', 'COUNTRY', 'HOLIDAY', 'R_B_SOUL',
+                           'FOLK', 'LATIN', 'CHRISTIAN_GOSPEL', 'ALTERNATIVE_INDIE', 'POP',
+                           'ROCK', 'WORLD', 'VOCAL_EASY_LISTENING', 'HIP_HOP_RAP', 'JAZZ',
+                           'METAL', 'REGGAE_SKA', 'SOUNDTRACKS_CAST_ALBUMS', 'DANCE_ELECTRONIC',
+                           'CLASSICAL', 'NEW_AGE', 'BLUES', 'CHILDREN_MUSIC'}
         res = self.mc.get_genres()
         assert_equal(set([e['id'] for e in res]), expected_genres)
 
     @test(groups=['genres'])
     def mc_specific_genre(self):
-        expected_genres = {u'PROGRESSIVE_METAL', u'CLASSIC_METAL', u'HAIR_METAL', u'INDUSTRIAL',
-                           u'ALT_METAL', u'THRASH', u'METALCORE', u'BLACK_DEATH_METAL',
-                           u'DOOM_METAL'}
+        expected_genres = {'PROGRESSIVE_METAL', 'CLASSIC_METAL', 'HAIR_METAL', 'INDUSTRIAL',
+                           'ALT_METAL', 'THRASH', 'METALCORE', 'BLACK_DEATH_METAL',
+                           'DOOM_METAL'}
         res = self.mc.get_genres('METAL')
         assert_equal(set([e['id'] for e in res]), expected_genres)
 

@@ -86,10 +86,10 @@ class Webclient(_Base):
         md = res[1][1]
 
         return {
-            u'author': md[8],
-            u'description': md[7],
-            u'num_tracks': num_tracks,
-            u'title': md[1],
+            'author': md[8],
+            'description': md[7],
+            'num_tracks': num_tracks,
+            'title': md[1],
         }
 
     @utils.enforce_id_param

@@ -7,7 +7,7 @@ import os
 
 import mutagen
 
-for fname in glob(u'audiotest*'):
+for fname in glob('audiotest*'):
     audio = mutagen.File(fname, easy=True)
 
     if audio is None:
