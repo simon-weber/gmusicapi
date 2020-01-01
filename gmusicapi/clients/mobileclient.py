@@ -576,7 +576,7 @@ class Mobileclient(_OAuthClient):
         return res['mutate_response'][0]['id']
 
     def get_all_user_playlist_contents(self):
-        """
+        r"""
         Retrieves the contents of *all* user-created playlists
         -- the Mobileclient does not support retrieving
         only the contents of one
@@ -1609,7 +1609,7 @@ class Mobileclient(_OAuthClient):
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
                        genre_id=None, playlist_token=None, curated_station_id=None):
-        """Creates a radio station and returns its id.
+        r"""Creates a radio station and returns its id.
 
         :param name: the name of the station to create
         :param \*_id: the id of an item to seed the station from.
