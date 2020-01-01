@@ -195,7 +195,7 @@ class Call(metaclass=BuildRequestMeta):
             log.debug("%s(args=%s, kwargs=%s)",
                       call_name,
                       [utils.truncate(a) for a in args],
-                      dict((k, utils.truncate(v)) for (k, v) in kwargs.items())
+                      {k: utils.truncate(v) for (k, v) in kwargs.items()}
                       )
         else:
             log.debug("%s(<omitted>)", call_name)

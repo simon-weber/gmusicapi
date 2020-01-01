@@ -35,11 +35,11 @@ _python_to_cpp_types = {
     str: ('string',),
 }
 
-cpp_type_to_python = dict(
-    (getattr(FieldDescriptor, 'CPPTYPE_' + cpp.upper()), python)
+cpp_type_to_python = {
+    getattr(FieldDescriptor, 'CPPTYPE_' + cpp.upper()): python
     for (python, cpplist) in _python_to_cpp_types.items()
     for cpp in cpplist
-)
+}
 
 log_filepath = os.path.join(my_appdirs.user_log_dir, 'gmusicapi.log')
 printed_log_start_message = False  # global, set in config_debug_logging
@@ -539,7 +539,7 @@ def truncate(x, max_els=100, recurse_levels=0):
             if isinstance(x, dict):
                 if 'id' in x and 'titleNorm' in x:
                     # assume to be a song dict
-                    trunc = dict((k, x.get(k)) for k in ['title', 'artist', 'album'])
+                    trunc = {k: x.get(k) for k in ['title', 'artist', 'album']}
                     trunc['...'] = '...'
                     return trunc
                 else:

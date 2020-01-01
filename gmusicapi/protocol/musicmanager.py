@@ -183,7 +183,7 @@ class UploadMetadata(MmCall):
         elif isinstance(audio, mutagen.asf.ASF):
             # WMA entries store more info than just the value.
             # Monkeypatch in a dict {key: value} to keep interface the same for all filetypes.
-            asf_dict = dict((k, [ve.value for ve in v]) for (k, v) in audio.tags.as_dict().items())
+            asf_dict = {k: [ve.value for ve in v] for (k, v) in audio.tags.as_dict().items()}
             audio.tags = asf_dict
 
         extension = os.path.splitext(filepath)[1].upper()

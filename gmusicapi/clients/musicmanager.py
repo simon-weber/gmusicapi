@@ -216,10 +216,10 @@ class Musicmanager(_OAuthClient):
         # figure it's better to hardcode keys here than use introspection
         # and risk returning a new field all of a sudden.
 
-        return dict((field, getattr(track_info, field)) for field in
-                    ('id', 'title', 'album', 'album_artist', 'artist',
-                     'track_number', 'track_size', 'disc_number',
-                     'total_disc_count'))
+        return {field: getattr(track_info, field) for field in
+                ('id', 'title', 'album', 'album_artist', 'artist',
+                 'track_number', 'track_size', 'disc_number',
+                 'total_disc_count')}
 
     def _get_all_songs(self, export_type=1):
         """Return a generator of song chunks."""
