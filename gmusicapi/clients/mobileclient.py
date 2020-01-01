@@ -30,17 +30,17 @@ class Mobileclient(_OAuthClient):
     OAUTH_FILEPATH = os.path.join(my_appdirs.user_data_dir, 'mobileclient.cred')
 
     def __init__(self, debug_logging=True, validate=True, verify_ssl=True):
-        super(Mobileclient, self).__init__(self.__class__.__name__,
-                                           debug_logging,
-                                           validate,
-                                           verify_ssl)
+        super().__init__(self.__class__.__name__,
+                         debug_logging,
+                         validate,
+                         verify_ssl)
 
     def _make_call(self, protocol, *args, **kwargs):
         """Switch the required_auth at runtime."""
         if self._authtype is not None:
             kwargs['required_auth'] = authtypes(**{self._authtype: True})
 
-        return super(Mobileclient, self)._make_call(protocol, *args, **kwargs)
+        return super()._make_call(protocol, *args, **kwargs)
 
     def _ensure_device_id(self, device_id=None):
         if device_id is None:

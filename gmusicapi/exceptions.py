@@ -57,5 +57,5 @@ class InvalidDeviceId(Exception):
         else:
             message += 'It looks like your account does not have any '
             'valid device IDs.'
-        super(InvalidDeviceId, self).__init__(message)
+        super().__init__(message)
         self.valid_device_ids = ids

@@ -36,10 +36,10 @@ class Musicmanager(_OAuthClient):
     _session_class = session.Musicmanager
 
     def __init__(self, debug_logging=True, validate=True, verify_ssl=True):
-        super(Musicmanager, self).__init__(self.__class__.__name__,
-                                           debug_logging,
-                                           validate,
-                                           verify_ssl)
+        super().__init__(self.__class__.__name__,
+                         debug_logging,
+                         validate,
+                         verify_ssl)
 
     def login(self, oauth_credentials=OAUTH_FILEPATH,
               uploader_id=None, uploader_name=None):
@@ -165,7 +165,7 @@ class Musicmanager(_OAuthClient):
         self.uploader_id = None
         self.uploader_name = None
 
-        return success and super(Musicmanager, self).logout()
+        return success and super().logout()
 
     # mostly copy-paste from Webclient.get_all_songs.
     # not worried about overlap in this case; the logic of either could change.

@@ -124,7 +124,7 @@ class Webclient(_Base):
         :param email:
         :param password:
         """
-        super(Webclient, self).login()
+        super().login()
 
         # Google's login form has a bunch of hidden fields I'd rather not deal with manually.
         browser = mechanicalsoup.Browser(soup_config={"features": "html.parser"})
@@ -203,12 +203,12 @@ class Musicmanager(_Base):
     )
 
     def __init__(self, *args, **kwargs):
-        super(Musicmanager, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._oauth_creds = None
 
     def login(self, oauth_credentials, *args, **kwargs):
         """Store an already-acquired oauth2client.Credentials."""
-        super(Musicmanager, self).login()
+        super().login()
 
         try:
             # refresh the token right away to check auth validity
@@ -246,7 +246,7 @@ class Mobileclient(Musicmanager):
     )
 
     def __init__(self, *args, **kwargs):
-        super(Mobileclient, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._master_token = None
         self._authtoken = None
         self._locale = None
@@ -309,6 +309,6 @@ class Mobileclient(Musicmanager):
             return rsession.request(**req_kwargs)
 
         if desired_auth.oauth:
-            return super(Mobileclient, self)._send_with_auth(req_kwargs, desired_auth, rsession)
+            return super()._send_with_auth(req_kwargs, desired_auth, rsession)
 
         raise ValueError("_send_with_auth got invalid desired_auth: {}".format(desired_auth))

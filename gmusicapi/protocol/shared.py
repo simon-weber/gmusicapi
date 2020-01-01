@@ -40,7 +40,7 @@ class BuildRequestMeta(type):
 
     def __new__(cls, name, bases, dct):
         # To not mess with mro and inheritance, build the class first.
-        new_cls = super(BuildRequestMeta, cls).__new__(cls, name, bases, dct)
+        new_cls = super().__new__(cls, name, bases, dct)
 
         merge_keys = ('headers', 'params')
         all_keys = ('method', 'url', 'files', 'data', 'verify', 'allow_redirects') + merge_keys

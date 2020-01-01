@@ -39,10 +39,10 @@ class Webclient(_Base):
             GmusicapiWarning
         )
 
-        super(Webclient, self).__init__(self.__class__.__name__,
-                                        debug_logging,
-                                        validate,
-                                        verify_ssl)
+        super().__init__(self.__class__.__name__,
+                         debug_logging,
+                         validate,
+                         verify_ssl)
 
     def login(self, email, password):
         """Authenticates the webclient.
@@ -68,7 +68,7 @@ class Webclient(_Base):
         return True
 
     def logout(self):
-        return super(Webclient, self).logout()
+        return super().logout()
 
     def get_shared_playlist_info(self, share_token):
         """
