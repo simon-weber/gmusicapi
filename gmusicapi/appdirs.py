@@ -9,9 +9,9 @@ except ImportError:
     print('warning: could not import appdirs; will use current directory')
 
     class FakeAppDirs:
-        to_spoof = set(base + '_dir' for base in
-                       ('user_data', 'site_data', 'user_config', 'site_config', 'user_cache',
-                        'user_log'))
+        to_spoof = {base + '_dir' for base in
+                    ('user_data', 'site_data', 'user_config', 'site_config', 'user_cache',
+                     'user_log')}
 
         def __getattr__(self, name):
             if name in self.to_spoof:

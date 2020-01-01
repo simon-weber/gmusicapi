@@ -971,7 +971,7 @@ class ClientTests:
     @test
     def mc_artist_info(self):
         aid = 'Apoecs6off3y6k4h5nvqqos4b5e'  # amorphis
-        optional_keys = set(('albums', 'topTracks', 'related_artists'))
+        optional_keys = {'albums', 'topTracks', 'related_artists'}
 
         include_all_res = self.mc.get_artist_info(aid, include_albums=True,
                                                   max_top_tracks=1, max_rel_artist=1)
@@ -1028,7 +1028,7 @@ class ClientTests:
                            'METAL', 'REGGAE_SKA', 'SOUNDTRACKS_CAST_ALBUMS', 'DANCE_ELECTRONIC',
                            'CLASSICAL', 'NEW_AGE', 'BLUES', 'CHILDREN_MUSIC'}
         res = self.mc.get_genres()
-        assert_equal(set([e['id'] for e in res]), expected_genres)
+        assert_equal({e['id'] for e in res}, expected_genres)
 
     @test(groups=['genres'])
     def mc_specific_genre(self):
@@ -1036,7 +1036,7 @@ class ClientTests:
                            'ALT_METAL', 'THRASH', 'METALCORE', 'BLACK_DEATH_METAL',
                            'DOOM_METAL'}
         res = self.mc.get_genres('METAL')
-        assert_equal(set([e['id'] for e in res]), expected_genres)
+        assert_equal({e['id'] for e in res}, expected_genres)
 
     @test(groups=['genres'])
     def mc_leaf_parent_genre(self):
