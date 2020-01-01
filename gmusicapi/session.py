@@ -1,7 +1,6 @@
 """
 Sessions handle the details of authentication and transporting requests.
 """
-from __future__ import print_function, division, absolute_import, unicode_literals
 
 from collections import namedtuple
 from contextlib import closing

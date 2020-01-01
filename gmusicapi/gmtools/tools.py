@@ -1,5 +1,4 @@
 """Tools for manipulating client-received Google Music data."""
-from __future__ import print_function, division, absolute_import, unicode_literals
 
 import operator
 import re

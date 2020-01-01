@@ -1,5 +1,4 @@
 """Utility functions used across api code."""
-from __future__ import print_function, division, absolute_import, unicode_literals
 
 import ast
 from bisect import bisect_left

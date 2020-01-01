@@ -4,7 +4,6 @@ These tests all run against an actual Google Music account.
 Destructive modifications are not made, but if things go terrible wrong,
 an extra test playlist or song may result.
 """
-from __future__ import print_function, division, absolute_import, unicode_literals
 
 from collections import namedtuple
 import datetime

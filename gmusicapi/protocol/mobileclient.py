@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 """Calls made by the mobile client."""
-from __future__ import print_function, division, absolute_import, unicode_literals
 
 import base64
 import calendar

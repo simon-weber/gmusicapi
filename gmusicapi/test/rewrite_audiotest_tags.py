@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 """A script that will rewrite audiotest* metadata to match their filenames."""
-from __future__ import print_function, division, absolute_import, unicode_literals
 
 from glob import glob
 import os

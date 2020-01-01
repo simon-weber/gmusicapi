@@ -1,7 +1,6 @@
 """
 Mock version of appdirs for use in cases without the real version
 """
-from __future__ import print_function, division, absolute_import, unicode_literals
 
 try:
     from appdirs import AppDirs
