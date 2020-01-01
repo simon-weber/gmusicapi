@@ -2,7 +2,6 @@
 
 """Calls made by the web client."""
 from __future__ import print_function, division, absolute_import, unicode_literals
-from six import raise_from
 from builtins import *  # noqa
 
 import base64
@@ -66,7 +65,7 @@ class WcCall(Call):
         try:
             return validictory.validate(msg, cls._res_schema)
         except ValueError as e:
-            raise_from(ValidationException(str(e)), e)
+            raise ValidationException(str(e)) from e
 
     @classmethod
     def check_success(cls, response, msg):

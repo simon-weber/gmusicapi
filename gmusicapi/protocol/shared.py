@@ -3,7 +3,6 @@
 """Definitions shared by multiple clients."""
 from __future__ import print_function, division, absolute_import, unicode_literals
 from builtins import *  # noqa
-from six import raise_from
 
 from collections import namedtuple
 
@@ -262,7 +261,7 @@ class Call(with_metaclass(BuildRequestMeta, object)):
                            e_message=str(e),
                            req_kwargs=safe_req_kwargs,
                            content=response.text)
-            raise_from(CallFailure(err_msg, e.callname), e)
+            raise CallFailure(err_msg, e.callname) from e
 
         except ValidationException as e:
             # TODO shouldn't be using formatting
@@ -291,7 +290,7 @@ class Call(with_metaclass(BuildRequestMeta, object)):
         try:
             return json.loads(text)
         except ValueError as e:
-            raise_from(ParseException(str(e)), e)
+            raise ParseException(str(e)) from e
 
     @staticmethod
     def _filter_proto(msg, make_copy=True):

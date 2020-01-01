@@ -2,7 +2,6 @@
 
 """Calls made by the Music Manager (related to uploading)."""
 from __future__ import print_function, division, absolute_import, unicode_literals
-from six import raise_from
 from builtins import *  # noqa
 
 import base64
@@ -57,7 +56,7 @@ class MmCall(Call):
         try:
             res_msg.ParseFromString(response.content)
         except DecodeError as e:
-            raise_from(ParseException(str(e)), e)
+            raise ParseException(str(e)) from e
 
         return res_msg
 
