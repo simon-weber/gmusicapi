@@ -420,7 +420,7 @@ class Musicmanager(_OAuthClient):
                                       path, sample_request, track,
                                       self.uploader_id, bogus_sample)
 
-            except (IOError, ValueError) as e:
+            except (OSError, ValueError) as e:
                 self.logger.warning("couldn't create scan and match sample for '%r': %s",
                                     path, str(e))
                 not_uploaded[path] = str(e)
@@ -514,7 +514,7 @@ class Musicmanager(_OAuthClient):
                         try:
                             self.logger.info("transcoding '%r' to mp3", path)
                             contents = utils.transcode_to_mp3(path, quality=transcode_quality)
-                        except (IOError, ValueError) as e:
+                        except (OSError, ValueError) as e:
                             self.logger.warning("error transcoding %r: %s", path, e)
                             not_uploaded[path] = "transcoding error: %s" % e
                             continue

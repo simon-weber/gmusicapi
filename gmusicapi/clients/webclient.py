@@ -196,7 +196,7 @@ class Webclient(_Base):
 
                 if use_range_header:
                     # the user didn't want automatic response fixup
-                    raise IOError('use_range_header is True but the response'
+                    raise OSError('use_range_header is True but the response'
                                   ' was not the correct content length.'
                                   ' This might be caused by a (poorly-written) http proxy.')
 

@@ -323,7 +323,7 @@ def configure_debug_log_handlers(logger):
     try:
         make_sure_path_exists(os.path.dirname(log_filepath), 0o700)
         debug_handler = logging.FileHandler(log_filepath, encoding='utf-8')
-    except (OSError, IOError):
+    except OSError:
         logging_to_file = False
         debug_handler = logging.StreamHandler()
 
@@ -498,9 +498,9 @@ def transcode_to_mp3(filepath, quality='320k', slice_start=None, slice_duration=
 
         if proc.returncode != 0:
             err_output = ("(return code: %r)\n" % proc.returncode) + err_output.decode("ascii")
-            raise IOError  # handle errors in except
+            raise OSError  # handle errors in except
 
-    except (OSError, IOError) as e:
+    except OSError as e:
 
         err_msg = "transcoding command (%r) failed: %s. " % (' '.join(cmd), e)
 
@@ -512,7 +512,7 @@ def transcode_to_mp3(filepath, quality='320k', slice_start=None, slice_duration=
 
         log.exception('transcoding failure:\n%s', err_msg)
 
-        raise IOError(err_msg)
+        raise OSError(err_msg)
 
     else:
         return audio_out
