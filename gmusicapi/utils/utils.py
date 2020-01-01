@@ -2,7 +2,6 @@
 
 """Utility functions used across api code."""
 from __future__ import print_function, division, absolute_import, unicode_literals
-from builtins import *  # noqa
 
 import ast
 from bisect import bisect_left

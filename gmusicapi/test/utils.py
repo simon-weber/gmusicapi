@@ -2,7 +2,6 @@
 
 """Utilities used in testing."""
 from __future__ import print_function, division, absolute_import, unicode_literals
-from builtins import *  # noqa
 
 import logging
 import os

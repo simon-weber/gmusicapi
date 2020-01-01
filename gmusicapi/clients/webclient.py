@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function, division, absolute_import, unicode_literals
-from builtins import *  # noqa
 
 import warnings
 from urllib.parse import parse_qsl, urlparse

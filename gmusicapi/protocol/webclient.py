@@ -2,7 +2,6 @@
 
 """Calls made by the web client."""
 from __future__ import print_function, division, absolute_import, unicode_literals
-from builtins import *  # noqa
 
 import base64
 import copy

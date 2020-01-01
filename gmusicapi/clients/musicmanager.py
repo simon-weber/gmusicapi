@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function, division, absolute_import, unicode_literals
-from builtins import *  # noqa
 
 import os
 from socket import gethostname
