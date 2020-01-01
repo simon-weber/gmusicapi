@@ -128,7 +128,7 @@ def compose(*funcs, **kfuncs):
     return reduce(lambda f, g: lambda *args, **kaargs: f(g(*args, **kaargs)), funcs)
 
 
-class SongMatcher(object):
+class SongMatcher:
     """Matches GM songs to user-provided metadata."""
 
     def __init__(self, songs, log_metadata=['title', 'artist', 'album']):
@@ -162,7 +162,7 @@ class SongMatcher(object):
 
         return build_song_rep(song, self.log_metadata)
 
-    class SearchModifier(object):
+    class SearchModifier:
         """Controls how to query the library.
         Implementations define a comparator, and 2 functions
         (transformers) to modify the query and song data on the fly.

@@ -8,7 +8,7 @@ try:
 except ImportError:
     print('warning: could not import appdirs; will use current directory')
 
-    class FakeAppDirs(object):
+    class FakeAppDirs:
         to_spoof = set(base + '_dir' for base in
                        ('user_data', 'site_data', 'user_config', 'site_config', 'user_cache',
                         'user_log'))

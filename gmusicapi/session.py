@@ -48,7 +48,7 @@ def credentials_from_refresh_token(token, oauth_info):
     return OAuth2Credentials.new_from_json(json.dumps(cred_json))
 
 
-class _Base(object):
+class _Base:
     def __init__(self, rsession_setup=None):
         """
         :param rsession_setup: a callable that will be called with

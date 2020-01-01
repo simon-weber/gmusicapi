@@ -49,7 +49,7 @@ printed_log_start_message = False  # global, set in config_debug_logging
 _mac_pattern = re.compile("^({pair}:){{5}}{pair}$".format(pair='[0-9A-F]' * 2))
 
 
-class DynamicClientLogger(object):
+class DynamicClientLogger:
     """Dynamically proxies to the logger of a Client higher in the call stack.
 
     This is a ridiculous hack needed because
@@ -625,7 +625,7 @@ def require_subscription(function, *args, **kwargs):
 
 # Modification of recipe found at
 # https://wiki.python.org/moin/PythonDecoratorLibrary#Cached_Properties.
-class cached_property(object):
+class cached_property:
     """Version of @property decorator that caches the result with a TTL.
 
     Tracks the property's value and last refresh time in a dict attribute

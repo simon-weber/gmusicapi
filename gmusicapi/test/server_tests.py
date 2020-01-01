@@ -89,7 +89,7 @@ def subscription(f, *args, **kwargs):
 
 
 @test(groups=['server-other'])
-class SslVerificationTests(object):
+class SslVerificationTests:
     test_url = 'https://wrong.host.badssl.com/'
 
     @test
@@ -119,7 +119,7 @@ class SslVerificationTests(object):
 
 
 @test(groups=['server'])
-class ClientTests(object):
+class ClientTests:
     # set on the instance in login
     # wc = None  # webclient
     mm = None  # musicmanager
