@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Unofficial Google Music Api documentation build configuration file, created by
 # sphinx-quickstart on Sat Feb 25 00:36:45 2012.

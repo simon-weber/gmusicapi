@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Utility functions used across api code."""
 from __future__ import print_function, division, absolute_import, unicode_literals
 

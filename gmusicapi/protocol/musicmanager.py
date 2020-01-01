@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Calls made by the Music Manager (related to uploading)."""
 from __future__ import print_function, division, absolute_import, unicode_literals
 

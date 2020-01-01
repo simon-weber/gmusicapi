@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 These tests all run against an actual Google Music account.
 

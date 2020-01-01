@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Sessions handle the details of authentication and transporting requests.
 """

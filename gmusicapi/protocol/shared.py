@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """Definitions shared by multiple clients."""
 from __future__ import print_function, division, absolute_import, unicode_literals
 

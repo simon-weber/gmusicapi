@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Mock version of appdirs for use in cases without the real version
 """

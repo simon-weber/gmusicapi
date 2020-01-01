@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from gmusicapi._version import __version__
 from gmusicapi.clients import Webclient, Musicmanager, Mobileclient
 from gmusicapi.exceptions import CallFailure

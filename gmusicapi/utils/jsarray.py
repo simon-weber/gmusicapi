@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Tools to handle Google's ridiculous interchange format.
 """
