@@ -87,10 +87,10 @@ class DynamicClientLogger:
                         f_self = frame.f_locals['self']
 
                         # can't import and check against classes; that causes an import cycle
-                        if ((f_self is not None and
-                             f_self.__module__.startswith('gmusicapi.clients') and
-                             f_self.__class__.__name__ in ('Musicmanager', 'Webclient',
-                                                           'Mobileclient'))):
+                        if (f_self is not None and
+                            f_self.__module__.startswith('gmusicapi.clients') and
+                            f_self.__class__.__name__ in ('Musicmanager', 'Webclient',
+                                                          'Mobileclient')):
                             logger = f_self.logger
                             break
                 finally:
@@ -262,8 +262,8 @@ def dual_decorator(func):
     """
     @functools.wraps(func)
     def inner(*args, **kw):
-        if ((len(args) == 1 and not kw and callable(args[0]) and
-             not (type(args[0]) == type and issubclass(args[0], BaseException)))):
+        if (len(args) == 1 and not kw and callable(args[0]) and
+                not (type(args[0]) == type and issubclass(args[0], BaseException))):
             return func()(args[0])
         else:
             return func(*args, **kw)
@@ -301,8 +301,8 @@ def enforce_ids_param(position=1):
     @decorator
     def wrapper(function, *args, **kw):
 
-        if ((not isinstance(args[position], (list, tuple)) or
-             not all([isinstance(e, str) for e in args[position]]))):
+        if (not isinstance(args[position], (list, tuple)) or
+                not all([isinstance(e, str) for e in args[position]])):
             raise ValueError("Invalid param type in position %s;"
                              " expected ids (did you pass dictionaries?)" % position)
 

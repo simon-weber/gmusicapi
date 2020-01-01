@@ -961,8 +961,8 @@ class ClientTests:
 
         with Check() as check:
             for type_, hits in res.items():
-                if ((not test_subscription_features() and
-                     type_ in ('artist_hits', 'song_hits', 'album_hits'))):
+                if (not test_subscription_features() and
+                        type_ in ('artist_hits', 'song_hits', 'album_hits')):
                     # These results aren't returned for non-sub accounts.
                     check.true(len(hits) == 0, "%s had %s hits, expected 0" % (type_, len(hits)))
                 else:
