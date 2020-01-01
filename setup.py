@@ -52,7 +52,6 @@ setup(
         'appdirs >= 1.1.0',                       # user_log_dir
         'gpsoauth >= 0.2.0',                      # mac -> android_id, validation, pycryptodome
         'MechanicalSoup >= 0.4.0',
-        'future',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

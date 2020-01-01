@@ -1,7 +1,6 @@
 appdirs==1.4.0
 beautifulsoup4==4.5.1
 decorator==4.0.10
-future==0.15.2
 gpsoauth==0.4.0
 httplib2==0.9.2
 MechanicalSoup==0.4.0
