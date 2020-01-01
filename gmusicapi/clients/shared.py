@@ -8,13 +8,12 @@ import logging
 import os
 
 from gmusicapi.utils import utils
-from future.utils import with_metaclass
 from oauth2client.client import OAuth2WebServerFlow
 import oauth2client.file
 import webbrowser
 
 
-class _Base(with_metaclass(utils.DocstringInheritMeta, object)):
+class _Base(metaclass=utils.DocstringInheritMeta):
     """Factors out common client setup."""
     _session_class = utils.NotImplementedField
 

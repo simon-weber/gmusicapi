@@ -15,7 +15,6 @@ from gmusicapi.exceptions import (
 from gmusicapi.utils import utils
 
 import requests
-from future.utils import with_metaclass
 
 log = utils.DynamicClientLogger(__name__)
 
@@ -98,7 +97,7 @@ class BuildRequestMeta(type):
         return new_cls
 
 
-class Call(with_metaclass(BuildRequestMeta, object)):
+class Call(metaclass=BuildRequestMeta):
     """
     Clients should use Call.perform().
 

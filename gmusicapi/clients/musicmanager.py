@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function, division, absolute_import, unicode_literals
-from future.utils import PY3
 from past.builtins import basestring
 from builtins import *  # noqa
 
@@ -9,11 +8,7 @@ import os
 from socket import gethostname
 import time
 from uuid import getnode as getmac
-
-if PY3:
-    from urllib.parse import unquote
-else:
-    from urllib import unquote
+from urllib.parse import unquote
 
 import httplib2  # included with oauth2client
 from oauth2client.client import TokenRevokeError
