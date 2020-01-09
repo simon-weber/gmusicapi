@@ -1,19 +1,12 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function, division, absolute_import, unicode_literals
-from future.utils import PY3
-from past.builtins import basestring
-from builtins import *  # noqa
 
 import os
 from socket import gethostname
 import time
 from uuid import getnode as getmac
-
-if PY3:
-    from urllib.parse import unquote
-else:
-    from urllib import unquote
+from urllib.parse import unquote
 
 import httplib2  # included with oauth2client
 from oauth2client.client import TokenRevokeError
@@ -313,7 +306,7 @@ class Musicmanager(_OAuthClient):
 
         return (client_state.total_track_count, client_state.locker_track_limit)
 
-    @utils.accept_singleton(basestring)
+    @utils.accept_singleton(str)
     @utils.empty_arg_shortcircuit(return_code='{}')
     def upload(self, filepaths, enable_matching=False,
                enable_transcoding=True, transcode_quality='320k'):

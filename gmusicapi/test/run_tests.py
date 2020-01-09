@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function, division, absolute_import, unicode_literals
-from future.utils import PY3, bind_method
-from builtins import *  # noqa
 
 from collections import namedtuple
 import functools
@@ -97,8 +95,8 @@ def retrieve_auth():
 
 def freeze_method_kwargs(klass, method_name, **kwargs):
     method = getattr(klass, method_name)
-    partialfunc = functools.partialmethod if PY3 else functools.partial
-    bind_method(klass, method_name, partialfunc(method, **kwargs))
+    partialfunc = functools.partialmethod
+    setattr(klass, method_name, partialfunc(method, **kwargs))
 
 
 def freeze_login_details(mc_kwargs, mm_kwargs):

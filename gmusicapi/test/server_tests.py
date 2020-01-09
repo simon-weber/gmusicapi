@@ -7,7 +7,6 @@ Destructive modifications are not made, but if things go terrible wrong,
 an extra test playlist or song may result.
 """
 from __future__ import print_function, division, absolute_import, unicode_literals
-from builtins import *  # noqa
 
 from collections import namedtuple
 import datetime
