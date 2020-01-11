@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-
 """Custom exceptions used across the project."""
-from __future__ import print_function, division, absolute_import, unicode_literals
 
 
 class CallFailure(Exception):
@@ -60,5 +57,5 @@ class InvalidDeviceId(Exception):
         else:
             message += 'It looks like your account does not have any '
             'valid device IDs.'
-        super(InvalidDeviceId, self).__init__(message)
+        super().__init__(message)
         self.valid_device_ids = ids

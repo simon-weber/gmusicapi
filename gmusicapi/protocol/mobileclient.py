@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """Calls made by the mobile client."""
-from __future__ import print_function, division, absolute_import, unicode_literals
 
 import base64
 import calendar
@@ -1023,7 +1021,7 @@ class ListSharedPlaylistEntries(McListCall):
 
     @classmethod
     def dynamic_params(cls, share_token, updated_after=None, start_token=None, max_results=None):
-        return super(ListSharedPlaylistEntries, cls).dynamic_params(
+        return super().dynamic_params(
             updated_after, start_token, max_results)
 
     @classmethod

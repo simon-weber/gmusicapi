@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-
 """Utilities used in testing."""
-from __future__ import print_function, division, absolute_import, unicode_literals
 
 import logging
 import os
@@ -25,8 +22,8 @@ gm_id_regex = re.compile(("{h}{{8}}-" +
 # directory as this file.
 test_file_dir = os.path.dirname(os.path.abspath(__file__))
 
-small_mp3 = os.path.join(test_file_dir, u'audiotest_small.mp3')
-image_filename = os.path.join(test_file_dir, u'imagetest_10x10_check.png')
+small_mp3 = os.path.join(test_file_dir, 'audiotest_small.mp3')
+image_filename = os.path.join(test_file_dir, 'imagetest_10x10_check.png')
 
 # that dumb intro track on conspiracy of one
 aa_song_id = 'Tqqufr34tuqojlvkolsrwdwx7pe'

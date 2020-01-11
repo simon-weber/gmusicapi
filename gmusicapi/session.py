@@ -1,9 +1,6 @@
-# -*- coding: utf-8 -*-
-
 """
 Sessions handle the details of authentication and transporting requests.
 """
-from __future__ import print_function, division, absolute_import, unicode_literals
 
 from collections import namedtuple
 from contextlib import closing
@@ -51,7 +48,7 @@ def credentials_from_refresh_token(token, oauth_info):
     return OAuth2Credentials.new_from_json(json.dumps(cred_json))
 
 
-class _Base(object):
+class _Base:
     def __init__(self, rsession_setup=None):
         """
         :param rsession_setup: a callable that will be called with
@@ -127,7 +124,7 @@ class Webclient(_Base):
         :param email:
         :param password:
         """
-        super(Webclient, self).login()
+        super().login()
 
         # Google's login form has a bunch of hidden fields I'd rather not deal with manually.
         browser = mechanicalsoup.Browser(soup_config={"features": "html.parser"})
@@ -206,12 +203,12 @@ class Musicmanager(_Base):
     )
 
     def __init__(self, *args, **kwargs):
-        super(Musicmanager, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._oauth_creds = None
 
     def login(self, oauth_credentials, *args, **kwargs):
         """Store an already-acquired oauth2client.Credentials."""
-        super(Musicmanager, self).login()
+        super().login()
 
         try:
             # refresh the token right away to check auth validity
@@ -249,7 +246,7 @@ class Mobileclient(Musicmanager):
     )
 
     def __init__(self, *args, **kwargs):
-        super(Mobileclient, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._master_token = None
         self._authtoken = None
         self._locale = None
@@ -312,6 +309,6 @@ class Mobileclient(Musicmanager):
             return rsession.request(**req_kwargs)
 
         if desired_auth.oauth:
-            return super(Mobileclient, self)._send_with_auth(req_kwargs, desired_auth, rsession)
+            return super()._send_with_auth(req_kwargs, desired_auth, rsession)
 
         raise ValueError("_send_with_auth got invalid desired_auth: {}".format(desired_auth))

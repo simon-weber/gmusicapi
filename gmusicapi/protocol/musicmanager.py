@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-
 """Calls made by the Music Manager (related to uploading)."""
-from __future__ import print_function, division, absolute_import, unicode_literals
 
 import base64
 import hashlib
@@ -186,7 +183,7 @@ class UploadMetadata(MmCall):
         elif isinstance(audio, mutagen.asf.ASF):
             # WMA entries store more info than just the value.
             # Monkeypatch in a dict {key: value} to keep interface the same for all filetypes.
-            asf_dict = dict((k, [ve.value for ve in v]) for (k, v) in audio.tags.as_dict().items())
+            asf_dict = {k: [ve.value for ve in v] for (k, v) in audio.tags.as_dict().items()}
             audio.tags = asf_dict
 
         extension = os.path.splitext(filepath)[1].upper()
@@ -499,7 +496,7 @@ class ProvideSample(MmCall):
     @staticmethod
     @pb
     def dynamic_data(filepath, server_challenge, track, uploader_id, mock_sample=None):
-        """Raise IOError on transcoding problems, or ValueError for invalid input.
+        """Raise OSError on transcoding problems, or ValueError for invalid input.
 
         :param mock_sample: if provided, will be sent in place of a proper sample
 

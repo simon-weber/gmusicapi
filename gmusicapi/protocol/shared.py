@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-
 """Definitions shared by multiple clients."""
-from __future__ import print_function, division, absolute_import, unicode_literals
 
 from collections import namedtuple
 
@@ -43,7 +40,7 @@ class BuildRequestMeta(type):
 
     def __new__(cls, name, bases, dct):
         # To not mess with mro and inheritance, build the class first.
-        new_cls = super(BuildRequestMeta, cls).__new__(cls, name, bases, dct)
+        new_cls = super().__new__(cls, name, bases, dct)
 
         merge_keys = ('headers', 'params')
         all_keys = ('method', 'url', 'files', 'data', 'verify', 'allow_redirects') + merge_keys
@@ -198,7 +195,7 @@ class Call(metaclass=BuildRequestMeta):
             log.debug("%s(args=%s, kwargs=%s)",
                       call_name,
                       [utils.truncate(a) for a in args],
-                      dict((k, utils.truncate(v)) for (k, v) in kwargs.items())
+                      {k: utils.truncate(v) for (k, v) in kwargs.items()}
                       )
         else:
             log.debug("%s(<omitted>)", call_name)

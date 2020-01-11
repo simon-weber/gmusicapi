@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
-
 """
 These tests all run against an actual Google Music account.
 
 Destructive modifications are not made, but if things go terrible wrong,
 an extra test playlist or song may result.
 """
-from __future__ import print_function, division, absolute_import, unicode_literals
 
 from collections import namedtuple
 import datetime
@@ -92,7 +89,7 @@ def subscription(f, *args, **kwargs):
 
 
 @test(groups=['server-other'])
-class SslVerificationTests(object):
+class SslVerificationTests:
     test_url = 'https://wrong.host.badssl.com/'
 
     @test
@@ -122,7 +119,7 @@ class SslVerificationTests(object):
 
 
 @test(groups=['server'])
-class ClientTests(object):
+class ClientTests:
     # set on the instance in login
     # wc = None  # webclient
     mm = None  # musicmanager
@@ -964,8 +961,8 @@ class ClientTests(object):
 
         with Check() as check:
             for type_, hits in res.items():
-                if ((not test_subscription_features() and
-                     type_ in ('artist_hits', 'song_hits', 'album_hits'))):
+                if (not test_subscription_features() and
+                        type_ in ('artist_hits', 'song_hits', 'album_hits')):
                     # These results aren't returned for non-sub accounts.
                     check.true(len(hits) == 0, "%s had %s hits, expected 0" % (type_, len(hits)))
                 else:
@@ -974,7 +971,7 @@ class ClientTests(object):
     @test
     def mc_artist_info(self):
         aid = 'Apoecs6off3y6k4h5nvqqos4b5e'  # amorphis
-        optional_keys = set(('albums', 'topTracks', 'related_artists'))
+        optional_keys = {'albums', 'topTracks', 'related_artists'}
 
         include_all_res = self.mc.get_artist_info(aid, include_albums=True,
                                                   max_top_tracks=1, max_rel_artist=1)
@@ -1025,21 +1022,21 @@ class ClientTests(object):
 
     @test(groups=['genres'])
     def mc_all_genres(self):
-        expected_genres = {u'COMEDY_SPOKEN_WORD_OTHER', u'COUNTRY', u'HOLIDAY', u'R_B_SOUL',
-                           u'FOLK', u'LATIN', u'CHRISTIAN_GOSPEL', u'ALTERNATIVE_INDIE', u'POP',
-                           u'ROCK', u'WORLD', u'VOCAL_EASY_LISTENING', u'HIP_HOP_RAP', u'JAZZ',
-                           u'METAL', u'REGGAE_SKA', u'SOUNDTRACKS_CAST_ALBUMS', u'DANCE_ELECTRONIC',
-                           u'CLASSICAL', u'NEW_AGE', u'BLUES', u'CHILDREN_MUSIC'}
+        expected_genres = {'COMEDY_SPOKEN_WORD_OTHER', 'COUNTRY', 'HOLIDAY', 'R_B_SOUL',
+                           'FOLK', 'LATIN', 'CHRISTIAN_GOSPEL', 'ALTERNATIVE_INDIE', 'POP',
+                           'ROCK', 'WORLD', 'VOCAL_EASY_LISTENING', 'HIP_HOP_RAP', 'JAZZ',
+                           'METAL', 'REGGAE_SKA', 'SOUNDTRACKS_CAST_ALBUMS', 'DANCE_ELECTRONIC',
+                           'CLASSICAL', 'NEW_AGE', 'BLUES', 'CHILDREN_MUSIC'}
         res = self.mc.get_genres()
-        assert_equal(set([e['id'] for e in res]), expected_genres)
+        assert_equal({e['id'] for e in res}, expected_genres)
 
     @test(groups=['genres'])
     def mc_specific_genre(self):
-        expected_genres = {u'PROGRESSIVE_METAL', u'CLASSIC_METAL', u'HAIR_METAL', u'INDUSTRIAL',
-                           u'ALT_METAL', u'THRASH', u'METALCORE', u'BLACK_DEATH_METAL',
-                           u'DOOM_METAL'}
+        expected_genres = {'PROGRESSIVE_METAL', 'CLASSIC_METAL', 'HAIR_METAL', 'INDUSTRIAL',
+                           'ALT_METAL', 'THRASH', 'METALCORE', 'BLACK_DEATH_METAL',
+                           'DOOM_METAL'}
         res = self.mc.get_genres('METAL')
-        assert_equal(set([e['id'] for e in res]), expected_genres)
+        assert_equal({e['id'] for e in res}, expected_genres)
 
     @test(groups=['genres'])
     def mc_leaf_parent_genre(self):

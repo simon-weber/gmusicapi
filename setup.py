@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 import re
 from setuptools import setup, find_packages
@@ -17,7 +16,7 @@ if sys.version_info[:3] < (3, 5, 0):
 VERSIONFILE = 'gmusicapi/_version.py'
 
 version_line = open(VERSIONFILE).read()
-version_re = r"^__version__ = u['\"]([^'\"]*)['\"]"
+version_re = r"^__version__ = ['\"]([^'\"]*)['\"]"
 match = re.search(version_re, version_line, re.M)
 if match:
     version = match.group(1)

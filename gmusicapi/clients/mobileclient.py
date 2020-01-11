@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function, division, absolute_import, unicode_literals
 from collections import defaultdict
 import datetime
 from functools import partial
@@ -33,17 +30,17 @@ class Mobileclient(_OAuthClient):
     OAUTH_FILEPATH = os.path.join(my_appdirs.user_data_dir, 'mobileclient.cred')
 
     def __init__(self, debug_logging=True, validate=True, verify_ssl=True):
-        super(Mobileclient, self).__init__(self.__class__.__name__,
-                                           debug_logging,
-                                           validate,
-                                           verify_ssl)
+        super().__init__(self.__class__.__name__,
+                         debug_logging,
+                         validate,
+                         verify_ssl)
 
     def _make_call(self, protocol, *args, **kwargs):
         """Switch the required_auth at runtime."""
         if self._authtype is not None:
             kwargs['required_auth'] = authtypes(**{self._authtype: True})
 
-        return super(Mobileclient, self)._make_call(protocol, *args, **kwargs)
+        return super()._make_call(protocol, *args, **kwargs)
 
     def _ensure_device_id(self, device_id=None):
         if device_id is None:
@@ -579,7 +576,7 @@ class Mobileclient(_OAuthClient):
         return res['mutate_response'][0]['id']
 
     def get_all_user_playlist_contents(self):
-        """
+        r"""
         Retrieves the contents of *all* user-created playlists
         -- the Mobileclient does not support retrieving
         only the contents of one
@@ -1612,7 +1609,7 @@ class Mobileclient(_OAuthClient):
     def create_station(self, name,
                        track_id=None, artist_id=None, album_id=None,
                        genre_id=None, playlist_token=None, curated_station_id=None):
-        """Creates a radio station and returns its id.
+        r"""Creates a radio station and returns its id.
 
         :param name: the name of the station to create
         :param \*_id: the id of an item to seed the station from.

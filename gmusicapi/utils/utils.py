@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-
 """Utility functions used across api code."""
-from __future__ import print_function, division, absolute_import, unicode_literals
 
 import ast
 from bisect import bisect_left
@@ -38,11 +35,11 @@ _python_to_cpp_types = {
     str: ('string',),
 }
 
-cpp_type_to_python = dict(
-    (getattr(FieldDescriptor, 'CPPTYPE_' + cpp.upper()), python)
+cpp_type_to_python = {
+    getattr(FieldDescriptor, 'CPPTYPE_' + cpp.upper()): python
     for (python, cpplist) in _python_to_cpp_types.items()
     for cpp in cpplist
-)
+}
 
 log_filepath = os.path.join(my_appdirs.user_log_dir, 'gmusicapi.log')
 printed_log_start_message = False  # global, set in config_debug_logging
@@ -52,7 +49,7 @@ printed_log_start_message = False  # global, set in config_debug_logging
 _mac_pattern = re.compile("^({pair}:){{5}}{pair}$".format(pair='[0-9A-F]' * 2))
 
 
-class DynamicClientLogger(object):
+class DynamicClientLogger:
     """Dynamically proxies to the logger of a Client higher in the call stack.
 
     This is a ridiculous hack needed because
@@ -90,10 +87,10 @@ class DynamicClientLogger(object):
                         f_self = frame.f_locals['self']
 
                         # can't import and check against classes; that causes an import cycle
-                        if ((f_self is not None and
-                             f_self.__module__.startswith('gmusicapi.clients') and
-                             f_self.__class__.__name__ in ('Musicmanager', 'Webclient',
-                                                           'Mobileclient'))):
+                        if (f_self is not None and
+                            f_self.__module__.startswith('gmusicapi.clients') and
+                            f_self.__class__.__name__ in ('Musicmanager', 'Webclient',
+                                                          'Mobileclient')):
                             logger = f_self.logger
                             break
                 finally:
@@ -265,8 +262,8 @@ def dual_decorator(func):
     """
     @functools.wraps(func)
     def inner(*args, **kw):
-        if ((len(args) == 1 and not kw and callable(args[0]) and
-             not (type(args[0]) == type and issubclass(args[0], BaseException)))):
+        if (len(args) == 1 and not kw and callable(args[0]) and
+                not (type(args[0]) == type and issubclass(args[0], BaseException))):
             return func()(args[0])
         else:
             return func(*args, **kw)
@@ -304,8 +301,8 @@ def enforce_ids_param(position=1):
     @decorator
     def wrapper(function, *args, **kw):
 
-        if ((not isinstance(args[position], (list, tuple)) or
-             not all([isinstance(e, str) for e in args[position]]))):
+        if (not isinstance(args[position], (list, tuple)) or
+                not all([isinstance(e, str) for e in args[position]])):
             raise ValueError("Invalid param type in position %s;"
                              " expected ids (did you pass dictionaries?)" % position)
 
@@ -326,7 +323,7 @@ def configure_debug_log_handlers(logger):
     try:
         make_sure_path_exists(os.path.dirname(log_filepath), 0o700)
         debug_handler = logging.FileHandler(log_filepath, encoding='utf-8')
-    except (OSError, IOError):
+    except OSError:
         logging_to_file = False
         debug_handler = logging.StreamHandler()
 
@@ -467,7 +464,7 @@ def transcode_to_mp3(filepath, quality='320k', slice_start=None, slice_duration=
     :param slice_duration: (optional) when used with slice_start, the number of seconds in the slice
 
     Raise:
-      * IOError: problems during transcoding
+      * OSError: problems during transcoding
       * ValueError: invalid params, transcoder not found
     """
 
@@ -501,9 +498,9 @@ def transcode_to_mp3(filepath, quality='320k', slice_start=None, slice_duration=
 
         if proc.returncode != 0:
             err_output = ("(return code: %r)\n" % proc.returncode) + err_output.decode("ascii")
-            raise IOError  # handle errors in except
+            raise OSError  # handle errors in except
 
-    except (OSError, IOError) as e:
+    except OSError as e:
 
         err_msg = "transcoding command (%r) failed: %s. " % (' '.join(cmd), e)
 
@@ -515,7 +512,7 @@ def transcode_to_mp3(filepath, quality='320k', slice_start=None, slice_duration=
 
         log.exception('transcoding failure:\n%s', err_msg)
 
-        raise IOError(err_msg)
+        raise OSError(err_msg)
 
     else:
         return audio_out
@@ -542,7 +539,7 @@ def truncate(x, max_els=100, recurse_levels=0):
             if isinstance(x, dict):
                 if 'id' in x and 'titleNorm' in x:
                     # assume to be a song dict
-                    trunc = dict((k, x.get(k)) for k in ['title', 'artist', 'album'])
+                    trunc = {k: x.get(k) for k in ['title', 'artist', 'album']}
                     trunc['...'] = '...'
                     return trunc
                 else:
@@ -628,7 +625,7 @@ def require_subscription(function, *args, **kwargs):
 
 # Modification of recipe found at
 # https://wiki.python.org/moin/PythonDecoratorLibrary#Cached_Properties.
-class cached_property(object):
+class cached_property:
     """Version of @property decorator that caches the result with a TTL.
 
     Tracks the property's value and last refresh time in a dict attribute

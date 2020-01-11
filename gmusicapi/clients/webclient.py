@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function, division, absolute_import, unicode_literals
-
 import warnings
 from urllib.parse import parse_qsl, urlparse
 
@@ -43,10 +39,10 @@ class Webclient(_Base):
             GmusicapiWarning
         )
 
-        super(Webclient, self).__init__(self.__class__.__name__,
-                                        debug_logging,
-                                        validate,
-                                        verify_ssl)
+        super().__init__(self.__class__.__name__,
+                         debug_logging,
+                         validate,
+                         verify_ssl)
 
     def login(self, email, password):
         """Authenticates the webclient.
@@ -72,7 +68,7 @@ class Webclient(_Base):
         return True
 
     def logout(self):
-        return super(Webclient, self).logout()
+        return super().logout()
 
     def get_shared_playlist_info(self, share_token):
         """
@@ -90,10 +86,10 @@ class Webclient(_Base):
         md = res[1][1]
 
         return {
-            u'author': md[8],
-            u'description': md[7],
-            u'num_tracks': num_tracks,
-            u'title': md[1],
+            'author': md[8],
+            'description': md[7],
+            'num_tracks': num_tracks,
+            'title': md[1],
         }
 
     @utils.enforce_id_param
@@ -166,7 +162,7 @@ class Webclient(_Base):
 
           There are three possible values for this argument:
               * None: (default) send header; fix response locally on problems
-              * True: send header; raise IOError on problems
+              * True: send header; raise OSError on problems
               * False: do not send header
         """
 
@@ -200,7 +196,7 @@ class Webclient(_Base):
 
                 if use_range_header:
                     # the user didn't want automatic response fixup
-                    raise IOError('use_range_header is True but the response'
+                    raise OSError('use_range_header is True but the response'
                                   ' was not the correct content length.'
                                   ' This might be caused by a (poorly-written) http proxy.')
 

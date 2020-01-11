@@ -1,15 +1,13 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """A script that will rewrite audiotest* metadata to match their filenames."""
-from __future__ import print_function, division, absolute_import, unicode_literals
 
 from glob import glob
 import os
 
 import mutagen
 
-for fname in glob(u'audiotest*'):
+for fname in glob('audiotest*'):
     audio = mutagen.File(fname, easy=True)
 
     if audio is None:
