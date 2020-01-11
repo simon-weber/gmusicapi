@@ -464,7 +464,7 @@ def transcode_to_mp3(filepath, quality='320k', slice_start=None, slice_duration=
     :param slice_duration: (optional) when used with slice_start, the number of seconds in the slice
 
     Raise:
-      * IOError: problems during transcoding
+      * OSError: problems during transcoding
       * ValueError: invalid params, transcoder not found
     """
 

@@ -162,7 +162,7 @@ class Webclient(_Base):
 
           There are three possible values for this argument:
               * None: (default) send header; fix response locally on problems
-              * True: send header; raise IOError on problems
+              * True: send header; raise OSError on problems
               * False: do not send header
         """
 

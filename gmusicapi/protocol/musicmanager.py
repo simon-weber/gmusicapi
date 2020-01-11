@@ -496,7 +496,7 @@ class ProvideSample(MmCall):
     @staticmethod
     @pb
     def dynamic_data(filepath, server_challenge, track, uploader_id, mock_sample=None):
-        """Raise IOError on transcoding problems, or ValueError for invalid input.
+        """Raise OSError on transcoding problems, or ValueError for invalid input.
 
         :param mock_sample: if provided, will be sent in place of a proper sample
 
