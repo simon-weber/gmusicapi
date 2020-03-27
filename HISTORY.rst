@@ -5,9 +5,12 @@ History
 
 As of 1.0.0, `semantic versioning <http://semver.org/>`__ is used.
 
-12.1.2
+13.0.0
 ++++++
-released ...
+released 2020-03-27
+
+- breaking: drop Python 2 support
+- fix an album name schema failure
 
 12.1.1
 ++++++
