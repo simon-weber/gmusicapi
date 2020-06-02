@@ -26,6 +26,7 @@ Here are the ports I'm currently aware of:
 -  PHP:
    `raydanhk <http://code.google.com/p/unofficial-google-music-api-php/>`__
 -  Ruby: `Loic Nageleisen <https://github.com/lloeki/ruby-skyjam>`__
+-  Rust: `Max Jöhnk <https://github.com/maxjoehnk/gmusic-rs>`__
 
 They're in various states of completion and maintenance.
 
