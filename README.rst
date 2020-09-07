@@ -58,13 +58,10 @@ in touch, either `drop by #gmusicapi on Freenode
 Status and updates
 ------------------
 
-|build_status| |repominder_status|
+|build_status|
 
 .. |build_status| image:: https://travis-ci.org/simon-weber/gmusicapi.png?branch=develop
         :target: https://travis-ci.org/simon-weber/gmusicapi
-        
-.. |repominder_status| image:: https://img.shields.io/badge/dynamic/json.svg?label=release&query=%24.status&maxAge=43200&uri=https%3A%2F%2Fwww.repominder.com%2Fbadge%2FeyJyZXBvX2lkIjogMTEsICJ1c2VyX2lkIjogMn0%3D%2F&link=https%3A%2F%2Fwww.repominder.com%2F
-        :target: https://www.repominder.com
 
 * January 2020: Python 2 support dropped.
 * November 2018: proper OAuth support for the mobileclient.
