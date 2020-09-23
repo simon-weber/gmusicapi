@@ -293,7 +293,7 @@ class Mobileclient(Musicmanager):
         # As of API v2.5, dv is a required parameter for all calls.
         # The dv value is part of the Android app version number,
         # but setting this to 0 works fine.
-        req_kwargs['params'].update({'dv': 0})
+        req_kwargs['params'].update({'dv': 87701})
 
         if self._is_subscribed:
             req_kwargs['params'].update({'tier': 'aa'})
