@@ -830,18 +830,24 @@ class McStreamCall(McCall):
 
     @staticmethod
     def dynamic_headers(item_id, device_id, quality):
-        return {'X-Device-ID': device_id}
+        return {'X-Device-ID': device_id,
+                'User-agent': 'Android-Music/8770'}
 
     @classmethod
     def dynamic_params(cls, item_id, device_id, quality):
         sig, salt = cls.get_signature(item_id)
 
         params = {'opt': quality,
-                  'net': 'mob',
-                  'pt': 'e',
+                  'net': 'wifi',
+                  'dt': 'uc',
                   'slt': salt,
                   'sig': sig,
+                  'p': '0',
+                  'adaptive': 'false',
+                  'targetkbps': '512',
+                  'audio_formats': 'mp3'
                   }
+
         if item_id.startswith(('T', 'D')):
             # Store track or podcast episode.
             params['mjck'] = item_id
